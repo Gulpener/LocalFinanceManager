@@ -2,6 +2,7 @@ using LocalFinanceManager.Application.Interfaces;
 using LocalFinanceManager.Application.Services;
 using LocalFinanceManager.Domain.Entities;
 using LocalFinanceManager.Infrastructure;
+using LocalFinanceManager.Infrastructure.Import;
 using LocalFinanceManager.Infrastructure.Repositories;
 using LocalFinanceManager.Web.Components;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,12 @@ builder.Services.AddScoped<IEnvelopeRepository, EfEnvelopeRepository>();
 
 // Register Application Services
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
+
+// Register Transaction Importers
+builder.Services.AddScoped<ITransactionImporter, CsvTransactionImporter>();
+builder.Services.AddScoped<ITransactionImporter, JsonTransactionImporter>();
+builder.Services.AddScoped<ITransactionImporter, Mt940TransactionImporter>();
 
 var app = builder.Build();
 
