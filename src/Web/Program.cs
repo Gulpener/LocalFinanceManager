@@ -1,10 +1,16 @@
+using LocalFinanceManager.Infrastructure;
 using LocalFinanceManager.Web.Components;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Register DbContext with SQLite
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // LocalFinanceManager Service Registrations
 // TODO: Register Application Services
@@ -18,10 +24,6 @@ builder.Services.AddRazorComponents()
 // builder.Services.AddScoped<IAccountRepository, EfAccountRepository>();
 // builder.Services.AddScoped<ITransactionRepository, EfTransactionRepository>();
 // builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
-
-// TODO: Register DbContext
-// builder.Services.AddDbContext<ApplicationDbContext>(options =>
-//     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
