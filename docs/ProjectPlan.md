@@ -12,7 +12,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 
 ## Bootstrapping (preliminary tasks)
 
-- [ ] Task 0.1 — Create `.editorconfig` and `CONTRIBUTING.md`  
+- [x] Task 0.1 — Create `.editorconfig` and `CONTRIBUTING.md`  
        Owner: agent  
        Steps:
 
