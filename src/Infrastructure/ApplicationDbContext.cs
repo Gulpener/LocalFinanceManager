@@ -1,7 +1,7 @@
+using System.Text.Json;
 using LocalFinanceManager.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using System.Text.Json;
 
 namespace LocalFinanceManager.Infrastructure;
 
