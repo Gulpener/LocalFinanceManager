@@ -1,138 +1,406 @@
-﻿# Project Plan — LocalFinanceManager
+﻿# Project Plan — LocalFinanceManager (Agent Task List)
 
-This document lists prioritized epics and ordered user stories to build the application incrementally. Each story includes a short acceptance criteria and suggested sprint order. Implement features top-to-bottom.
+This version of the project plan converts epics and stories into explicit, actionable tasks the agent can perform. Each task includes the exact work steps, commands to run, target files to create/change, and acceptance criteria so tasks can be executed and verified automatically.
 
-## Milestones
-1. Core data & persistence
-2. Import, dedupe & manual entry
-3. Categorization & rules engine
-4. Budgets & envelopes
-5. UI, dashboards & reporting
-6. Privacy, backup & ops
-7. Tests, CI and documentation
+Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules; if those files are missing the agent will create them as the first step.
 
 ---
 
-## Epic A — Core data & persistence (Sprint 1)
-Goal: establish database, domain model, repository layer and basic CRUD for accounts and transactions.
+## Bootstrapping (preliminary tasks)
 
-- A.1 — Initialize solution & projects  
-  Acceptance: Solution skeleton with projects: Domain, Application, Infrastructure, Web. DI wired in `Program.cs`.  
-- A.2 — Implement EF Core models & migrations (Accounts, Transactions, Category, Envelope, Rule)  
-  Acceptance: EF models match datamodel in README. `InitialCreate` migration applied to local SQLite.  
-- A.3 — Repository interfaces + EF implementations  
-  Acceptance: `IAccountRepository`, `ITransactionRepository` and implementations with unit tests for basic CRUD.  
-- A.4 — Transaction service + add/get endpoints (Blazor pages or minimal APIs)  
-  Acceptance: Can create, read, update, delete transactions via UI/API; transactions persist in SQLite.
+- Task 0.1 — Create `.editorconfig` and `CONTRIBUTING.md`  
+  Owner: agent  
+  Steps:
+  - Create `.editorconfig` with project formatting rules (indentation, newline, C# conventions).
+  - Create `CONTRIBUTING.md` with branch/PR/style rules and testing requirements.
+  Acceptance:
+  - Files exist at repo root and validate with `dotnet format` (or linter step).
 
----
-
-## Epic B — Import & manual entry (Sprint 2)
-Goal: support importing CSV/MT940/JSON, preserve original CSV string, and deduplicate.
-
-- B.1 — CSV/TSV importer (pluggable)  
-  Acceptance: Import pipeline reads rows to `Transaction` with `OriginalCsv` stored.  
-- B.2 — MT940 + JSON import adapters (priority: CSV then JSON then MT940)  
-  Acceptance: Adapters convert respective formats into domain transactions.  
-- B.3 — Deduplication strategy & UI feedback  
-  Acceptance: Duplicate detection (hash on Date+Amount+Description+Account) with configurable dedupe threshold and preview before commit.  
-- B.4 — Manual transaction entry UI/validation  
-  Acceptance: Form for adding transactions, validation via FluentValidation.
+- Task 0.2 — Initialize solution & projects (Epic A.1)  
+  Owner: agent  
+  Steps:
+  - Run `dotnet new sln -n LocalFinanceManager`.
+  - Create projects: `Domain` (classlib), `Application` (classlib), `Infrastructure` (classlib), `Web` (webapp or blazorserver). Add to solution.
+  - Create minimal `Program.cs` in `Web` with DI registrations placeholder.
+  Files:
+  - `LocalFinanceManager.sln`, `src/Domain/*.csproj`, `src/Application/*.csproj`, `src/Infrastructure/*.csproj`, `src/Web/*.csproj`, `src/Web/Program.cs`
+  Acceptance:
+  - Solution builds (`dotnet build`).
+  - `Program.cs` registers DI container and sample services.
 
 ---
 
-## Epic C — Categorization & learning engine (Sprint 3)
-Goal: implement score-based automatic categorization and learning from corrections.
+## Epic A — Core data & persistence (Sprint 1) -> Tasks
 
-- C.1 — Category learning profile storage & update APIs  
-  Acceptance: Word/IBAN/amount-bucket frequencies persist per category.  
-- C.2 — Scoring engine (description, contra-account, amount buckets, recurrence)  
-  Acceptance: Given a transaction, engine returns category suggestions with scores.  
-- C.3 — Uncertainty threshold + UI suggestion flow  
-  Acceptance: If top score < threshold, UI prompts for confirmation; else auto-assign.  
-- C.4 — Learning from manual corrections (incremental update)  
-  Acceptance: When user changes category, learning profile updates and affects future scores.
+- Task A.1 — Add EF Core packages and SQLite provider  
+  Owner: agent  
+  Steps:
+  - Add EF Core packages to `Infrastructure` and `Web` projects.
+  Commands:
+  - `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore`
+  - `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore.Sqlite`
+  - `dotnet add src/Web package Microsoft.EntityFrameworkCore.Design`
+  Acceptance:
+  - Packages referenced; project restores successfully.
 
----
+- Task A.2 — Implement EF Core entity models (A.2)  
+  Owner: agent  
+  Steps:
+  - Create classes in `Domain/Entities` matching `readme.md` datamodel (`Account`, `Transaction`, `Category`, `Envelope`, `Rule`, `CategoryLearningProfile`).
+  Files:
+  - `src/Domain/Entities/*.cs`
+  Acceptance:
+  - Entities compile and follow naming / formatting from `.editorconfig`.
 
-## Epic D — Rules, priorities & split transactions (Sprint 4)
-Goal: deterministic rules and the ability to split a transaction into multiple categories/envelopes.
+- Task A.3 — Create `ApplicationDbContext` & mapping (A.2)  
+  Owner: agent  
+  Steps:
+  - Create `ApplicationDbContext` in `Infrastructure` with DbSet properties for each entity.
+  - Configure value conversions for `List<string>` and `Dictionary<,>` as JSON columns.
+  Files:
+  - `src/Infrastructure/ApplicationDbContext.cs`
+  Acceptance:
+  - `ApplicationDbContext` compiles and can be registered in DI.
 
-- D.1 — Rule engine with priorities (pattern matching, regex, IBAN)  
-  Acceptance: Rules evaluated before/after scoring; highest priority rule applies.  
-- D.2 — UI for creating/editing rules and priority ordering  
-  Acceptance: CRUD for rules and preview of affected transactions.  
-- D.3 — Transaction splitting UI + accounting adjustments  
-  Acceptance: Split a transaction into N parts with categories/envelopes; persisted correctly.
+- Task A.4 — Add initial EF migration and apply to local SQLite (A.2)  
+  Owner: agent  
+  Steps:
+  - Add migration `InitialCreate` and update local SQLite DB in dev folder (`App_Data/local.db`).
+  Commands:
+  - `dotnet ef migrations add InitialCreate --project src/Infrastructure --startup-project src/Web`
+  - `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
+  Acceptance:
+  - `InitialCreate` migration folder exists; `local.db` file created with expected tables.
 
----
+- Task A.5 — Define repository interfaces (A.3)  
+  Owner: agent  
+  Steps:
+  - Create `IAccountRepository`, `ITransactionRepository`, etc., in `Application` project.
+  Files:
+  - `src/Application/Interfaces/IAccountRepository.cs`, `ITransactionRepository.cs`
+  Acceptance:
+  - Interfaces compile and documented with XML comments.
 
-## Epic E — Budgets & envelopes (Sprint 5)
-Goal: monthly budgets per category and envelope allocations.
+- Task A.6 — Implement EF repository implementations (A.3)  
+  Owner: agent  
+  Steps:
+  - Add EF implementations in `Infrastructure` (`EfAccountRepository`, `EfTransactionRepository`) using `ApplicationDbContext`.
+  Files:
+  - `src/Infrastructure/Repositories/*.cs`
+  Acceptance:
+  - Repositories registered in DI and pass simple CRUD unit tests.
 
-- E.1 — Budget model + monthly calculation service  
-  Acceptance: Store monthly budgets; service computes spent vs budget for month.  
-- E.2 — Envelopes (potjes) allocation tasks & recurring allocations  
-  Acceptance: Create envelopes, set monthly allocation, run allocation job.  
-- E.3 — UI for budgets & envelope management + progress bars  
-  Acceptance: Visuals showing budget consumption and envelope balances.
+- Task A.7 — Unit tests for CRUD (A.3)  
+  Owner: agent  
+  Steps:
+  - Create test project `tests/Infrastructure.Tests` using xUnit; write tests for create/read/update/delete for accounts and transactions using in-memory or transient SQLite.
+  Commands:
+  - `dotnet new xunit -n Infrastructure.Tests`
+  Files:
+  - `tests/Infrastructure.Tests/*.cs`
+  Acceptance:
+  - Tests run with `dotnet test` and pass.
 
----
-
-## Epic F — Dashboards & reporting (Sprint 6)
-Goal: visual, exportable summaries and trends.
-
-- F.1 — Monthly/Yearly overview components (charts)  
-  Acceptance: Pie/bar/line charts for income vs expense and per-category breakdown.  
-- F.2 — Export CSV/PDF for periods and categories  
-  Acceptance: Export selected reports.  
-- F.3 — Advanced filters and saved reports  
-  Acceptance: Save and load report filters.
-
----
-
-## Epic G — Privacy, backup & local operations (Sprint 7)
-Goal: ensure local-only storage, optional encryption and backups.
-
-- G.1 — Local SQLite file handling & backup/restore UI  
-  Acceptance: Create manual backups and restore with validation.  
-- G.2 — Optional AES-256 DB encryption at rest  
-  Acceptance: Toggle encryption; keys stored locally; clear doc for key recovery.  
-- G.3 — Automatic local backups (configurable cadence)  
-  Acceptance: Scheduled backups written to configured folder.
-
----
-
-## Epic H — Tests, CI, scaffolding & docs (parallel, ongoing)
-Goal: product-quality processes.
-
-- H.1 — Unit tests for RuleEngine, ScoringEngine, BudgetEngine (target 80%+ on core)  
-  Acceptance: CI runs tests on PR and master.  
-- H.2 — Integration tests with in-memory or transient SQLite  
-  Acceptance: End-to-end flow tests for import → categorize → budget impact.  
-- H.3 — CI pipeline (GitHub Actions): build, test, static analysis  
-  Acceptance: PRs gated by passing pipeline.  
-- H.4 — Documentation: README extensions, usage guide, and API docs  
-  Acceptance: Developer guide for running locally and release notes.
-
----
-
-## Prioritization & Implementation notes
-- Implement Epics A→C first to deliver basic usable product (accounts, transactions, import + categorization).
-- Rules (Epic D) and Budgets (Epic E) follow to improve automation and user value.
-- Keep each story small and testable; prefer iterative demos after each sprint.
-- Use feature toggles for advanced features (encryption, scheduled tasks) to allow progressive rollout.
-- Maintain backward-compatible migrations for local SQLite.
+- Task A.8 — Transaction service + endpoints (A.4)  
+  Owner: agent  
+  Steps:
+  - Implement `TransactionService` in `Application` that uses repositories and provides methods: Add, Get, Update, Delete.
+  - Create minimal API endpoints in `Web/Program.cs` or scaffold Blazor pages for transactions (list, add, edit).
+  Files:
+  - `src/Application/Services/TransactionService.cs`, `src/Web/Pages/Transactions/*` or `src/Web/Controllers/TransactionsController.cs`
+  Acceptance:
+  - API/UI can create/read/update/delete transactions and persist to `local.db`.
 
 ---
 
-## Example User Story Template (use for all stories)
-Title: Short title  
-As a: [role]  
-I want: [capability]  
-So that: [value]  
-Acceptance criteria: bullet list (data, UI, tests)
+## Epic B — Import & manual entry (Sprint 2) -> Tasks
+
+- Task B.1 — Scaffolding: Import pipeline & interfaces (B.1)  
+  Owner: agent  
+  Steps:
+  - Create `ITransactionImporter` interface and pipeline in `Application`.
+  - Add `CsvTransactionImporter` implementation class in `Infrastructure`.
+  Files:
+  - `src/Application/Interfaces/ITransactionImporter.cs`, `src/Infrastructure/Import/CsvTransactionImporter.cs`
+  Acceptance:
+  - Importer registered in DI and can be called by a CLI or UI endpoint.
+
+- Task B.2 — CSV/TSV importer implementation (B.1)  
+  Owner: agent  
+  Steps:
+  - Parse CSV rows, map to `Transaction` entity preserving `OriginalCsv`.
+  - Allow configurable delimiter and header mapping.
+  Commands:
+  - Unit tests with sample CSV files under `tests/TestData/*.csv`
+  Files:
+  - `src/Infrastructure/Import/CsvTransactionImporter.cs`, `tests/ImporterTests.cs`
+  Acceptance:
+  - Imported transactions contain `OriginalCsv` equal to source row; tests validate parsing.
+
+- Task B.3 — JSON and MT940 adapters (B.2)  
+  Owner: agent  
+  Steps:
+  - Add `JsonTransactionImporter` and `Mt940TransactionImporter` skeletons, wire to pipeline (priority order: CSV -> JSON -> MT940).
+  Files:
+  - `src/Infrastructure/Import/JsonTransactionImporter.cs`, `Mt940TransactionImporter.cs`
+  Acceptance:
+  - JSON importer handles sample JSON; MT940 adapter skeleton ready for future parsing rules.
+
+- Task B.4 — Deduplication implementation & preview (B.3)  
+  Owner: agent  
+  Steps:
+  - Implement dedupe logic: compute hash on Date+Amount+Description+Account.
+  - Add configurable threshold and preview endpoint/UI to show duplicates before commit.
+  Files:
+  - `src/Application/Services/DeduplicationService.cs`, `src/Web/Pages/ImportPreview.razor`
+  Acceptance:
+  - Preview returns duplicates and unique candidates; tests validate duplicate detection.
+
+- Task B.5 — Manual entry UI + FluentValidation (B.4)  
+  Owner: agent  
+  Steps:
+  - Create transaction entry form with validation rules using FluentValidation.
+  Files:
+  - `src/Web/Pages/Transactions/Add.razor`, `src/Application/Validators/TransactionValidator.cs`
+  Acceptance:
+  - Form validates input and persists valid transactions; tests cover validator.
 
 ---
 
-End of Project Plan
+## Epic C — Categorization & learning engine (Sprint 3) -> Tasks
+
+- Task C.1 — Category learning profile persistence (C.1)  
+  Owner: agent  
+  Steps:
+  - Ensure `CategoryLearningProfile` EF mapping persists dictionaries as JSON.
+  - Add repository methods to read/update profiles.
+  Files:
+  - `src/Infrastructure/Repositories/CategoryLearningProfileRepository.cs`
+  Acceptance:
+  - Profiles saved and retrieved correctly in DB; unit tests validate frequency updates.
+
+- Task C.2 — Implement ScoringEngine (C.2)  
+  Owner: agent  
+  Steps:
+  - Create `ScoringEngine` in `Application` that computes scores from description words, IBANs, amount buckets, recurrence signals.
+  - Return list of category suggestions with score floats.
+  Files:
+  - `src/Application/Services/ScoringEngine.cs`
+  Acceptance:
+  - Given sample transactions, engine returns ranked suggestions; unit tests assert expected scores.
+
+- Task C.3 — Uncertainty threshold and UI flow (C.3)  
+  Owner: agent  
+  Steps:
+  - Add configurable uncertainty threshold in app settings.
+  - Wire UI to prompt user when top score < threshold; auto-assign otherwise.
+  Files:
+  - `src/Web/Pages/Transactions/AutoCategorize.razor`, `appsettings.Development.json`
+  Acceptance:
+  - UI behaves per threshold; integration test verifies flow.
+
+- Task C.4 — Learning update on manual corrections (C.4)  
+  Owner: agent  
+  Steps:
+  - When user changes category, update `CategoryLearningProfile` frequencies incrementally.
+  - Add tests that show learning impacts future scoring.
+  Files:
+  - `src/Application/Services/LearningService.cs`
+  Acceptance:
+  - After correction, subsequent scoring reflects updated profile.
+
+---
+
+## Epic D — Rules, priorities & split transactions (Sprint 4) -> Tasks
+
+- Task D.1 — Rule engine core (D.1)  
+  Owner: agent  
+  Steps:
+  - Implement `RuleEngine` that evaluates rules (pattern, regex, IBAN) with priority ordering.
+  - Rules can apply before scoring or as override.
+  Files:
+  - `src/Application/Services/RuleEngine.cs`
+  Acceptance:
+  - Engine applies highest-priority matching rule; unit tests cover match types.
+
+- Task D.2 — Rules CRUD UI + priority ordering (D.2)  
+  Owner: agent  
+  Steps:
+  - Add pages to create/edit/delete rules and reorder priorities; show preview of affected transactions.
+  Files:
+  - `src/Web/Pages/Rules/*`
+  Acceptance:
+  - CRUD works and preview lists impacted transactions.
+
+- Task D.3 — Transaction splitting feature (D.3)  
+  Owner: agent  
+  Steps:
+  - Implement split model and persist parts as linked records with accounting adjustments.
+  - UI to create N-part splits and reassign categories/envelopes.
+  Files:
+  - `src/Domain/Entities/TransactionSplit.cs`, `src/Web/Pages/Transactions/Split.razor`
+  Acceptance:
+  - Splits persist and transaction totals reconcile; tests validate correctness.
+
+---
+
+## Epic E — Budgets & envelopes (Sprint 5) -> Tasks
+
+- Task E.1 — Budget model & monthly calculation service (E.1)  
+  Owner: agent  
+  Steps:
+  - Implement `Budget` entity if needed and `BudgetService` that computes spent vs budget for a month.
+  Files:
+  - `src/Application/Services/BudgetService.cs`
+  Acceptance:
+  - Service returns monthly budget summary; unit tests validate calculations.
+
+- Task E.2 — Envelopes allocation job (E.2)  
+  Owner: agent  
+  Steps:
+  - Implement envelope allocation logic and an optional scheduled job or manual run endpoint.
+  Files:
+  - `src/Application/Jobs/EnvelopeAllocator.cs`, `src/Web/Api/EnvelopeJobController.cs`
+  Acceptance:
+  - Job executes allocations and updates envelope balances.
+
+- Task E.3 — UI for budgets & envelopes (E.3)  
+  Owner: agent  
+  Steps:
+  - Add pages with progress bars showing budget consumption and envelope balances (use chosen chart lib).
+  Files:
+  - `src/Web/Pages/Budgets/*`, `src/Web/Pages/Envelopes/*`
+  Acceptance:
+  - UI displays accurate values for a test dataset.
+
+---
+
+## Epic F — Dashboards & reporting (Sprint 6) -> Tasks
+
+- Task F.1 — Overview components & charts (F.1)  
+  Owner: agent  
+  Steps:
+  - Integrate Chart.js or Blazor chart component; add monthly/yearly charts.
+  Files:
+  - `src/Web/Components/Charts/*`
+  Acceptance:
+  - Charts render with sample data.
+
+- Task F.2 — Export CSV/PDF endpoints (F.2)  
+  Owner: agent  
+  Steps:
+  - Add export endpoints for period/category as CSV and PDF (PDF via server-side library).
+  Files:
+  - `src/Web/Api/ExportController.cs`
+  Acceptance:
+  - Exports produce correct files for sample input.
+
+- Task F.3 — Advanced filters & saved reports (F.3)  
+  Owner: agent  
+  Steps:
+  - Implement UI for filters and ability to save/load report presets.
+  Files:
+  - `src/Web/Pages/Reports/*`
+  Acceptance:
+  - Saved reports persist and restore filters.
+
+---
+
+## Epic G — Privacy, backup & operations (Sprint 7) -> Tasks
+
+- Task G.1 — Backup/restore UI (G.1)  
+  Owner: agent  
+  Steps:
+  - Implement manual backup endpoint that copies `local.db` to configured folder with validation.
+  Files:
+  - `src/Web/Api/BackupController.cs`
+  Acceptance:
+  - Backup and restore validated by checksum and file existence.
+
+- Task G.2 — Optional AES-256 DB encryption (G.2)  
+  Owner: agent  
+  Steps:
+  - Add a feature toggle and scaffolding for AES-256 encryption at rest (local key management docs).
+  Files:
+  - `src/Infrastructure/Security/EncryptionService.cs`, `docs/encryption.md`
+  Acceptance:
+  - Encryption toggle exists and documentation explains key recovery; actual encryption implementation gated behind feature flag.
+
+- Task G.3 — Scheduled backups (G.3)  
+  Owner: agent  
+  Steps:
+  - Add optional scheduled backup job (Hangfire Lite or hosted service) with configurable cadence.
+  Files:
+  - `src/Application/Jobs/ScheduledBackupService.cs`
+  Acceptance:
+  - Scheduled backup can be simulated in tests.
+
+---
+
+## Epic H — Tests, CI & docs (parallel, ongoing) -> Tasks
+
+- Task H.1 — Unit tests for core engines (H.1)  
+  Owner: agent  
+  Steps:
+  - Add tests for `RuleEngine`, `ScoringEngine`, `BudgetService` targeting >=80% for core logic.
+  Files:
+  - `tests/*.Tests`
+  Acceptance:
+  - Tests run in CI and meet coverage targets.
+
+- Task H.2 — Integration tests with transient SQLite (H.2)  
+  Owner: agent  
+  Steps:
+  - Add integration tests that cover import → categorize → budget impact end-to-end.
+  Files:
+  - `tests/Integration/*.cs`
+  Acceptance:
+  - Tests pass locally and in CI.
+
+- Task H.3 — GitHub Actions pipeline (H.3)  
+  Owner: agent  
+  Steps:
+  - Create `.github/workflows/ci.yml` pipeline: build, test, dotnet-format check, run migrations in ephemeral DB.
+  Files:
+  - `.github/workflows/ci.yml`
+  Acceptance:
+  - Pipeline runs on PR and passes.
+
+- Task H.4 — Documentation & developer guide (H.4)  
+  Owner: agent  
+  Steps:
+  - Update `README.md` with run instructions, sample data, and migration steps; add developer guide to `docs/`.
+  Files:
+  - `README.md`, `docs/developer-guide.md`
+  Acceptance:
+  - Developer can clone, run `dotnet ef database update` and start the app with documented steps.
+
+---
+
+## Implementation notes for the agent
+
+- Break each task into small commits and create feature branches per task.
+- Create unit/integration tests before finalizing feature commits where practical.
+- Use `App_Data/local.db` for the default SQLite path in development.
+- Persist `OriginalCsv` on every imported transaction.
+- Expose feature flags via `appsettings.json` and `IConfiguration`.
+- Prefer JSON columns for `List<string>` and `Dictionary<,>` storage using EF Core value converters.
+- Always run `dotnet format` and `dotnet build` before opening PR; CI will run the same checks.
+
+---
+
+## Example task example (implementation checklist)
+
+Task: `A.4 — Transaction service + add/get endpoints` — agent checklist:
+- Create `TransactionService` in `Application`.
+- Implement methods: `AddAsync`, `GetByIdAsync`, `ListByAccountAsync`, `UpdateAsync`, `DeleteAsync`.
+- Register service in `Web/Program.cs` (`builder.Services.AddScoped<ITransactionService, TransactionService>()`).
+- Add minimal API endpoints in `Web/Program.cs` for CRUD.
+- Add unit tests and integration test using transient SQLite.
+- Run `dotnet build` and `dotnet test`.
+
+Acceptance: endpoints return expected HTTP codes and data persisted to `local.db`.
+
+---
+
+End of task-oriented project plan.
