@@ -22,10 +22,17 @@ builder.Services.AddScoped<IAccountRepository, EfAccountRepository>();
 builder.Services.AddScoped<ITransactionRepository, EfTransactionRepository>();
 builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
 builder.Services.AddScoped<IEnvelopeRepository, EfEnvelopeRepository>();
+builder.Services.AddScoped<ICategoryLearningProfileRepository, EfCategoryLearningProfileRepository>();
+builder.Services.AddScoped<IRuleRepository, EfRuleRepository>();
+builder.Services.AddScoped<IBudgetRepository, EfBudgetRepository>();
 
 // Register Application Services
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
+builder.Services.AddScoped<IScoringEngine, ScoringEngine>();
+builder.Services.AddScoped<ILearningService, LearningService>();
+builder.Services.AddScoped<IRuleEngine, RuleEngine>();
+builder.Services.AddScoped<IBudgetService, BudgetService>();
 
 // Register Transaction Importers
 builder.Services.AddScoped<ITransactionImporter, CsvTransactionImporter>();
