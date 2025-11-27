@@ -1,4 +1,6 @@
+using LocalFinanceManager.Application.Interfaces;
 using LocalFinanceManager.Infrastructure;
+using LocalFinanceManager.Infrastructure.Repositories;
 using LocalFinanceManager.Web.Components;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +14,12 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Register Infrastructure Services (Repositories)
+builder.Services.AddScoped<IAccountRepository, EfAccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, EfTransactionRepository>();
+builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
+builder.Services.AddScoped<IEnvelopeRepository, EfEnvelopeRepository>();
+
 // LocalFinanceManager Service Registrations
 // TODO: Register Application Services
 // builder.Services.AddScoped<ITransactionService, TransactionService>();
@@ -19,11 +27,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // builder.Services.AddScoped<ICategoryService, CategoryService>();
 // builder.Services.AddScoped<IScoringEngine, ScoringEngine>();
 // builder.Services.AddScoped<IRuleEngine, RuleEngine>();
-
-// TODO: Register Infrastructure Services (Repositories)
-// builder.Services.AddScoped<IAccountRepository, EfAccountRepository>();
-// builder.Services.AddScoped<ITransactionRepository, EfTransactionRepository>();
-// builder.Services.AddScoped<ICategoryRepository, EfCategoryRepository>();
 
 var app = builder.Build();
 
