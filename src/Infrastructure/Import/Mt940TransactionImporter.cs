@@ -147,14 +147,7 @@ public class Mt940TransactionImporter : ITransactionImporter
             var amount = decimal.Parse(amountStr, System.Globalization.CultureInfo.InvariantCulture);
 
             // Apply credit/debit sign
-            if (creditDebit == 'D')
-            {
-                amount = -Math.Abs(amount);
-            }
-            else
-            {
-                amount = Math.Abs(amount);
-            }
+            amount = creditDebit == 'D' ? -Math.Abs(amount) : Math.Abs(amount);
 
             // Extract description from remainder
             var description = pos < content.Length ? content[pos..] : string.Empty;

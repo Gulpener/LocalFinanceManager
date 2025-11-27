@@ -1,7 +1,7 @@
 [
   {
     "date": "2025-01-15T00:00:00",
-    "amount": 100.50,
+    "amount": -100.50,
     "description": "Albert Heijn supermarket",
     "counterAccount": "NL01RABO0123456789",
     "accountNumber": "NL99INGB9876543210"

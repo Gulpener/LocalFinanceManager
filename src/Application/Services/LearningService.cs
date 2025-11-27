@@ -51,9 +51,9 @@ public partial class LearningService : ILearningService
         var words = ExtractWords(transaction.Description?.ToLowerInvariant() ?? string.Empty);
         foreach (var word in words)
         {
-            if (profile.WordFrequency.ContainsKey(word))
+            if (profile.WordFrequency.TryGetValue(word, out var currentWordFreq))
             {
-                profile.WordFrequency[word] = Math.Max(0, profile.WordFrequency[word] + delta);
+                profile.WordFrequency[word] = Math.Max(0, currentWordFreq + delta);
             }
             else if (delta > 0)
             {
@@ -65,9 +65,9 @@ public partial class LearningService : ILearningService
         if (!string.IsNullOrWhiteSpace(transaction.CounterAccount))
         {
             var normalizedIban = transaction.CounterAccount.ToUpperInvariant().Replace(" ", "");
-            if (profile.IbanFrequency.ContainsKey(normalizedIban))
+            if (profile.IbanFrequency.TryGetValue(normalizedIban, out var currentIbanFreq))
             {
-                profile.IbanFrequency[normalizedIban] = Math.Max(0, profile.IbanFrequency[normalizedIban] + delta);
+                profile.IbanFrequency[normalizedIban] = Math.Max(0, currentIbanFreq + delta);
             }
             else if (delta > 0)
             {
@@ -77,9 +77,9 @@ public partial class LearningService : ILearningService
 
         // Update amount bucket frequency
         var bucket = ScoringEngine.GetAmountBucket(transaction.Amount);
-        if (profile.AmountBucketFrequency.ContainsKey(bucket))
+        if (profile.AmountBucketFrequency.TryGetValue(bucket, out var currentBucketFreq))
         {
-            profile.AmountBucketFrequency[bucket] = Math.Max(0, profile.AmountBucketFrequency[bucket] + delta);
+            profile.AmountBucketFrequency[bucket] = Math.Max(0, currentBucketFreq + delta);
         }
         else if (delta > 0)
         {

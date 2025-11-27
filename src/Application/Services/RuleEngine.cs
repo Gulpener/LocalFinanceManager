@@ -30,19 +30,17 @@ public class RuleEngine : IRuleEngine
     {
         var rules = await _ruleRepository.GetAllOrderedByPriorityAsync(cancellationToken);
 
-        foreach (var rule in rules)
+        var matchedRule = rules.FirstOrDefault(rule => RuleMatches(rule, transaction));
+        if (matchedRule != null)
         {
-            if (RuleMatches(rule, transaction))
+            return new RuleMatchResult
             {
-                return new RuleMatchResult
-                {
-                    HasMatch = true,
-                    MatchedRule = rule,
-                    SuggestedCategoryId = rule.TargetCategoryId,
-                    SuggestedEnvelopeId = rule.TargetEnvelopeId,
-                    Labels = rule.AddLabels.ToList()
-                };
-            }
+                HasMatch = true,
+                MatchedRule = matchedRule,
+                SuggestedCategoryId = matchedRule.TargetCategoryId,
+                SuggestedEnvelopeId = matchedRule.TargetEnvelopeId,
+                Labels = matchedRule.AddLabels.ToList()
+            };
         }
 
         return new RuleMatchResult { HasMatch = false };
