@@ -294,6 +294,41 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
     Acceptance:
   - Service returns monthly budget summary; unit tests validate calculations.
 
+- [ ] Task E.1 — Budget model & monthly calculation service (E.1)  
+       Owner: agent  
+       Steps:
+
+  - Ensure `Budget` entity includes optional `AccountId` to support account-scoped budgets (see `readme.md`).
+  - Update EF Core mappings in `ApplicationDbContext` to persist `AccountId` and add composite unique index `IX_Budget_AccountId_Month`.
+  - Add migration `AddAccountToBudget` (or include in next schema migration) and apply to development SQLite DB.
+    Commands:
+  - `dotnet ef migrations add AddAccountToBudget --project src/Infrastructure --startup-project src/Web`
+  - `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
+  - Update `BudgetService` to compute planned/actual amounts for flexible scopes:
+    - Category (all accounts)
+    - Envelope (allocations)
+    - Account (all transactions for one account)
+    - Combined scope rules (e.g., Account + Category) — service should accept optional `accountId` and/or `categoryId`/`envelopeId` filters.
+  - Update API/UI: add account selector when creating/editing budgets and show account-level summaries and progress bars.
+    Files:
+  - `src/Application/Services/BudgetService.cs`
+  - `src/Infrastructure/Migrations/*AddAccountToBudget*`
+  - `src/Web/Pages/Budgets/*`
+    Acceptance:
+  - DB schema contains `AccountId` column and index `IX_Budget_AccountId_Month`.
+  - `BudgetService` returns correct values for account-scoped budgets; unit/integration tests added.
+  - UI allows creating account-scoped budgets and displays per-account progress bars.
+
+- [ ] Task E.1.1 — Backfill / Data Migration (optional)
+      Steps:
+
+  - If previous budgets should be associated to accounts, provide a one-time migration or admin import to convert defaults.
+  - Provide a CLI tool or admin UI to assign account scope to existing budget entries.
+    Files:
+  - `src/Tools/Backfill/AssignBudgetAccount.cs` (optional)
+    Acceptance:
+  - Backfill tool documented and tested on sample DB.
+
 - [ ] Task E.2 — Envelopes allocation job (E.2)  
        Owner: agent  
        Steps:
