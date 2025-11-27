@@ -21,7 +21,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
     Acceptance:
   - Files exist at repo root and validate with `dotnet format` (or linter step).
 
-- [ ] Task 0.2 — Initialize solution & projects (Epic A.1)  
+- [x] Task 0.2 — Initialize solution & projects (Epic A.1)  
        Owner: agent  
        Steps:
 
@@ -39,7 +39,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   - Solution builds (`dotnet build`).
   - `Program.cs` registers DI container and sample services.
 
-- [ ] Task 0.3 — Create test data folder structure  
+- [x] Task 0.3 — Create test data folder structure  
        Owner: agent  
        Steps:
   - Create `tests/TestData/` with sample CSV/JSON files
