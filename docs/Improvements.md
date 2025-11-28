@@ -14,3 +14,5 @@ Currently, account numbers are stored as plain strings without validation. This 
 ## Improvement 3: Application should be an executable
 
 ## Improvement 4: Database should be a shared file in for example onedrive
+
+## Improvement 5: Create option to add, list and delete accounts
