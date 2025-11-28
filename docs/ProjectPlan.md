@@ -271,7 +271,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
     Acceptance:
   - CRUD works and preview lists impacted transactions.
 
-- [ ] Task D.3 — Transaction splitting feature (D.3)  
+- [x] Task D.3 — Transaction splitting feature (D.3)  
        Owner: agent  
        Steps:
   - Implement split model and persist parts as linked records with accounting adjustments.

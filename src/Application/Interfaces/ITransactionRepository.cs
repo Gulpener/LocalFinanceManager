@@ -72,6 +72,36 @@ public interface ITransactionRepository
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets a split part by its ID.
+    /// </summary>
+    Task<TransactionSplit?> GetSplitByIdAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all split parts for a parent transaction.
+    /// </summary>
+    Task<IReadOnlyList<TransactionSplit>> GetSplitsByParentIdAsync(int parentTransactionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds a split part.
+    /// </summary>
+    Task<TransactionSplit> AddSplitAsync(TransactionSplit split, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds multiple split parts.
+    /// </summary>
+    Task<IReadOnlyList<TransactionSplit>> AddSplitsAsync(IEnumerable<TransactionSplit> splits, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates an existing split part.
+    /// </summary>
+    Task UpdateSplitAsync(TransactionSplit split, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a split part by ID.
+    /// </summary>
+    Task<bool> DeleteSplitAsync(int id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Checks if a transaction with the same hash already exists (for deduplication).
     /// </summary>
     /// <param name="date">Transaction date.</param>

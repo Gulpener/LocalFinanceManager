@@ -28,6 +28,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
     /// <summary>
+    /// Gets or sets the transaction splits.
+    /// </summary>
+    public DbSet<TransactionSplit> TransactionSplits => Set<TransactionSplit>();
+
+    /// <summary>
     /// Gets or sets the categories.
     /// </summary>
     public DbSet<Category> Categories => Set<Category>();
@@ -74,6 +79,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.CounterAccount).HasMaxLength(50);
 
+            entity.Property(e => e.IsSplit).HasDefaultValue(false);
+
             // Store Tags as JSON
             entity.Property(e => e.Tags)
                 .HasConversion(
@@ -102,6 +109,12 @@ public class ApplicationDbContext : DbContext
                 .WithMany(e => e.Transactions)
                 .HasForeignKey(e => e.EnvelopeId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // Configure relationship to split parts
+            entity.HasMany(e => e.Splits)
+                .WithOne(s => s.ParentTransaction)
+                .HasForeignKey(s => s.ParentTransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Category configuration
@@ -243,6 +256,32 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.AccountId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // TransactionSplit configuration
+        modelBuilder.Entity<TransactionSplit>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+
+            entity.HasOne(e => e.ParentTransaction)
+                .WithMany(t => t.Splits)
+                .HasForeignKey(e => e.ParentTransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Envelope)
+                .WithMany()
+                .HasForeignKey(e => e.EnvelopeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.ParentTransactionId)
+                .HasDatabaseName("IX_TransactionSplit_ParentTransactionId");
         });
     }
 }

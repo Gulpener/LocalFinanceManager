@@ -54,4 +54,62 @@ public class TransactionService : ITransactionService
     {
         return await _transactionRepository.DeleteAsync(id, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<TransactionSplit?> GetSplitByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await _transactionRepository.GetSplitByIdAsync(id, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TransactionSplit>> GetSplitsByParentIdAsync(int parentTransactionId, CancellationToken cancellationToken = default)
+    {
+        return await _transactionRepository.GetSplitsByParentIdAsync(parentTransactionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<TransactionSplit> AddSplitAsync(TransactionSplit split, CancellationToken cancellationToken = default)
+    {
+        return await _transactionRepository.AddSplitAsync(split, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TransactionSplit>> AddSplitsAsync(IEnumerable<TransactionSplit> splits, CancellationToken cancellationToken = default)
+    {
+        var splitList = splits.ToList();
+
+        if (!splitList.Any())
+        {
+            return Array.Empty<TransactionSplit>();
+        }
+
+        // Ensure all splits reference the same parent and that parent exists
+        var parentId = splitList.First().ParentTransactionId;
+        var parent = await _transactionRepository.GetByIdAsync(parentId, cancellationToken);
+        if (parent == null)
+        {
+            throw new InvalidOperationException("Parent transaction not found.");
+        }
+
+        // Validate sums: sum of splits must equal parent amount
+        var total = splitList.Sum(s => s.Amount);
+        if (total != parent.Amount)
+        {
+            throw new InvalidOperationException("Sum of split amounts does not equal parent transaction amount.");
+        }
+
+        return await _transactionRepository.AddSplitsAsync(splitList, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateSplitAsync(TransactionSplit split, CancellationToken cancellationToken = default)
+    {
+        await _transactionRepository.UpdateSplitAsync(split, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteSplitAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await _transactionRepository.DeleteSplitAsync(id, cancellationToken);
+    }
 }

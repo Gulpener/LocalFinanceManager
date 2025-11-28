@@ -84,6 +84,54 @@ app.MapDelete("/api/transactions/{id}", async (int id, ITransactionService trans
     return deleted ? Results.NoContent() : Results.NotFound();
 });
 
+// Minimal API endpoints for Transaction Splits
+app.MapGet("/api/transactions/{id}/splits", async (int id, ITransactionService transactionService) =>
+{
+    var splits = await transactionService.GetSplitsByParentIdAsync(id);
+    return Results.Ok(splits);
+});
+
+app.MapGet("/api/transactions/splits/{id}", async (int id, ITransactionService transactionService) =>
+{
+    var split = await transactionService.GetSplitByIdAsync(id);
+    return split is not null ? Results.Ok(split) : Results.NotFound();
+});
+
+app.MapPost("/api/transactions/{id}/splits", async (int id, List<TransactionSplit> splits, ITransactionService transactionService) =>
+{
+    // Ensure incoming splits reference the correct parent
+    foreach (var s in splits)
+    {
+        s.ParentTransactionId = id;
+    }
+
+    var created = await transactionService.AddSplitsAsync(splits);
+    return Results.Created($"/api/transactions/{id}/splits", created);
+});
+
+app.MapPost("/api/transactions/splits", async (TransactionSplit split, ITransactionService transactionService) =>
+{
+    var created = await transactionService.AddSplitAsync(split);
+    return Results.Created($"/api/transactions/splits/{created.Id}", created);
+});
+
+app.MapPut("/api/transactions/splits/{id}", async (int id, TransactionSplit split, ITransactionService transactionService) =>
+{
+    if (id != split.Id)
+    {
+        return Results.BadRequest("ID mismatch");
+    }
+
+    await transactionService.UpdateSplitAsync(split);
+    return Results.NoContent();
+});
+
+app.MapDelete("/api/transactions/splits/{id}", async (int id, ITransactionService transactionService) =>
+{
+    var deleted = await transactionService.DeleteSplitAsync(id);
+    return deleted ? Results.NoContent() : Results.NotFound();
+});
+
 // Map minimal API endpoints for Accounts
 app.MapGet("/api/accounts", async (IAccountRepository accountRepository) =>
 {

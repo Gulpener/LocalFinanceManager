@@ -69,4 +69,24 @@ public class Transaction
     /// Navigation property to the associated envelope (optional).
     /// </summary>
     public Envelope? Envelope { get; set; }
+
+    /// <summary>
+    /// Whether this transaction is a parent for split parts.
+    /// </summary>
+    public bool IsSplit { get; set; } = false;
+
+    /// <summary>
+    /// If this transaction is a split part, this references the parent transaction id.
+    /// </summary>
+    public int? ParentTransactionId { get; set; }
+
+    /// <summary>
+    /// Navigation to the parent transaction if this is a split part.
+    /// </summary>
+    public Transaction? ParentTransaction { get; set; }
+
+    /// <summary>
+    /// Split parts associated with this parent transaction.
+    /// </summary>
+    public List<TransactionSplit> Splits { get; set; } = new();
 }

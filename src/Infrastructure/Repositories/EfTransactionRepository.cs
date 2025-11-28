@@ -27,6 +27,7 @@ public class EfTransactionRepository : ITransactionRepository
             .Include(t => t.Account)
             .Include(t => t.Category)
             .Include(t => t.Envelope)
+            .Include(t => t.Splits)
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
@@ -73,6 +74,25 @@ public class EfTransactionRepository : ITransactionRepository
     }
 
     /// <inheritdoc />
+    public async Task<TransactionSplit?> GetSplitByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await _context.TransactionSplits
+            .Include(s => s.Category)
+            .Include(s => s.Envelope)
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TransactionSplit>> GetSplitsByParentIdAsync(int parentTransactionId, CancellationToken cancellationToken = default)
+    {
+        return await _context.TransactionSplits
+            .Include(s => s.Category)
+            .Include(s => s.Envelope)
+            .Where(s => s.ParentTransactionId == parentTransactionId)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Transaction>> AddRangeAsync(IEnumerable<Transaction> transactions, CancellationToken cancellationToken = default)
     {
         var transactionList = transactions.ToList();
@@ -85,6 +105,30 @@ public class EfTransactionRepository : ITransactionRepository
     public async Task UpdateAsync(Transaction transaction, CancellationToken cancellationToken = default)
     {
         _context.Transactions.Update(transaction);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<TransactionSplit> AddSplitAsync(TransactionSplit split, CancellationToken cancellationToken = default)
+    {
+        _context.TransactionSplits.Add(split);
+        await _context.SaveChangesAsync(cancellationToken);
+        return split;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TransactionSplit>> AddSplitsAsync(IEnumerable<TransactionSplit> splits, CancellationToken cancellationToken = default)
+    {
+        var list = splits.ToList();
+        _context.TransactionSplits.AddRange(list);
+        await _context.SaveChangesAsync(cancellationToken);
+        return list;
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateSplitAsync(TransactionSplit split, CancellationToken cancellationToken = default)
+    {
+        _context.TransactionSplits.Update(split);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -112,5 +156,19 @@ public class EfTransactionRepository : ITransactionRepository
                 t.Description == description &&
                 t.AccountId == accountId,
                 cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteSplitAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var split = await _context.TransactionSplits.FindAsync([id], cancellationToken);
+        if (split == null)
+        {
+            return false;
+        }
+
+        _context.TransactionSplits.Remove(split);
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }
