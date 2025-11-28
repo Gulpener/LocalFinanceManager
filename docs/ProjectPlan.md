@@ -190,7 +190,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Preview returns duplicates and unique candidates; tests validate duplicate detection.
 
-- [ ] Task B.5 — Manual entry UI + FluentValidation (B.4)  
+- [x] Task B.5 — Manual entry UI + FluentValidation (B.4)  
        Owner: agent  
        Steps:
 - Create transaction entry form with validation rules using FluentValidation.
