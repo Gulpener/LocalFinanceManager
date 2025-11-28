@@ -261,7 +261,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Engine applies highest-priority matching rule; unit tests cover match types.
 
-- [ ] Task D.2 — Rules CRUD UI + priority ordering (D.2)  
+- [x] Task D.2 — Rules CRUD UI + priority ordering (D.2)  
        Owner: agent  
        Steps:
 
