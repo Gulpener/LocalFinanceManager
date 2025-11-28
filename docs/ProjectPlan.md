@@ -21,39 +21,39 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
     Acceptance:
   - Files exist at repo root and validate with `dotnet format` (or linter step).
 
-- [ ] Task 0.2 — Initialize solution & projects (Epic A.1)  
+- [x] Task 0.2 — Initialize solution & projects (Epic A.1)  
        Owner: agent  
        Steps:
 
-  - Run `dotnet new sln -n LocalFinanceManager` in repo root
-  - Create `src/` and `tests/` folders
-  - `dotnet new classlib -n LocalFinanceManager.Domain -o src/Domain`
-  - `dotnet new classlib -n LocalFinanceManager.Application -o src/Application`
-  - `dotnet new classlib -n LocalFinanceManager.Infrastructure -o src/Infrastructure`
-  - `dotnet new blazorserver -n LocalFinanceManager.Web -o src/Web`
-  - `dotnet sln add src/**/*.csproj`
-  - Create minimal `Program.cs` in `Web` with DI registrations placeholder.
-    Files:
-  - `LocalFinanceManager.sln`, `src/Domain/*.csproj`, `src/Application/*.csproj`, `src/Infrastructure/*.csproj`, `src/Web/*.csproj`, `src/Web/Program.cs`
-    Acceptance:
-  - Solution builds (`dotnet build`).
-  - `Program.cs` registers DI container and sample services.
+- Run `dotnet new sln -n LocalFinanceManager` in repo root
+- Create `src/` and `tests/` folders
+- `dotnet new classlib -n LocalFinanceManager.Domain -o src/Domain`
+- `dotnet new classlib -n LocalFinanceManager.Application -o src/Application`
+- `dotnet new classlib -n LocalFinanceManager.Infrastructure -o src/Infrastructure`
+- `dotnet new blazorserver -n LocalFinanceManager.Web -o src/Web`
+- `dotnet sln add src/**/*.csproj`
+- Create minimal `Program.cs` in `Web` with DI registrations placeholder.
+  Files:
+- `LocalFinanceManager.sln`, `src/Domain/*.csproj`, `src/Application/*.csproj`, `src/Infrastructure/*.csproj`, `src/Web/*.csproj`, `src/Web/Program.cs`
+  Acceptance:
+- Solution builds (`dotnet build`).
+- `Program.cs` registers DI container and sample services.
 
-- [ ] Task 0.3 — Create test data folder structure  
+- [x] Task 0.3 — Create test data folder structure  
        Owner: agent  
        Steps:
-  - Create `tests/TestData/` with sample CSV/JSON files
-    Files:
-  - `tests/TestData/sample-transactions.csv`
-  - `tests/TestData/sample-transactions.json`
-    Acceptance:
-  - Folders and sample files exist; solution builds.
+- Create `tests/TestData/` with sample CSV/JSON files
+  Files:
+- `tests/TestData/sample-transactions.csv`
+- `tests/TestData/sample-transactions.json`
+  Acceptance:
+- Folders and sample files exist; solution builds.
 
 ---
 
 ## Epic A — Core data & persistence (Sprint 1) -> Tasks
 
-- [ ] Task A.1 — Add EF Core packages and SQLite provider  
+- [x] Task A.1 — Add EF Core packages and SQLite provider  
        Owner: agent  
        Steps:
 
@@ -65,29 +65,29 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
     Acceptance:
   - Packages referenced; project restores successfully.
 
-- [ ] Task A.2 — Implement EF Core entity models (A.2)  
+- [x] Task A.2 — Implement EF Core entity models (A.2)  
        **Depends on:** Task 0.2  
        Owner: agent  
        Steps:
 
-  - Create classes in `Domain/Entities` matching `readme.md` datamodel (`Account`, `Transaction`, `Category`, `Envelope`, `Rule`, `CategoryLearningProfile`).
-    Files:
-  - `src/Domain/Entities/*.cs`
-    Acceptance:
-  - Entities compile and follow naming / formatting from `.editorconfig`.
+- Create classes in `Domain/Entities` matching `readme.md` datamodel (`Account`, `Transaction`, `Category`, `Envelope`, `Rule`, `CategoryLearningProfile`).
+  Files:
+- `src/Domain/Entities/*.cs`
+  Acceptance:
+- Entities compile and follow naming / formatting from `.editorconfig`.
 
-- [ ] Task A.3 — Create `ApplicationDbContext` & mapping (A.2)  
+- [x] Task A.3 — Create `ApplicationDbContext` & mapping (A.2)  
        Owner: agent  
        Steps:
 
-  - Create `ApplicationDbContext` in `Infrastructure` with DbSet properties for each entity.
-  - Configure value conversions for `List<string>` and `Dictionary<,>` as JSON columns.
-    Files:
-  - `src/Infrastructure/ApplicationDbContext.cs`
-    Acceptance:
-  - `ApplicationDbContext` compiles and can be registered in DI.
+- Create `ApplicationDbContext` in `Infrastructure` with DbSet properties for each entity.
+- Configure value conversions for `List<string>` and `Dictionary<,>` as JSON columns.
+  Files:
+- `src/Infrastructure/ApplicationDbContext.cs`
+  Acceptance:
+- `ApplicationDbContext` compiles and can be registered in DI.
 
-- [ ] Task A.4 — Add initial EF migration and apply to local SQLite (A.2)  
+- [x] Task A.4 — Add initial EF migration and apply to local SQLite (A.2)  
        Owner: agent  
        Steps:
 
@@ -97,132 +97,133 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   - `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
     Acceptance:
   - `InitialCreate` migration folder exists; `local.db` file created with expected tables.
+  - Evidence: migration `20251127225513_InitialCreate` found in \_\_EFMigrationsHistory.
 
-- [ ] Task A.5 — Define repository interfaces (A.3)  
+- [x] Task A.5 — Define repository interfaces (A.3)  
        Owner: agent  
        Steps:
 
-  - Create `IAccountRepository`, `ITransactionRepository`, etc., in `Application` project.
-    Files:
-  - `src/Application/Interfaces/IAccountRepository.cs`, `ITransactionRepository.cs`
-    Acceptance:
-  - Interfaces compile and documented with XML comments.
+- Create `IAccountRepository`, `ITransactionRepository`, etc., in `Application` project.
+  Files:
+- `src/Application/Interfaces/IAccountRepository.cs`, `ITransactionRepository.cs`
+  Acceptance:
+- Interfaces compile and documented with XML comments.
 
-- [ ] Task A.6 — Implement EF repository implementations (A.3)  
+- [x] Task A.6 — Implement EF repository implementations (A.3)  
        Owner: agent  
        Steps:
 
-  - Add EF implementations in `Infrastructure` (`EfAccountRepository`, `EfTransactionRepository`) using `ApplicationDbContext`.
-    Files:
-  - `src/Infrastructure/Repositories/*.cs`
-    Acceptance:
-  - Repositories registered in DI and pass simple CRUD unit tests.
+- Add EF implementations in `Infrastructure` (`EfAccountRepository`, `EfTransactionRepository`) using `ApplicationDbContext`.
+  Files:
+- `src/Infrastructure/Repositories/*.cs`
+  Acceptance:
+- Repositories registered in DI and pass simple CRUD unit tests.
 
-- [ ] Task A.7 — Unit tests for CRUD (A.3)  
+- [x] Task A.7 — Unit tests for CRUD (A.3)  
        Owner: agent  
        Steps:
 
-  - Create test project `tests/Infrastructure.Tests` using xUnit; write tests for create/read/update/delete for accounts and transactions using in-memory or transient SQLite.
-    Commands:
-  - `dotnet new xunit -n Infrastructure.Tests`
-    Files:
-  - `tests/Infrastructure.Tests/*.cs`
-    Acceptance:
-  - Tests run with `dotnet test` and pass.
+- Create test project `tests/Infrastructure.Tests` using xUnit; write tests for create/read/update/delete for accounts and transactions using in-memory or transient SQLite.
+  Commands:
+- `dotnet new xunit -n Infrastructure.Tests`
+  Files:
+- `tests/Infrastructure.Tests/*.cs`
+  Acceptance:
+- Tests run with `dotnet test` and pass.
 
-- [ ] Task A.8 — Transaction service + endpoints (A.4)  
+- [x] Task A.8 — Transaction service + endpoints (A.4)  
        Owner: agent  
        Steps:
-  - Implement `TransactionService` in `Application` that uses repositories and provides methods: Add, Get, Update, Delete.
-  - Create minimal API endpoints in `Web/Program.cs` or scaffold Blazor pages for transactions (list, add, edit).
-    Files:
-  - `src/Application/Services/TransactionService.cs`, `src/Web/Pages/Transactions/*` or `src/Web/Controllers/TransactionsController.cs`
-    Acceptance:
-  - API/UI can create/read/update/delete transactions and persist to `local.db`.
+- Implement `TransactionService` in `Application` that uses repositories and provides methods: Add, Get, Update, Delete.
+- Create minimal API endpoints in `Web/Program.cs` or scaffold Blazor pages for transactions (list, add, edit).
+  Files:
+- `src/Application/Services/TransactionService.cs`, `src/Web/Pages/Transactions/*` or `src/Web/Controllers/TransactionsController.cs`
+  Acceptance:
+- API/UI can create/read/update/delete transactions and persist to `local.db`.
 
 ---
 
 ## Epic B — Import & manual entry (Sprint 2) -> Tasks
 
-- [ ] Task B.1 — Scaffolding: Import pipeline & interfaces (B.1)  
+- [x] Task B.1 — Scaffolding: Import pipeline & interfaces (B.1)  
        Owner: agent  
        Steps:
 
-  - Create `ITransactionImporter` interface and pipeline in `Application`.
-  - Add `CsvTransactionImporter` implementation class in `Infrastructure`.
-    Files:
-  - `src/Application/Interfaces/ITransactionImporter.cs`, `src/Infrastructure/Import/CsvTransactionImporter.cs`
-    Acceptance:
-  - Importer registered in DI and can be called by a CLI or UI endpoint.
+- Create `ITransactionImporter` interface and pipeline in `Application`.
+- Add `CsvTransactionImporter` implementation class in `Infrastructure`.
+  Files:
+- `src/Application/Interfaces/ITransactionImporter.cs`, `src/Infrastructure/Import/CsvTransactionImporter.cs`
+  Acceptance:
+- Importer registered in DI and can be called by a CLI or UI endpoint.
 
-- [ ] Task B.2 — CSV/TSV importer implementation (B.1)  
+- [x] Task B.2 — CSV/TSV importer implementation (B.1)  
        Owner: agent  
        Steps:
 
-  - Parse CSV rows, map to `Transaction` entity preserving `OriginalCsv`.
-  - Allow configurable delimiter and header mapping.
-    Commands:
-  - Unit tests with sample CSV files under `tests/TestData/*.csv`
-    Files:
-  - `src/Infrastructure/Import/CsvTransactionImporter.cs`, `tests/ImporterTests.cs`
-    Acceptance:
-  - Imported transactions contain `OriginalCsv` equal to source row; tests validate parsing.
+- Parse CSV rows, map to `Transaction` entity preserving `OriginalCsv`.
+- Allow configurable delimiter and header mapping.
+  Commands:
+- Unit tests with sample CSV files under `tests/TestData/*.csv`
+  Files:
+- `src/Infrastructure/Import/CsvTransactionImporter.cs`, `tests/ImporterTests.cs`
+  Acceptance:
+- Imported transactions contain `OriginalCsv` equal to source row; tests validate parsing.
 
-- [ ] Task B.3 — JSON and MT940 adapters (B.2)  
+- [x] Task B.3 — JSON and MT940 adapters (B.2)  
        Owner: agent  
        Steps:
 
-  - Add `JsonTransactionImporter` and `Mt940TransactionImporter` skeletons, wire to pipeline (priority order: CSV -> JSON -> MT940).
-    Files:
-  - `src/Infrastructure/Import/JsonTransactionImporter.cs`, `Mt940TransactionImporter.cs`
-    Acceptance:
-  - JSON importer handles sample JSON; MT940 adapter skeleton ready for future parsing rules.
+- Add `JsonTransactionImporter` and `Mt940TransactionImporter` skeletons, wire to pipeline (priority order: CSV -> JSON -> MT940).
+  Files:
+- `src/Infrastructure/Import/JsonTransactionImporter.cs`, `Mt940TransactionImporter.cs`
+  Acceptance:
+- JSON importer handles sample JSON; MT940 adapter skeleton ready for future parsing rules.
 
-- [ ] Task B.4 — Deduplication implementation & preview (B.3)  
+- [x] Task B.4 — Deduplication implementation & preview (B.3)  
        Owner: agent  
        Steps:
 
-  - Implement dedupe logic: compute hash on Date+Amount+Description+Account.
-  - Add configurable threshold and preview endpoint/UI to show duplicates before commit.
-    Files:
-  - `src/Application/Services/DeduplicationService.cs`, `src/Web/Pages/ImportPreview.razor`
-    Acceptance:
-  - Preview returns duplicates and unique candidates; tests validate duplicate detection.
+- Implement dedupe logic: compute hash on Date+Amount+Description+Account.
+- Add configurable threshold and preview endpoint/UI to show duplicates before commit.
+  Files:
+- `src/Application/Services/DeduplicationService.cs`, `src/Web/Pages/ImportPreview.razor`
+  Acceptance:
+- Preview returns duplicates and unique candidates; tests validate duplicate detection.
 
 - [ ] Task B.5 — Manual entry UI + FluentValidation (B.4)  
        Owner: agent  
        Steps:
-  - Create transaction entry form with validation rules using FluentValidation.
-    Files:
-  - `src/Web/Pages/Transactions/Add.razor`, `src/Application/Validators/TransactionValidator.cs`
-    Acceptance:
-  - Form validates input and persists valid transactions; tests cover validator.
+- Create transaction entry form with validation rules using FluentValidation.
+  Files:
+- `src/Web/Pages/Transactions/Add.razor`, `src/Application/Validators/TransactionValidator.cs`
+  Acceptance:
+- Form validates input and persists valid transactions; tests cover validator.
 
 ---
 
 ## Epic C — Categorization & learning engine (Sprint 3) -> Tasks
 
-- [ ] Task C.1 — Category learning profile persistence (C.1)  
+- [x] Task C.1 — Category learning profile persistence (C.1)  
        Owner: agent  
        Steps:
 
-  - Ensure `CategoryLearningProfile` EF mapping persists dictionaries as JSON.
-  - Add repository methods to read/update profiles.
-    Files:
-  - `src/Infrastructure/Repositories/CategoryLearningProfileRepository.cs`
-    Acceptance:
-  - Profiles saved and retrieved correctly in DB; unit tests validate frequency updates.
+- Ensure `CategoryLearningProfile` EF mapping persists dictionaries as JSON.
+- Add repository methods to read/update profiles.
+  Files:
+- `src/Infrastructure/Repositories/CategoryLearningProfileRepository.cs`
+  Acceptance:
+- Profiles saved and retrieved correctly in DB; unit tests validate frequency updates.
 
-- [ ] Task C.2 — Implement ScoringEngine (C.2)  
+- [x] Task C.2 — Implement ScoringEngine (C.2)  
        Owner: agent  
        Steps:
 
-  - Create `ScoringEngine` in `Application` that computes scores from description words, IBANs, amount buckets, recurrence signals.
-  - Return list of category suggestions with score floats.
-    Files:
-  - `src/Application/Services/ScoringEngine.cs`
-    Acceptance:
-  - Given sample transactions, engine returns ranked suggestions; unit tests assert expected scores.
+- Create `ScoringEngine` in `Application` that computes scores from description words, IBANs, amount buckets, recurrence signals.
+- Return list of category suggestions with score floats.
+  Files:
+- `src/Application/Services/ScoringEngine.cs`
+  Acceptance:
+- Given sample transactions, engine returns ranked suggestions; unit tests assert expected scores.
 
 - [ ] Task C.3 — Uncertainty threshold and UI flow (C.3)  
        Owner: agent  
@@ -235,30 +236,30 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
     Acceptance:
   - UI behaves per threshold; integration test verifies flow.
 
-- [ ] Task C.4 — Learning update on manual corrections (C.4)  
+- [x] Task C.4 — Learning update on manual corrections (C.4)  
        Owner: agent  
        Steps:
-  - When user changes category, update `CategoryLearningProfile` frequencies incrementally.
-  - Add tests that show learning impacts future scoring.
-    Files:
-  - `src/Application/Services/LearningService.cs`
-    Acceptance:
-  - After correction, subsequent scoring reflects updated profile.
+- When user changes category, update `CategoryLearningProfile` frequencies incrementally.
+- Add tests that show learning impacts future scoring.
+  Files:
+- `src/Application/Services/LearningService.cs`
+  Acceptance:
+- After correction, subsequent scoring reflects updated profile.
 
 ---
 
 ## Epic D — Rules, priorities & split transactions (Sprint 4) -> Tasks
 
-- [ ] Task D.1 — Rule engine core (D.1)  
+- [x] Task D.1 — Rule engine core (D.1)  
        Owner: agent  
        Steps:
 
-  - Implement `RuleEngine` that evaluates rules (pattern, regex, IBAN) with priority ordering.
-  - Rules can apply before scoring or as override.
-    Files:
-  - `src/Application/Services/RuleEngine.cs`
-    Acceptance:
-  - Engine applies highest-priority matching rule; unit tests cover match types.
+- Implement `RuleEngine` that evaluates rules (pattern, regex, IBAN) with priority ordering.
+- Rules can apply before scoring or as override.
+  Files:
+- `src/Application/Services/RuleEngine.cs`
+  Acceptance:
+- Engine applies highest-priority matching rule; unit tests cover match types.
 
 - [ ] Task D.2 — Rules CRUD UI + priority ordering (D.2)  
        Owner: agent  
