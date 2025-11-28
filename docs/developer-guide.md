@@ -220,6 +220,77 @@ If you encounter database errors:
 2. Check database state for repository tests
 3. Ensure test data fixtures are present
 
+## Troubleshooting: `dotnet ef database update` failures
+
+If the command
+
+```
+dotnet ef database update --project src/Infrastructure --startup-project src/Web
+```
+
+fails, follow these checks in order:
+
+1. Tool availability
+
+   - If you use a tool manifest: dotnet tool restore
+   - Or install globally: dotnet tool install --global dotnet-ef
+
+2. Run from solution root and enable verbose output
+
+   - dotnet build src/Web
+   - dotnet ef database update --project src/Infrastructure --startup-project src/Web --verbose
+   - The --verbose output often shows why the design-time host or DbContext could not be created.
+
+3. Ensure startup project is executable and builds
+
+   - The startup project (src/Web) must be runnable (e.g., a Blazor Server app) and reference the Infrastructure assembly (directly or via solution dependency).
+   - Run dotnet build src/Web and resolve any build errors first.
+
+4. Ensure EF Design package and references
+
+   - Add Microsoft.EntityFrameworkCore.Design to src/Infrastructure if it's missing:
+     dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore.Design
+
+5. Design-time DbContext creation failures
+
+   - Common error: "Unable to create an object of type 'ApplicationDbContext'. For the different patterns of creating DbContext..."
+   - Solutions:
+     a) Add a design-time factory class in src/Infrastructure implementing IDesignTimeDbContextFactory<ApplicationDbContext>.
+     b) Or pass --context YourNamespace.ApplicationDbContext to the dotnet ef command.
+
+   Example design-time factory (add to src/Infrastructure):
+
+   ```csharp
+   // example: src/Infrastructure/DesignTimeDbContextFactory.cs
+   using Microsoft.EntityFrameworkCore;
+   using Microsoft.EntityFrameworkCore.Design;
+   // using YourNamespace.Infrastructure; // adjust namespace
+   // using YourNamespace.Domain; // adjust as needed
+
+   public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+   {
+       public ApplicationDbContext CreateDbContext(string[] args)
+       {
+           var builder = new DbContextOptionsBuilder<ApplicationDbContext>();
+           // Use the same connection string you use in Program.cs
+           var conn = "Data Source=App_Data/local.db";
+           builder.UseSqlite(conn, b => b.MigrationsAssembly("Infrastructure"));
+           return new ApplicationDbContext(builder.Options);
+       }
+   }
+   ```
+
+6. Migrations assembly mismatch
+
+   - If migrations are applied from a different assembly, ensure migrations assembly is set:
+     options.UseSqlite(conn, b => b.MigrationsAssembly("Infrastructure"));
+
+7. Alternative: run update using the Web project as startup and pointing to migrations assembly
+
+   - dotnet ef database update --startup-project src/Web --project src/Infrastructure --context ApplicationDbContext --verbose
+
+8. If you still see errors, copy the full --verbose output and inspect the first exception stack frame — common causes are missing config at design-time, missing packages, or build failures.
+
 ## Contributing
 
 1. Create a feature branch: `feature/task-number-description`
