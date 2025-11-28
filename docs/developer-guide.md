@@ -26,6 +26,12 @@ dotnet restore
 ### 3. Apply Database Migrations
 
 ```bash
+dotnet new tool-manifest # if you don't already have .config/dotnet-tools.json
+dotnet tool install dotnet-ef --version 10.0.0
+dotnet tool restore
+```
+
+```bash
 dotnet ef database update --project src/Infrastructure --startup-project src/Web
 ```
 
@@ -104,21 +110,21 @@ The application uses EF Core with SQLite. Key configurations:
 
 ### Services
 
-| Service | Purpose |
-|---------|---------|
-| `TransactionService` | CRUD operations for transactions |
-| `BudgetService` | Budget calculations and summaries |
-| `ScoringEngine` | Auto-categorization scoring |
-| `LearningService` | Updates learning profiles from user corrections |
-| `RuleEngine` | Applies user-defined categorization rules |
-| `DeduplicationService` | Detects duplicate transactions |
+| Service                | Purpose                                         |
+| ---------------------- | ----------------------------------------------- |
+| `TransactionService`   | CRUD operations for transactions                |
+| `BudgetService`        | Budget calculations and summaries               |
+| `ScoringEngine`        | Auto-categorization scoring                     |
+| `LearningService`      | Updates learning profiles from user corrections |
+| `RuleEngine`           | Applies user-defined categorization rules       |
+| `DeduplicationService` | Detects duplicate transactions                  |
 
 ### Importers
 
-| Importer | File Types |
-|----------|------------|
-| `CsvTransactionImporter` | `.csv`, `.tsv` |
-| `JsonTransactionImporter` | `.json` |
+| Importer                   | File Types       |
+| -------------------------- | ---------------- |
+| `CsvTransactionImporter`   | `.csv`, `.tsv`   |
+| `JsonTransactionImporter`  | `.json`          |
 | `Mt940TransactionImporter` | `.mt940`, `.sta` |
 
 ## Database Migrations
