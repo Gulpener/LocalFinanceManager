@@ -225,7 +225,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Given sample transactions, engine returns ranked suggestions; unit tests assert expected scores.
 
-- [ ] Task C.3 — Uncertainty threshold and UI flow (C.3)  
+- [x] Task C.3 — Uncertainty threshold and UI flow (C.3)  
        Owner: agent  
        Steps:
 
