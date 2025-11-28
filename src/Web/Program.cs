@@ -190,4 +190,45 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+// Seed initial accounts and ensure migrations are applied
+using (var scope = app.Services.CreateScope())
+{
+    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var applyMigrations = configuration.GetValue<bool>("ApplyMigrationsOnStartup", true);
+
+    if (applyMigrations)
+    {
+        // Run migration + seeding in background so dotnet run isn't blocked.
+        _ = Task.Run(async () =>
+        {
+            using var bgScope = app.Services.CreateScope();
+            var db = bgScope.ServiceProvider.GetRequiredService<LocalFinanceManager.Infrastructure.ApplicationDbContext>();
+            var logger = bgScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            try
+            {
+                await db.Database.MigrateAsync();
+
+                if (!db.Accounts.Any())
+                {
+                    db.Accounts.AddRange(
+                        new LocalFinanceManager.Domain.Entities.Account { Name = "Checking", AccountType = "Checking", InitialBalance = 1000m, IsActive = true },
+                        new LocalFinanceManager.Domain.Entities.Account { Name = "Savings", AccountType = "Savings", InitialBalance = 5000m, IsActive = true }
+                    );
+                    await db.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Background database migration/seed failed");
+            }
+        });
+    }
+    else
+    {
+        // Optionally log that migrations are skipped
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("ApplyMigrationsOnStartup = false, skipping migrations at startup.");
+    }
+}
 app.Run();
