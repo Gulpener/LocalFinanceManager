@@ -43,7 +43,7 @@ This creates the SQLite database at `src/Web/App_Data/local.db`.
 dotnet run --project src/Web
 ```
 
-The application will be available at `http://localhost:5000` (or as configured in `launchSettings.json`).
+The application will be available at `http://localost:5000` (or as configured in `launchSettings.json`).
 
 ### 5. Run Tests
 
