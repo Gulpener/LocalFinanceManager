@@ -96,50 +96,96 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 - `dotnet ef migrations add InitialCreate --project src/Infrastructure --startup-project src/Web`
 - `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
   Acceptance:
-- `InitialCreate` migration folder exists; `local.db` file created with expected tables.
-- Evidence: migration `20251127225513_InitialCreate` found in \_\_EFMigrationsHistory.
 
-- [ ] Task A.5 — Define repository interfaces (A.3)  
+````markdown
+# Project Plan — LocalFinanceManager (Agent Task List)
+
+This version of the project plan converts epics and stories into explicit, actionable tasks the agent can perform. Each task includes the exact work steps, commands to run, target files to create/change, and acceptance criteria so tasks can be executed and verified automatically.
+
+Status tracking
+
+- Tasks are represented as GitHub-style markdown checkboxes. The agent will mark a task as completed by changing its checkbox from `- [ ]` to `- [x]` and will include the commit/PR reference in the commit message or PR description when doing so.
+
+Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules; if those files are missing the agent will create them as the first step.
+
+---
+
+## Bootstrapping (preliminary tasks)
+
+- [ ] Task 0.1 — Create `.editorconfig` and `CONTRIBUTING.md`  
        Owner: agent  
        Steps:
 
-- Create `IAccountRepository`, `ITransactionRepository`, etc., in `Application` project.
-  Files:
-- `src/Application/Interfaces/IAccountRepository.cs`, `ITransactionRepository.cs`
+- Create `.editorconfig` with project formatting rules (indentation, newline, C# conventions).
+- Create `CONTRIBUTING.md` with branch/PR/style rules and testing requirements.
   Acceptance:
-- Interfaces compile and documented with XML comments.
+- Files exist at repo root and validate with `dotnet format` (or linter step).
 
-- [ ] Task A.6 — Implement EF repository implementations (A.3)  
+- [ ] Task 0.2 — Initialize solution & projects (Epic A.1)  
        Owner: agent  
        Steps:
 
-- Add EF implementations in `Infrastructure` (`EfAccountRepository`, `EfTransactionRepository`) using `ApplicationDbContext`.
+- Run `dotnet new sln -n LocalFinanceManager` in repo root
+- Create `src/` and `tests/` folders
+- `dotnet new classlib -n LocalFinanceManager.Domain -o src/Domain`
+- `dotnet new classlib -n LocalFinanceManager.Application -o src/Application`
+- `dotnet new classlib -n LocalFinanceManager.Infrastructure -o src/Infrastructure`
+- `dotnet new blazorserver -n LocalFinanceManager.Web -o src/Web`
+- `dotnet sln add src/**/*.csproj`
+- Create minimal `Program.cs` in `Web` with DI registrations placeholder.
   Files:
-- `src/Infrastructure/Repositories/*.cs`
+- `LocalFinanceManager.sln`, `src/Domain/*.csproj`, `src/Application/*.csproj`, `src/Infrastructure/*.csproj`, `src/Web/*.csproj`, `src/Web/Program.cs`
   Acceptance:
-- Repositories registered in DI and pass simple CRUD unit tests.
+- Solution builds (`dotnet build`).
+- `Program.cs` registers DI container and sample services.
 
-- [ ] Task A.7 — Unit tests for CRUD (A.3)  
+- [ ] Task 0.3 — Create test data folder structure  
+       Owner: agent  
+       Steps:
+- Create `tests/TestData/` with sample CSV/JSON files
+  Files:
+- `tests/TestData/sample-transactions.csv`
+- `tests/TestData/sample-transactions.json`
+  Acceptance:
+- Folders and sample files exist; solution builds.
+
+---
+
+## Epic A — Core data & persistence (Sprint 1) -> Tasks
+
+- [ ] Task A.1 — Add EF Core packages and SQLite provider  
        Owner: agent  
        Steps:
 
-- Create test project `tests/Infrastructure.Tests` using xUnit; write tests for create/read/update/delete for accounts and transactions using in-memory or transient SQLite.
+- Add EF Core packages to `Infrastructure` and `Web` projects.
   Commands:
-- `dotnet new xunit -n Infrastructure.Tests`
-  Files:
-- `tests/Infrastructure.Tests/*.cs`
+- `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore`
+- `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore.Sqlite`
+- `dotnet add src/Web package Microsoft.EntityFrameworkCore.Design`
   Acceptance:
-- Tests run with `dotnet test` and pass.
+- Packages referenced; project restores successfully.
 
-- [ ] Task A.8 — Transaction service + endpoints (A.4)  
+- [ ] Task A.2 — Implement EF Core entity models (A.2)  
+       **Depends on:** Task 0.2  
        Owner: agent  
        Steps:
-- Implement `TransactionService` in `Application` that uses repositories and provides methods: Add, Get, Update, Delete.
-- Create minimal API endpoints in `Web/Program.cs` or scaffold Blazor pages for transactions (list, add, edit).
+
+- Create classes in `Domain/Entities` matching `readme.md` datamodel (`Account`, `Transaction`, `Category`, `Envelope`, `Rule`, `CategoryLearningProfile`).
   Files:
-- `src/Application/Services/TransactionService.cs`, `src/Web/Pages/Transactions/*` or `src/Web/Controllers/TransactionsController.cs`
+- `src/Domain/Entities/*.cs`
   Acceptance:
-- API/UI can create/read/update/delete transactions and persist to `local.db`.
+- Entities compile and follow naming / formatting from `.editorconfig`.
+
+- [ ] Task A.3 — Create `ApplicationDbContext` & mapping (A.2)  
+       Owner: agent  
+       Steps:
+
+- Create `ApplicationDbContext` in `Infrastructure` with DbSet properties for each entity.
+- Configure value conversions for `List<string>` and `Dictionary<,>` as JSON columns.
+  Files:
+- `src/Infrastructure/ApplicationDbContext.cs`
+  Acceptance:
+- `ApplicationDbContext` compiles and can be registered in DI.
 
 ---
 
@@ -289,65 +335,65 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
        Owner: agent  
        Steps:
 
-  - Implement `Budget` entity if needed and `BudgetService` that computes spent vs budget for a month.
-    Files:
-  - `src/Application/Services/BudgetService.cs`
-    Acceptance:
-  - Service returns monthly budget summary; unit tests validate calculations.
+- Implement `Budget` entity if needed and `BudgetService` that computes spent vs budget for a month.
+  Files:
+- `src/Application/Services/BudgetService.cs`
+  Acceptance:
+- Service returns monthly budget summary; unit tests validate calculations.
 
 - [ ] Task E.1 — Budget model & monthly calculation service (E.1)  
        Owner: agent  
        Steps:
 
-  - Ensure `Budget` entity includes optional `AccountId` to support account-scoped budgets (see `readme.md`).
-  - Update EF Core mappings in `ApplicationDbContext` to persist `AccountId` and add composite unique index `IX_Budget_AccountId_Month`.
-  - Add migration `AddAccountToBudget` (or include in next schema migration) and apply to development SQLite DB.
-    Commands:
-  - `dotnet ef migrations add AddAccountToBudget --project src/Infrastructure --startup-project src/Web`
-  - `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
-  - Update `BudgetService` to compute planned/actual amounts for flexible scopes:
-    - Category (all accounts)
-    - Envelope (allocations)
-    - Account (all transactions for one account)
-    - Combined scope rules (e.g., Account + Category) — service should accept optional `accountId` and/or `categoryId`/`envelopeId` filters.
-  - Update API/UI: add account selector when creating/editing budgets and show account-level summaries and progress bars.
-    Files:
-  - `src/Application/Services/BudgetService.cs`
-  - `src/Infrastructure/Migrations/*AddAccountToBudget*`
-  - `src/Web/Pages/Budgets/*`
-    Acceptance:
-  - DB schema contains `AccountId` column and index `IX_Budget_AccountId_Month`.
-  - `BudgetService` returns correct values for account-scoped budgets; unit/integration tests added.
-  - UI allows creating account-scoped budgets and displays per-account progress bars.
+- Ensure `Budget` entity includes optional `AccountId` to support account-scoped budgets (see `readme.md`).
+- Update EF Core mappings in `ApplicationDbContext` to persist `AccountId` and add composite unique index `IX_Budget_AccountId_Month`.
+- Add migration `AddAccountToBudget` (or include in next schema migration) and apply to development SQLite DB.
+  Commands:
+- `dotnet ef migrations add AddAccountToBudget --project src/Infrastructure --startup-project src/Web`
+- `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
+- Update `BudgetService` to compute planned/actual amounts for flexible scopes:
+  - Category (all accounts)
+  - Envelope (allocations)
+  - Account (all transactions for one account)
+  - Combined scope rules (e.g., Account + Category) — service should accept optional `accountId` and/or `categoryId`/`envelopeId` filters.
+- Update API/UI: add account selector when creating/editing budgets and show account-level summaries and progress bars.
+  Files:
+- `src/Application/Services/BudgetService.cs`
+- `src/Infrastructure/Migrations/*AddAccountToBudget*`
+- `src/Web/Pages/Budgets/*`
+  Acceptance:
+- DB schema contains `AccountId` column and index `IX_Budget_AccountId_Month`.
+- `BudgetService` returns correct values for account-scoped budgets; unit/integration tests added.
+- UI allows creating account-scoped budgets and displays per-account progress bars.
 
 - [ ] Task E.1.1 — Backfill / Data Migration (optional)
       Steps:
 
-  - If previous budgets should be associated to accounts, provide a one-time migration or admin import to convert defaults.
-  - Provide a CLI tool or admin UI to assign account scope to existing budget entries.
-    Files:
-  - `src/Tools/Backfill/AssignBudgetAccount.cs` (optional)
-    Acceptance:
-  - Backfill tool documented and tested on sample DB.
+- If previous budgets should be associated to accounts, provide a one-time migration or admin import to convert defaults.
+- Provide a CLI tool or admin UI to assign account scope to existing budget entries.
+  Files:
+- `src/Tools/Backfill/AssignBudgetAccount.cs` (optional)
+  Acceptance:
+- Backfill tool documented and tested on sample DB.
 
 - [ ] Task E.2 — Envelopes allocation job (E.2)  
        Owner: agent  
        Steps:
 
-  - Implement envelope allocation logic and an optional scheduled job or manual run endpoint.
-    Files:
-  - `src/Application/Jobs/EnvelopeAllocator.cs`, `src/Web/Api/EnvelopeJobController.cs`
-    Acceptance:
-  - Job executes allocations and updates envelope balances.
+- Implement envelope allocation logic and an optional scheduled job or manual run endpoint.
+  Files:
+- `src/Application/Jobs/EnvelopeAllocator.cs`, `src/Web/Api/EnvelopeJobController.cs`
+  Acceptance:
+- Job executes allocations and updates envelope balances.
 
 - [ ] Task E.3 — UI for budgets & envelopes (E.3)  
        Owner: agent  
        Steps:
-  - Add pages with progress bars showing budget consumption and envelope balances (use chosen chart lib).
-    Files:
-  - `src/Web/Pages/Budgets/*`, `src/Web/Pages/Envelopes/*`
-    Acceptance:
-  - UI displays accurate values for a test dataset.
+- Add pages with progress bars showing budget consumption and envelope balances (use chosen chart lib).
+  Files:
+- `src/Web/Pages/Budgets/*`, `src/Web/Pages/Envelopes/*`
+  Acceptance:
+- UI displays accurate values for a test dataset.
 
 ---
 
@@ -357,30 +403,30 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
        Owner: agent  
        Steps:
 
-  - Integrate Chart.js or Blazor chart component; add monthly/yearly charts.
-    Files:
-  - `src/Web/Components/Charts/*`
-    Acceptance:
-  - Charts render with sample data.
+- Integrate Chart.js or Blazor chart component; add monthly/yearly charts.
+  Files:
+- `src/Web/Components/Charts/*`
+  Acceptance:
+- Charts render with sample data.
 
 - [ ] Task F.2 — Export CSV/PDF endpoints (F.2)  
        Owner: agent  
        Steps:
 
-  - Add export endpoints for period/category as CSV and PDF (PDF via server-side library).
-    Files:
-  - `src/Web/Api/ExportController.cs`
-    Acceptance:
-  - Exports produce correct files for sample input.
+- Add export endpoints for period/category as CSV and PDF (PDF via server-side library).
+  Files:
+- `src/Web/Api/ExportController.cs`
+  Acceptance:
+- Exports produce correct files for sample input.
 
 - [ ] Task F.3 — Advanced filters & saved reports (F.3)  
        Owner: agent  
        Steps:
-  - Implement UI for filters and ability to save/load report presets.
-    Files:
-  - `src/Web/Pages/Reports/*`
-    Acceptance:
-  - Saved reports persist and restore filters.
+- Implement UI for filters and ability to save/load report presets.
+  Files:
+- `src/Web/Pages/Reports/*`
+  Acceptance:
+- Saved reports persist and restore filters.
 
 ---
 
@@ -390,30 +436,30 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
        Owner: agent  
        Steps:
 
-  - Implement manual backup endpoint that copies `local.db` to configured folder with validation.
-    Files:
-  - `src/Web/Api/BackupController.cs`
-    Acceptance:
-  - Backup and restore validated by checksum and file existence.
+- Implement manual backup endpoint that copies `local.db` to configured folder with validation.
+  Files:
+- `src/Web/Api/BackupController.cs`
+  Acceptance:
+- Backup and restore validated by checksum and file existence.
 
 - [ ] Task G.2 — Optional AES-256 DB encryption (G.2)  
        Owner: agent  
        Steps:
 
-  - Add a feature toggle and scaffolding for AES-256 encryption at rest (local key management docs).
-    Files:
-  - `src/Infrastructure/Security/EncryptionService.cs`, `docs/encryption.md`
-    Acceptance:
-  - Encryption toggle exists and documentation explains key recovery; actual encryption implementation gated behind feature flag.
+- Add a feature toggle and scaffolding for AES-256 encryption at rest (local key management docs).
+  Files:
+- `src/Infrastructure/Security/EncryptionService.cs`, `docs/encryption.md`
+  Acceptance:
+- Encryption toggle exists and documentation explains key recovery; actual encryption implementation gated behind feature flag.
 
 - [ ] Task G.3 — Scheduled backups (G.3)  
        Owner: agent  
        Steps:
-  - Add optional scheduled backup job (Hangfire Lite or hosted service) with configurable cadence.
-    Files:
-  - `src/Application/Jobs/ScheduledBackupService.cs`
-    Acceptance:
-  - Scheduled backup can be simulated in tests.
+- Add optional scheduled backup job (Hangfire Lite or hosted service) with configurable cadence.
+  Files:
+- `src/Application/Jobs/ScheduledBackupService.cs`
+  Acceptance:
+- Scheduled backup can be simulated in tests.
 
 ---
 
@@ -423,40 +469,40 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
        Owner: agent  
        Steps:
 
-  - Add tests for `RuleEngine`, `ScoringEngine`, `BudgetService` targeting >=80% for core logic.
-    Files:
-  - `tests/*.Tests`
-    Acceptance:
-  - Tests run in CI and meet coverage targets.
+- Add tests for `RuleEngine`, `ScoringEngine`, `BudgetService` targeting >=80% for core logic.
+  Files:
+- `tests/*.Tests`
+  Acceptance:
+- Tests run in CI and meet coverage targets.
 
 - [ ] Task H.2 — Integration tests with transient SQLite (H.2)  
        Owner: agent  
        Steps:
 
-  - Add integration tests that cover import → categorize → budget impact end-to-end.
-    Files:
-  - `tests/Integration/*.cs`
-    Acceptance:
-  - Tests pass locally and in CI.
+- Add integration tests that cover import → categorize → budget impact end-to-end.
+  Files:
+- `tests/Integration/*.cs`
+  Acceptance:
+- Tests pass locally and in CI.
 
 - [ ] Task H.3 — GitHub Actions pipeline (H.3)  
        Owner: agent  
        Steps:
 
-  - Create `.github/workflows/ci.yml` pipeline: build, test, dotnet-format check, run migrations in ephemeral DB.
-    Files:
-  - `.github/workflows/ci.yml`
-    Acceptance:
-  - Pipeline runs on PR and passes.
+- Create `.github/workflows/ci.yml` pipeline: build, test, dotnet-format check, run migrations in ephemeral DB.
+  Files:
+- `.github/workflows/ci.yml`
+  Acceptance:
+- Pipeline runs on PR and passes.
 
 - [ ] Task H.4 — Documentation & developer guide (H.4)  
        Owner: agent  
        Steps:
-  - Update `README.md` with run instructions, sample data, and migration steps; add developer guide to `docs/`.
-    Files:
-  - `README.md`, `docs/developer-guide.md`
-    Acceptance:
-  - Developer can clone, run `dotnet ef database update` and start the app with documented steps.
+- Update `README.md` with run instructions, sample data, and migration steps; add developer guide to `docs/`.
+  Files:
+- `README.md`, `docs/developer-guide.md`
+  Acceptance:
+- Developer can clone, run `dotnet ef database update` and start the app with documented steps.
 
 ---
 
@@ -480,21 +526,67 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 
 ---
 
-## Example task example (implementation checklist)
+End of task-oriented project plan.
 
-- [ ] Task: `A.4 — Transaction service + add/get endpoints` — agent checklist:
-- Create `TransactionService` in `Application`.
-- Implement methods: `AddAsync`, `GetByIdAsync`, `ListByAccountAsync`, `UpdateAsync`, `DeleteAsync`.
-- Register service in `Web/Program.cs` (`builder.Services.AddScoped<ITransactionService, TransactionService>()`).
-- Add minimal API endpoints in `Web/Program.cs` for CRUD.
-- Add unit tests and integration test using transient SQLite.
-- Run `dotnet build` and `dotnet test`.
+## Improvements (Agent suggestions)
 
-Acceptance: endpoints return expected HTTP codes and data persisted to `local.db`.
+- [ ] Task I.1 — Improve structured logging & observability  
+       Owner: agent  
+       Steps:
+
+  - Add `Serilog` and configure sinks (console, file, optional Seq/OTel).
+  - Add correlation IDs and request logging middleware.
+  - Add basic metrics (request counts, error counts) via OpenTelemetry.  
+    Files:
+  - `src/Infrastructure/Logging/SerilogExtensions.cs`, `src/Web/Program.cs`  
+    Acceptance:
+  - Structured logs include correlation IDs and key fields; metrics visible in dev output.
+
+- [ ] Task I.2 — Feature flags & runtime configuration  
+       Owner: agent  
+       Steps:
+
+  - Add `Microsoft.FeatureManagement` package and scaffold feature flags.
+  - Expose flags in `appsettings.{Environment}.json` and provide an admin UI for toggling.  
+    Files:
+  - `src/Web/Pages/Admin/FeatureFlags.razor`, `appsettings.Development.json`  
+    Acceptance:
+  - Flags toggle features at runtime without redeploy; tests exercise toggled behavior.
+
+- [ ] Task I.3 — CI improvements: security scanning & coverage  
+       Owner: agent  
+       Steps:
+
+  - Extend GitHub Actions to run code scanning (e.g., `dotnet format`, `dotnet restore` + static analyzers) and to upload coverage artifacts.
+  - Add caching for NuGet restore and build outputs.  
+    Files:
+  - `.github/workflows/ci.yml`  
+    Acceptance:
+  - CI pipeline includes formatting check, static analyzers, and publishes test coverage artifacts.
+
+- [ ] Task I.4 — Accessibility & UI polish  
+       Owner: agent  
+       Steps:
+
+  - Run an accessibility audit on core pages (transactions, import, budgets).
+  - Fix issues: labels, ARIA attributes, contrast, keyboard navigation.  
+    Files:
+  - `src/Web/Pages/*`  
+    Acceptance:
+  - Core pages pass automated a11y checks (axe or similar) and keyboard navigation works.
+
+- [ ] Task I.5 — Internationalization (i18n) support  
+       Owner: agent  
+       Steps:
+
+  - Add resource files and localize UI strings; move hard-coded strings to resources.
+  - Provide culture-aware date/number formatting and a locale selector in UI.  
+    Files:
+  - `src/Web/Resources/*.resx`, `src/Web/Program.cs`  
+    Acceptance:
+  - Application supports at least two locales and formats dates/numbers accordingly.
 
 ---
-
-End of task-oriented project plan.
 
 ### Appendix A — `.editorconfig` template
 
@@ -506,4 +598,9 @@ indent_style = space
 indent_size = 4
 dotnet_sort_system_directives_first = true
 csharp_new_line_before_open_brace = all
+```
+````
+
+```
+
 ```
