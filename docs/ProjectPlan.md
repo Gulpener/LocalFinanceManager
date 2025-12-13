@@ -12,16 +12,16 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 
 ## Bootstrapping (preliminary tasks)
 
-- [x] Task 0.1 — Create `.editorconfig` and `CONTRIBUTING.md`  
+- [ ] Task 0.1 — Create `.editorconfig` and `CONTRIBUTING.md`  
        Owner: agent  
        Steps:
 
-  - Create `.editorconfig` with project formatting rules (indentation, newline, C# conventions).
-  - Create `CONTRIBUTING.md` with branch/PR/style rules and testing requirements.
-    Acceptance:
-  - Files exist at repo root and validate with `dotnet format` (or linter step).
+- Create `.editorconfig` with project formatting rules (indentation, newline, C# conventions).
+- Create `CONTRIBUTING.md` with branch/PR/style rules and testing requirements.
+  Acceptance:
+- Files exist at repo root and validate with `dotnet format` (or linter step).
 
-- [x] Task 0.2 — Initialize solution & projects (Epic A.1)  
+- [ ] Task 0.2 — Initialize solution & projects (Epic A.1)  
        Owner: agent  
        Steps:
 
@@ -39,7 +39,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 - Solution builds (`dotnet build`).
 - `Program.cs` registers DI container and sample services.
 
-- [x] Task 0.3 — Create test data folder structure  
+- [ ] Task 0.3 — Create test data folder structure  
        Owner: agent  
        Steps:
 - Create `tests/TestData/` with sample CSV/JSON files
@@ -53,19 +53,19 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 
 ## Epic A — Core data & persistence (Sprint 1) -> Tasks
 
-- [x] Task A.1 — Add EF Core packages and SQLite provider  
+- [ ] Task A.1 — Add EF Core packages and SQLite provider  
        Owner: agent  
        Steps:
 
-  - Add EF Core packages to `Infrastructure` and `Web` projects.
-    Commands:
-  - `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore`
-  - `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore.Sqlite`
-  - `dotnet add src/Web package Microsoft.EntityFrameworkCore.Design`
-    Acceptance:
-  - Packages referenced; project restores successfully.
+- Add EF Core packages to `Infrastructure` and `Web` projects.
+  Commands:
+- `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore`
+- `dotnet add src/Infrastructure package Microsoft.EntityFrameworkCore.Sqlite`
+- `dotnet add src/Web package Microsoft.EntityFrameworkCore.Design`
+  Acceptance:
+- Packages referenced; project restores successfully.
 
-- [x] Task A.2 — Implement EF Core entity models (A.2)  
+- [ ] Task A.2 — Implement EF Core entity models (A.2)  
        **Depends on:** Task 0.2  
        Owner: agent  
        Steps:
@@ -76,7 +76,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Entities compile and follow naming / formatting from `.editorconfig`.
 
-- [x] Task A.3 — Create `ApplicationDbContext` & mapping (A.2)  
+- [ ] Task A.3 — Create `ApplicationDbContext` & mapping (A.2)  
        Owner: agent  
        Steps:
 
@@ -87,19 +87,19 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - `ApplicationDbContext` compiles and can be registered in DI.
 
-- [x] Task A.4 — Add initial EF migration and apply to local SQLite (A.2)  
+- [ ] Task A.4 — Add initial EF migration and apply to local SQLite (A.2)  
        Owner: agent  
        Steps:
 
-  - Add migration `InitialCreate` and update local SQLite DB in dev folder (`App_Data/local.db`).
-    Commands:
-  - `dotnet ef migrations add InitialCreate --project src/Infrastructure --startup-project src/Web`
-  - `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
-    Acceptance:
-  - `InitialCreate` migration folder exists; `local.db` file created with expected tables.
-  - Evidence: migration `20251127225513_InitialCreate` found in \_\_EFMigrationsHistory.
+- Add migration `InitialCreate` and update local SQLite DB in dev folder (`App_Data/local.db`).
+  Commands:
+- `dotnet ef migrations add InitialCreate --project src/Infrastructure --startup-project src/Web`
+- `dotnet ef database update --project src/Infrastructure --startup-project src/Web`
+  Acceptance:
+- `InitialCreate` migration folder exists; `local.db` file created with expected tables.
+- Evidence: migration `20251127225513_InitialCreate` found in \_\_EFMigrationsHistory.
 
-- [x] Task A.5 — Define repository interfaces (A.3)  
+- [ ] Task A.5 — Define repository interfaces (A.3)  
        Owner: agent  
        Steps:
 
@@ -109,7 +109,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Interfaces compile and documented with XML comments.
 
-- [x] Task A.6 — Implement EF repository implementations (A.3)  
+- [ ] Task A.6 — Implement EF repository implementations (A.3)  
        Owner: agent  
        Steps:
 
@@ -119,7 +119,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Repositories registered in DI and pass simple CRUD unit tests.
 
-- [x] Task A.7 — Unit tests for CRUD (A.3)  
+- [ ] Task A.7 — Unit tests for CRUD (A.3)  
        Owner: agent  
        Steps:
 
@@ -131,7 +131,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Tests run with `dotnet test` and pass.
 
-- [x] Task A.8 — Transaction service + endpoints (A.4)  
+- [ ] Task A.8 — Transaction service + endpoints (A.4)  
        Owner: agent  
        Steps:
 - Implement `TransactionService` in `Application` that uses repositories and provides methods: Add, Get, Update, Delete.
@@ -145,7 +145,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 
 ## Epic B — Import & manual entry (Sprint 2) -> Tasks
 
-- [x] Task B.1 — Scaffolding: Import pipeline & interfaces (B.1)  
+- [ ] Task B.1 — Scaffolding: Import pipeline & interfaces (B.1)  
        Owner: agent  
        Steps:
 
@@ -156,7 +156,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Importer registered in DI and can be called by a CLI or UI endpoint.
 
-- [x] Task B.2 — CSV/TSV importer implementation (B.1)  
+- [ ] Task B.2 — CSV/TSV importer implementation (B.1)  
        Owner: agent  
        Steps:
 
@@ -169,7 +169,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Imported transactions contain `OriginalCsv` equal to source row; tests validate parsing.
 
-- [x] Task B.3 — JSON and MT940 adapters (B.2)  
+- [ ] Task B.3 — JSON and MT940 adapters (B.2)  
        Owner: agent  
        Steps:
 
@@ -179,7 +179,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - JSON importer handles sample JSON; MT940 adapter skeleton ready for future parsing rules.
 
-- [x] Task B.4 — Deduplication implementation & preview (B.3)  
+- [ ] Task B.4 — Deduplication implementation & preview (B.3)  
        Owner: agent  
        Steps:
 
@@ -190,7 +190,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Preview returns duplicates and unique candidates; tests validate duplicate detection.
 
-- [x] Task B.5 — Manual entry UI + FluentValidation (B.4)  
+- [ ] Task B.5 — Manual entry UI + FluentValidation (B.4)  
        Owner: agent  
        Steps:
 - Create transaction entry form with validation rules using FluentValidation.
@@ -203,7 +203,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 
 ## Epic C — Categorization & learning engine (Sprint 3) -> Tasks
 
-- [x] Task C.1 — Category learning profile persistence (C.1)  
+- [ ] Task C.1 — Category learning profile persistence (C.1)  
        Owner: agent  
        Steps:
 
@@ -214,7 +214,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Profiles saved and retrieved correctly in DB; unit tests validate frequency updates.
 
-- [x] Task C.2 — Implement ScoringEngine (C.2)  
+- [ ] Task C.2 — Implement ScoringEngine (C.2)  
        Owner: agent  
        Steps:
 
@@ -225,18 +225,18 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Given sample transactions, engine returns ranked suggestions; unit tests assert expected scores.
 
-- [x] Task C.3 — Uncertainty threshold and UI flow (C.3)  
+- [ ] Task C.3 — Uncertainty threshold and UI flow (C.3)  
        Owner: agent  
        Steps:
 
-  - Add configurable uncertainty threshold in app settings.
-  - Wire UI to prompt user when top score < threshold; auto-assign otherwise.
-    Files:
-  - `src/Web/Pages/Transactions/AutoCategorize.razor`, `appsettings.Development.json`
-    Acceptance:
-  - UI behaves per threshold; integration test verifies flow.
+- Add configurable uncertainty threshold in app settings.
+- Wire UI to prompt user when top score < threshold; auto-assign otherwise.
+  Files:
+- `src/Web/Pages/Transactions/AutoCategorize.razor`, `appsettings.Development.json`
+  Acceptance:
+- UI behaves per threshold; integration test verifies flow.
 
-- [x] Task C.4 — Learning update on manual corrections (C.4)  
+- [ ] Task C.4 — Learning update on manual corrections (C.4)  
        Owner: agent  
        Steps:
 - When user changes category, update `CategoryLearningProfile` frequencies incrementally.
@@ -250,7 +250,7 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
 
 ## Epic D — Rules, priorities & split transactions (Sprint 4) -> Tasks
 
-- [x] Task D.1 — Rule engine core (D.1)  
+- [ ] Task D.1 — Rule engine core (D.1)  
        Owner: agent  
        Steps:
 
@@ -261,25 +261,25 @@ Note: the agent must strictly follow `.editorconfig` and `CONTRIBUTING.md` rules
   Acceptance:
 - Engine applies highest-priority matching rule; unit tests cover match types.
 
-- [x] Task D.2 — Rules CRUD UI + priority ordering (D.2)  
+- [ ] Task D.2 — Rules CRUD UI + priority ordering (D.2)  
        Owner: agent  
        Steps:
 
-  - Add pages to create/edit/delete rules and reorder priorities; show preview of affected transactions.
-    Files:
-  - `src/Web/Pages/Rules/*`
-    Acceptance:
-  - CRUD works and preview lists impacted transactions.
+- Add pages to create/edit/delete rules and reorder priorities; show preview of affected transactions.
+  Files:
+- `src/Web/Pages/Rules/*`
+  Acceptance:
+- CRUD works and preview lists impacted transactions.
 
-- [x] Task D.3 — Transaction splitting feature (D.3)  
+- [ ] Task D.3 — Transaction splitting feature (D.3)  
        Owner: agent  
        Steps:
-  - Implement split model and persist parts as linked records with accounting adjustments.
-  - UI to create N-part splits and reassign categories/envelopes.
-    Files:
-  - `src/Domain/Entities/TransactionSplit.cs`, `src/Web/Pages/Transactions/Split.razor`
-    Acceptance:
-  - Splits persist and transaction totals reconcile; tests validate correctness.
+- Implement split model and persist parts as linked records with accounting adjustments.
+- UI to create N-part splits and reassign categories/envelopes.
+  Files:
+- `src/Domain/Entities/TransactionSplit.cs`, `src/Web/Pages/Transactions/Split.razor`
+  Acceptance:
+- Splits persist and transaction totals reconcile; tests validate correctness.
 
 ---
 
