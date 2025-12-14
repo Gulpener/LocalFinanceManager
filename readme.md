@@ -1,11 +1,11 @@
-﻿# 🏦 Personal Finance Manager – Lokaal WebApp (.NET 10)
+﻿# 🏦 Personal Finance Manager – Local WebApp (.NET 10)
 
-**Beschrijving:**
-LocalFinanceManager is een lokaal draaiende webapplicatie (ASP.NET Core 10, Blazor Server) voor het beheren van persoonlijke financiën. De applicatie ondersteunt meerdere rekeningen, budgetten, potjes/enveloppen, import van transacties en score-based automatische categorisatie. Alle data blijft lokaal opgeslagen in SQLite.
+**Description:**
+LocalFinanceManager is a locally hosted web application (ASP.NET Core 10, Blazor Server) for managing personal finances. The app supports multiple accounts, budgets, envelopes, transaction import, and score-based automatic categorization. All data is stored locally in SQLite.
 
-**Doelgroep:** Iedereen die persoonlijke financiën overzichtelijk wil beheren zonder cloud-afhankelijkheid.
+**Audience:** Anyone who wants to manage personal finances locally without cloud dependence.
 
-**Technologie:**
+**Technology:**
 
 - Backend: **.NET 10 / ASP.NET Core**
 - Frontend: **Blazor Server / Razor Components**
@@ -14,72 +14,86 @@ LocalFinanceManager is een lokaal draaiende webapplicatie (ASP.NET Core 10, Blaz
 
 ---
 
-## 🎯 Functionaliteiten
+## 🚀 Quick Start
 
-### 1. Rekeningbeheer
+Follow these steps on first use:
 
-- Meerdere rekeningen (bank, spaar, creditcard, contant)
-- Beginbalans + transacties
-- Saldo automatisch berekend
-- Archiveren/verbergen van rekeningen
+1. Create a budget plan per account number.
+   - Create an `Account` and define the monthly budgets for that account, either per category or per account.
+2. Import bank transactions for that account(s) via CSV, TSV, MT940, or JSON.
+3. Assign imported transactions to existing budget categories or envelopes, and allocate amounts.
+4. Review automatic categorization suggestions and correct them where needed — the scoring model learns from your corrections and improves future categorizations.
 
-### 2. Transactiebeheer
-
-- Handmatig toevoegen van transacties
-- Importeren van transacties via CSV, TSV, MT940 of JSON
-- Deduplicatie bij import
-- Splitsen van transacties in meerdere categorieën/potjes
-- **Originele CSV-string opslaan bij elke transactie**
-
-### 3. Score-based automatische categorisatie
-
-- Leer van eerder handmatig gecategoriseerde transacties
-- Scoring gebaseerd op:
-
-  - Woorden in omschrijving
-  - Tegenrekening / IBAN
-  - Bedrag clusters
-  - Herhalende patronen (maandelijks/wekelijkse betalingen)
-
-- Score-formule bepaalt de meest waarschijnlijke categorie
-- Gebruiker kan correcties doen → model leert bij
-- Onzekerheidsdrempel: als score te laag is, vraagt systeem gebruiker om bevestiging
-
-### 4. Budgetten
-
-- Maandelijkse budgetten per categorie en optioneel per account
-- Vergelijking: geplande vs. werkelijke uitgaven (per scope: category / envelope / account)
-- Visuele voortgangsbalken per categorie of per account
-- Budgetten kunnen worden aangemaakt met scope: `Category`, `Envelope` of `Account`.
-  - **Category budgets** volgen uitgaven per categorie over alle rekeningen.
-  - **Envelope budgets** volgen toewijzingen naar potjes/enveloppen.
-  - **Account budgets** volgen alle transacties voor een specifieke rekening (optioneel gefilterd op categorie).
-- Weergave en prioriteit: wanneer zowel account- als category-budgets bestaan, toont de UI beide overzichten; account-budgets geven inzicht in per-rekening limieten terwijl category-budgets helpen bij categorie-gestuurde planning.
-
-### 5. Potjes / Enveloppen
-
-- Aanmaken van potjes: “Leefgeld”, “Boodschappen”, “Vakantie”, etc.
-- Maandelijkse automatische toewijzing
-- Transacties koppelen aan potjes
-- Dashboard met resterende saldo per potje
-
-### 6. Dashboards & Rapportages
-
-- Maandelijks overzicht inkomsten / uitgaven
-- Jaaroverzicht met trends
-- Grafieken: pie chart, bar chart, lijn grafieken
-- Categorie-verdeling & potjesstatus
-
-### 7. Lokale opslag & privacy
-
-- SQLite database lokaal opgeslagen
-- Optionele AES-256 encryptie
-- Geen cloudverbindingen
-- Automatische back-ups naar lokale bestanden
+Note: Budgets attached to a specific `Account` (account number) provide per-account limits; category budgets track spending across all accounts.
 
 ---
 
-## 🏛️ Architectuur
+## 🎯 Features
+
+### 1. Account management
+
+- Multiple accounts (checking, savings, credit card, cash)
+- Opening balance + transactions
+- Balance auto-calculated
+- Archive/hide accounts
+
+### 2. Transaction management
+
+- Add transactions manually
+- Import transactions via CSV, TSV, MT940, or JSON
+- Deduplication on import
+- Split transactions across multiple categories/envelopes
+- **Store original CSV string with each transaction**
+
+### 3. Score-based automatic categorization
+
+- Learns from previously manually categorized transactions
+- Scoring based on:
+
+  - Words in the description
+  - Counterparty / IBAN
+  - Amount clusters
+  - Recurring patterns (monthly/weekly payments)
+
+- Score formula picks the most likely category
+- User can correct suggestions → model updates
+- Uncertainty threshold: if score is low, the system asks the user to confirm
+
+### 4. Budgets
+
+- Monthly budgets per category and optionally per account
+- Compare planned vs actual spending (scopes: category / envelope / account)
+- Visual progress bars per category or per account
+- Budgets can be created with scope: `Category`, `Envelope`, or `Account`.
+  - **Category budgets** track spending per category across all accounts.
+  - **Envelope budgets** track allocations to envelopes.
+  - **Account budgets** track all transactions for a specific account (optionally filtered by category).
+- Display & priority: when both account and category budgets exist, the UI shows both; account budgets provide per-account limits while category budgets help category-driven planning.
+
+### 5. Envelopes
+
+- Create envelopes: “Cash”, “Groceries”, “Vacation”, etc.
+- Monthly automatic allocation
+- Link transactions to envelopes
+- Dashboard with remaining balance per envelope
+
+### 6. Dashboards & Reporting
+
+- Monthly income / expense overview
+- Yearly overview with trends
+- Charts: pie, bar, line
+- Category distribution & envelope status
+
+### 7. Local storage & privacy
+
+- SQLite database stored locally
+- Optional AES-256 encryption
+- No cloud connections
+- Automatic backups to local files
+
+---
+
+## 🏛️ Architecture
 
 ### Backend
 
@@ -94,16 +108,16 @@ LocalFinanceManager is een lokaal draaiende webapplicatie (ASP.NET Core 10, Blaz
 
 ### Frontend
 
-- Blazor Server (aanbevolen)
-- Alternatief: Razor Pages of React + minimal APIs
+- Blazor Server (recommended)
+- Alternative: Razor Pages or React + minimal APIs
 
 ### Dependency Injection
 
-- Alle services via DI container (`builder.Services.AddScoped<...>`)
+- All services registered via the DI container (`builder.Services.AddScoped<...>`)
 
 ---
 
-## 📦 Datamodel
+## 📦 Data model
 
 ```csharp
 public class Account {
@@ -123,7 +137,7 @@ public class Transaction {
     public int CategoryId { get; set; }
     public int? EnvelopeId { get; set; }
     public List<string> Tags { get; set; } = new();
-    public string OriginalCsv { get; set; } // originele CSV-string
+    public string OriginalCsv { get; set; } // original CSV string
 }
 
 public class Category {
@@ -172,43 +186,43 @@ public class Budget {
 
 ---
 
-## 🔧 Technologie & Libraries
+## 🔧 Technology & Libraries
 
 - **.NET 10 / ASP.NET Core**
 - **Blazor Server / Razor Components**
 - **Entity Framework Core 10** + SQLite
 - **AutoMapper**
 - **FluentValidation**
-- **MediatR** (optioneel)
-- **Chart.js** integratie of Blazor Charts component
-- **Hangfire Lite** (optioneel voor geplande taken)
+- **MediatR** (optional)
+- **Chart.js** integration or Blazor Charts component
+- **Hangfire Lite** (optional for scheduled tasks)
 
 ---
 
 ## 🔨 Scaffolding via dotnet CLI
 
 - `dotnet new webapp -n LocalFinanceManager`
-- `dotnet new classlib` (voor services en domain)
+- `dotnet new classlib` (for services and domain)
 - `dotnet ef migrations add InitialCreate`
 - `dotnet ef database update`
 - `dotnet new razorcomponent` (UI scaffolding)
 
-Copilot kan hier scaffolding templates voor genereren.
+Copilot can generate scaffolding templates for these steps.
 
 ---
 
-## 🧪 Teststrategie
+## 🧪 Testing strategy
 
-- Unit tests voor RuleEngine & BudgetEngine
-- Integration tests met SQLite + EF Core
-- UI tests via Playwright of BUnit voor Blazor
+- Unit tests for RuleEngine & BudgetEngine
+- Integration tests with SQLite + EF Core
+- UI tests via Playwright or BUnit for Blazor
 
 ---
 
-## 🚀 Toekomstige uitbreidingen
+## 🚀 Future enhancements
 
-- PSD2 koppeling (lokaal token)
-- Export naar Excel/PDF
+- PSD2 integration (local token)
+- Export to Excel/PDF
 - Multi-user (offline auth)
-- Offline-first PWA optie
-- Plugin systeem voor extra functionaliteit
+- Offline-first PWA option
+- Plugin system for extensions
