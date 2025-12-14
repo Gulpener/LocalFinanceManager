@@ -5,6 +5,8 @@ LocalFinanceManager is a locally hosted web application (ASP.NET Core 10, Blazor
 
 **Audience:** Anyone who wants to manage personal finances locally without cloud dependence.
 
+**UI language:** The user interface and all user-facing text should be presented in Dutch. Internal code, inline comments, and repository documentation should remain in English (see project language guidance in .github/copilot-instructions.md).
+
 **Technology:**
 
 - Backend: **.NET 10 / ASP.NET Core**
