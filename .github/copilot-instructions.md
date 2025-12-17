@@ -9,6 +9,7 @@ Algemene regels
 - Gebruik EF Core voor persistence en Blazor (pages) voor UI.
 - Tests: unit tests + integration tests met in-memory/SQLite.
 - Valuta: ISO-4217 (3 letters). Geldwaarden als decimal(18,2).
+- Copilot moet **altijd** voorbeeld CLI-commando's opnemen om .NET solutions en projecten aan te maken en te koppelen (bijv. `dotnet new`, `dotnet sln add`, `dotnet new blazorserver`, `dotnet add package`).
 
 Definition of Done (kort)
 
