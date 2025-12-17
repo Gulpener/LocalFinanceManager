@@ -13,11 +13,11 @@ Laatste update: 2025-12-17
 
 ## MVP 2 — Budgetplan per account (jaarlijks) [High Priority]
 
-- [ ] Entity: BudgetPlan (Id, AccountId, Year, Name)
-- [ ] Entity: BudgetLine (BudgetPlanId, CategoryId, AmountYearly)
+- [ ] Entity: BudgetPlan (Id, AccountId, Year (kalenderjaar, Jan–Dec), Name)
+- [ ] Entity: BudgetLine (BudgetPlanId, CategoryId, MonthlyAmounts[12])
 - [ ] CRUD voor BudgetPlan en BudgetLine
-- [ ] UI: Budgetplan editor per account (jaarlijkse invoer)
-- [ ] Aggregatie: geplande vs. werkelijke bedragen (per jaar/maand)
+- [ ] UI: Budgetplan editor per account (verplichte per-maand invoer voor budgetlijnen)
+- [ ] Aggregatie: geplande vs. werkelijke bedragen (per maand/jaar)
 - [ ] Unit tests voor BudgetEngine basis
 
 ## MVP 3 — Import transacties [High Priority]

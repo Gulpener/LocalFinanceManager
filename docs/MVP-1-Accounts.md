@@ -8,15 +8,15 @@ Acceptatiecriteria
 
 - API: `GET /accounts`, `GET /accounts/{id}`, `POST /accounts`, `PUT /accounts/{id}`, `DELETE /accounts/{id}` (archive flow: soft-delete / `IsArchived`).
 - Blazor UI: lijst, create, edit, archive/unarchive, eenvoudige saldo-overzicht.
-- Validatie: `Name` required, `Currency` ISO-4217 code, `StartingBalance` numeric, `Type` enum (Checking,Savings,Credit).
-
-Data model (voor Copilot implementatie)
+- Validatie: `Label` required, `IBAN` required (valide IBAN), `Currency` ISO-4217 code, `StartingBalance` numeric, `Type` enum (Checking,Savings,Credit).
+  Data model (voor Copilot implementatie)
 
 - Account
   - Id: GUID
-  - Name: string(100), not null
+  - Label: string(100), not null (gebruikersvriendelijke omschrijving, bv. "Hoofdrekening")
   - Type: enum {Checking, Savings, Credit, Other}
   - Currency: string(3) ISO-4217
+  - IBAN: string(34), not null (bewaar als genormaliseerde IBAN zonder spaties)
   - StartingBalance: decimal(18,2)
   - IsArchived: bool (default false)
   - CreatedAt: DateTime
@@ -31,20 +31,20 @@ DB / EF details
 API contract details
 
 - Request/Response JSON schema voorbeelden:
-  - POST body: `{ "name":"Spaar","type":"Savings","currency":"EUR","startingBalance":0.00 }`
+  - POST body: `{ "label":"Spaarrekening","iban":"NL91ABNA0417164300","type":"Savings","currency":"EUR","startingBalance":0.00 }` (IBAN is verplicht)
   - Response: full Account object with `id`.
 - Statuscodes: 200/201/204/400/404/409 (conflict for concurrency)
 
 UI aanwijzingen (Blazor)
 
 - Pages: `/accounts` (lijst), `/accounts/new`, `/accounts/{id}/edit`.
-- Lijst toont: Name, Type, Currency, CurrentBalance (derived; initially StartingBalance), Actions(edit, archive).
+- Lijst toont: Label, Type, Currency, CurrentBalance (derived; initially StartingBalance), Actions(edit, archive).
 - Form validatie client-side + server-side; gebruik FluentValidation of DataAnnotations.
 
 Business/edge-cases
 
 - Archiveren betekent verbergen in standaardlijsten; transacties moeten historisch blijven.
-- Niet toestaan van duplicate names per gebruiker (configurable).
+- Niet toestaan van duplicate labels per gebruiker (configurable).
 
 Tests
 
@@ -58,8 +58,8 @@ Deployment/env
 
 Voorbeeld seed-data
 
-- { "Name": "Betaalrekening", "Type":"Checking", "Currency":"EUR", "StartingBalance": 1000.00 }
-- { "Name": "Spaarrekening", "Type":"Savings", "Currency":"EUR", "StartingBalance": 2500.00 }
+- { "Label": "Betaalrekening", "IBAN": "NL91ABNA0417164300", "Type":"Checking", "Currency":"EUR", "StartingBalance": 1000.00 }
+- { "Label": "Spaarrekening", "IBAN": "NL20INGB0001234567", "Type":"Savings", "Currency":"EUR", "StartingBalance": 2500.00 }
 
 Definition of Done
 
