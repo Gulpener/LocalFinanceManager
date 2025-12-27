@@ -7,9 +7,10 @@ Doel
 Algemene regels
 
 - Gebruik EF Core voor persistence en Blazor (pages) voor UI.
-- Tests: unit tests + integration tests met in-memory/SQLite.
+- Tests: unit tests + integration tests met in-memory/SQLite + **e2e tests met Playwright**.
 - Valuta: ISO-4217 (3 letters). Geldwaarden als decimal(18,2).
 - Copilot moet **altijd** voorbeeld CLI-commando's opnemen om .NET solutions en projecten aan te maken en te koppelen (bijv. `dotnet new`, `dotnet sln add`, `dotnet new blazorserver`, `dotnet add package`).
+- **E2E Tests:** Copilot MOET ALTIJD bijbehorende e2e tests genereren voor nieuwe features. Use NUnit + Microsoft.Playwright in `tests/LocalFinanceManager.E2E/`. Scaffold met: `dotnet new nunit -n LocalFinanceManager.E2E -o tests/LocalFinanceManager.E2E`, `dotnet sln add tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj`, `dotnet add tests/LocalFinanceManager.E2E package Microsoft.Playwright` en `dotnet add tests/LocalFinanceManager.E2E package Microsoft.Playwright.NUnit`.
 
 Verplichte CLI-gebruik (NOODZAKELIJK)
 

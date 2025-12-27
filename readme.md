@@ -175,11 +175,125 @@ Copilot kan hier scaffolding templates voor genereren.
 
 ---
 
-## 🧪 Teststrategie
+## ▶️ Run & Test (Development)
 
-- Unit tests voor RuleEngine & BudgetEngine
-- Integration tests met SQLite + EF Core
-- UI tests via Playwright of BUnit voor Blazor
+Follow these steps to run the API, the Blazor UI and the tests locally on Windows (PowerShell). Commands assume you are in the repository root (`C:\Users\gjgie\source\repos\LocalFinanceManager`).
+
+1. Restore and build
+
+```powershell
+dotnet restore
+dotnet build
+```
+
+2. Apply EF Core migrations (creates `localfm.db` by default)
+
+```powershell
+dotnet tool run dotnet-ef -- migrations list
+dotnet tool install --global dotnet-ef # if not already installed
+dotnet ef database update --project src/LocalFinanceManager.Api --startup-project src/LocalFinanceManager.Api
+```
+
+3. Run the API (Swagger available in Development)
+
+```powershell
+dotnet run --project src/LocalFinanceManager.Api
+# API will listen on the configured ports (see output). Swagger UI: /swagger when running in Development.
+```
+
+4. Run the Blazor UI (in another terminal)
+
+```powershell
+dotnet run --project src/LocalFinanceManager.Blazor
+
+# Open the browser at the URL printed by the command (usually http://localhost:5xxx)
+```
+
+Note: the projects are configured to use fixed development ports to avoid mismatches between frontend and API:
+
+- API (HTTPS): `https://localhost:7126/` (also available on HTTP at `http://localhost:5096/`)
+- Blazor UI (HTTPS): `https://localhost:7163/` (Blazor will call the API at `https://localhost:7126/` by default)
+
+If you want both services to run behind the same host:port (not recommended locally), you can reverse-proxy them, or run the API on a fixed port and set the Blazor `ApiBaseUrl` accordingly. To change the API base used by the Blazor frontend, edit `src/LocalFinanceManager.Blazor/appsettings.Development.json` or set the `ApiBaseUrl` environment variable before running.
+
+5. Run unit & integration tests
+
+```powershell
+dotnet test tests/LocalFinanceManager.Tests/
+```
+
+6. Run E2E tests (see E2E Tests section below)
+
+```powershell
+dotnet test tests/LocalFinanceManager.E2E/
+```
+
+Notes:
+
+- The SQLite DB file used by the API is `localfm.db` by default (connection string in appsettings or environment).
+- For reliable integration tests the test host ensures the DB schema is created automatically.
+- If you need to re-seed sample data, run the seeder via the API startup in Development or use the `DbSeeder` helper.
+- E2E tests require both API and Blazor UI to be running on their configured ports.
+
+## 🧪 Test Strategy
+
+- Unit tests for RuleEngine & BudgetEngine
+- Integration tests with SQLite + EF Core
+- E2E tests via Playwright (NUnit + Microsoft.Playwright)
+
+### Run E2E Tests
+
+E2E tests are located in `tests/LocalFinanceManager.E2E/` and are executed with NUnit + Microsoft.Playwright.
+
+#### Quick Start (Recommended)
+
+Use the provided script to automatically start servers and run e2e tests:
+
+```powershell
+.\run-e2e-tests.ps1
+```
+
+This script:
+- Starts the API server (https://localhost:7126)
+- Starts the Blazor UI server (https://localhost:7163)
+- Waits for both to initialize (default: 20 seconds)
+- Runs all e2e tests
+- Cleans up processes automatically
+
+Optional: customize wait time before tests:
+```powershell
+.\run-e2e-tests.ps1 -WaitSeconds 30
+```
+
+#### Manual Setup
+
+1. Ensure Playwright browsers are installed:
+
+```powershell
+npx playwright install
+```
+
+2. Start API and Blazor UI (in separate terminals):
+
+```powershell
+# Terminal 1: API (Port 5096/7126)
+dotnet run --project src/LocalFinanceManager.Api
+
+# Terminal 2: Blazor UI (Port 5114/7163)
+dotnet run --project src/LocalFinanceManager.Blazor
+```
+
+3. Run E2E tests:
+
+```powershell
+dotnet test tests/LocalFinanceManager.E2E/
+```
+
+#### Run All Tests Together
+
+```powershell
+dotnet test
+```
 
 ---
 
