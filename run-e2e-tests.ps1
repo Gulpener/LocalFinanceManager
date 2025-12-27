@@ -13,7 +13,8 @@ try {
             Write-Host "⚠️  Found process on port $($_.LocalPort): $($process.Name) (PID: $($process.Id))"
         }
     }
-} catch { }
+}
+catch { }
 
 Write-Host "`n⏱️  Starting API server (Port 5096/7126)..."
 $apiProcess = Start-Process -FilePath "dotnet" -ArgumentList @("run", "--project", "src/LocalFinanceManager.Api", "--no-build") -PassThru
@@ -32,7 +33,8 @@ Write-Host "========================================`n" -ForegroundColor Green
 try {
     dotnet test tests/LocalFinanceManager.E2E/ --logger console --verbosity detailed
     $testExitCode = $LASTEXITCODE
-} catch {
+}
+catch {
     Write-Host "❌ Error running tests: $_" -ForegroundColor Red
     $testExitCode = 1
 }
@@ -44,7 +46,8 @@ Write-Host "✅ Servers stopped" -ForegroundColor Green
 
 if ($testExitCode -eq 0) {
     Write-Host "`n✨ All tests passed!" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "`n❌ Some tests failed (Exit code: $testExitCode)" -ForegroundColor Red
 }
 

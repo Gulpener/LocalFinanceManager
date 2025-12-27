@@ -254,6 +254,7 @@ Use the provided script to automatically start servers and run e2e tests:
 ```
 
 This script:
+
 - Starts the API server (https://localhost:7126)
 - Starts the Blazor UI server (https://localhost:7163)
 - Waits for both to initialize (default: 20 seconds)
@@ -261,6 +262,7 @@ This script:
 - Cleans up processes automatically
 
 Optional: customize wait time before tests:
+
 ```powershell
 .\run-e2e-tests.ps1 -WaitSeconds 30
 ```
