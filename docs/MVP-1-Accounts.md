@@ -25,8 +25,10 @@ Acceptatiecriteria
 DB / EF details
 
 - DbContext registratie voorbeeld: `DbSet<Account> Accounts`.
-- Migratie seed: 3 sample accounts (EUR Checking, USD Savings, EUR Credit).
+- **Migrations:** Automatic migrations applied on app startup via `Database.MigrateAsync()` in `Program.cs`—no manual CLI steps during development.
+- Migratie seed: 3 sample accounts (EUR Checking, USD Savings, EUR Credit) applied in `OnModelCreating()`.
 - Concurrency: optionele `RowVersion` byte[] voor optimistic concurrency.
+- **IBAN Validation:** Use `IbanNet` NuGet package for IBAN validation in FluentValidation rules.
 
 API contract details
 
@@ -44,17 +46,21 @@ UI aanwijzingen (Blazor)
 Business/edge-cases
 
 - Archiveren betekent verbergen in standaardlijsten; transacties moeten historisch blijven.
+  - **Implementation note:** All queries explicitly filter archived accounts (`.Where(a => !a.IsArchived)`); no global soft-delete filter configured.
 - Niet toestaan van duplicate labels per gebruiker (configurable).
 
 Tests
 
-- Unit: repository CRUD ops, DTO mapping, validator rules.
-- Integration: in-memory SQLite tests for DbContext + migrations.
+- Unit: repository CRUD ops, DTO mapping, validator rules (including IbanNet validation).
+- Integration: in-memory SQLite (`:memory:` database) tests for DbContext + automatic migrations.
+  - Use `SqliteConnection("Data Source=:memory:")` for fast, isolated test runs.
+- E2E: Playwright tests for account CRUD workflows (create, edit, archive, list).
 
 Deployment/env
 
 - Connection strings via `ASPNETCORE_ConnectionStrings__Default`.
 - Local dev: sample seed toggled behind `ASPNETCORE_ENVIRONMENT == Development`.
+- **Automatic migrations:** At app startup, `Database.MigrateAsync()` is called to ensure latest schema is applied without manual intervention.
 
 Voorbeeld seed-data
 
@@ -63,4 +69,8 @@ Voorbeeld seed-data
 
 Definition of Done
 
-- End-to-end: create account via API + UI, edit, archive, unit & integration tests present.
+- End-to-end: create account via API + UI, edit, archive, list (excluding archived), unit & integration tests present.
+- Automatic migrations applied on app startup without manual CLI steps.
+- IBAN validation via IbanNet working in both API and Blazor forms.
+- Archived accounts excluded from all standard list queries via explicit filtering.
+- E2E tests for account CRUD workflows passing.

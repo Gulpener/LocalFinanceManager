@@ -7,7 +7,8 @@ Doel
 Algemene regels
 
 - Gebruik EF Core voor persistence en Blazor (pages) voor UI.
-- Tests: unit tests + integration tests met in-memory/SQLite + **e2e tests met Playwright**.
+- **Database Migrations:** Code-first EF Core met automatic migrations. Migrations worden automatisch toegepast bij app startup via `Database.MigrateAsync()` in `Program.cs`. Geen handmatige CLI-stappen vereist tijdens development.
+- Tests: unit tests + integration tests met in-memory SQLite + **e2e tests met Playwright**.
 - Valuta: ISO-4217 (3 letters). Geldwaarden als decimal(18,2).
 - Copilot moet **altijd** voorbeeld CLI-commando's opnemen om .NET solutions en projecten aan te maken en te koppelen (bijv. `dotnet new`, `dotnet sln add`, `dotnet new blazorserver`, `dotnet add package`).
 - **E2E Tests:** Copilot MOET ALTIJD bijbehorende e2e tests genereren voor nieuwe features. Use NUnit + Microsoft.Playwright in `tests/LocalFinanceManager.E2E/`. Scaffold met: `dotnet new nunit -n LocalFinanceManager.E2E -o tests/LocalFinanceManager.E2E`, `dotnet sln add tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj`, `dotnet add tests/LocalFinanceManager.E2E package Microsoft.Playwright` en `dotnet add tests/LocalFinanceManager.E2E package Microsoft.Playwright.NUnit`.
@@ -27,11 +28,13 @@ dotnet sln add LocalFinanceManager/LocalFinanceManager.csproj
 dotnet add LocalFinanceManager package Microsoft.EntityFrameworkCore.Sqlite
 dotnet add LocalFinanceManager package Microsoft.EntityFrameworkCore.Design
 dotnet add LocalFinanceManager package FluentValidation.AspNetCore
+dotnet add LocalFinanceManager package IbanNet
 dotnet add LocalFinanceManager package Swashbuckle.AspNetCore
 ```
 
 Definition of Done (kort)
 
-- Voor elk MVP: werkende API + minimale Blazor UI, unit + integration tests, voorbeeld seed-data.
+- Voor elk MVP: werkende API + minimale Blazor UI, unit + integration tests (in-memory SQLite), e2e tests, voorbeeld seed-data.
+- Automatic migrations toegepast bij app startup zonder handmatige CLI-stappen.
 
 Waar nodig voor implementatie: raadpleeg de gedetailleerde MVP-documenten in `docs/`.
