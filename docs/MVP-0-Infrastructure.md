@@ -179,12 +179,12 @@ EF Core Configuration Example
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     base.OnModelCreating(modelBuilder);
-    
+
     // Configure RowVersion
     modelBuilder.Entity<Account>()
         .Property(e => e.RowVersion)
         .IsRowVersion();
-    
+
     // Configure CreatedAt/UpdatedAt (example with interceptor approach)
     // Details depend on chosen timestamp strategy
 }
