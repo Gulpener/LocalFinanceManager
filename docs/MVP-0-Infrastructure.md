@@ -181,7 +181,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
     base.OnModelCreating(modelBuilder);
 
     // Configure RowVersion
-    modelBuilder.Entity<Account>()
+    modelBuilder.Entity<BaseEntity>()
         .Property(e => e.RowVersion)
         .IsRowVersion();
 
