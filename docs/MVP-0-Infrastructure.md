@@ -7,7 +7,7 @@ Doel
 
 Acceptatiecriteria
 
-- All 4 projects created via CLI: `LocalFinanceManager`, `LocalFinanceManager.Tests`, `LocalFinanceManager.E2E`, `LocalFinanceManager.ML`, `LocalFinanceManager.ML.Tests`
+- All 5 projects created via CLI: `LocalFinanceManager`, `LocalFinanceManager.Tests`, `LocalFinanceManager.E2E`, `LocalFinanceManager.ML`, `LocalFinanceManager.ML.Tests`
 - `BaseEntity` abstract class with Id, RowVersion, CreatedAt, UpdatedAt implemented
 - `AppDbContext` configured with automatic migration on startup
 - Test infrastructure working: `TestDbContextFactory`, `PlaywrightFixture`, `TestDataBuilder`
