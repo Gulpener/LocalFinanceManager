@@ -36,7 +36,7 @@ Configuration & Settings
 
 - Minimum labeled examples threshold: **10 per category** (setting: MLOptions.MinLabeledExamplesPerCategory)
 - Training window: **90 days** rolling (setting: MLOptions.TrainingWindowDays)
-- Retraining frequency: **weekly** (setting: MLOptions.RetrainingScheduleCron = "0 2 \* \* 0") // Sunday 2 AM UTC
+- Retraining frequency: **weekly** (setting: MLOptions.RetrainingScheduleCron = "0 2 * * 0") // Sunday 2 AM UTC
 - Feature importance top N: **3** features (setting: MLOptions.TopFeaturesCount)
 - Model approval threshold (F1 score): **> 0.85** (setting: MLOptions.MinF1ScoreForApproval)
 
