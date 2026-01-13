@@ -11,17 +11,20 @@ Acceptatiecriteria
 
 Background job design
 
-- `IHostedService` configured in `Program.cs` runs on configurable schedule (e.g., weekly).
+- `IHostedService` configured in `Program.cs` with dual schedule:
+  - Retraining job: **Sunday 2 AM UTC** weekly
+  - Auto-apply job: **daily 6 AM UTC**
 - Calls `IMLService.RetrainAsync()` to train new model on latest labeled data.
-- **Threshold-based approval:** New model must exceed metric threshold (e.g., F1 score > 0.85) before active model swap; rejected improvements logged for monitoring.
-- Idempotent auto-apply job processes suggestion batches; retries with exponential backoff.
+- **Threshold-based approval:** New model must exceed **F1 score > 0.85** before active model swap; rejected improvements logged for monitoring.
+- Idempotent auto-apply job processes suggestion batches; retries with exponential backoff: 1s → 2s → 4s → 8s.
 - Store `AutoAppliedBy`, `AutoAppliedAt`, `Confidence`, `ModelVersion` in audit trail for each auto-applied assignment.
 
 Rollout & safety
 
 - Feature flags / gradual rollout (percent of transactions or specific users/accounts).
-- Undo UI: user can revert automated tag within retention window (configurable, e.g., 30 days); audit log records automated actions and reverts.
-- **Safety gates:** Auto-apply only after MVP-5 retraining completes with threshold approval; monitored for undo rate (alert if > 20% of auto-applies reversed).
+- Undo UI: user can revert automated tag within **30-day retention window**; audit log records automated actions and reverts.
+- **Safety gates:** Auto-apply only after MVP-5 retraining completes with threshold approval; monitored for undo rate.
+- **Alert threshold:** Trigger alert if **undo rate exceeds 20% in 7-day window**, indicating potential model quality issues.
 
 Security & monitoring
 

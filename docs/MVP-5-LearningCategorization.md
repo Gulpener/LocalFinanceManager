@@ -11,19 +11,24 @@ Scope & acceptatiecriteria
 
 Data & features
 
-- Input features: description (tokenized), counterparty, amount (binned), booking account, weekday/month, merchant patterns.
+- Input features:
+  - Description: tokenization (word-level, case-insensitive)
+  - Amount: binning into 5 ranges (micro <10, small 10-100, medium 100-1000, large 1000-10000, xlarge >10000)
+  - Temporal features: weekday, month, quarter patterns
+  - Counterparty, booking account, merchant patterns
 - Label: CategoryId / BudgetLineId from user assignments.
 
 Training / update flow
 
-- Offline training job that uses persisted user-corrections as labeled data.
-- Model versioning: store model metadata, createdAt, sample-size, metrics.
-- Retrain frequency configurable (daily/weekly or manual trigger).
+- Offline training job using `FastTreeBinaryClassificationTrainer` for multi-class categorization via one-vs-rest approach.
+- Weekly retraining on labeled data within 90-day rolling window.
+- Model versioning: store model metadata, createdAt, sample-size, metrics, trainer configuration.
+- Manual retraining trigger available for immediate updates.
 
 Performance & metrics
 
-- Track precision, recall, top-N accuracy, suggestion acceptance rate.
-- Minimum labeled examples per category before auto-assign considered (configurable threshold).
+- Track precision, recall, F1 score, top-N accuracy, suggestion acceptance rate.
+- Minimum 10 labeled examples per category threshold before auto-assignment considered (MVP-6).
 
 Explainability
 

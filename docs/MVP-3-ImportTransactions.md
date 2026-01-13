@@ -24,8 +24,11 @@ Deduplicatie
 
 - Strategies:
   - exact: match op (Date, Amount, ExternalId)
-  - fuzzy: description similarity + amount + counterparty (threshold configurable)
-- Config: prioriteit order (externalId -> exact -> fuzzy).
+  - fuzzy: Jaccard similarity algorithm on description (threshold 0.65) + amount match + counterparty similarity
+- Config: prioriteit order (externalId -> exact -> fuzzy)
+- Auto-detection heuristics for Date, Amount, Description column mapping
+- Batch processing: 1000 transactions per batch
+- Max file size: 100 MB
 
 Storage
 

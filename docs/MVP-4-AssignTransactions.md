@@ -27,8 +27,8 @@ Data model
 
 Business regels
 
-- Sum(splits) must equal original Amount (allow rounding tolerance configurable).
-- Bulk assign applies same BudgetLineId to many transactions; provide preview and undo.
+- Sum(splits) must equal original Amount (±0.01 rounding tolerance).
+- Bulk assign applies same BudgetLineId to many transactions; provide preview and undo within 30-day retention window.
 
 API endpoints
 
