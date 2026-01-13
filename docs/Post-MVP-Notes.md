@@ -1,6 +1,6 @@
 # Post-MVP / Nice-to-have
 
-Kort overzicht van features die later kunnen volgen en welke informatie Copilot nodig heeft om ze te bouwen.
+Short overview of features that can be added later and what information Copilot needs to build them.
 
 MT940 parser
 
