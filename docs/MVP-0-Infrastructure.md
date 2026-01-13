@@ -200,7 +200,7 @@ Tests
 
 Definition of Done
 
-- All 4 projects compile without warnings/errors
+- All 5 projects compile without warnings/errors
 - Solution structure matches documented folder layout
 - `BaseEntity` implemented and inheritable by all domain entities
 - `AppDbContext` configured with automatic migrations on startup
