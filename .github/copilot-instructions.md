@@ -10,6 +10,7 @@ Algemene regels
 - **Database Migrations:** Code-first EF Core met automatic migrations. Migrations worden automatisch toegepast bij app startup via `Database.MigrateAsync()` in `Program.cs`. Geen handmatige CLI-stappen vereist tijdens development.
 - Tests: unit tests + integration tests met in-memory SQLite + **e2e tests met NUnit + Microsoft.Playwright**.
 - Valuta: ISO-4217 (3 letters). Geldwaarden als decimal(18,2).
+- **Technical Decisions:** Alle technische keuzes voor logging, error handling, configuration, async patterns, DI conventions, en database setup zijn vastgesteld in `docs/Implementation-Guidelines.md`. Raadpleeg dit document voor gedetailleerde implementatie-patronen.
 - Copilot moet **altijd** voorbeeld CLI-commando's opnemen om .NET solutions en projecten aan te maken en te koppelen (bijv. `dotnet new`, `dotnet sln add`, `dotnet new blazorserver`, `dotnet add package`).
 - **Concurrency Control:** Implementeer optimistic concurrency met `RowVersion` (byte[]) op veelvuldig bewerkte entities (Account, BudgetPlan, Transaction, BudgetLine); configureer EF Core met `.IsRowVersion()`. Handle `DbUpdateConcurrencyException` met last-write-wins reload strategie; return HTTP 409 Conflict met huidigte entity state.
 - **Soft-delete filtering:** Implementeer `IsArchived` property; alle queries moeten expliciet filteren via `.Where(x => !x.IsArchived)`. Encapsuleer filtering in `IRepository<T>` pattern om foutrisico's te minimaliseren.
@@ -35,6 +36,22 @@ Machine Learning
 - Store getrainde modellen als `MLModel` entities (byte[] ModelBytes + JSON metadata) in database; enable versioning zonder filesystem dependencies.
 - Fixture models: pre-trained `.bin` files committed in `LocalFinanceManager.ML.Tests/fixtures/models/`; CI job retrains monthly van labeled data.
 - Minimum labeled examples threshold (e.g., 10 per category) enforced voor auto-assignment consideration.
+
+## Implementation Guidelines Reference
+
+- **Technical Decisions:** All code must follow decisions specified in `docs/Implementation-Guidelines.md`:
+  - **.NET Version:** net10.0
+  - **Logging:** Built-in Microsoft.Extensions.Logging (ILogger)
+  - **Error Responses:** RFC 7231 Problem Details format
+  - **Configuration:** appsettings.json + environment-specific files with IOptions<T>
+  - **CORS:** Not needed (same-origin Blazor Server)
+  - **Async Patterns:** Async all the way (all I/O operations async/await)
+  - **DI Conventions:** Scoped services with I<Name> interfaces
+  - **Database:** SQLite file (localfinancemanager.db in project root)
+  - **Validation Errors:** Standard RFC 7231 format with property errors
+  - **Code Style:** Nullable reference types enabled, warnings not-as-errors
+
+For code examples and detailed guidance, refer to `docs/Implementation-Guidelines.md`.
 
 Verplichte CLI-gebruik (NOODZAKELIJK)
 

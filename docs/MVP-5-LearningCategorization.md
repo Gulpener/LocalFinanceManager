@@ -30,6 +30,27 @@ Performance & metrics
 - Track precision, recall, F1 score, top-N accuracy, suggestion acceptance rate.
 - Minimum 10 labeled examples per category threshold before auto-assignment considered (MVP-6).
 
+Configuration & Settings
+
+(via appsettings.json + IOptions<MLOptions>):
+- Minimum labeled examples threshold: **10 per category** (setting: MLOptions.MinLabeledExamplesPerCategory)
+- Training window: **90 days** rolling (setting: MLOptions.TrainingWindowDays)
+- Retraining frequency: **weekly** (setting: MLOptions.RetrainingScheduleCron = "0 2 * * 0") // Sunday 2 AM UTC
+- Feature importance top N: **3** features (setting: MLOptions.TopFeaturesCount)
+- Model approval threshold (F1 score): **> 0.85** (setting: MLOptions.MinF1ScoreForApproval)
+
+Example IOptions class:
+```csharp
+public class MLOptions
+{
+    public int MinLabeledExamplesPerCategory { get; set; } = 10;
+    public int TrainingWindowDays { get; set; } = 90;
+    public string RetrainingScheduleCron { get; set; } = "0 2 * * 0";
+    public int TopFeaturesCount { get; set; } = 3;
+    public decimal MinF1ScoreForApproval { get; set; } = 0.85m;
+}
+```
+
 Explainability
 
 - Return the top contributing features for a suggestion (e.g., keyword matches, counterparty).
@@ -44,6 +65,34 @@ Storage
 - Store user-corrections as labeled examples; keep audit trail linking suggestion -> final label -> user.
 - **ML Model storage:** Train models using `LocalFinanceManager.ML` class library (separate from main app); serialize trained model as `MLModel` entity (byte[] ModelBytes + metadata in database). Enable versioning without filesystem dependencies.
 - **Fixture models:** Pre-trained `.bin` model files committed to `LocalFinanceManager.ML.Tests/fixtures/` for fast <100ms test startup. CI job retrains fixture models monthly to detect data drift.
+
+Error Handling
+
+(see `Implementation-Guidelines.md` Error Response Format section):
+- **Insufficient labeled data:** Return 400 Bad Request with detail: "Category {categoryId} has only {count} labeled examples, minimum required is {threshold}"
+- **Model training timeout:** Return 503 Service Unavailable with detail: "Model training exceeded timeout, please retry"
+- **Feature extraction failure:** Log error and return 500 Internal Server Error
+- **Suggestion API errors:** Return 400 Bad Request if transactionId not found, 500 if prediction fails
+
+Example error response for insufficient data:
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+  "title": "Insufficient training data",
+  "status": 400,
+  "detail": "Category 'Groceries' has only 5 labeled examples, minimum required is 10"
+}
+```
+
+Logging Strategy
+
+(see `Implementation-Guidelines.md` Logging Strategy section):
+- Use `ILogger<MLService>` and `ILogger<SuggestionService>` for operations
+- Log levels:
+  - `LogInformation`: Training started, model saved, new model approved, suggestion generated
+  - `LogWarning`: Category below minimum threshold, confidence below expected range
+  - `LogError`: Training failed, feature extraction error, model serialization failure
+- Example: `_logger.LogInformation("Model v{Version} trained with F1 score {F1Score}, sample size {SampleSize}", version, f1Score, sampleSize);`
 
 Tests
 
