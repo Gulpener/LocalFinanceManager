@@ -126,7 +126,7 @@ app.UseExceptionHandler(errorApp =>
             context.Response.StatusCode = StatusCodes.Status409Conflict;
             await context.Response.WriteAsJsonAsync(new
             {
-                type = "https://tools.ietf.org/html/rfc7231#section-6.4.9",
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
                 title = "Conflict - Resource was modified.",
                 status = 409,
                 detail = "The resource was modified by another request. Please reload and try again."
