@@ -2,23 +2,28 @@
 
 Laatste update: 2026-01-13
 
-## Infrastructure Setup [Critical - Do First]
+## MVP 0 — Infrastructure Setup (Foundation) [Critical - Do First]
 
-- [ ] Run complete solution scaffolding via CLI (dotnet new sln, projects, packages)
+See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be completed before starting any feature MVP (MVP 1-6).
+
+- [ ] Run complete solution scaffolding via CLI (dotnet new sln, all 4 projects, packages)
 - [ ] Create `BaseEntity` abstract class (Guid Id, byte[] RowVersion, DateTime CreatedAt/UpdatedAt)
 - [ ] Setup `AppDbContext` with automatic migration on startup via `Database.MigrateAsync()`
+- [ ] Configure EF Core `RowVersion` property with `.IsRowVersion()` on BaseEntity
 - [ ] Implement `IRepository<T>` generic pattern with `.Where(x => !x.IsArchived)` soft-delete filtering
+- [ ] Implement `DbUpdateConcurrencyException` handler in repositories (last-write-wins reload, return HTTP 409 Conflict)
+- [ ] Setup `AppDbContext.SeedAsync()` method for Development-only seeding (check existing data to prevent duplicates)
 - [ ] Create `TestDbContextFactory` for in-memory SQLite (`:memory:`) in `LocalFinanceManager.Tests`
 - [ ] Create `PlaywrightFixture` base class for E2E tests with `WebApplicationFactory` + test SQLite database
 - [ ] Create `TestDataBuilder` for shared seed data (3 sample accounts, categories, transactions)
-- [ ] Setup `AppDbContext.SeedAsync()` method for Development-only seeding (check existing data to prevent duplicates)
-- [ ] Configure EF Core `RowVersion` property with `.IsRowVersion()` on BaseEntity
-- [ ] Implement `DbUpdateConcurrencyException` handler in repositories (last-write-wins reload, return HTTP 409 Conflict)
 - [ ] Create `LocalFinanceManager.ML` class library with ML.NET package references
 - [ ] Create `LocalFinanceManager.ML.Tests` project with fixture models directory structure
 - [ ] Create `MLModel` entity for database storage (byte[] ModelBytes, int Version, DateTime TrainedAt, string Metrics JSON)
+- [ ] Verify all projects compile without errors; folder structure complete
 
 ## MVP 1 — Accounts (CRUD) [High Priority]
+
+**Note:** MVP-0 (Infrastructure Setup) must be completed first. These tasks implement Account-specific functionality.
 
 - [ ] Entity: Account (extends BaseEntity, Label, Type enum, Currency ISO-4217, IBAN, StartingBalance, IsArchived, RowVersion)
 - [ ] Create `IAccountRepository` with soft-delete filtering encapsulation
