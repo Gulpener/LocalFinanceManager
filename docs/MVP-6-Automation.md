@@ -65,7 +65,7 @@ Example error response for undo conflict:
 
 ```json
 {
-  "type": "https://tools.ietf.org/html/rfc7231#section-6.4.9",
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.8",
   "title": "Conflict - Cannot undo",
   "status": 409,
   "detail": "Transaction was modified after auto-apply. Manual review required."
