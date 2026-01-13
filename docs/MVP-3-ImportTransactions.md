@@ -17,7 +17,7 @@ Import specificaties
 
 Mapping config
 
-- UI/JSON schema waarmee gebruiker kolomnamen mappt naar transactievenvelden.
+- UI/JSON schema waarmee gebruiker kolomnamen mappt naar transactievelden.
 - Voorstel-heuristieken: automatisch detecteer Date en Amount kolommen.
 
 Deduplicatie
