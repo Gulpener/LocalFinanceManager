@@ -30,6 +30,7 @@ Deduplicatie
 Storage
 
 - Transactie-entiteit bevat `OriginalImport` (string, nvarchar(max)), `ImportedAt`, `SourceFileName`, `ImportBatchId`.
+- **Note:** Import process **bypasses RowVersion conflict checks** (import is batch non-interactive operation); RowVersion validation applied only to post-import manual edits (MVP-4+).
 
 Error handling & UX
 
@@ -41,9 +42,15 @@ Performance
 
 Tests
 
-- Parser edgecases: escaped commas, quotes, different date formats.
-- Deduplicate tests: exact, fuzzy thresholds, collision edgecases.
+**Project Structure:** Shared test infrastructure from MVP-1 (`LocalFinanceManager.Tests` and `LocalFinanceManager.E2E`).
+
+- **Unit tests** (`LocalFinanceManager.Tests`): Parser edgecases (escaped commas, quotes, different date formats), deduplicate tests (exact, fuzzy thresholds, collision edgecases), mapping configuration validation.
+- **Integration tests** (`LocalFinanceManager.Tests`): end-to-end import flow with in-memory SQLite, deduplication against existing transactions, original import string storage verification.
+- **E2E tests** (`LocalFinanceManager.E2E`): Upload UI → preview mapping → import flow; verify imported transactions appear in list and are excludable from duplicates on re-import.
 
 Definition of Done
 
 - End-to-end: upload CSV → parsed → preview with mapping → import with dedupe, transactions saved with `OriginalImport`.
+- Import succeeds with comprehensive audit trail (original file, batch ID, timestamp, error log per row).
+- Deduplication (exact + fuzzy) working correctly across existing and new transactions.
+- RowVersion concurrency checks **not applied** during import; manual post-import edits respect RowVersion validation.

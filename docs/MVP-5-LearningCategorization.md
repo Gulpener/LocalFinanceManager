@@ -37,12 +37,24 @@ Integration/UI
 Storage
 
 - Store user-corrections as labeled examples; keep audit trail linking suggestion -> final label -> user.
+- **ML Model storage:** Train models using `LocalFinanceManager.ML` class library (separate from main app); serialize trained model as `MLModel` entity (byte[] ModelBytes + metadata in database). Enable versioning without filesystem dependencies.
+- **Fixture models:** Pre-trained `.bin` model files committed to `LocalFinanceManager.ML.Tests/fixtures/` for fast <100ms test startup. CI job retrains fixture models monthly to detect data drift.
 
 Tests
 
-- Unit: feature extraction, rule engine scoring.
-- Model tests: validate that retrained model improves metrics on holdout.
+**Project Structure:** Three test projects with dedicated ML test isolation (`LocalFinanceManager.Tests`, `LocalFinanceManager.E2E`, `LocalFinanceManager.ML.Tests`).
+
+- **Unit tests** (`LocalFinanceManager.Tests`): feature extraction (tokenization, binning, temporal patterns), rule engine scoring, suggestion ranking logic.
+- **ML tests** (`LocalFinanceManager.ML.Tests`): model training, evaluation on holdout set, metric validation (precision, recall, F1), feature importance extraction, model serialization/deserialization using fixture models.
+- **Integration tests** (`LocalFinanceManager.Tests`): end-to-end suggestion flow with in-memory SQLite; verify labeled examples stored after user corrections; test retraining trigger.
+- **E2E tests** (`LocalFinanceManager.E2E`): suggestion display UI, accept/override workflows, confidence score display, explanation (top features) visibility.
 
 Definition of Done
 
-- Suggestion API with a simple model + feedback loop; example trainer; metrics dashboard basic.
+- Suggestion API with ML.NET model (logistic regression / decision tree) + feedback loop working.
+- Suggestion endpoint returns `{ categoryId, confidence, explanation }` with top contributing features visible.
+- User accept/override tracked as labeled training data in audit trail.
+- Offline retraining job (configurable frequency) trains new model on labeled examples; stores result in `MLModel` table with version + metrics.
+- Fixture models committed to repo; CI job retrains monthly to prevent data drift.
+- Basic metrics dashboard showing precision, recall, acceptance rate, labeled examples count per category.
+- Minimum labeled examples threshold (e.g., 10 per category) enforced before model considers category for auto-assignment (MVP-6).

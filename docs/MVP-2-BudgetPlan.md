@@ -11,18 +11,20 @@ Acceptatiecriteria
 
 Data model
 
-- BudgetPlan
-  - Id: GUID
+- BudgetPlan (extends `BaseEntity`)
+  - Id: GUID (inherited from BaseEntity)
   - AccountId: GUID (FK)
   - Year: int (kalenderjaar, bijv. 2026 = januari–december 2026)
   - Name: string(150)
   - CreatedAt, UpdatedAt
-- BudgetLine
-  - Id: GUID
+  - RowVersion: byte[] (inherited from BaseEntity, configured for optimistic concurrency)
+- BudgetLine (extends `BaseEntity`)
+  - Id: GUID (inherited from BaseEntity)
   - BudgetPlanId: GUID (FK)
   - CategoryId: GUID
-  - MonthlyAmounts: decimal[12] (array van 12 waarden, Jan→Dec, decimal(18,2))
+  - MonthlyAmounts: decimal[12] stored as JSON array (Jan→Dec, decimal(18,2) values per month)
   - Notes: string?
+  - RowVersion: byte[] (inherited from BaseEntity)
 
 Business regels
 
@@ -48,8 +50,11 @@ Edgecases
 
 Tests
 
-- Unit: aggregatie berekeningen (sum MonthlyAmounts → YearTotal), CRUD voor plan/lines.
-- Integration: end-to-end create plan + lines + read aggregations per maand.
+**Project Structure:** Shared test infrastructure from MVP-1 (`LocalFinanceManager.Tests` and `LocalFinanceManager.E2E`).
+
+- **Unit tests** (`LocalFinanceManager.Tests`): aggregatie berekeningen (sum MonthlyAmounts JSON → YearTotal), CRUD voor plan/lines, RowVersion conflict handling on budget edits.
+- **Integration tests** (`LocalFinanceManager.Tests`): end-to-end create plan + lines + read aggregations per maand using in-memory SQLite; verify JSON array storage/retrieval.
+- **E2E tests** (`LocalFinanceManager.E2E`): budget editor UI workflows, per-maand entry, bulk uniform value assignment, persistence verification.
 
 Seed-data
 

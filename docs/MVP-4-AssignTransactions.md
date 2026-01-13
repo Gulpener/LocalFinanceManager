@@ -11,17 +11,19 @@ Acceptatiecriteria
 
 Data model
 
-- Transaction
-  - Id: GUID
+- Transaction (extends `BaseEntity`)
+  - Id: GUID (inherited from BaseEntity)
   - Amount: decimal
   - Date, Description, Counterparty
-  - AssignedParts: collectie van `TransactionSplit`
-- TransactionSplit
-  - Id: GUID
-  - TransactionId: GUID
+  - AssignedParts: collectie van `TransactionSplit` (optional; null/empty for unsplit transactions)
+  - RowVersion: byte[] (inherited from BaseEntity, configured for optimistic concurrency)
+- TransactionSplit (extends `BaseEntity`)
+  - Id: GUID (inherited from BaseEntity)
+  - TransactionId: GUID (FK)
   - BudgetLineId: GUID (of CategoryId)
   - Amount: decimal
-  - Note
+  - Note: string?
+  - RowVersion: byte[] (inherited from BaseEntity)
 
 Business regels
 
@@ -30,9 +32,9 @@ Business regels
 
 API endpoints
 
-- `POST /transactions/{id}/assign` body: `{ "budgetLineId":".." }`
-- `POST /transactions/bulk-assign` body: `{ "transactionIds":[..], "budgetLineId":".." }`
-- `POST /transactions/{id}/split` body: `{ "splits":[{"budgetLineId":"..","amount":100.00}, ...] }`
+- `POST /transactions/{id}/assign` body: `{ "budgetLineId":".." }` (returns 409 Conflict if RowVersion mismatch; client reloads + retries)
+- `POST /transactions/bulk-assign` body: `{ "transactionIds":[..], "budgetLineId":".." }` (atomic operation; all succeed or all fail)
+- `POST /transactions/{id}/split` body: `{ "splits":[{"budgetLineId":"...","amount":100.00}, ...] }` (validates sum and RowVersion)
 
 UI aanwijzingen
 
@@ -46,8 +48,16 @@ Audit & undo
 
 Tests
 
-- Splits sum validation, bulk assign atomicity, audit record generation.
+**Project Structure:** Shared test infrastructure from MVP-1 (`LocalFinanceManager.Tests` and `LocalFinanceManager.E2E`).
+
+- **Unit tests** (`LocalFinanceManager.Tests`): Splits sum validation (including rounding tolerance), bulk assign logic, audit record generation, RowVersion conflict detection.
+- **Integration tests** (`LocalFinanceManager.Tests`): end-to-end assign and split workflows with in-memory SQLite; verify 409 Conflict returned on RowVersion mismatch; test atomic bulk operations.
+- **E2E tests** (`LocalFinanceManager.E2E`): assign UI workflow, split editor (add/remove rows, sum validation), bulk assign preview, undo workflow.
 
 Definition of Done
 
-- API + UI assign/split working, validation, audit & undo, tests present.
+- API + UI assign/split working, validation, audit & undo, tests present across separate test projects.
+- RowVersion concurrency checks enforced; 409 Conflict handling enables "reload latest" + retry flow.
+- Splits sum validation with configurable rounding tolerance; atomicity on bulk operations guaranteed.
+- Audit trail captures ChangedBy, ChangedAt, before/after values; undo reverts last N actions per transaction.
+- All transaction edits respect RowVersion; import-created transactions inherit RowVersion on first manual edit.
