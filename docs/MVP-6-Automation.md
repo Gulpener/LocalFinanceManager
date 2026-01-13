@@ -29,15 +29,17 @@ Rollout & safety
 Configuration & Feature Flags
 
 (via appsettings.json + IOptions<AutomationOptions>):
+
 - Auto-apply confidence threshold: **0.85** (setting: AutomationOptions.ConfidenceThreshold)
-- Retraining schedule: **Sunday 2 AM UTC** (setting: AutomationOptions.RetrainingScheduleCron = "0 2 * * 0")
-- Auto-apply schedule: **daily 6 AM UTC** (setting: AutomationOptions.AutoApplyScheduleCron = "0 6 * * *")
+- Retraining schedule: **Sunday 2 AM UTC** (setting: AutomationOptions.RetrainingScheduleCron = "0 2 \* \* 0")
+- Auto-apply schedule: **daily 6 AM UTC** (setting: AutomationOptions.AutoApplyScheduleCron = "0 6 \* \* \*")
 - Undo retention window: **30 days** (setting: AutomationOptions.UndoRetentionDays)
 - Undo rate alert threshold: **>20% in 7-day window** (setting: AutomationOptions.UndoRateAlertThreshold)
 - Max retries with exponential backoff: **5 retries** (1s, 2s, 4s, 8s, 16s)
 - Per-account feature flag: auto-apply enabled/disabled toggle
 
 Example IOptions class:
+
 ```csharp
 public class AutomationOptions
 {
@@ -53,12 +55,14 @@ public class AutomationOptions
 Error Handling
 
 (see `Implementation-Guidelines.md` Error Response Format section):
+
 - **Retraining failure:** Log error, retain previous model, alert operations team
 - **Auto-apply failure:** Retry with exponential backoff (1s → 2s → 4s → 8s → 16s), log all attempts, skip transaction after max retries
 - **Undo operation failure:** Return 409 Conflict if transaction was re-edited, 500 if database error
 - **Feature flag retrieval failure:** Default to safe mode (auto-apply disabled)
 
 Example error response for undo conflict:
+
 ```json
 {
   "type": "https://tools.ietf.org/html/rfc7231#section-6.4.9",
@@ -71,6 +75,7 @@ Example error response for undo conflict:
 Logging Strategy
 
 (see `Implementation-Guidelines.md` Logging Strategy section):
+
 - Use `ILogger<MLRetrainingService>` and `ILogger<AutoApplyService>` for background jobs
 - Log levels:
   - `LogInformation`: Retraining started/completed, model approved/rejected, auto-apply batch started/completed, undo operation

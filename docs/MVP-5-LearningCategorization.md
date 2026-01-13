@@ -33,13 +33,15 @@ Performance & metrics
 Configuration & Settings
 
 (via appsettings.json + IOptions<MLOptions>):
+
 - Minimum labeled examples threshold: **10 per category** (setting: MLOptions.MinLabeledExamplesPerCategory)
 - Training window: **90 days** rolling (setting: MLOptions.TrainingWindowDays)
-- Retraining frequency: **weekly** (setting: MLOptions.RetrainingScheduleCron = "0 2 * * 0") // Sunday 2 AM UTC
+- Retraining frequency: **weekly** (setting: MLOptions.RetrainingScheduleCron = "0 2 \* \* 0") // Sunday 2 AM UTC
 - Feature importance top N: **3** features (setting: MLOptions.TopFeaturesCount)
 - Model approval threshold (F1 score): **> 0.85** (setting: MLOptions.MinF1ScoreForApproval)
 
 Example IOptions class:
+
 ```csharp
 public class MLOptions
 {
@@ -69,12 +71,14 @@ Storage
 Error Handling
 
 (see `Implementation-Guidelines.md` Error Response Format section):
+
 - **Insufficient labeled data:** Return 400 Bad Request with detail: "Category {categoryId} has only {count} labeled examples, minimum required is {threshold}"
 - **Model training timeout:** Return 503 Service Unavailable with detail: "Model training exceeded timeout, please retry"
 - **Feature extraction failure:** Log error and return 500 Internal Server Error
 - **Suggestion API errors:** Return 400 Bad Request if transactionId not found, 500 if prediction fails
 
 Example error response for insufficient data:
+
 ```json
 {
   "type": "https://tools.ietf.org/html/rfc7231#section-6.5.1",
@@ -87,6 +91,7 @@ Example error response for insufficient data:
 Logging Strategy
 
 (see `Implementation-Guidelines.md` Logging Strategy section):
+
 - Use `ILogger<MLService>` and `ILogger<SuggestionService>` for operations
 - Log levels:
   - `LogInformation`: Training started, model saved, new model approved, suggestion generated

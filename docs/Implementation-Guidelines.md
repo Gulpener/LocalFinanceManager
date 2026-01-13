@@ -8,18 +8,18 @@ This document specifies technical decisions for LocalFinanceManager development.
 
 ## Technology Stack
 
-| Component | Choice | Details |
-|-----------|--------|---------|
-| **.NET Version** | net10.0 | Latest, modern features |
-| **Logging** | Built-in ILogger | Use Microsoft.Extensions.Logging |
-| **Error Responses** | RFC 7231 Problem Details | Standard API error format |
-| **Configuration** | appsettings.json + environment-specific | IOptions<T> for DI |
-| **CORS** | Not needed | No cross-origin calls required (Blazor Server, same-origin) |
-| **Async Patterns** | Async all the way | All I/O operations async/await |
-| **DI Conventions** | Scoped services, I<Name> interfaces | See conventions below |
-| **Database** | SQLite file | `localfinancemanager.db` in project root |
-| **Validation Errors** | Standard RFC 7231 format | See error response examples below |
-| **Code Style** | Nullable enabled, warnings not-as-errors | Modern C# safety features |
+| Component             | Choice                                   | Details                                                     |
+| --------------------- | ---------------------------------------- | ----------------------------------------------------------- |
+| **.NET Version**      | net10.0                                  | Latest, modern features                                     |
+| **Logging**           | Built-in ILogger                         | Use Microsoft.Extensions.Logging                            |
+| **Error Responses**   | RFC 7231 Problem Details                 | Standard API error format                                   |
+| **Configuration**     | appsettings.json + environment-specific  | IOptions<T> for DI                                          |
+| **CORS**              | Not needed                               | No cross-origin calls required (Blazor Server, same-origin) |
+| **Async Patterns**    | Async all the way                        | All I/O operations async/await                              |
+| **DI Conventions**    | Scoped services, I<Name> interfaces      | See conventions below                                       |
+| **Database**          | SQLite file                              | `localfinancemanager.db` in project root                    |
+| **Validation Errors** | Standard RFC 7231 format                 | See error response examples below                           |
+| **Code Style**        | Nullable enabled, warnings not-as-errors | Modern C# safety features                                   |
 
 ---
 
@@ -62,6 +62,7 @@ public class AccountService
 ```
 
 **Log Levels:**
+
 - `LogError`: Exceptions, data integrity issues
 - `LogWarning`: Validation failures, edge cases
 - `LogInformation`: Operation starts/completions
@@ -87,6 +88,7 @@ All API errors return standardized JSON structure:
 ```
 
 **Status codes by scenario:**
+
 - `200 OK`: Successful GET/PUT/DELETE
 - `201 Created`: Successful POST
 - `204 No Content`: Successful DELETE with no response body
@@ -149,6 +151,7 @@ app.UseExceptionHandler(errorApp =>
 ## Configuration (appsettings.json + Environment-Specific)
 
 **File structure:**
+
 ```
 LocalFinanceManager/
 ├── appsettings.json              (shared config)
@@ -342,10 +345,12 @@ await app.RunAsync();  // Async main
 ## Dependency Injection Conventions
 
 **Service naming:**
+
 - Interfaces: `IAccountRepository`, `IAccountService`, `IMLService`
 - Implementations: `AccountRepository`, `AccountService`, `MLService`
 
 **Lifetime management:**
+
 - **Scoped** (default for most services): Created per HTTP request
 - **Singleton**: Shared across requests (configuration, logging factories)
 - **Transient**: New instance every time (rarely used)
@@ -406,7 +411,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
-    
+
     if (app.Environment.IsDevelopment())
     {
         await dbContext.SeedAsync();
@@ -431,12 +436,8 @@ await app.RunAsync();
   "status": 400,
   "detail": "The request contains invalid data.",
   "errors": {
-    "Label": [
-      "Label is required"
-    ],
-    "IBAN": [
-      "Invalid IBAN format"
-    ]
+    "Label": ["Label is required"],
+    "IBAN": ["Invalid IBAN format"]
   }
 }
 ```

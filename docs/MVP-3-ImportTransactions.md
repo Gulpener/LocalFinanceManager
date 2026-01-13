@@ -47,12 +47,14 @@ Performance
 
 - Stream parsing voor grote bestanden; batch inserts; background job for heavy dedupe.
 - Configuration (via appsettings.json + IOptions<ImportOptions>):
+
   - Batch size: **1000 rows** per transaction (setting: ImportOptions.BatchSize)
   - Max file size: **100 MB** (setting: ImportOptions.MaxFileSizeMB)
   - Timeout: **60 seconds per 10k rows** (setting: ImportOptions.TimeoutSecondsPerBatch)
   - Fuzzy threshold: **0.65** Jaccard similarity (setting: ImportOptions.FuzzyMatchThreshold)
 
   Example IOptions class:
+
   ```csharp
   public class ImportOptions
   {
@@ -74,6 +76,7 @@ Tests
 Logging Strategy
 
 (see `Implementation-Guidelines.md` Logging Strategy section):
+
 - Use `ILogger<ImportService>` for import operations
 - Log levels:
   - `LogInformation`: Import started, batch completed, total rows imported
