@@ -364,3 +364,9 @@ FodyWeavers.xsd
 
 # Local SQLite database
 **/App_Data/
+
+# Allow E2E test project source files
+!tests/
+!tests/LocalFinanceManager.E2E/
+!tests/LocalFinanceManager.E2E/*.cs
+!tests/LocalFinanceManager.E2E/*.csproj
