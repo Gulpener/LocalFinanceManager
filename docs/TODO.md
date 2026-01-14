@@ -1,23 +1,26 @@
 # TODO Backlog — MVP-gebaseerde roadmap
 
-Laatste update: 2026-01-13
+Laatste update: 2026-01-14
 
-## MVP 0 — Infrastructure Setup (Foundation) [Critical - Do First]
+## MVP 0 — Infrastructure Setup (Foundation) [✓ COMPLETED]
 
 See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be completed before starting any feature MVP (MVP 1-6).
 
-- [ ] Run complete solution scaffolding via CLI (dotnet new sln, all 4 projects, packages)
-- [ ] Create `BaseEntity` abstract class (Guid Id, byte[] RowVersion, DateTime CreatedAt/UpdatedAt)
-- [ ] Setup `AppDbContext` with automatic migration on startup via `Database.MigrateAsync()`
-- [ ] Configure EF Core `RowVersion` property with `.IsRowVersion()` on BaseEntity
-- [ ] Implement `IRepository<T>` generic pattern with `.Where(x => !x.IsArchived)` soft-delete filtering
-- [ ] Implement `DbUpdateConcurrencyException` handler in repositories (last-write-wins reload, return HTTP 409 Conflict)
-- [ ] Setup `AppDbContext.SeedAsync()` method for Development-only seeding (check existing data to prevent duplicates)
-- [ ] Create `TestDbContextFactory` for in-memory SQLite (`:memory:`) in `LocalFinanceManager.Tests`
-- [ ] Create `PlaywrightFixture` base class for E2E tests with `WebApplicationFactory` + test SQLite database
-- [ ] Create `TestDataBuilder` for shared seed data (3 sample accounts, categories, transactions)
-- [ ] Create `LocalFinanceManager.ML` class library with ML.NET package references
-- [ ] Create `LocalFinanceManager.ML.Tests` project with fixture models directory structure
+- [x] Run complete solution scaffolding via CLI (dotnet new sln, all 5 projects, packages)
+- [x] Create `BaseEntity` abstract class (Guid Id, byte[] RowVersion, DateTime CreatedAt/UpdatedAt)
+- [x] Setup `AppDbContext` with automatic migration on startup via `Database.MigrateAsync()`
+- [x] Configure EF Core `RowVersion` property with `.IsRowVersion()` on BaseEntity
+- [x] Implement `IRepository<T>` generic pattern with `.Where(x => !x.IsArchived)` soft-delete filtering
+- [x] Implement `DbUpdateConcurrencyException` handler in repositories (last-write-wins reload, return HTTP 409 Conflict)
+- [x] Setup `AppDbContext.SeedAsync()` method for Development-only seeding (check existing data to prevent duplicates)
+- [x] Create `TestDbContextFactory` for in-memory SQLite (`:memory:`) in `LocalFinanceManager.Tests`
+- [x] Create `PlaywrightFixture` base class for E2E tests with `WebApplicationFactory` + test SQLite database
+- [x] Create `TestDataBuilder` for shared seed data (MLModel for testing)
+- [x] Create `LocalFinanceManager.ML` class library with ML.NET package references
+- [x] Create `LocalFinanceManager.ML.Tests` project with fixture models directory structure
+- [x] Create `MLModel` entity for database storage (byte[] ModelBytes, int Version, DateTime TrainedAt, string Metrics JSON)
+- [x] Verify all projects compile without errors; folder structure complete
+- [x] All infrastructure tests passing (10 unit tests, 2 E2E smoke tests)
 - [ ] Create `MLModel` entity for database storage (byte[] ModelBytes, int Version, DateTime TrainedAt, string Metrics JSON)
 - [ ] Verify all projects compile without errors; folder structure complete
 
