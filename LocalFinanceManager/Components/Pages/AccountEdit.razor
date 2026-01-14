@@ -1,0 +1,185 @@
+@page "/accounts/{id:guid}/edit"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@inject AccountService AccountService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Account</PageTitle>
+
+<h1>Edit Account</h1>
+
+@if (account == null)
+{
+    <p><em>Loading account...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="@request" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+
+                @if (!string.IsNullOrEmpty(concurrencyMessage))
+                {
+                    <div class="alert alert-warning">
+                        <p>@concurrencyMessage</p>
+                        <button type="button" class="btn btn-sm btn-warning" @onclick="ReloadAccount">
+                            Reload Latest Version
+                        </button>
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <label for="label" class="form-label">Label</label>
+                    <InputText id="label" class="form-control" @bind-Value="request.Label" />
+                    @if (validationErrors.ContainsKey("Label"))
+                    {
+                        <div class="text-danger">@string.Join(", ", validationErrors["Label"])</div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label for="type" class="form-label">Account Type</label>
+                    <InputSelect id="type" class="form-select" @bind-Value="request.Type">
+                        <option value="@AccountType.Checking">Checking</option>
+                        <option value="@AccountType.Savings">Savings</option>
+                        <option value="@AccountType.Credit">Credit</option>
+                        <option value="@AccountType.Other">Other</option>
+                    </InputSelect>
+                </div>
+
+                <div class="mb-3">
+                    <label for="iban" class="form-label">IBAN</label>
+                    <InputText id="iban" class="form-control" @bind-Value="request.IBAN" placeholder="NL91ABNA0417164300" />
+                    @if (validationErrors.ContainsKey("IBAN"))
+                    {
+                        <div class="text-danger">@string.Join(", ", validationErrors["IBAN"])</div>
+                    }
+                    <div class="form-text">Enter IBAN with or without spaces</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="currency" class="form-label">Currency</label>
+                    <InputText id="currency" class="form-control" @bind-Value="request.Currency" placeholder="EUR" maxlength="3" />
+                    @if (validationErrors.ContainsKey("Currency"))
+                    {
+                        <div class="text-danger">@string.Join(", ", validationErrors["Currency"])</div>
+                    }
+                    <div class="form-text">3-letter ISO code (e.g., EUR, USD)</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="startingBalance" class="form-label">Starting Balance</label>
+                    <InputNumber id="startingBalance" class="form-control" @bind-Value="request.StartingBalance" />
+                    @if (validationErrors.ContainsKey("StartingBalance"))
+                    {
+                        <div class="text-danger">@string.Join(", ", validationErrors["StartingBalance"])</div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span> Saving...</span>
+                        }
+                        else
+                        {
+                            <span>Save Changes</span>
+                        }
+                    </button>
+                    <a href="/accounts" class="btn btn-secondary">Cancel</a>
+                </div>
+
+                <div class="text-muted small">
+                    <p>Created: @account.CreatedAt.ToLocalTime().ToString("g")</p>
+                    <p>Last Updated: @account.UpdatedAt.ToLocalTime().ToString("g")</p>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private AccountResponse? account;
+    private UpdateAccountRequest request = new();
+    private Dictionary<string, string[]> validationErrors = new();
+    private string? errorMessage;
+    private string? concurrencyMessage;
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccount();
+    }
+
+    private async Task LoadAccount()
+    {
+        try
+        {
+            account = await AccountService.GetByIdAsync(Id);
+            if (account == null)
+            {
+                Navigation.NavigateTo("/accounts");
+                return;
+            }
+
+            // Populate the form
+            request.Label = account.Label;
+            request.Type = account.Type;
+            request.IBAN = account.IBAN;
+            request.Currency = account.Currency;
+            request.StartingBalance = account.StartingBalance;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading account: {ex.Message}";
+        }
+    }
+
+    private async Task ReloadAccount()
+    {
+        concurrencyMessage = null;
+        await LoadAccount();
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        concurrencyMessage = null;
+        validationErrors.Clear();
+
+        try
+        {
+            var response = await AccountService.UpdateAsync(Id, request);
+            if (response != null)
+            {
+                Navigation.NavigateTo("/accounts");
+            }
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            concurrencyMessage = "This account was modified by another user. Please reload the latest version and try again.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating account: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

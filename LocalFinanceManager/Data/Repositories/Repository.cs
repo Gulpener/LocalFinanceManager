@@ -39,7 +39,8 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     {
         entity.Id = Guid.NewGuid();
         await _dbSet.AddAsync(entity);
-        _logger.LogInformation("Adding new {EntityType} with ID {Id}", typeof(T).Name, entity.Id);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Added new {EntityType} with ID {Id}", typeof(T).Name, entity.Id);
     }
 
     public async Task UpdateAsync(T entity)

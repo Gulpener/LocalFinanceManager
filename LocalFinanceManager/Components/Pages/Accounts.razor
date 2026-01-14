@@ -1,0 +1,144 @@
+@page "/accounts"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@inject AccountService AccountService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Accounts</PageTitle>
+
+<h1>Accounts</h1>
+
+<div class="mb-3">
+    <a href="/accounts/new" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Create New Account
+    </a>
+</div>
+
+@if (accounts == null)
+{
+    <p><em>Loading accounts...</em></p>
+}
+else if (!accounts.Any())
+{
+    <div class="alert alert-info">
+        <p>No accounts found. Create your first account to get started!</p>
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Label</th>
+                <th>Type</th>
+                <th>Currency</th>
+                <th>IBAN</th>
+                <th class="text-end">Current Balance</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var account in accounts)
+            {
+                <tr>
+                    <td>@account.Label</td>
+                    <td>@account.Type</td>
+                    <td>@account.Currency</td>
+                    <td>@FormatIban(account.IBAN)</td>
+                    <td class="text-end">@account.CurrentBalance.ToString("N2")</td>
+                    <td>
+                        <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmArchive(account)">
+                            <i class="bi bi-archive"></i> Archive
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<!-- Archive Confirmation Modal -->
+@if (accountToArchive != null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Archive</h5>
+                    <button type="button" class="btn-close" @onclick="CancelArchive"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to archive the account "<strong>@accountToArchive.Label</strong>"?</p>
+                    <p class="text-muted">Archived accounts will be hidden from the list but can be restored later.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelArchive">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ArchiveAccount">Archive</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<AccountResponse>? accounts;
+    private AccountResponse? accountToArchive;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccounts();
+    }
+
+    private async Task LoadAccounts()
+    {
+        try
+        {
+            accounts = await AccountService.GetAllActiveAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading accounts: {ex.Message}";
+        }
+    }
+
+    private void ConfirmArchive(AccountResponse account)
+    {
+        accountToArchive = account;
+    }
+
+    private void CancelArchive()
+    {
+        accountToArchive = null;
+    }
+
+    private async Task ArchiveAccount()
+    {
+        if (accountToArchive == null) return;
+
+        try
+        {
+            await AccountService.ArchiveAsync(accountToArchive.Id);
+            accountToArchive = null;
+            await LoadAccounts(); // Reload the list
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error archiving account: {ex.Message}";
+        }
+    }
+
+    private string FormatIban(string iban)
+    {
+        // Format IBAN with spaces every 4 characters for readability
+        if (string.IsNullOrWhiteSpace(iban))
+            return iban;
+
+        return string.Join(" ", Enumerable.Range(0, (iban.Length + 3) / 4)
+            .Select(i => iban.Substring(i * 4, Math.Min(4, iban.Length - i * 4))));
+    }
+}

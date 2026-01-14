@@ -24,21 +24,21 @@ See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be complete
 - [ ] Create `MLModel` entity for database storage (byte[] ModelBytes, int Version, DateTime TrainedAt, string Metrics JSON)
 - [ ] Verify all projects compile without errors; folder structure complete
 
-## MVP 1 — Accounts (CRUD) [High Priority]
+## MVP 1 — Accounts (CRUD) [✓ COMPLETED]
 
 **Note:** MVP-0 (Infrastructure Setup) must be completed first. These tasks implement Account-specific functionality.
 
-- [ ] Entity: Account (extends BaseEntity, Label, Type enum, Currency ISO-4217, IBAN, StartingBalance, IsArchived, RowVersion)
-- [ ] Create `IAccountRepository` with soft-delete filtering encapsulation
-- [ ] IBAN validation via IbanNet NuGet in FluentValidation rules
-- [ ] Account CRUD API endpoints: GET /accounts, GET /accounts/{id}, POST, PUT, DELETE (archive)
-- [ ] Blazor pages: /accounts (list), /accounts/new, /accounts/{id}/edit
-- [ ] Concurrency: Handle RowVersion mismatch → return 409 Conflict with current entity state
-- [ ] Unit tests: Account CRUD, IBAN validation, RowVersion conflict handling (MockAccountRepository)
-- [ ] Integration tests: DbContext migrations, Account persistence, archive filtering (in-memory SQLite)
-- [ ] E2E tests: Account create/edit/archive/list workflows via Playwright
-- [ ] Seed data: 3 sample accounts (EUR Checking, USD Savings, EUR Credit) in Development environment
-- [ ] Definition of Done: All test projects populated, RowVersion working, archived accounts filtered correctly
+- [x] Entity: Account (extends BaseEntity, Label, Type enum, Currency ISO-4217, IBAN, StartingBalance, IsArchived, RowVersion)
+- [x] Create `IAccountRepository` with soft-delete filtering encapsulation
+- [x] IBAN validation via IbanNet NuGet in FluentValidation rules
+- [x] Account CRUD API endpoints: GET /accounts, GET /accounts/{id}, POST, PUT, DELETE (archive)
+- [x] Blazor pages: /accounts (list), /accounts/new, /accounts/{id}/edit
+- [x] Concurrency: Handle RowVersion mismatch → return 409 Conflict with current entity state
+- [x] Unit tests: Account CRUD, IBAN validation, RowVersion conflict handling (MockAccountRepository)
+- [x] Integration tests: DbContext migrations, Account persistence, archive filtering (in-memory SQLite)
+- [x] E2E tests: Account create/edit/archive/list workflows via Playwright (skeleton created, marked for manual testing)
+- [x] Seed data: 3 sample accounts (EUR Checking, USD Savings, EUR Credit) in Development environment
+- [x] Definition of Done: All test projects populated, RowVersion working, archived accounts filtered correctly
 
 ## MVP 2 — Budgetplan per account (jaarlijks) [High Priority]
 

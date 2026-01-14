@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
 
     // Entity Sets
     public DbSet<MLModel> MLModels => Set<MLModel>();
+    public DbSet<Account> Accounts => Set<Account>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +46,28 @@ public class AppDbContext : DbContext
                     .HasIndex("IsArchived");
             }
         }
+
+        // Configure Account entity
+        modelBuilder.Entity<Account>(entity =>
+        {
+            entity.Property(a => a.Label)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(a => a.IBAN)
+                .IsRequired()
+                .HasMaxLength(34);
+
+            entity.Property(a => a.Currency)
+                .IsRequired()
+                .HasMaxLength(3);
+
+            entity.Property(a => a.StartingBalance)
+                .HasColumnType("decimal(18,2)");
+
+            // Index for common queries
+            entity.HasIndex(a => a.Label);
+        });
     }
 
     public override int SaveChanges()
@@ -86,7 +109,51 @@ public class AppDbContext : DbContext
     /// </summary>
     public async Task SeedAsync()
     {
-        // Seed logic will be added in MVP-1 and beyond
-        await Task.CompletedTask;
+        // Seed accounts if none exist
+        if (!await Accounts.AnyAsync())
+        {
+            var accounts = new[]
+            {
+                new Account
+                {
+                    Id = Guid.NewGuid(),
+                    Label = "Betaalrekening",
+                    Type = AccountType.Checking,
+                    IBAN = "NL91ABNA0417164300",
+                    Currency = "EUR",
+                    StartingBalance = 1000.00m,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsArchived = false
+                },
+                new Account
+                {
+                    Id = Guid.NewGuid(),
+                    Label = "Spaarrekening",
+                    Type = AccountType.Savings,
+                    IBAN = "NL20INGB0001234567",
+                    Currency = "EUR",
+                    StartingBalance = 2500.00m,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsArchived = false
+                },
+                new Account
+                {
+                    Id = Guid.NewGuid(),
+                    Label = "Credit Card",
+                    Type = AccountType.Credit,
+                    IBAN = "NL39RABO0300065264",
+                    Currency = "EUR",
+                    StartingBalance = 0.00m,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsArchived = false
+                }
+            };
+
+            await Accounts.AddRangeAsync(accounts);
+            await SaveChangesAsync();
+        }
     }
 }
