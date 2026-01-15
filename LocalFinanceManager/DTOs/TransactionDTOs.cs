@@ -189,3 +189,179 @@ public class ImportPreviewDto
     /// </summary>
     public List<ImportRowError> Errors { get; set; } = new();
 }
+
+/// <summary>
+/// DTO for transaction split data.
+/// </summary>
+public class TransactionSplitDto
+{
+    public Guid Id { get; set; }
+    public Guid TransactionId { get; set; }
+    public Guid? BudgetLineId { get; set; }
+    public Guid? CategoryId { get; set; }
+    public decimal Amount { get; set; }
+    public string? Note { get; set; }
+    public byte[]? RowVersion { get; set; }
+}
+
+/// <summary>
+/// Request to assign a transaction to a budget line or category.
+/// </summary>
+public class AssignTransactionRequest
+{
+    /// <summary>
+    /// Budget line ID to assign to (optional if CategoryId provided).
+    /// </summary>
+    public Guid? BudgetLineId { get; set; }
+
+    /// <summary>
+    /// Category ID to assign to (optional if BudgetLineId provided).
+    /// </summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>
+    /// Optional note for this assignment.
+    /// </summary>
+    public string? Note { get; set; }
+
+    /// <summary>
+    /// Row version for optimistic concurrency control.
+    /// </summary>
+    public byte[]? RowVersion { get; set; }
+}
+
+/// <summary>
+/// Request to split a transaction across multiple budget lines or categories.
+/// </summary>
+public class SplitTransactionRequest
+{
+    /// <summary>
+    /// Split allocations - must sum to transaction amount (±0.01 tolerance).
+    /// </summary>
+    public List<SplitAllocationDto> Splits { get; set; } = new();
+
+    /// <summary>
+    /// Row version for optimistic concurrency control.
+    /// </summary>
+    public byte[]? RowVersion { get; set; }
+}
+
+/// <summary>
+/// Individual split allocation within a transaction split.
+/// </summary>
+public class SplitAllocationDto
+{
+    /// <summary>
+    /// Budget line ID to assign to (optional if CategoryId provided).
+    /// </summary>
+    public Guid? BudgetLineId { get; set; }
+
+    /// <summary>
+    /// Category ID to assign to (optional if BudgetLineId provided).
+    /// </summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>
+    /// Amount for this split part.
+    /// </summary>
+    public decimal Amount { get; set; }
+
+    /// <summary>
+    /// Optional note explaining this split.
+    /// </summary>
+    public string? Note { get; set; }
+}
+
+/// <summary>
+/// Request to bulk assign multiple transactions to same budget line or category.
+/// </summary>
+public class BulkAssignTransactionsRequest
+{
+    /// <summary>
+    /// Transaction IDs to assign.
+    /// </summary>
+    public List<Guid> TransactionIds { get; set; } = new();
+
+    /// <summary>
+    /// Budget line ID to assign all transactions to (optional if CategoryId provided).
+    /// </summary>
+    public Guid? BudgetLineId { get; set; }
+
+    /// <summary>
+    /// Category ID to assign all transactions to (optional if BudgetLineId provided).
+    /// </summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>
+    /// Optional note for the bulk assignment.
+    /// </summary>
+    public string? Note { get; set; }
+}
+
+/// <summary>
+/// Result of bulk assignment operation.
+/// </summary>
+public class BulkAssignResultDto
+{
+    /// <summary>
+    /// Number of transactions successfully assigned.
+    /// </summary>
+    public int AssignedCount { get; set; }
+
+    /// <summary>
+    /// Number of transactions that failed.
+    /// </summary>
+    public int FailedCount { get; set; }
+
+    /// <summary>
+    /// Total transactions attempted.
+    /// </summary>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// Whether operation completed successfully.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Optional message.
+    /// </summary>
+    public string? Message { get; set; }
+
+    /// <summary>
+    /// IDs of failed transactions.
+    /// </summary>
+    public List<Guid> FailedTransactionIds { get; set; } = new();
+}
+
+/// <summary>
+/// Request to undo last assignment action on a transaction.
+/// </summary>
+public class UndoAssignmentRequest
+{
+    /// <summary>
+    /// Transaction ID to undo.
+    /// </summary>
+    public Guid TransactionId { get; set; }
+
+    /// <summary>
+    /// Audit entry ID to undo (most recent if not specified).
+    /// </summary>
+    public Guid? AuditEntryId { get; set; }
+}
+
+/// <summary>
+/// DTO for transaction audit entry.
+/// </summary>
+public class TransactionAuditDto
+{
+    public Guid Id { get; set; }
+    public Guid TransactionId { get; set; }
+    public string ActionType { get; set; } = string.Empty;
+    public string ChangedBy { get; set; } = string.Empty;
+    public DateTime ChangedAt { get; set; }
+    public string? BeforeState { get; set; }
+    public string? AfterState { get; set; }
+    public string? Reason { get; set; }
+}
+

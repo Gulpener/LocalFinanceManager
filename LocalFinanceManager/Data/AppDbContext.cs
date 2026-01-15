@@ -20,6 +20,8 @@ public class AppDbContext : DbContext
     public DbSet<BudgetPlan> BudgetPlans => Set<BudgetPlan>();
     public DbSet<BudgetLine> BudgetLines => Set<BudgetLine>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<TransactionSplit> TransactionSplits => Set<TransactionSplit>();
+    public DbSet<TransactionAudit> TransactionAudits => Set<TransactionAudit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -165,6 +167,71 @@ public class AppDbContext : DbContext
             entity.HasIndex(t => t.Date);
             entity.HasIndex(t => new { t.Date, t.Amount, t.ExternalId }); // Exact match deduplication
             entity.HasIndex(t => t.ImportBatchId);
+        });
+
+        // Configure TransactionSplit entity
+        modelBuilder.Entity<TransactionSplit>(entity =>
+        {
+            entity.Property(ts => ts.Amount)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+
+            entity.Property(ts => ts.Note)
+                .HasMaxLength(500);
+
+            entity.HasOne(ts => ts.Transaction)
+                .WithMany(t => t.AssignedParts)
+                .HasForeignKey(ts => ts.TransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(ts => ts.BudgetLine)
+                .WithMany()
+                .HasForeignKey(ts => ts.BudgetLineId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(ts => ts.Category)
+                .WithMany()
+                .HasForeignKey(ts => ts.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for queries
+            entity.HasIndex(ts => ts.TransactionId);
+            entity.HasIndex(ts => ts.BudgetLineId);
+            entity.HasIndex(ts => ts.CategoryId);
+        });
+
+        // Configure TransactionAudit entity
+        modelBuilder.Entity<TransactionAudit>(entity =>
+        {
+            entity.Property(ta => ta.ActionType)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(ta => ta.ChangedBy)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(ta => ta.ChangedAt)
+                .IsRequired();
+
+            entity.Property(ta => ta.BeforeState)
+                .HasColumnType("TEXT");
+
+            entity.Property(ta => ta.AfterState)
+                .HasColumnType("TEXT");
+
+            entity.Property(ta => ta.Reason)
+                .HasMaxLength(500);
+
+            entity.HasOne(ta => ta.Transaction)
+                .WithMany()
+                .HasForeignKey(ta => ta.TransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Indexes for audit queries
+            entity.HasIndex(ta => ta.TransactionId);
+            entity.HasIndex(ta => ta.ChangedAt);
+            entity.HasIndex(ta => ta.ActionType);
         });
     }
 

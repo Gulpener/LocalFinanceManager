@@ -59,4 +59,21 @@ public class Transaction : BaseEntity
     /// Timestamp when transaction was imported.
     /// </summary>
     public DateTime? ImportedAt { get; set; }
+
+    /// <summary>
+    /// Collection of transaction splits when transaction is divided across multiple categories.
+    /// Null or empty for unsplit transactions.
+    /// </summary>
+    public ICollection<TransactionSplit>? AssignedParts { get; set; }
+
+    /// <summary>
+    /// Computed property: Indicates whether transaction is split across multiple categories.
+    /// </summary>
+    public bool IsSplit => AssignedParts != null && AssignedParts.Any();
+
+    /// <summary>
+    /// Computed property: Returns the effective amount (sum of splits or base amount).
+    /// Used for validation and reporting.
+    /// </summary>
+    public decimal EffectiveAmount => IsSplit ? AssignedParts!.Sum(s => s.Amount) : Amount;
 }
