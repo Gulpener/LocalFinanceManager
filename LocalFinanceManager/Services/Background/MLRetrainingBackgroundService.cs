@@ -30,14 +30,14 @@ public class MLRetrainingBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("ML Retraining Background Service started with schedule: {Schedule}", 
-            _mlOptions.RetrainingScheduleCron);
+            _automationOptions.RetrainingScheduleCron);
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 var now = DateTime.UtcNow;
-                var nextRun = CronParser.GetNextOccurrence(_mlOptions.RetrainingScheduleCron, now);
+                var nextRun = CronParser.GetNextOccurrence(_automationOptions.RetrainingScheduleCron, now);
                 var delay = nextRun - now;
 
                 _logger.LogInformation("Next ML retraining scheduled at {NextRun} UTC (in {Delay})", 

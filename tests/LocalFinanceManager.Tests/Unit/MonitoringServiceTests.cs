@@ -106,7 +106,7 @@ public class MonitoringServiceTests : IDisposable
     }
 
     [Test]
-    public async Task GetAutoApplyStatsAsync_WithExactThreshold_TriggesAlert()
+    public async Task GetAutoApplyStatsAsync_WithExactThreshold_TriggersAlert()
     {
         // Arrange
         var transactions = Enumerable.Range(0, 5).Select(_ => CreateTransaction()).ToList();
