@@ -115,6 +115,13 @@ Definition of Done (kort)
 - Voor elk MVP: werkende API + minimale Blazor UI, unit + integration tests (in-memory SQLite), e2e tests, voorbeeld seed-data.
 - Automatic migrations toegepast bij app startup zonder handmatige CLI-stappen.
 - **TODO Tracking:** Na voltooiing van elke taak/stap in een MVP, markeert Copilot de overeenkomstige taak in `docs/TODO.md` als voltooid (`[x]`). Dit handelt Copilot automatisch af na implementatie.
+- **User Story Archiving:** Wanneer een User Story uit `docs/Userstories/` volledig geïmplementeerd en getest is, moet het bestand verplaatst worden naar `docs/Userstories/Archive/` om de actieve backlog overzichtelijk te houden.
+
+User Story Management
+
+- **Naming Convention:** User stories volgen het formaat `UserStory-[number]-[Title].md` (bijv. `UserStory-1-CI-Pipeline.md`).
+- **Numbering:** Bij het aanmaken van een nieuwe user story, moet Copilot ALTIJD beide `docs/Userstories/` EN `docs/Userstories/Archive/` controleren om het hoogste bestaande nummer te vinden. Het nieuwe nummer is dan hoogste nummer + 1.
+- **Location:** Nieuwe user stories worden aangemaakt in `docs/Userstories/`, voltooide stories worden verplaatst naar `docs/Userstories/Archive/`.
 
 Repository & Entity Patterns
 
