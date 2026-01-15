@@ -1,6 +1,7 @@
 @page "/budgets/{Id:guid}/edit"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using Microsoft.EntityFrameworkCore
 @inject BudgetPlanService BudgetPlanService
 @inject CategoryService CategoryService
 @inject NavigationManager Navigation
@@ -122,19 +123,94 @@ else
                         <tbody>
                             @foreach (var line in budgetPlan.BudgetLines)
                             {
-                                <tr>
-                                    <td>@line.CategoryName</td>
-                                    @for (int i = 0; i < 12; i++)
-                                    {
-                                        <td class="text-end">@line.MonthlyAmounts[i].ToString("F2")</td>
-                                    }
-                                    <td class="text-end fw-bold">@line.YearTotal.ToString("F2")</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-danger" @onclick="() => ArchiveLine(line.Id)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
-                                </tr>
+                                @if (_editingLineId == line.Id)
+                                {
+                                    <tr class="table-warning">
+                                        <td>
+                                            <InputSelect class="form-select form-select-sm" @bind-Value="_editCategoryId">
+                                                @if (categories != null)
+                                                {
+                                                    @foreach (var category in categories)
+                                                    {
+                                                        <option value="@category.Id">@category.Name</option>
+                                                    }
+                                                }
+                                            </InputSelect>
+                                        </td>
+                                        @for (int i = 0; i < 12; i++)
+                                        {
+                                            var monthIndex = i;
+                                            <td>
+                                                <input type="number" class="form-control form-control-sm text-end" 
+                                                    @bind="_editMonthlyAmounts[monthIndex]" step="0.01" />
+                                            </td>
+                                        }
+                                        <td class="text-end fw-bold">@_editMonthlyAmounts.Sum().ToString("F2")</td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <button class="btn btn-sm btn-success" @onclick="SaveLine">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-secondary" @onclick="CancelEditLine">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-warning">
+                                        <td colspan="15">
+                                            <div class="row g-2">
+                                                <div class="col-md-4">
+                                                    <label class="form-label small">Notes</label>
+                                                    <input type="text" class="form-control form-control-sm" @bind="_editNotes" />
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-check mt-4">
+                                                        <input type="checkbox" class="form-check-input" id="uniformCheckbox-@line.Id" 
+                                                            @bind="_useUniformAmount" />
+                                                        <label class="form-check-label" for="uniformCheckbox-@line.Id">
+                                                            Uniform bedrag
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                @if (_useUniformAmount)
+                                                {
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small">Uniform Value</label>
+                                                        <input type="number" class="form-control form-control-sm" 
+                                                            @bind="_uniformAmount" @bind:event="oninput" 
+                                                            @onchange="ApplyUniformAmountToEdit" step="0.01" />
+                                                    </div>
+                                                }
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(editLineErrorMessage))
+                                            {
+                                                <div class="alert alert-danger alert-sm mt-2 mb-0">@editLineErrorMessage</div>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td>@line.CategoryName</td>
+                                        @for (int i = 0; i < 12; i++)
+                                        {
+                                            <td class="text-end">@line.MonthlyAmounts[i].ToString("F2")</td>
+                                        }
+                                        <td class="text-end fw-bold">@line.YearTotal.ToString("F2")</td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <button class="btn btn-sm btn-primary" @onclick="() => StartEditLine(line)">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @onclick="() => ArchiveLine(line.Id)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
                             }
                             <tr class="table-secondary fw-bold">
                                 <td>TOTAL</td>
@@ -164,6 +240,28 @@ else
     </div>
 }
 
+@if (_showConflictDialog)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Concurrency Conflict</h5>
+                    <button type="button" class="btn-close" @onclick="CloseConflictDialog"></button>
+                </div>
+                <div class="modal-body">
+                    <p>De budgetregel is gewijzigd door een ander proces.</p>
+                    <p>Wilt u de laatste versie herladen? (Uw wijzigingen gaan verloren.)</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" @onclick="ReloadBudgetPlan">Herladen</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CloseConflictDialog">Annuleer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public Guid Id { get; set; }
@@ -177,6 +275,17 @@ else
     private bool showAddLineForm = false;
     private string? planErrorMessage;
     private string? lineErrorMessage;
+    
+    // Edit mode state
+    private Guid? _editingLineId = null;
+    private BudgetLineDto? _editingLineSnapshot = null;
+    private decimal[] _editMonthlyAmounts = new decimal[12];
+    private Guid _editCategoryId;
+    private string? _editNotes;
+    private bool _useUniformAmount = false;
+    private decimal _uniformAmount = 0;
+    private string? editLineErrorMessage;
+    private bool _showConflictDialog = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -267,4 +376,80 @@ else
 
     private string GetMonthName(int index) => new DateTime(2000, index + 1, 1).ToString("MMMM");
     private string GetMonthAbbr(int index) => new DateTime(2000, index + 1, 1).ToString("MMM");
+
+    private void StartEditLine(BudgetLineDto line)
+    {
+        _editingLineId = line.Id;
+        _editingLineSnapshot = line;
+        _editMonthlyAmounts = line.MonthlyAmounts.ToArray();
+        _editCategoryId = line.CategoryId;
+        _editNotes = line.Notes;
+        _useUniformAmount = false;
+        _uniformAmount = 0;
+        editLineErrorMessage = null;
+    }
+
+    private void CancelEditLine()
+    {
+        _editingLineId = null;
+        _editingLineSnapshot = null;
+        editLineErrorMessage = null;
+        _useUniformAmount = false;
+        _uniformAmount = 0;
+    }
+
+    private void ApplyUniformAmountToEdit()
+    {
+        if (_useUniformAmount)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                _editMonthlyAmounts[i] = _uniformAmount;
+            }
+        }
+    }
+
+    private async Task SaveLine()
+    {
+        if (_editingLineId == null || _editingLineSnapshot == null)
+        {
+            return;
+        }
+
+        editLineErrorMessage = null;
+        try
+        {
+            var updateDto = new UpdateBudgetLineDto
+            {
+                CategoryId = _editCategoryId,
+                MonthlyAmounts = _editMonthlyAmounts,
+                Notes = _editNotes,
+                RowVersion = _editingLineSnapshot.RowVersion
+            };
+
+            await BudgetPlanService.UpdateLineAsync(_editingLineId.Value, updateDto);
+            await LoadBudgetPlan();
+            CancelEditLine();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _showConflictDialog = true;
+        }
+        catch (Exception ex)
+        {
+            editLineErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task ReloadBudgetPlan()
+    {
+        await LoadBudgetPlan();
+        CancelEditLine();
+        _showConflictDialog = false;
+    }
+
+    private void CloseConflictDialog()
+    {
+        _showConflictDialog = false;
+    }
 }
