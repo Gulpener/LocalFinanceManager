@@ -14,6 +14,18 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
     {
     }
 
+    /// <summary>
+    /// Override GetActiveAsync to include proper ordering by date.
+    /// </summary>
+    public new async Task<List<Transaction>> GetActiveAsync()
+    {
+        return await _dbSet
+            .Where(t => !t.IsArchived)
+            .OrderByDescending(t => t.Date)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<List<Transaction>> GetByAccountIdAsync(Guid accountId)
     {
         return await _dbSet
@@ -42,9 +54,9 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
         var endDate = date.AddDays(daysTolerance);
 
         return await _dbSet
-            .Where(t => !t.IsArchived 
-                && t.Date >= startDate 
-                && t.Date <= endDate 
+            .Where(t => !t.IsArchived
+                && t.Date >= startDate
+                && t.Date <= endDate
                 && t.Amount == amount)
             .ToListAsync();
     }
@@ -66,7 +78,7 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
 
         await _dbSet.AddRangeAsync(transactions);
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Added {Count} transactions in batch", transactions.Count());
     }
 }

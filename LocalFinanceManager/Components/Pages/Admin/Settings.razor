@@ -123,6 +123,18 @@
                     <td>@_budgetPlanCount records</td>
                 </tr>
                 <tr>
+                    <th scope="row">Budget Lines:</th>
+                    <td>@_budgetLineCount records</td>
+                </tr>
+                <tr>
+                    <th scope="row">Transactions:</th>
+                    <td>@_transactionCount records</td>
+                </tr>
+                <tr>
+                    <th scope="row">Transaction Splits:</th>
+                    <td>@_transactionSplitCount records</td>
+                </tr>
+                <tr>
                     <th scope="row">Seed Data Geladen:</th>
                     <td>
                         @if (_seedDataLoaded)
@@ -141,8 +153,9 @@
 </div>
 
 @code {
-    private static readonly Regex DataSourceRegex = new(@"Data Source=([^;]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    
+    private static readonly Regex DataSourceRegex = new(@"Data Source=([^;]+)", RegexOptions.IgnoreCase |
+    RegexOptions.Compiled);
+
     private string? _connectionString;
     private string? _databasePath;
     private bool _databaseExists;
@@ -153,6 +166,9 @@
     private int _accountCount;
     private int _categoryCount;
     private int _budgetPlanCount;
+    private int _budgetLineCount;
+    private int _transactionCount;
+    private int _transactionSplitCount;
     private bool _seedDataLoaded;
     private string _environmentBadgeClass = "bg-secondary";
 
@@ -173,8 +189,8 @@
             {
                 var relativePath = match.Groups[1].Value;
                 _databasePath = Path.IsPathRooted(relativePath)
-                    ? relativePath
-                    : Path.Combine(Environment.ContentRootPath, relativePath);
+                ? relativePath
+                : Path.Combine(Environment.ContentRootPath, relativePath);
 
                 // Check if database file exists
                 if (File.Exists(_databasePath))
@@ -196,6 +212,9 @@
         _accountCount = await DbContext.Accounts.CountAsync();
         _categoryCount = await DbContext.Categories.CountAsync();
         _budgetPlanCount = await DbContext.BudgetPlans.CountAsync();
+        _budgetLineCount = await DbContext.BudgetLines.CountAsync();
+        _transactionCount = await DbContext.Transactions.CountAsync();
+        _transactionSplitCount = await DbContext.TransactionSplits.CountAsync();
         _seedDataLoaded = _accountCount > 0 && _categoryCount > 0;
     }
 

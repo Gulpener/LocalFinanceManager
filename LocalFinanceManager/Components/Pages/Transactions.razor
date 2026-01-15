@@ -4,6 +4,7 @@
 @inject ITransactionRepository TransactionRepository
 @inject IAccountRepository AccountRepository
 @inject NavigationManager NavigationManager
+@rendermode InteractiveServer
 
 <PageTitle>Transacties</PageTitle>
 
@@ -11,7 +12,7 @@
 
 <div class="mb-3">
     <label for="accountFilter" class="form-label">Filter op rekening:</label>
-    <select id="accountFilter" class="form-select" @onchange="OnAccountChanged">
+    <select id="accountFilter" class="form-select" @bind="selectedAccountIdString" @bind:after="OnAccountChanged">
         <option value="">Alle rekeningen</option>
         @foreach (var account in accounts)
         {
@@ -64,7 +65,8 @@ else
                     <td>
                         @if (!string.IsNullOrEmpty(transaction.SourceFileName))
                         {
-                            <span class="badge bg-secondary" title="Geïmporteerd op @transaction.ImportedAt?.ToString("dd-MM-yyyy HH:mm")">
+                            <span class="badge bg-secondary"
+                                title="Geïmporteerd op @transaction.ImportedAt?.ToString("dd-MM-yyyy HH:mm")">
                                 @transaction.SourceFileName
                             </span>
                         }
@@ -92,6 +94,7 @@ else
     private List<LocalFinanceManager.Models.Transaction> transactions = new();
     private List<LocalFinanceManager.Models.Account> accounts = new();
     private Guid? selectedAccountId = null;
+    private string selectedAccountIdString = "";
     private bool loading = true;
     private decimal totalAmount = 0;
 
@@ -109,7 +112,7 @@ else
     private async Task LoadTransactionsAsync()
     {
         loading = true;
-        
+
         if (selectedAccountId.HasValue)
         {
             transactions = await TransactionRepository.GetByAccountIdAsync(selectedAccountId.Value);
@@ -123,13 +126,12 @@ else
         loading = false;
     }
 
-    private async Task OnAccountChanged(ChangeEventArgs e)
+    private async Task OnAccountChanged()
     {
-        var accountIdString = e.Value?.ToString();
-        selectedAccountId = string.IsNullOrEmpty(accountIdString) || accountIdString == "" 
-            ? null 
-            : Guid.Parse(accountIdString);
-        
+        selectedAccountId = string.IsNullOrEmpty(selectedAccountIdString)
+        ? null
+        : Guid.Parse(selectedAccountIdString);
+
         await LoadTransactionsAsync();
     }
 
