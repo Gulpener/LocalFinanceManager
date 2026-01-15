@@ -76,4 +76,95 @@ public class BudgetPlanTests : PageTest
         // 5. Verify plan no longer in list
         // TODO: Implement full test flow
     }
+
+    [Test]
+    [Ignore("Manual testing required - Playwright automation TBD")]
+    public async Task EditBudgetLine_InlineEdit_SavesSuccessfully()
+    {
+        // This is a skeleton test for manual verification
+        // Full Playwright implementation would include:
+        // 1. Navigate to budget plan edit page
+        // 2. Click "Edit" button on a budget line
+        // 3. Verify row transforms to input fields
+        // 4. Change a monthly amount value
+        // 5. Change the category dropdown
+        // 6. Update the notes field
+        // 7. Click "Save" button
+        // 8. Verify row returns to read-only mode
+        // 9. Verify changes are persisted (reload page and check)
+        await Page.GotoAsync($"{BaseUrl}/budgets");
+        // TODO: Implement full test flow
+    }
+
+    [Test]
+    [Ignore("Manual testing required - Playwright automation TBD")]
+    public async Task EditBudgetLine_InlineEdit_CancelRestoresValues()
+    {
+        // This is a skeleton test for manual verification
+        // Full Playwright implementation would include:
+        // 1. Navigate to budget plan edit page
+        // 2. Note original values of first budget line
+        // 3. Click "Edit" button on the budget line
+        // 4. Change monthly amounts, category, notes
+        // 5. Click "Cancel" button
+        // 6. Verify row returns to read-only mode
+        // 7. Verify original values are restored (no API call made)
+        await Page.GotoAsync($"{BaseUrl}/budgets");
+        // TODO: Implement full test flow
+    }
+
+    [Test]
+    [Ignore("Manual testing required - Playwright automation TBD")]
+    public async Task EditBudgetLine_UniformAmount_FillsAllMonths()
+    {
+        // This is a skeleton test for manual verification
+        // Full Playwright implementation would include:
+        // 1. Navigate to budget plan edit page
+        // 2. Click "Edit" button on a budget line
+        // 3. Check the "Uniform bedrag" checkbox
+        // 4. Enter value 250 in the uniform amount input
+        // 5. Verify all 12 month inputs show 250
+        // 6. Verify year total shows 3000 (250 * 12)
+        // 7. Click "Save" button
+        // 8. Reload page and verify values persisted
+        await Page.GotoAsync($"{BaseUrl}/budgets");
+        // TODO: Implement full test flow
+    }
+
+    [Test]
+    [Ignore("Manual testing required - Playwright automation TBD")]
+    public async Task EditBudgetLine_ConcurrencyConflict_ShowsReloadDialog()
+    {
+        // This is a skeleton test for manual verification
+        // Full Playwright implementation would include:
+        // 1. Open budget plan edit page in two browser contexts
+        // 2. In context A: Click "Edit" on a budget line
+        // 3. In context B: Click "Edit" on the same budget line
+        // 4. In context B: Change values and click "Save"
+        // 5. In context A: Change values and click "Save"
+        // 6. Verify 409 Conflict dialog appears in context A
+        // 7. Verify dialog message: "De budgetregel is gewijzigd door een ander proces"
+        // 8. Click "Herladen" button
+        // 9. Verify latest data from context B is loaded
+        // 10. Verify edit mode is exited
+        await Page.GotoAsync($"{BaseUrl}/budgets");
+        // TODO: Implement full test flow
+    }
+
+    [Test]
+    [Ignore("Manual testing required - Playwright automation TBD")]
+    public async Task EditBudgetLine_CategoryChange_UpdatesInList()
+    {
+        // This is a skeleton test for manual verification
+        // Full Playwright implementation would include:
+        // 1. Navigate to budget plan edit page
+        // 2. Note the category of first budget line
+        // 3. Click "Edit" button on the budget line
+        // 4. Change category dropdown to different category
+        // 5. Click "Save" button
+        // 6. Verify category name updates in the table
+        // 7. Reload page and verify category persisted
+        await Page.GotoAsync($"{BaseUrl}/budgets");
+        // TODO: Implement full test flow
+    }
 }
