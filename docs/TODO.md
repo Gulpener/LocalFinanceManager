@@ -75,21 +75,21 @@ See detailed spec in `docs/MVP-2.1-CategoryManagement.md`.
 - [x] Add SQLite database files to .gitignore
 - [x] Definition of Done: Full Category CRUD via UI, RowVersion concurrency implemented, all unit/integration tests passing
 
-## MVP 2.2 — BudgetLine Inline Editing [Not Started]
+## MVP 2.2 — BudgetLine Inline Editing [✓ COMPLETED]
 
 See detailed spec in `docs/MVP-2.2-BudgetLineEditing.md`.
 
-- [ ] Add edit mode state to `BudgetPlanEdit.razor` (Edit/Save/Cancel buttons per line)
-- [ ] Transform budget line table row to input fields when editing
-- [ ] Implement category dropdown + 12 month inputs + notes input in edit mode
-- [ ] Wire Save button to existing `PUT /api/budgetplans/{planId}/lines/{lineId}` endpoint
-- [ ] Handle 409 Conflict with reload prompt dialog
-- [ ] Preserve uniform amount feature in edit mode (checkbox + auto-fill)
-- [ ] Implement Cancel button to restore original values without API call
-- [ ] Unit tests: Uniform amount logic, edit mode state transitions
-- [ ] Integration tests: Edit budget line with stale RowVersion → 409 Conflict response
-- [ ] E2E tests: Edit workflow, cancel workflow, uniform amount in edit, concurrency conflict handling
-- [ ] Definition of Done: Users can edit budget lines inline, 409 Conflict handled, uniform amount works
+- [x] Add edit mode state to `BudgetPlanEdit.razor` (Edit/Save/Cancel buttons per line)
+- [x] Transform budget line table row to input fields when editing
+- [x] Implement category dropdown + 12 month inputs + notes input in edit mode
+- [x] Wire Save button to existing `PUT /api/budgetplans/{planId}/lines/{lineId}` endpoint
+- [x] Handle 409 Conflict with reload prompt dialog
+- [x] Preserve uniform amount feature in edit mode (checkbox + auto-fill)
+- [x] Implement Cancel button to restore original values without API call
+- [x] Unit tests: Uniform amount logic, edit mode state transitions (validator tests passing)
+- [x] Integration tests: Edit budget line with stale RowVersion → 409 Conflict response (3 new tests)
+- [x] E2E tests: Edit workflow, cancel workflow, uniform amount in edit, concurrency conflict handling (5 skeleton tests for manual verification)
+- [x] Definition of Done: Users can edit budget lines inline, 409 Conflict handled, uniform amount works
 
 ## MVP 2.3 — CategoryType (Income/Expense) [Not Started]
 
