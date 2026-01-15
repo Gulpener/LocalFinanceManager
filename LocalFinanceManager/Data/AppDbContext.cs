@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<BudgetPlan> BudgetPlans => Set<BudgetPlan>();
     public DbSet<BudgetLine> BudgetLines => Set<BudgetLine>();
+    public DbSet<Transaction> Transactions => Set<Transaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,6 +127,44 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(bl => bl.BudgetPlanId);
             entity.HasIndex(bl => bl.CategoryId);
+        });
+
+        // Configure Transaction entity
+        modelBuilder.Entity<Transaction>(entity =>
+        {
+            entity.Property(t => t.Amount)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+
+            entity.Property(t => t.Date)
+                .IsRequired();
+
+            entity.Property(t => t.Description)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(t => t.Counterparty)
+                .HasMaxLength(200);
+
+            entity.Property(t => t.ExternalId)
+                .HasMaxLength(100);
+
+            entity.Property(t => t.OriginalImport)
+                .HasColumnType("TEXT"); // nvarchar(max) equivalent for SQLite
+
+            entity.Property(t => t.SourceFileName)
+                .HasMaxLength(255);
+
+            entity.HasOne(t => t.Account)
+                .WithMany()
+                .HasForeignKey(t => t.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for common queries and deduplication
+            entity.HasIndex(t => t.AccountId);
+            entity.HasIndex(t => t.Date);
+            entity.HasIndex(t => new { t.Date, t.Amount, t.ExternalId }); // Exact match deduplication
+            entity.HasIndex(t => t.ImportBatchId);
         });
     }
 
@@ -349,6 +388,73 @@ public class AppDbContext : DbContext
                     await BudgetLines.AddRangeAsync(budgetLines);
                     await SaveChangesAsync();
                 }
+            }
+        }
+
+        // Seed transactions if none exist
+        if (!await Transactions.AnyAsync())
+        {
+            var firstAccount = await Accounts.FirstOrDefaultAsync();
+            if (firstAccount != null)
+            {
+                var transactions = new[]
+                {
+                    new Transaction
+                    {
+                        Id = Guid.NewGuid(),
+                        AccountId = firstAccount.Id,
+                        Amount = -45.50m,
+                        Date = DateTime.UtcNow.AddDays(-5),
+                        Description = "Grocery Store Purchase",
+                        Counterparty = "Albert Heijn",
+                        ExternalId = "TRX001",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        IsArchived = false
+                    },
+                    new Transaction
+                    {
+                        Id = Guid.NewGuid(),
+                        AccountId = firstAccount.Id,
+                        Amount = -12.30m,
+                        Date = DateTime.UtcNow.AddDays(-4),
+                        Description = "Coffee Shop",
+                        Counterparty = "Starbucks",
+                        ExternalId = "TRX002",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        IsArchived = false
+                    },
+                    new Transaction
+                    {
+                        Id = Guid.NewGuid(),
+                        AccountId = firstAccount.Id,
+                        Amount = 2500.00m,
+                        Date = DateTime.UtcNow.AddDays(-3),
+                        Description = "Salary Payment",
+                        Counterparty = "Employer Corp",
+                        ExternalId = "TRX003",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        IsArchived = false
+                    },
+                    new Transaction
+                    {
+                        Id = Guid.NewGuid(),
+                        AccountId = firstAccount.Id,
+                        Amount = -850.00m,
+                        Date = DateTime.UtcNow.AddDays(-2),
+                        Description = "Rent Payment",
+                        Counterparty = "Landlord",
+                        ExternalId = "TRX004",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        IsArchived = false
+                    }
+                };
+
+                await Transactions.AddRangeAsync(transactions);
+                await SaveChangesAsync();
             }
         }
     }

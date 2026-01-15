@@ -22,6 +22,7 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IBudgetPlanRepository, BudgetPlanRepository>();
 builder.Services.AddScoped<IBudgetLineRepository, BudgetLineRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 // Register services
 builder.Services.AddScoped<AccountService>();
