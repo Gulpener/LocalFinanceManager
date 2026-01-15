@@ -122,7 +122,7 @@ else
             var updateRequest = new UpdateCategoryDto
             {
                 Name = categoryName,
-                RowVersion = null // The API will handle this internally via repository
+                RowVersion = currentCategory.RowVersion
             };
 
             var response = await CategoryService.UpdateAsync(Id, updateRequest);
