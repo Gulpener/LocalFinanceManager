@@ -1,6 +1,7 @@
 @page "/categories"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
 @inject CategoryService CategoryService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
@@ -31,6 +32,7 @@ else
         <thead>
             <tr>
                 <th>Naam</th>
+                <th>Type</th>
                 <th>Acties</th>
             </tr>
         </thead>
@@ -39,6 +41,7 @@ else
             {
                 <tr>
                     <td>@category.Name</td>
+                    <td>@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven")</td>
                     <td>
                         <a href="/categories/@category.Id/edit" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> Bewerken

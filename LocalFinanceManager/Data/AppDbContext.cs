@@ -79,6 +79,10 @@ public class AppDbContext : DbContext
                 .IsRequired()
                 .HasMaxLength(100);
 
+            entity.Property(c => c.Type)
+                .HasConversion<int>() // Store enum as int
+                .HasDefaultValue(CategoryType.Expense);
+
             entity.HasIndex(c => c.Name);
         });
 
@@ -216,14 +220,19 @@ public class AppDbContext : DbContext
         {
             var categories = new[]
             {
-                new Category { Id = Guid.NewGuid(), Name = "Huur", IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Boodschappen", IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Transport", IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Utilities", IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Entertainment", IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Healthcare", IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Savings", IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Other", IsArchived = false }
+                // Income categories
+                new Category { Id = Guid.NewGuid(), Name = "Salaris", Type = CategoryType.Income, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Freelance", Type = CategoryType.Income, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Dividend", Type = CategoryType.Income, IsArchived = false },
+                // Expense categories
+                new Category { Id = Guid.NewGuid(), Name = "Huur", Type = CategoryType.Expense, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Boodschappen", Type = CategoryType.Expense, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Transport", Type = CategoryType.Expense, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Utilities", Type = CategoryType.Expense, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Entertainment", Type = CategoryType.Expense, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Healthcare", Type = CategoryType.Expense, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Savings", Type = CategoryType.Expense, IsArchived = false },
+                new Category { Id = Guid.NewGuid(), Name = "Other", Type = CategoryType.Expense, IsArchived = false }
             };
 
             await Categories.AddRangeAsync(categories);
