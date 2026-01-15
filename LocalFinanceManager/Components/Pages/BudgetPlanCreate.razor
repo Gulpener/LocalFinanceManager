@@ -1,0 +1,106 @@
+@page "/budgets/new"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@inject BudgetPlanService BudgetPlanService
+@inject AccountService AccountService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Create Budget Plan</PageTitle>
+
+<h1>Create Budget Plan</h1>
+
+<div class="card">
+    <div class="card-body">
+        <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <div class="mb-3">
+                <label for="accountId" class="form-label">Account</label>
+                <InputSelect id="accountId" class="form-select" @bind-Value="model.AccountId">
+                    <option value="">-- Select an account --</option>
+                    @if (accounts != null)
+                    {
+                        @foreach (var account in accounts)
+                        {
+                            <option value="@account.Id">@account.Label (@account.Currency)</option>
+                        }
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => model.AccountId)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="year" class="form-label">Year</label>
+                <InputNumber id="year" class="form-control" @bind-Value="model.Year" />
+                <ValidationMessage For="@(() => model.Year)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <InputText id="name" class="form-control" @bind-Value="model.Name" />
+                <ValidationMessage For="@(() => model.Name)" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    Create Budget Plan
+                </button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public Guid AccountId { get; set; }
+
+    private CreateBudgetPlanDto model = new() { Year = DateTime.Now.Year };
+    private List<AccountResponse>? accounts;
+    private bool isSubmitting = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        accounts = await AccountService.GetAllActiveAsync();
+        if (AccountId != Guid.Empty)
+        {
+            model = model with { AccountId = AccountId };
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await BudgetPlanService.CreateAsync(model);
+            Navigation.NavigateTo($"/budgets/{result.Id}/edit");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/budgets");
+    }
+}

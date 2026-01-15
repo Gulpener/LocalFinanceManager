@@ -40,22 +40,22 @@ See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be complete
 - [x] Seed data: 3 sample accounts (EUR Checking, USD Savings, EUR Credit) in Development environment
 - [x] Definition of Done: All test projects populated, RowVersion working, archived accounts filtered correctly
 
-## MVP 2 — Budgetplan per account (jaarlijks) [High Priority]
+## MVP 2 — Budgetplan per account (jaarlijks) [✓ COMPLETED]
 
-- [ ] Entity: BudgetPlan (extends BaseEntity, AccountId FK, Year int, Name, RowVersion)
-- [ ] Entity: BudgetLine (extends BaseEntity, BudgetPlanId FK, CategoryId, MonthlyAmounts decimal[12] as JSON, RowVersion)
-- [ ] Create `IBudgetPlanRepository` and `IBudgetLineRepository` with soft-delete filtering
-- [ ] BudgetPlan CRUD API: GET /accounts/{id}/budgetplans, POST, PUT, DELETE
-- [ ] BudgetLine CRUD API: POST /budgetplans/{id}/lines, PUT, DELETE
-- [ ] Aggregation: Sum MonthlyAmounts JSON array → YearTotal computed property
-- [ ] Blazor UI: Budget editor table (rows = categories, columns = months Jan-Dec + Year-total)
-- [ ] Bulk uniform value assignment: Copy single month value to all 12 months
-- [ ] Concurrency: RowVersion on budget edits → 409 Conflict + reload prompts
-- [ ] Unit tests: MonthlyAmounts JSON storage/retrieval, aggregation calculations, RowVersion conflict
-- [ ] Integration tests: End-to-end plan + lines creation, monthly aggregation queries
-- [ ] E2E tests: Budget editor UI, per-month entry, bulk uniform assignment, persistence
-- [ ] Seed data: Sample budget plan for test account with 5 budget lines + monthly allocations
-- [ ] Definition of Done: JSON storage working, aggregations accurate, RowVersion enforced
+- [x] Entity: BudgetPlan (extends BaseEntity, AccountId FK, Year int, Name, RowVersion)
+- [x] Entity: BudgetLine (extends BaseEntity, BudgetPlanId FK, CategoryId, MonthlyAmounts decimal[12] as JSON, RowVersion)
+- [x] Create `IBudgetPlanRepository` and `IBudgetLineRepository` with soft-delete filtering
+- [x] BudgetPlan CRUD API: GET /accounts/{id}/budgetplans, POST, PUT, DELETE
+- [x] BudgetLine CRUD API: POST /budgetplans/{id}/lines, PUT, DELETE
+- [x] Aggregation: Sum MonthlyAmounts JSON array → YearTotal computed property
+- [x] Blazor UI: Budget editor table (rows = categories, columns = months Jan-Dec + Year-total)
+- [x] Bulk uniform value assignment: Copy single month value to all 12 months
+- [x] Concurrency: RowVersion on budget edits → 409 Conflict + reload prompts
+- [x] Unit tests: MonthlyAmounts JSON storage/retrieval, aggregation calculations, RowVersion conflict
+- [x] Integration tests: End-to-end plan + lines creation, monthly aggregation queries
+- [x] E2E tests: Budget editor UI, per-month entry, bulk uniform assignment, persistence
+- [x] Seed data: Sample budget plan for test account with 5 budget lines + monthly allocations
+- [x] Definition of Done: JSON storage working, aggregations accurate, RowVersion enforced
 
 ## MVP 3 — Import transacties [High Priority]
 

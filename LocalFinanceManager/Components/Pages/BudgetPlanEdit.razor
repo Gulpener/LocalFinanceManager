@@ -1,0 +1,270 @@
+@page "/budgets/{Id:guid}/edit"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@inject BudgetPlanService BudgetPlanService
+@inject CategoryService CategoryService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Edit Budget Plan</PageTitle>
+
+@if (budgetPlan == null)
+{
+    <p><em>Loading budget plan...</em></p>
+}
+else
+{
+    <h1>Edit Budget Plan: @budgetPlan.Name (@budgetPlan.Year)</h1>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5>Plan Details</h5>
+        </div>
+        <div class="card-body">
+            <EditForm Model="@updateModel" OnValidSubmit="HandleUpdatePlan">
+                <div class="row">
+                    <div class="col-md-8">
+                        <label for="name" class="form-label">Plan Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="updateModel.Name" />
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Update Name</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(planErrorMessage))
+                {
+                    <div class="alert alert-danger mt-2">@planErrorMessage</div>
+                }
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Budget Lines</h5>
+            <button class="btn btn-sm btn-primary" @onclick="ShowAddLineForm">
+                <i class="bi bi-plus-circle"></i> Add Budget Line
+            </button>
+        </div>
+        <div class="card-body">
+            @if (showAddLineForm)
+            {
+                <div class="card mb-3 border-primary">
+                    <div class="card-header bg-primary text-white">New Budget Line</div>
+                    <div class="card-body">
+                        <EditForm Model="@newLineModel" OnValidSubmit="HandleAddLine">
+                            <div class="mb-3">
+                                <label class="form-label">Category</label>
+                                <InputSelect class="form-select" @bind-Value="newLineModel.CategoryId">
+                                    <option value="">-- Select a category --</option>
+                                    @if (categories != null)
+                                    {
+                                        @foreach (var category in categories)
+                                        {
+                                            <option value="@category.Id">@category.Name</option>
+                                        }
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Monthly Amounts (or enter uniform value)</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text">Uniform Value</span>
+                                    <input type="number" class="form-control" @bind="uniformAmount" step="0.01" />
+                                    <button type="button" class="btn btn-secondary" @onclick="ApplyUniformAmount">
+                                        Apply to All Months
+                                    </button>
+                                </div>
+                                <div class="row g-2">
+                                    @for (int i = 0; i < 12; i++)
+                                    {
+                                        var monthIndex = i;
+                                        <div class="col-md-2">
+                                            <label class="form-label small">@GetMonthName(i)</label>
+                                            <input type="number" class="form-control form-control-sm"
+                                                @bind="newLineMonthlyAmounts[monthIndex]" step="0.01" />
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notes</label>
+                                <InputText class="form-control" @bind-Value="newLineModel.Notes" />
+                            </div>
+                            @if (!string.IsNullOrEmpty(lineErrorMessage))
+                            {
+                                <div class="alert alert-danger">@lineErrorMessage</div>
+                            }
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">Add Line</button>
+                                <button type="button" class="btn btn-secondary" @onclick="CancelAddLine">Cancel</button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            }
+
+            @if (budgetPlan.BudgetLines.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                @for (int i = 0; i < 12; i++)
+                                {
+                                    <th class="text-end">@GetMonthAbbr(i)</th>
+                                }
+                                <th class="text-end">Year Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var line in budgetPlan.BudgetLines)
+                            {
+                                <tr>
+                                    <td>@line.CategoryName</td>
+                                    @for (int i = 0; i < 12; i++)
+                                    {
+                                        <td class="text-end">@line.MonthlyAmounts[i].ToString("F2")</td>
+                                    }
+                                    <td class="text-end fw-bold">@line.YearTotal.ToString("F2")</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => ArchiveLine(line.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                            <tr class="table-secondary fw-bold">
+                                <td>TOTAL</td>
+                                @for (int i = 0; i < 12; i++)
+                                {
+                                    var monthTotal = budgetPlan.BudgetLines.Sum(l => l.MonthlyAmounts[i]);
+                                    <td class="text-end">@monthTotal.ToString("F2")</td>
+                                }
+                                <td class="text-end">@budgetPlan.BudgetLines.Sum(l => l.YearTotal).ToString("F2")</td>
+                                <td></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No budget lines yet. Click "Add Budget Line" to create one.
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button class="btn btn-secondary" @onclick="GoBack">Back to Budget Plans</button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private BudgetPlanDto? budgetPlan;
+    private List<CategoryDto>? categories;
+    private UpdateBudgetPlanDto updateModel = new();
+    private CreateBudgetLineDto newLineModel = new();
+    private decimal[] newLineMonthlyAmounts = new decimal[12];
+    private decimal uniformAmount = 0;
+    private bool showAddLineForm = false;
+    private string? planErrorMessage;
+    private string? lineErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBudgetPlan();
+        await LoadCategories();
+    }
+
+    private async Task LoadBudgetPlan()
+    {
+        budgetPlan = await BudgetPlanService.GetByIdAsync(Id);
+        if (budgetPlan != null)
+        {
+            updateModel = new UpdateBudgetPlanDto
+            {
+                Name = budgetPlan.Name,
+                RowVersion = budgetPlan.RowVersion
+            };
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        categories = await CategoryService.GetAllActiveAsync();
+    }
+
+    private async Task HandleUpdatePlan()
+    {
+        planErrorMessage = null;
+        try
+        {
+            await BudgetPlanService.UpdateAsync(Id, updateModel);
+            await LoadBudgetPlan();
+        }
+        catch (Exception ex)
+        {
+            planErrorMessage = ex.Message;
+        }
+    }
+
+    private void ShowAddLineForm()
+    {
+        showAddLineForm = true;
+        newLineModel = new CreateBudgetLineDto { BudgetPlanId = Id };
+        newLineMonthlyAmounts = new decimal[12];
+        uniformAmount = 0;
+    }
+
+    private void CancelAddLine()
+    {
+        showAddLineForm = false;
+        lineErrorMessage = null;
+    }
+
+    private void ApplyUniformAmount()
+    {
+        for (int i = 0; i < 12; i++)
+        {
+            newLineMonthlyAmounts[i] = uniformAmount;
+        }
+    }
+
+    private async Task HandleAddLine()
+    {
+        lineErrorMessage = null;
+        try
+        {
+            newLineModel = newLineModel with { MonthlyAmounts = newLineMonthlyAmounts };
+            await BudgetPlanService.CreateLineAsync(newLineModel);
+            await LoadBudgetPlan();
+            showAddLineForm = false;
+        }
+        catch (Exception ex)
+        {
+            lineErrorMessage = ex.Message;
+        }
+    }
+
+    private async Task ArchiveLine(Guid lineId)
+    {
+        await BudgetPlanService.ArchiveLineAsync(lineId);
+        await LoadBudgetPlan();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/budgets");
+    }
+
+    private string GetMonthName(int index) => new DateTime(2000, index + 1, 1).ToString("MMMM");
+    private string GetMonthAbbr(int index) => new DateTime(2000, index + 1, 1).ToString("MMM");
+}

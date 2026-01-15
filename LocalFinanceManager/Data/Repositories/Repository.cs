@@ -78,6 +78,7 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         if (entity != null)
         {
             entity.IsArchived = true;
+            await _context.SaveChangesAsync();
             _logger.LogInformation("Archived {EntityType} with ID {Id}", typeof(T).Name, id);
         }
     }

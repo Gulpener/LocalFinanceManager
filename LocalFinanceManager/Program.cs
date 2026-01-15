@@ -19,13 +19,23 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Register repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IBudgetPlanRepository, BudgetPlanRepository>();
+builder.Services.AddScoped<IBudgetLineRepository, BudgetLineRepository>();
 
 // Register services
 builder.Services.AddScoped<AccountService>();
+builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<BudgetPlanService>();
 
 // Register validators
 builder.Services.AddScoped<IValidator<CreateAccountRequest>, CreateAccountRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateAccountRequest>, UpdateAccountRequestValidator>();
+builder.Services.AddScoped<IValidator<CreateCategoryDto>, CreateCategoryDtoValidator>();
+builder.Services.AddScoped<IValidator<CreateBudgetPlanDto>, CreateBudgetPlanDtoValidator>();
+builder.Services.AddScoped<IValidator<UpdateBudgetPlanDto>, UpdateBudgetPlanDtoValidator>();
+builder.Services.AddScoped<IValidator<CreateBudgetLineDto>, CreateBudgetLineDtoValidator>();
+builder.Services.AddScoped<IValidator<UpdateBudgetLineDto>, UpdateBudgetLineDtoValidator>();
 
 // Register IbanNet
 builder.Services.AddSingleton<IIbanValidator, IbanValidator>();
@@ -47,6 +57,15 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    // Recreate database if environment variable is set (Development only)
+    var recreateDb = app.Configuration.GetValue<bool>("RecreateDatabase");
+    if (recreateDb && app.Environment.IsDevelopment())
+    {
+        await context.Database.EnsureDeletedAsync();
+        app.Logger.LogInformation("Database deleted due to RecreateDatabase flag");
+    }
+
     await context.Database.MigrateAsync();
 
     // Seed only in Development
