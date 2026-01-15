@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalFinanceManager.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260115080305_AddCategoryTypeField")]
+    [Migration("20260115080958_AddCategoryTypeField")]
     partial class AddCategoryTypeField
     {
         /// <inheritdoc />
@@ -198,7 +198,7 @@ namespace LocalFinanceManager.Migrations
                     b.Property<int>("Type")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
-                        .HasDefaultValue(1);
+                        .HasDefaultValue(0);
 
                     b.Property<DateTime>("UpdatedAt")
                         .ValueGeneratedOnAdd()

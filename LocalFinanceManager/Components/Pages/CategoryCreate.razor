@@ -33,13 +33,17 @@
                 <label class="form-label">Type</label>
                 <div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="type" id="typeIncome" value="@CategoryType.Income" checked="@(categoryType == CategoryType.Income)" @onchange="@(() => categoryType = CategoryType.Income)" />
+                        <input class="form-check-input" type="radio" name="type" id="typeIncome" 
+                               checked="@(categoryType == CategoryType.Income)" 
+                               @onclick="@(() => categoryType = CategoryType.Income)" />
                         <label class="form-check-label" for="typeIncome">
                             Inkomsten
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="type" id="typeExpense" value="@CategoryType.Expense" checked="@(categoryType == CategoryType.Expense)" @onchange="@(() => categoryType = CategoryType.Expense)" />
+                        <input class="form-check-input" type="radio" name="type" id="typeExpense" 
+                               checked="@(categoryType == CategoryType.Expense)" 
+                               @onclick="@(() => categoryType = CategoryType.Expense)" />
                         <label class="form-check-label" for="typeExpense">
                             Uitgaven
                         </label>
