@@ -4,6 +4,7 @@
 @inject AppDbContext DbContext
 @using LocalFinanceManager.Data
 @using Microsoft.EntityFrameworkCore
+@using System.Text.RegularExpressions
 
 <PageTitle>Admin Settings</PageTitle>
 
@@ -164,10 +165,10 @@
         // Parse database path from connection string
         if (!string.IsNullOrEmpty(_connectionString))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(
+            var match = Regex.Match(
                 _connectionString,
                 @"Data Source=([^;]+)",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                RegexOptions.IgnoreCase);
 
             if (match.Success)
             {

@@ -5,6 +5,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 
 namespace LocalFinanceManager.E2E;
 
@@ -14,7 +15,6 @@ namespace LocalFinanceManager.E2E;
 /// </summary>
 public class PlaywrightFixture : WebApplicationFactory<Program>
 {
-    private SqliteConnection? _connection;
     private const string TestDatabasePath = "localfinancemanager.test.db";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -60,8 +60,6 @@ public class PlaywrightFixture : WebApplicationFactory<Program>
     {
         if (disposing)
         {
-            _connection?.Dispose();
-            
             // Clean up test database file
             if (File.Exists(TestDatabasePath))
             {

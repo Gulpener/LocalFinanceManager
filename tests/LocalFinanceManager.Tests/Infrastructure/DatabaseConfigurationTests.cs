@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace LocalFinanceManager.Tests.Infrastructure;
 
@@ -52,10 +54,10 @@ public class DatabaseConfigurationTests
         var connectionString = "Data Source=localfinancemanager.dev.db";
 
         // Act
-        var match = System.Text.RegularExpressions.Regex.Match(
+        var match = Regex.Match(
             connectionString,
             @"Data Source=([^;]+)",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            RegexOptions.IgnoreCase);
 
         // Assert
         Assert.That(match.Success, Is.True, "Should be able to parse database path from connection string");
@@ -69,10 +71,10 @@ public class DatabaseConfigurationTests
         var connectionString = "Data Source=/var/lib/myapp/localfinancemanager.db;Mode=ReadWrite";
 
         // Act
-        var match = System.Text.RegularExpressions.Regex.Match(
+        var match = Regex.Match(
             connectionString,
             @"Data Source=([^;]+)",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            RegexOptions.IgnoreCase);
 
         // Assert
         Assert.That(match.Success, Is.True);
