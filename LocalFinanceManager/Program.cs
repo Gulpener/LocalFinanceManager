@@ -60,10 +60,17 @@ using (var scope = app.Services.CreateScope())
 
     // Recreate database if environment variable is set (Development only)
     var recreateDb = app.Configuration.GetValue<bool>("RecreateDatabase");
-    if (recreateDb && app.Environment.IsDevelopment())
+    if (recreateDb)
     {
-        await context.Database.EnsureDeletedAsync();
-        app.Logger.LogInformation("Database deleted due to RecreateDatabase flag");
+        if (app.Environment.IsDevelopment())
+        {
+            await context.Database.EnsureDeletedAsync();
+            app.Logger.LogInformation("Database deleted due to RecreateDatabase flag");
+        }
+        else
+        {
+            app.Logger.LogWarning("RecreateDatabase flag ignored in non-Development environment for safety");
+        }
     }
 
     await context.Database.MigrateAsync();

@@ -28,4 +28,9 @@
     <ProjectReference Include="..\..\LocalFinanceManager\LocalFinanceManager.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\LocalFinanceManager\appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\LocalFinanceManager\appsettings.Development.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
