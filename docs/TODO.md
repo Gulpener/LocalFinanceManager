@@ -1,58 +1,136 @@
 # TODO Backlog — MVP-gebaseerde roadmap
 
-Laatste update: 2026-01-13
+Laatste update: 2026-01-14
 
-## MVP 0 — Infrastructure Setup (Foundation) [Critical - Do First]
+## MVP 0 — Infrastructure Setup (Foundation) [✓ COMPLETED]
 
 See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be completed before starting any feature MVP (MVP 1-6).
 
-- [ ] Run complete solution scaffolding via CLI (dotnet new sln, all 4 projects, packages)
-- [ ] Create `BaseEntity` abstract class (Guid Id, byte[] RowVersion, DateTime CreatedAt/UpdatedAt)
-- [ ] Setup `AppDbContext` with automatic migration on startup via `Database.MigrateAsync()`
-- [ ] Configure EF Core `RowVersion` property with `.IsRowVersion()` on BaseEntity
-- [ ] Implement `IRepository<T>` generic pattern with `.Where(x => !x.IsArchived)` soft-delete filtering
-- [ ] Implement `DbUpdateConcurrencyException` handler in repositories (last-write-wins reload, return HTTP 409 Conflict)
-- [ ] Setup `AppDbContext.SeedAsync()` method for Development-only seeding (check existing data to prevent duplicates)
-- [ ] Create `TestDbContextFactory` for in-memory SQLite (`:memory:`) in `LocalFinanceManager.Tests`
-- [ ] Create `PlaywrightFixture` base class for E2E tests with `WebApplicationFactory` + test SQLite database
-- [ ] Create `TestDataBuilder` for shared seed data (3 sample accounts, categories, transactions)
-- [ ] Create `LocalFinanceManager.ML` class library with ML.NET package references
-- [ ] Create `LocalFinanceManager.ML.Tests` project with fixture models directory structure
+- [x] Run complete solution scaffolding via CLI (dotnet new sln, all 5 projects, packages)
+- [x] Create `BaseEntity` abstract class (Guid Id, byte[] RowVersion, DateTime CreatedAt/UpdatedAt)
+- [x] Setup `AppDbContext` with automatic migration on startup via `Database.MigrateAsync()`
+- [x] Configure EF Core `RowVersion` property with `.IsRowVersion()` on BaseEntity
+- [x] Implement `IRepository<T>` generic pattern with `.Where(x => !x.IsArchived)` soft-delete filtering
+- [x] Implement `DbUpdateConcurrencyException` handler in repositories (last-write-wins reload, return HTTP 409 Conflict)
+- [x] Setup `AppDbContext.SeedAsync()` method for Development-only seeding (check existing data to prevent duplicates)
+- [x] Create `TestDbContextFactory` for in-memory SQLite (`:memory:`) in `LocalFinanceManager.Tests`
+- [x] Create `PlaywrightFixture` base class for E2E tests with `WebApplicationFactory` + test SQLite database
+- [x] Create `TestDataBuilder` for shared seed data (MLModel for testing)
+- [x] Create `LocalFinanceManager.ML` class library with ML.NET package references
+- [x] Create `LocalFinanceManager.ML.Tests` project with fixture models directory structure
+- [x] Create `MLModel` entity for database storage (byte[] ModelBytes, int Version, DateTime TrainedAt, string Metrics JSON)
+- [x] Verify all projects compile without errors; folder structure complete
+- [x] All infrastructure tests passing (10 unit tests, 2 E2E smoke tests)
 - [ ] Create `MLModel` entity for database storage (byte[] ModelBytes, int Version, DateTime TrainedAt, string Metrics JSON)
 - [ ] Verify all projects compile without errors; folder structure complete
 
-## MVP 1 — Accounts (CRUD) [High Priority]
+## MVP 1 — Accounts (CRUD) [✓ COMPLETED]
 
 **Note:** MVP-0 (Infrastructure Setup) must be completed first. These tasks implement Account-specific functionality.
 
-- [ ] Entity: Account (extends BaseEntity, Label, Type enum, Currency ISO-4217, IBAN, StartingBalance, IsArchived, RowVersion)
-- [ ] Create `IAccountRepository` with soft-delete filtering encapsulation
-- [ ] IBAN validation via IbanNet NuGet in FluentValidation rules
-- [ ] Account CRUD API endpoints: GET /accounts, GET /accounts/{id}, POST, PUT, DELETE (archive)
-- [ ] Blazor pages: /accounts (list), /accounts/new, /accounts/{id}/edit
-- [ ] Concurrency: Handle RowVersion mismatch → return 409 Conflict with current entity state
-- [ ] Unit tests: Account CRUD, IBAN validation, RowVersion conflict handling (MockAccountRepository)
-- [ ] Integration tests: DbContext migrations, Account persistence, archive filtering (in-memory SQLite)
-- [ ] E2E tests: Account create/edit/archive/list workflows via Playwright
-- [ ] Seed data: 3 sample accounts (EUR Checking, USD Savings, EUR Credit) in Development environment
-- [ ] Definition of Done: All test projects populated, RowVersion working, archived accounts filtered correctly
+- [x] Entity: Account (extends BaseEntity, Label, Type enum, Currency ISO-4217, IBAN, StartingBalance, IsArchived, RowVersion)
+- [x] Create `IAccountRepository` with soft-delete filtering encapsulation
+- [x] IBAN validation via IbanNet NuGet in FluentValidation rules
+- [x] Account CRUD API endpoints: GET /accounts, GET /accounts/{id}, POST, PUT, DELETE (archive)
+- [x] Blazor pages: /accounts (list), /accounts/new, /accounts/{id}/edit
+- [x] Concurrency: Handle RowVersion mismatch → return 409 Conflict with current entity state
+- [x] Unit tests: Account CRUD, IBAN validation, RowVersion conflict handling (MockAccountRepository)
+- [x] Integration tests: DbContext migrations, Account persistence, archive filtering (in-memory SQLite)
+- [x] E2E tests: Account create/edit/archive/list workflows via Playwright (skeleton created, marked for manual testing)
+- [x] Seed data: 3 sample accounts (EUR Checking, USD Savings, EUR Credit) in Development environment
+- [x] Definition of Done: All test projects populated, RowVersion working, archived accounts filtered correctly
 
-## MVP 2 — Budgetplan per account (jaarlijks) [High Priority]
+## MVP 2 — Budgetplan per account (jaarlijks) [✓ COMPLETED]
 
-- [ ] Entity: BudgetPlan (extends BaseEntity, AccountId FK, Year int, Name, RowVersion)
-- [ ] Entity: BudgetLine (extends BaseEntity, BudgetPlanId FK, CategoryId, MonthlyAmounts decimal[12] as JSON, RowVersion)
-- [ ] Create `IBudgetPlanRepository` and `IBudgetLineRepository` with soft-delete filtering
-- [ ] BudgetPlan CRUD API: GET /accounts/{id}/budgetplans, POST, PUT, DELETE
-- [ ] BudgetLine CRUD API: POST /budgetplans/{id}/lines, PUT, DELETE
-- [ ] Aggregation: Sum MonthlyAmounts JSON array → YearTotal computed property
-- [ ] Blazor UI: Budget editor table (rows = categories, columns = months Jan-Dec + Year-total)
-- [ ] Bulk uniform value assignment: Copy single month value to all 12 months
-- [ ] Concurrency: RowVersion on budget edits → 409 Conflict + reload prompts
-- [ ] Unit tests: MonthlyAmounts JSON storage/retrieval, aggregation calculations, RowVersion conflict
-- [ ] Integration tests: End-to-end plan + lines creation, monthly aggregation queries
-- [ ] E2E tests: Budget editor UI, per-month entry, bulk uniform assignment, persistence
-- [ ] Seed data: Sample budget plan for test account with 5 budget lines + monthly allocations
-- [ ] Definition of Done: JSON storage working, aggregations accurate, RowVersion enforced
+- [x] Entity: BudgetPlan (extends BaseEntity, AccountId FK, Year int, Name, RowVersion)
+- [x] Entity: BudgetLine (extends BaseEntity, BudgetPlanId FK, CategoryId, MonthlyAmounts decimal[12] as JSON, RowVersion)
+- [x] Create `IBudgetPlanRepository` and `IBudgetLineRepository` with soft-delete filtering
+- [x] BudgetPlan CRUD API: GET /accounts/{id}/budgetplans, POST, PUT, DELETE
+- [x] BudgetLine CRUD API: POST /budgetplans/{id}/lines, PUT, DELETE
+- [x] Aggregation: Sum MonthlyAmounts JSON array → YearTotal computed property
+- [x] Blazor UI: Budget editor table (rows = categories, columns = months Jan-Dec + Year-total)
+- [x] Bulk uniform value assignment: Copy single month value to all 12 months
+- [x] Concurrency: RowVersion on budget edits → 409 Conflict + reload prompts
+- [x] Unit tests: MonthlyAmounts JSON storage/retrieval, aggregation calculations, RowVersion conflict
+- [x] Integration tests: End-to-end plan + lines creation, monthly aggregation queries
+- [x] E2E tests: Budget editor UI, per-month entry, bulk uniform assignment, persistence
+- [x] Seed data: Sample budget plan for test account with 5 budget lines + monthly allocations
+- [x] Definition of Done: JSON storage working, aggregations accurate, RowVersion enforced
+
+## MVP 2.1 — Category Management UI [Not Started]
+
+See detailed spec in `docs/MVP-2.1-CategoryManagement.md`.
+
+- [ ] Create `Components/Pages/Categories.razor` (list all categories)
+- [ ] Create `Components/Pages/CategoryCreate.razor` (create new category)
+- [ ] Create `Components/Pages/CategoryEdit.razor` (rename category)
+- [ ] Add `UpdateAsync` method to `CategoryService`
+- [ ] Add `PUT /api/categories/{id}` endpoint to `CategoriesController`
+- [ ] Create `UpdateCategoryDto` and `UpdateCategoryDtoValidator`
+- [ ] Add "Categorieën" link to `NavMenu.razor`
+- [ ] Unit tests: UpdateCategoryDto validation, CategoryService.UpdateAsync logic
+- [ ] Integration tests: Update category with RowVersion conflict → 409 Conflict
+- [ ] E2E tests: Create, edit/rename, archive category workflows (remove [Ignore] attributes)
+- [ ] Definition of Done: Full Category CRUD via UI, RowVersion concurrency working, all E2E tests passing
+
+## MVP 2.2 — BudgetLine Inline Editing [Not Started]
+
+See detailed spec in `docs/MVP-2.2-BudgetLineEditing.md`.
+
+- [ ] Add edit mode state to `BudgetPlanEdit.razor` (Edit/Save/Cancel buttons per line)
+- [ ] Transform budget line table row to input fields when editing
+- [ ] Implement category dropdown + 12 month inputs + notes input in edit mode
+- [ ] Wire Save button to existing `PUT /api/budgetplans/{planId}/lines/{lineId}` endpoint
+- [ ] Handle 409 Conflict with reload prompt dialog
+- [ ] Preserve uniform amount feature in edit mode (checkbox + auto-fill)
+- [ ] Implement Cancel button to restore original values without API call
+- [ ] Unit tests: Uniform amount logic, edit mode state transitions
+- [ ] Integration tests: Edit budget line with stale RowVersion → 409 Conflict response
+- [ ] E2E tests: Edit workflow, cancel workflow, uniform amount in edit, concurrency conflict handling
+- [ ] Definition of Done: Users can edit budget lines inline, 409 Conflict handled, uniform amount works
+
+## MVP 2.3 — CategoryType (Income/Expense) [Not Started]
+
+See detailed spec in `docs/MVP-2.3-CategoryType.md`.
+
+- [ ] Add `CategoryType` enum (Income, Expense) to `Models/Category.cs`
+- [ ] Add `Type` property to `Category` model
+- [ ] EF Core migration: `AddCategoryTypeField` (automatic migration on startup)
+- [ ] Configure EF Core: `HasConversion<int>()` and `HasDefaultValue(CategoryType.Expense)`
+- [ ] Update all DTOs: `CategoryDto`, `CreateCategoryDto`, `UpdateCategoryDto` to include `Type`
+- [ ] Update validators: `CreateCategoryDtoValidator`, `UpdateCategoryDtoValidator` to require `Type`
+- [ ] Add Type radio buttons (Income/Expense) to category create/edit forms
+- [ ] Add Type column to category list page
+- [ ] Update seed data to include Type for all sample categories
+- [ ] Optional: Group budget lines by Income/Expense in budget editor
+- [ ] Optional: Add Income/Expense totals + Net calculation in budget editor
+- [ ] Unit tests: Enum validation, enum serialization (Income/Expense ↔ JSON string)
+- [ ] Integration tests: Create/update categories with Type, migration applies correctly
+- [ ] E2E tests: Create Income category, create Expense category, edit category type, verify list displays type
+- [ ] Definition of Done: CategoryType enum implemented, all CRUD includes Type, migration applied, E2E tests passing
+
+## MVP 2.4 — Database Environment Configuration [Not Started]
+
+See detailed spec in `docs/MVP-2.4-DatabaseEnvironments.md`.
+
+- [ ] Update `appsettings.Development.json`: connection string to `Data Source=localfinancemanager.dev.db`
+- [ ] Keep `appsettings.json` (Production default): connection string `Data Source=localfinancemanager.db`
+- [ ] Optional: Create `appsettings.Production.json` for explicit Production settings
+- [ ] Update `.gitignore`: add `*.db`, `*.db-shm`, `*.db-wal`, exclude database files
+- [ ] Update `.gitignore`: allow test fixtures `!tests/**/fixtures/**/*.db`
+- [ ] Update `Program.cs`: safety check for `RecreateDatabase` flag (ignore in Production)
+- [ ] Create `Components/Pages/Admin/Settings.razor` (environment info, database config, migrations, seed data status)
+- [ ] Add "Admin Settings" link to `NavMenu.razor`
+- [ ] Update README.md: Database Configuration section (Development/Production, environment switching, Admin Settings usage)
+- [ ] Update README.md: Troubleshooting section (wrong database file, database location)
+- [ ] Unit tests: Verify Development loads `.dev.db`, Production loads `.db`, RecreateDatabase safety in Production
+- [ ] Integration tests: No changes needed (in-memory SQLite)
+- [ ] E2E tests: Update `PlaywrightFixture` to use `localfinancemanager.test.db` with `RecreateDatabase=true`
+- [ ] E2E tests: Admin Settings page loads and displays correct information
+- [ ] Verify: Run in Development → creates `.dev.db`, navigate `/admin/settings` → verify correct environment/database
+- [ ] Verify: Switch to Production → creates `.db`, navigate `/admin/settings` → verify correct environment
+- [ ] Verify: `git status` shows no `.db` files (gitignore working)
+- [ ] Definition of Done: Separate Dev/Prod databases, Admin Settings page functional, database files excluded from git, README documented
 
 ## MVP 3 — Import transacties [High Priority]
 

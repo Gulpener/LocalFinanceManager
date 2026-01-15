@@ -1,0 +1,126 @@
+@page "/accounts/new"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@inject AccountService AccountService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Create Account</PageTitle>
+
+<h1>Create New Account</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="@request" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <div class="mb-3">
+                <label for="label" class="form-label">Label</label>
+                <InputText id="label" class="form-control" @bind-Value="request.Label" />
+                @if (validationErrors.ContainsKey("Label"))
+                {
+                    <div class="text-danger">@string.Join(", ", validationErrors["Label"])</div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <label for="type" class="form-label">Account Type</label>
+                <InputSelect id="type" class="form-select" @bind-Value="request.Type">
+                    <option value="@AccountType.Checking">Checking</option>
+                    <option value="@AccountType.Savings">Savings</option>
+                    <option value="@AccountType.Credit">Credit</option>
+                    <option value="@AccountType.Other">Other</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label for="iban" class="form-label">IBAN</label>
+                <InputText id="iban" class="form-control" @bind-Value="request.IBAN" placeholder="NL91ABNA0417164300" />
+                @if (validationErrors.ContainsKey("IBAN"))
+                {
+                    <div class="text-danger">@string.Join(", ", validationErrors["IBAN"])</div>
+                }
+                <div class="form-text">Enter IBAN with or without spaces</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="currency" class="form-label">Currency</label>
+                <InputText id="currency" class="form-control" @bind-Value="request.Currency" placeholder="EUR" maxlength="3" />
+                @if (validationErrors.ContainsKey("Currency"))
+                {
+                    <div class="text-danger">@string.Join(", ", validationErrors["Currency"])</div>
+                }
+                <div class="form-text">3-letter ISO code (e.g., EUR, USD)</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="startingBalance" class="form-label">Starting Balance</label>
+                <InputNumber id="startingBalance" class="form-control" @bind-Value="request.StartingBalance" />
+                @if (validationErrors.ContainsKey("StartingBalance"))
+                {
+                    <div class="text-danger">@string.Join(", ", validationErrors["StartingBalance"])</div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span> Creating...</span>
+                    }
+                    else
+                    {
+                        <span>Create Account</span>
+                    }
+                </button>
+                <a href="/accounts" class="btn btn-secondary">Cancel</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private CreateAccountRequest request = new()
+    {
+        Type = AccountType.Checking,
+        Currency = "EUR",
+        StartingBalance = 0
+    };
+
+    private Dictionary<string, string[]> validationErrors = new();
+    private string? errorMessage;
+    private bool isSubmitting = false;
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        validationErrors.Clear();
+
+        try
+        {
+            var response = await AccountService.CreateAsync(request);
+            Navigation.NavigateTo("/accounts");
+        }
+        catch (HttpRequestException ex)
+        {
+            // Handle validation errors
+            errorMessage = $"Error creating account: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error creating account: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
