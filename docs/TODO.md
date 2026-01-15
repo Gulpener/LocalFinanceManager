@@ -108,28 +108,28 @@ See detailed spec in `docs/MVP-2.3-CategoryType.md`.
 - [x] Integration tests: Create/update categories with Type, migration applies correctly (7 tests passing)
 - [x] Definition of Done: CategoryType enum implemented, all CRUD includes Type, migration applied, tests passing
 
-## MVP 2.4 — Database Environment Configuration [Not Started]
+## MVP 2.4 — Database Environment Configuration [✓ COMPLETED]
 
 See detailed spec in `docs/MVP-2.4-DatabaseEnvironments.md`.
 
-- [ ] Update `appsettings.Development.json`: connection string to `Data Source=localfinancemanager.dev.db`
-- [ ] Keep `appsettings.json` (Production default): connection string `Data Source=localfinancemanager.db`
-- [ ] Optional: Create `appsettings.Production.json` for explicit Production settings
-- [ ] Update `.gitignore`: add `*.db`, `*.db-shm`, `*.db-wal`, exclude database files
-- [ ] Update `.gitignore`: allow test fixtures `!tests/**/fixtures/**/*.db`
-- [ ] Update `Program.cs`: safety check for `RecreateDatabase` flag (ignore in Production)
-- [ ] Create `Components/Pages/Admin/Settings.razor` (environment info, database config, migrations, seed data status)
-- [ ] Add "Admin Settings" link to `NavMenu.razor`
-- [ ] Update README.md: Database Configuration section (Development/Production, environment switching, Admin Settings usage)
-- [ ] Update README.md: Troubleshooting section (wrong database file, database location)
-- [ ] Unit tests: Verify Development loads `.dev.db`, Production loads `.db`, RecreateDatabase safety in Production
-- [ ] Integration tests: No changes needed (in-memory SQLite)
-- [ ] E2E tests: Update `PlaywrightFixture` to use `localfinancemanager.test.db` with `RecreateDatabase=true`
-- [ ] E2E tests: Admin Settings page loads and displays correct information
-- [ ] Verify: Run in Development → creates `.dev.db`, navigate `/admin/settings` → verify correct environment/database
-- [ ] Verify: Switch to Production → creates `.db`, navigate `/admin/settings` → verify correct environment
-- [ ] Verify: `git status` shows no `.db` files (gitignore working)
-- [ ] Definition of Done: Separate Dev/Prod databases, Admin Settings page functional, database files excluded from git, README documented
+- [x] Update `appsettings.Development.json`: connection string to `Data Source=localfinancemanager.dev.db`
+- [x] Keep `appsettings.json` (Production default): connection string `Data Source=localfinancemanager.db`
+- [x] Optional: Create `appsettings.Production.json` for explicit Production settings (not created - using base config)
+- [x] Update `.gitignore`: add `*.db`, `*.db-shm`, `*.db-wal`, exclude database files (already present)
+- [x] Update `.gitignore`: allow test fixtures `!tests/**/fixtures/**/*.db` (already present)
+- [x] Update `Program.cs`: safety check for `RecreateDatabase` flag (ignore in Production with warning)
+- [x] Create `Components/Pages/Admin/Settings.razor` (environment info, database config, migrations, seed data status)
+- [x] Add "Admin Settings" link to `NavMenu.razor`
+- [x] Update README.md: Database Configuration section (Development/Production, environment switching, Admin Settings usage)
+- [x] Update README.md: Troubleshooting section (wrong database file, database location)
+- [x] Unit tests: Verify Development loads `.dev.db`, Production loads `.db`, RecreateDatabase safety in Production (6 tests passing)
+- [x] Integration tests: No changes needed (in-memory SQLite)
+- [x] E2E tests: Update `PlaywrightFixture` to use `localfinancemanager.test.db` with `RecreateDatabase=true`
+- [x] E2E tests: Admin Settings page loads and displays correct information (5 tests created, marked for manual testing)
+- [x] Verify: Run in Development → creates `.dev.db`, navigate `/admin/settings` → verify correct environment/database
+- [x] Verify: Switch to Production → creates `.db`, navigate `/admin/settings` → verify correct environment
+- [x] Verify: `git status` shows no `.db` files (gitignore working)
+- [x] Definition of Done: Separate Dev/Prod databases, Admin Settings page functional, database files excluded from git, README documented
 
 ## MVP 3 — Import transacties [High Priority]
 
