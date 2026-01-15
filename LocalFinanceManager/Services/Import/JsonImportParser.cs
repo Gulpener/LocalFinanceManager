@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using LocalFinanceManager.DTOs;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,7 @@ public class JsonImportParser : IImportParser
         _logger = logger;
     }
 
-    public async Task<List<ParsedTransactionDto>> ParseAsync(string fileContent, ColumnMappingDto mapping)
+    public Task<List<ParsedTransactionDto>> ParseAsync(string fileContent, ColumnMappingDto mapping)
     {
         var transactions = new List<ParsedTransactionDto>();
 
@@ -53,10 +54,10 @@ public class JsonImportParser : IImportParser
             throw new InvalidOperationException("Invalid JSON format", ex);
         }
 
-        return await Task.FromResult(transactions);
+        return Task.FromResult(transactions);
     }
 
-    public async Task<List<string>> DetectColumnsAsync(string fileContent)
+    public Task<List<string>> DetectColumnsAsync(string fileContent)
     {
         var columns = new HashSet<string>();
 
@@ -66,7 +67,7 @@ public class JsonImportParser : IImportParser
             
             if (jsonArray.RootElement.ValueKind != JsonValueKind.Array)
             {
-                return new List<string>();
+                return Task.FromResult(new List<string>());
             }
 
             // Get all property names from first few elements
@@ -85,7 +86,7 @@ public class JsonImportParser : IImportParser
             _logger.LogError(ex, "Failed to detect columns from JSON");
         }
 
-        return await Task.FromResult(columns.ToList());
+        return Task.FromResult(columns.ToList());
     }
 
     public async Task<ColumnMappingDto> AutoDetectMappingAsync(string fileContent)
@@ -156,7 +157,33 @@ public class JsonImportParser : IImportParser
             {
                 if (dateElement.ValueKind == JsonValueKind.String)
                 {
-                    transaction.Date = DateTime.Parse(dateElement.GetString()!);
+                    var dateString = dateElement.GetString()!;
+                    // Try multiple date formats with InvariantCulture
+                    var formats = new[]
+                    {
+                        "yyyy-MM-dd",
+                        "dd-MM-yyyy",
+                        "MM/dd/yyyy",
+                        "dd/MM/yyyy",
+                        "yyyyMMdd",
+                        "yyyy/MM/dd",
+                        "dd.MM.yyyy",
+                        "yyyy-MM-ddTHH:mm:ss", // ISO 8601
+                        "yyyy-MM-ddTHH:mm:ssZ"
+                    };
+
+                    if (DateTime.TryParseExact(dateString, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                    {
+                        transaction.Date = date;
+                    }
+                    else if (DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+                    {
+                        transaction.Date = date;
+                    }
+                    else
+                    {
+                        throw new FormatException($"Unable to parse date: {dateString}");
+                    }
                 }
                 else
                 {
@@ -177,7 +204,15 @@ public class JsonImportParser : IImportParser
                 }
                 else if (amountElement.ValueKind == JsonValueKind.String)
                 {
-                    transaction.Amount = decimal.Parse(amountElement.GetString()!);
+                    var amountString = amountElement.GetString()!;
+                    if (decimal.TryParse(amountString, NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var amount))
+                    {
+                        transaction.Amount = amount;
+                    }
+                    else
+                    {
+                        throw new FormatException($"Unable to parse amount: {amountString}");
+                    }
                 }
                 else
                 {
