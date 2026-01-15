@@ -4,6 +4,7 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.DTOs.Validators;
+using LocalFinanceManager.Models;
 using FluentValidation;
 using IbanNet;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,9 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
     ?? "Data Source=localfinancemanager.db";
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
+
+// Register configuration options
+builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
 
 // Register repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
