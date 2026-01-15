@@ -33,6 +33,13 @@ builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BudgetPlanService>();
 
+// Register import services
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.CsvImportParser>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.JsonImportParser>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.ExactMatchStrategy>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.FuzzyMatchStrategy>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.ImportService>();
+
 // Register validators
 builder.Services.AddScoped<IValidator<CreateAccountRequest>, CreateAccountRequestValidator>();
 builder.Services.AddScoped<IValidator<UpdateAccountRequest>, UpdateAccountRequestValidator>();
