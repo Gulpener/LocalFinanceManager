@@ -11,8 +11,4 @@
     <PackageReference Include="Microsoft.ML.FastTree" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\LocalFinanceManager\LocalFinanceManager.csproj" />
-  </ItemGroup>
-
 </Project>

@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Register configuration options
 builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
+builder.Services.Configure<LocalFinanceManager.Configuration.MLOptions>(builder.Configuration.GetSection("MLOptions"));
 
 // Register repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -30,12 +31,17 @@ builder.Services.AddScoped<IBudgetLineRepository, BudgetLineRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionSplitRepository, TransactionSplitRepository>();
 builder.Services.AddScoped<ITransactionAuditRepository, TransactionAuditRepository>();
+builder.Services.AddScoped<ILabeledExampleRepository, LabeledExampleRepository>();
 
 // Register services
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BudgetPlanService>();
 builder.Services.AddScoped<ITransactionAssignmentService, TransactionAssignmentService>();
+
+// Register ML services
+builder.Services.AddScoped<LocalFinanceManager.ML.IFeatureExtractor, LocalFinanceManager.ML.FeatureExtractor>();
+builder.Services.AddScoped<LocalFinanceManager.ML.IMLService, LocalFinanceManager.Services.MLService>();
 
 // Register import services
 builder.Services.AddScoped<LocalFinanceManager.Services.Import.CsvImportParser>();
