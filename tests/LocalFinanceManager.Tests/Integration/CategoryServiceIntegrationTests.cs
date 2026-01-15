@@ -49,7 +49,8 @@ public class CategoryServiceIntegrationTests
         // Arrange
         var createDto = new CreateCategoryDto
         {
-            Name = "Groceries"
+            Name = "Groceries",
+            Type = CategoryType.Expense
         };
 
         // Act
@@ -58,10 +59,12 @@ public class CategoryServiceIntegrationTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Name, Is.EqualTo("Groceries"));
+        Assert.That(result.Type, Is.EqualTo(CategoryType.Expense));
 
         var saved = await _context.Categories.FindAsync(result.Id);
         Assert.That(saved, Is.Not.Null);
         Assert.That(saved!.Name, Is.EqualTo("Groceries"));
+        Assert.That(saved.Type, Is.EqualTo(CategoryType.Expense));
         Assert.That(saved.IsArchived, Is.False);
     }
 
@@ -73,6 +76,7 @@ public class CategoryServiceIntegrationTests
         {
             Id = Guid.NewGuid(),
             Name = "Original Name",
+            Type = CategoryType.Expense,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -89,6 +93,7 @@ public class CategoryServiceIntegrationTests
         var updateDto = new UpdateCategoryDto
         {
             Name = "Updated Name",
+            Type = CategoryType.Income,
             RowVersion = loadedCategory!.RowVersion
         };
 
@@ -98,10 +103,12 @@ public class CategoryServiceIntegrationTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Name, Is.EqualTo("Updated Name"));
+        Assert.That(result.Type, Is.EqualTo(CategoryType.Income));
 
         var updated = await _context.Categories.FindAsync(category.Id);
         Assert.That(updated, Is.Not.Null);
         Assert.That(updated!.Name, Is.EqualTo("Updated Name"));
+        Assert.That(updated.Type, Is.EqualTo(CategoryType.Income));
     }
 
     [Test]
@@ -112,6 +119,7 @@ public class CategoryServiceIntegrationTests
         var updateDto = new UpdateCategoryDto
         {
             Name = "Updated Name",
+            Type = CategoryType.Income,
             RowVersion = new byte[] { 1, 2, 3, 4 }
         };
 
@@ -136,6 +144,7 @@ public class CategoryServiceIntegrationTests
         {
             Id = Guid.NewGuid(),
             Name = "Original Name",
+            Type = CategoryType.Expense,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -181,6 +190,7 @@ public class CategoryServiceIntegrationTests
         {
             Id = Guid.NewGuid(),
             Name = "To Archive",
+            Type = CategoryType.Expense,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -210,6 +220,7 @@ public class CategoryServiceIntegrationTests
         {
             Id = Guid.NewGuid(),
             Name = "Active",
+            Type = CategoryType.Income,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -218,6 +229,7 @@ public class CategoryServiceIntegrationTests
         {
             Id = Guid.NewGuid(),
             Name = "Archived",
+            Type = CategoryType.Expense,
             IsArchived = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -233,5 +245,67 @@ public class CategoryServiceIntegrationTests
         Assert.That(result.Count, Is.EqualTo(1));
         Assert.That(result[0].Name, Is.EqualTo("Active"));
         Assert.That(result.Any(c => c.Name == "Archived"), Is.False);
+    }
+
+    [Test]
+    public async Task CreateAsync_IncomeCategory_CreatesCorrectType()
+    {
+        // Arrange
+        var createDto = new CreateCategoryDto
+        {
+            Name = "Salary",
+            Type = CategoryType.Income
+        };
+
+        // Act
+        var result = await _categoryService.CreateAsync(createDto);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Name, Is.EqualTo("Salary"));
+        Assert.That(result.Type, Is.EqualTo(CategoryType.Income));
+
+        var saved = await _context.Categories.FindAsync(result.Id);
+        Assert.That(saved, Is.Not.Null);
+        Assert.That(saved!.Type, Is.EqualTo(CategoryType.Income));
+    }
+
+    [Test]
+    public async Task UpdateAsync_ChangeTypeFromExpenseToIncome_UpdatesSuccessfully()
+    {
+        // Arrange - Create an expense category
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Miscellaneous",
+            Type = CategoryType.Expense,
+            IsArchived = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await _categoryRepository.AddAsync(category);
+        _context.Entry(category).State = EntityState.Detached;
+
+        // Load the category to get its RowVersion
+        var loadedCategory = await _categoryRepository.GetByIdAsync(category.Id);
+        Assert.That(loadedCategory, Is.Not.Null);
+
+        var updateDto = new UpdateCategoryDto
+        {
+            Name = "Miscellaneous",
+            Type = CategoryType.Income, // Change to Income
+            RowVersion = loadedCategory!.RowVersion
+        };
+
+        // Act
+        var result = await _categoryService.UpdateAsync(category.Id, updateDto);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Type, Is.EqualTo(CategoryType.Income));
+
+        var updated = await _context.Categories.FindAsync(category.Id);
+        Assert.That(updated, Is.Not.Null);
+        Assert.That(updated!.Type, Is.EqualTo(CategoryType.Income));
     }
 }

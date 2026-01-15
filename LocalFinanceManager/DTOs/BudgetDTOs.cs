@@ -1,3 +1,5 @@
+using LocalFinanceManager.Models;
+
 namespace LocalFinanceManager.DTOs;
 
 /// <summary>
@@ -78,6 +80,7 @@ public record CategoryDto
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
+    public CategoryType Type { get; init; }
     public byte[]? RowVersion { get; init; }
 }
 
@@ -87,6 +90,7 @@ public record CategoryDto
 public record CreateCategoryDto
 {
     public string Name { get; init; } = string.Empty;
+    public CategoryType Type { get; init; }
 }
 
 /// <summary>
@@ -95,5 +99,6 @@ public record CreateCategoryDto
 public record UpdateCategoryDto
 {
     public string Name { get; init; } = string.Empty;
+    public CategoryType Type { get; init; }
     public byte[]? RowVersion { get; init; }
 }
