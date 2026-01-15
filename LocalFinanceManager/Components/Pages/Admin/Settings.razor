@@ -141,6 +141,8 @@
 </div>
 
 @code {
+    private static readonly Regex DataSourceRegex = new(@"Data Source=([^;]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    
     private string? _connectionString;
     private string? _databasePath;
     private bool _databaseExists;
@@ -165,10 +167,7 @@
         // Parse database path from connection string
         if (!string.IsNullOrEmpty(_connectionString))
         {
-            var match = Regex.Match(
-                _connectionString,
-                @"Data Source=([^;]+)",
-                RegexOptions.IgnoreCase);
+            var match = DataSourceRegex.Match(_connectionString);
 
             if (match.Success)
             {

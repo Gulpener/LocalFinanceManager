@@ -1,7 +1,7 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
 using NUnit.Framework;
-using System.Text.RegularExpressions;
 
 namespace LocalFinanceManager.E2E.Admin;
 
