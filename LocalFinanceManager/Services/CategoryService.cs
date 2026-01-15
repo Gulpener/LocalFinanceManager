@@ -29,6 +29,7 @@ public class CategoryService
         {
             Id = c.Id,
             Name = c.Name,
+            Type = c.Type,
             RowVersion = c.RowVersion
         }).ToList();
     }
@@ -44,6 +45,7 @@ public class CategoryService
         { 
             Id = category.Id, 
             Name = category.Name,
+            Type = category.Type,
             RowVersion = category.RowVersion
         } : null;
     }
@@ -58,6 +60,7 @@ public class CategoryService
         var category = new Category
         {
             Name = request.Name,
+            Type = request.Type,
             IsArchived = false
         };
 
@@ -69,6 +72,7 @@ public class CategoryService
         {
             Id = category.Id,
             Name = category.Name,
+            Type = category.Type,
             RowVersion = category.RowVersion
         };
     }
@@ -107,6 +111,7 @@ public class CategoryService
         }
 
         category.Name = request.Name;
+        category.Type = request.Type;
         category.RowVersion = request.RowVersion;
 
         await _categoryRepository.UpdateAsync(category);
@@ -117,6 +122,7 @@ public class CategoryService
         {
             Id = category.Id,
             Name = category.Name,
+            Type = category.Type,
             RowVersion = category.RowVersion
         };
     }

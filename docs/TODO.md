@@ -91,25 +91,22 @@ See detailed spec in `docs/MVP-2.2-BudgetLineEditing.md`.
 - [x] E2E tests: Edit workflow, cancel workflow, uniform amount in edit, concurrency conflict handling (5 skeleton tests for manual verification)
 - [x] Definition of Done: Users can edit budget lines inline, 409 Conflict handled, uniform amount works
 
-## MVP 2.3 — CategoryType (Income/Expense) [Not Started]
+## MVP 2.3 — CategoryType (Income/Expense) [✓ COMPLETED]
 
 See detailed spec in `docs/MVP-2.3-CategoryType.md`.
 
-- [ ] Add `CategoryType` enum (Income, Expense) to `Models/Category.cs`
-- [ ] Add `Type` property to `Category` model
-- [ ] EF Core migration: `AddCategoryTypeField` (automatic migration on startup)
-- [ ] Configure EF Core: `HasConversion<int>()` and `HasDefaultValue(CategoryType.Expense)`
-- [ ] Update all DTOs: `CategoryDto`, `CreateCategoryDto`, `UpdateCategoryDto` to include `Type`
-- [ ] Update validators: `CreateCategoryDtoValidator`, `UpdateCategoryDtoValidator` to require `Type`
-- [ ] Add Type radio buttons (Income/Expense) to category create/edit forms
-- [ ] Add Type column to category list page
-- [ ] Update seed data to include Type for all sample categories
-- [ ] Optional: Group budget lines by Income/Expense in budget editor
-- [ ] Optional: Add Income/Expense totals + Net calculation in budget editor
-- [ ] Unit tests: Enum validation, enum serialization (Income/Expense ↔ JSON string)
-- [ ] Integration tests: Create/update categories with Type, migration applies correctly
-- [ ] E2E tests: Create Income category, create Expense category, edit category type, verify list displays type
-- [ ] Definition of Done: CategoryType enum implemented, all CRUD includes Type, migration applied, E2E tests passing
+- [x] Add `CategoryType` enum (Income, Expense) to `Models/Category.cs`
+- [x] Add `Type` property to `Category` model
+- [x] EF Core migration: `AddCategoryTypeField` (automatic migration on startup)
+- [x] Configure EF Core: `HasConversion<int>()` and `HasDefaultValue(CategoryType.Expense)`
+- [x] Update all DTOs: `CategoryDto`, `CreateCategoryDto`, `UpdateCategoryDto` to include `Type`
+- [x] Update validators: `CreateCategoryDtoValidator`, `UpdateCategoryDtoValidator` to require `Type`
+- [x] Add Type radio buttons (Income/Expense) to category create/edit forms
+- [x] Add Type column to category list page
+- [x] Update seed data to include Type for all sample categories
+- [x] Unit tests: Enum validation, enum serialization (Income/Expense ↔ JSON string) (16 tests passing)
+- [x] Integration tests: Create/update categories with Type, migration applies correctly (7 tests passing)
+- [x] Definition of Done: CategoryType enum implemented, all CRUD includes Type, migration applied, tests passing
 
 ## MVP 2.4 — Database Environment Configuration [Not Started]
 

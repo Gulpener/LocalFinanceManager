@@ -115,6 +115,10 @@ public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
             .WithMessage("Naam is verplicht")
             .MaximumLength(100)
             .WithMessage("Naam mag maximaal 100 tekens bevatten");
+
+        RuleFor(x => x.Type)
+            .IsInEnum()
+            .WithMessage("Type moet Income of Expense zijn");
     }
 }
 
@@ -130,6 +134,10 @@ public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
             .WithMessage("Naam is verplicht")
             .MaximumLength(100)
             .WithMessage("Naam mag maximaal 100 tekens bevatten");
+
+        RuleFor(x => x.Type)
+            .IsInEnum()
+            .WithMessage("Type moet Income of Expense zijn");
 
         RuleFor(x => x.RowVersion)
             .NotNull()
