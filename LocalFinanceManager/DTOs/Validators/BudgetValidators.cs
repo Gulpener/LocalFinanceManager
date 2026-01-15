@@ -117,3 +117,22 @@ public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
             .WithMessage("Category name cannot exceed 100 characters.");
     }
 }
+
+/// <summary>
+/// Validator for UpdateCategoryDto.
+/// </summary>
+public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
+{
+    public UpdateCategoryDtoValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty()
+            .WithMessage("Naam is verplicht")
+            .MaximumLength(100)
+            .WithMessage("Naam mag maximaal 100 tekens bevatten");
+
+        RuleFor(x => x.RowVersion)
+            .NotNull()
+            .WithMessage("RowVersion is verplicht voor concurrency controle");
+    }
+}

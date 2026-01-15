@@ -15,15 +15,18 @@ public class CategoriesController : ControllerBase
 {
     private readonly CategoryService _categoryService;
     private readonly IValidator<CreateCategoryDto> _createValidator;
+    private readonly IValidator<UpdateCategoryDto> _updateValidator;
     private readonly ILogger<CategoriesController> _logger;
 
     public CategoriesController(
         CategoryService categoryService,
         IValidator<CreateCategoryDto> createValidator,
+        IValidator<UpdateCategoryDto> updateValidator,
         ILogger<CategoriesController> logger)
     {
         _categoryService = categoryService;
         _createValidator = createValidator;
+        _updateValidator = updateValidator;
         _logger = logger;
     }
 
@@ -84,5 +87,45 @@ public class CategoriesController : ControllerBase
             return NotFound(new { title = "Category not found", status = 404 });
         }
         return NoContent();
+    }
+
+    /// <summary>
+    /// Update a category.
+    /// </summary>
+    [HttpPut("{id}")]
+    public async Task<ActionResult<CategoryDto>> Update(Guid id, [FromBody] UpdateCategoryDto request)
+    {
+        var validationResult = await _updateValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(new
+            {
+                title = "Validation failed",
+                status = 400,
+                errors = validationResult.Errors.ToDictionary(e => e.PropertyName, e => e.ErrorMessage)
+            });
+        }
+
+        try
+        {
+            var category = await _categoryService.UpdateAsync(id, request);
+            if (category == null)
+            {
+                return NotFound(new { title = "Category not found", status = 404 });
+            }
+            return Ok(category);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Return 409 Conflict with current entity state
+            var currentCategory = await _categoryService.GetByIdAsync(id);
+            return Conflict(new
+            {
+                title = "Concurrency conflict",
+                status = 409,
+                detail = "The category was modified by another user. Please reload and try again.",
+                currentState = currentCategory
+            });
+        }
     }
 }

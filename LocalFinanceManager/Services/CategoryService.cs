@@ -84,4 +84,32 @@ public class CategoryService
         _logger.LogInformation("Category archived successfully: {CategoryId}", id);
         return true;
     }
+
+    /// <summary>
+    /// Update a category.
+    /// </summary>
+    public async Task<CategoryDto?> UpdateAsync(Guid id, UpdateCategoryDto request)
+    {
+        _logger.LogInformation("Updating category with ID: {CategoryId}", id);
+
+        var category = await _categoryRepository.GetByIdAsync(id);
+        if (category == null)
+        {
+            _logger.LogWarning("Category not found with ID: {CategoryId}", id);
+            return null;
+        }
+
+        category.Name = request.Name;
+        category.RowVersion = request.RowVersion ?? Array.Empty<byte>();
+
+        await _categoryRepository.UpdateAsync(category);
+
+        _logger.LogInformation("Category updated successfully: {CategoryId}", id);
+
+        return new CategoryDto
+        {
+            Id = category.Id,
+            Name = category.Name
+        };
+    }
 }
