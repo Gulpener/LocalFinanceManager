@@ -1,0 +1,141 @@
+@page "/transactions"
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Data.Repositories
+@inject ITransactionRepository TransactionRepository
+@inject IAccountRepository AccountRepository
+@inject NavigationManager NavigationManager
+
+<PageTitle>Transacties</PageTitle>
+
+<h1>Transacties</h1>
+
+<div class="mb-3">
+    <label for="accountFilter" class="form-label">Filter op rekening:</label>
+    <select id="accountFilter" class="form-select" @onchange="OnAccountChanged">
+        <option value="">Alle rekeningen</option>
+        @foreach (var account in accounts)
+        {
+            <option value="@account.Id">@account.Label</option>
+        }
+    </select>
+</div>
+
+<div class="mb-3">
+    <a href="/transactions/import" class="btn btn-primary">
+        <i class="bi bi-upload"></i> Importeer transacties
+    </a>
+</div>
+
+@if (loading)
+{
+    <p><em>Laden...</em></p>
+}
+else if (transactions.Count == 0)
+{
+    <div class="alert alert-info">
+        Geen transacties gevonden. @(selectedAccountId.HasValue ? "Selecteer een andere rekening of " : "")
+        <a href="/transactions/import">Importeer transacties</a> om te beginnen.
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Beschrijving</th>
+                <th>Tegenpartij</th>
+                <th>Bedrag</th>
+                <th>Rekening</th>
+                <th>Bron</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var transaction in transactions)
+            {
+                <tr>
+                    <td>@transaction.Date.ToString("dd-MM-yyyy")</td>
+                    <td>@transaction.Description</td>
+                    <td>@transaction.Counterparty</td>
+                    <td class="@(transaction.Amount >= 0 ? "text-success" : "text-danger")">
+                        @transaction.Amount.ToString("C2")
+                    </td>
+                    <td>@GetAccountLabel(transaction.AccountId)</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(transaction.SourceFileName))
+                        {
+                            <span class="badge bg-secondary" title="Geïmporteerd op @transaction.ImportedAt?.ToString("dd-MM-yyyy HH:mm")">
+                                @transaction.SourceFileName
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-primary">Handmatig</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-end">Totaal:</th>
+                <th class="@(totalAmount >= 0 ? "text-success" : "text-danger")">@totalAmount.ToString("C2")</th>
+                <th colspan="2"></th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <p class="text-muted">@transactions.Count transactie(s) weergegeven</p>
+}
+
+@code {
+    private List<LocalFinanceManager.Models.Transaction> transactions = new();
+    private List<LocalFinanceManager.Models.Account> accounts = new();
+    private Guid? selectedAccountId = null;
+    private bool loading = true;
+    private decimal totalAmount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccountsAsync();
+        await LoadTransactionsAsync();
+    }
+
+    private async Task LoadAccountsAsync()
+    {
+        accounts = await AccountRepository.GetActiveAsync();
+    }
+
+    private async Task LoadTransactionsAsync()
+    {
+        loading = true;
+        
+        if (selectedAccountId.HasValue)
+        {
+            transactions = await TransactionRepository.GetByAccountIdAsync(selectedAccountId.Value);
+        }
+        else
+        {
+            transactions = await TransactionRepository.GetActiveAsync();
+        }
+
+        totalAmount = transactions.Sum(t => t.Amount);
+        loading = false;
+    }
+
+    private async Task OnAccountChanged(ChangeEventArgs e)
+    {
+        var accountIdString = e.Value?.ToString();
+        selectedAccountId = string.IsNullOrEmpty(accountIdString) || accountIdString == "" 
+            ? null 
+            : Guid.Parse(accountIdString);
+        
+        await LoadTransactionsAsync();
+    }
+
+    private string GetAccountLabel(Guid accountId)
+    {
+        var account = accounts.FirstOrDefault(a => a.Id == accountId);
+        return account?.Label ?? "Onbekend";
+    }
+}
