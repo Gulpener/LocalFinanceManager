@@ -215,9 +215,12 @@ LocalFinanceManager/
 │   ├── LocalFinanceManager.E2E/          # Playwright E2E tests
 │   └── LocalFinanceManager.ML.Tests/     # ML model tests
 └── docs/                         # Documentation
-    ├── MVP-*.md                  # MVP specifications
     ├── Implementation-Guidelines.md
-    └── TODO.md
+    ├── MVP/                      # MVP specifications (completed)
+    │   ├── MVP-*.md
+    │   └── TODO.md
+    └── PrdReady/                 # Post-MVP features (documented)
+        └── Post-MVP-Notes.md
 ```
 
 ## Development Workflow
@@ -235,7 +238,7 @@ Migrations are automatically applied when the application starts.
 
 ### Creating a New Feature
 
-1. Define the feature in a new MVP document in `docs/`
+1. Define the feature in a new document in `docs/`
 2. Implement domain models in `Models/`
 3. Create DTOs and validators in `DTOs/`
 4. Implement repository in `Data/Repositories/`
@@ -314,17 +317,20 @@ Entities use `RowVersion` for concurrency control. Update conflicts return HTTP 
 If you're seeing unexpected data or an empty database:
 
 1. Check which environment you're running:
+
    ```powershell
    echo $env:ASPNETCORE_ENVIRONMENT
    ```
 
 2. Navigate to `/admin/settings` to verify:
+
    - Current environment (Development/Production)
    - Database file path in use
    - Database file existence and size
    - Seed data status
 
 3. Verify database file in use:
+
    - Development: `localfinancemanager.dev.db`
    - Production: `localfinancemanager.db`
 

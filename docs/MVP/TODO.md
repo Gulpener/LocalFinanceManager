@@ -4,7 +4,7 @@ Laatste update: 2026-01-14
 
 ## MVP 0 — Infrastructure Setup (Foundation) [✓ COMPLETED]
 
-See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be completed before starting any feature MVP (MVP 1-6).
+See detailed spec in `MVP-0-Infrastructure.md`. This phase must be completed before starting any feature MVP (MVP 1-6).
 
 - [x] Run complete solution scaffolding via CLI (dotnet new sln, all 5 projects, packages)
 - [x] Create `BaseEntity` abstract class (Guid Id, byte[] RowVersion, DateTime CreatedAt/UpdatedAt)
@@ -59,7 +59,7 @@ See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be complete
 
 ## MVP 2.1 — Category Management UI [✓ COMPLETED]
 
-See detailed spec in `docs/MVP-2.1-CategoryManagement.md`.
+See detailed spec in `MVP-2.1-CategoryManagement.md`.
 
 - [x] Create `Components/Pages/Categories.razor` (list all categories)
 - [x] Create `Components/Pages/CategoryCreate.razor` (create new category)
@@ -77,7 +77,7 @@ See detailed spec in `docs/MVP-2.1-CategoryManagement.md`.
 
 ## MVP 2.2 — BudgetLine Inline Editing [✓ COMPLETED]
 
-See detailed spec in `docs/MVP-2.2-BudgetLineEditing.md`.
+See detailed spec in `MVP-2.2-BudgetLineEditing.md`.
 
 - [x] Add edit mode state to `BudgetPlanEdit.razor` (Edit/Save/Cancel buttons per line)
 - [x] Transform budget line table row to input fields when editing
@@ -93,7 +93,7 @@ See detailed spec in `docs/MVP-2.2-BudgetLineEditing.md`.
 
 ## MVP 2.3 — CategoryType (Income/Expense) [✓ COMPLETED]
 
-See detailed spec in `docs/MVP-2.3-CategoryType.md`.
+See detailed spec in `MVP-2.3-CategoryType.md`.
 
 - [x] Add `CategoryType` enum (Income, Expense) to `Models/Category.cs`
 - [x] Add `Type` property to `Category` model
@@ -110,7 +110,7 @@ See detailed spec in `docs/MVP-2.3-CategoryType.md`.
 
 ## MVP 2.4 — Database Environment Configuration [✓ COMPLETED]
 
-See detailed spec in `docs/MVP-2.4-DatabaseEnvironments.md`.
+See detailed spec in `MVP-2.4-DatabaseEnvironments.md`.
 
 - [x] Update `appsettings.Development.json`: connection string to `Data Source=localfinancemanager.dev.db`
 - [x] Keep `appsettings.json` (Production default): connection string `Data Source=localfinancemanager.db`
@@ -223,7 +223,7 @@ See detailed spec in `docs/MVP-2.4-DatabaseEnvironments.md`.
 - [x] Definition of Done: IHostedService working, threshold approval enforced, undo functional, monitoring operational
 - [x] Create implementation summary documentation
 
-**Status:** ✅ **COMPLETED** - Core infrastructure complete. Background services, monitoring, and undo functionality implemented and tested. Database migrations will apply automatically on startup. See `docs/MVP-6-Automation-Summary.md` for detailed implementation documentation.
+**Status:** ✅ **COMPLETED** - Core infrastructure complete. Background services, monitoring, and undo functionality implemented and tested. Database migrations will apply automatically on startup. See `MVP-6-Automation-Summary.md` for detailed implementation documentation.
 
 ## Post-MVP / Nice-to-have [Low Priority]
 

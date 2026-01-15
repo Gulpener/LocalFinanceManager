@@ -160,4 +160,4 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 - Check existing data to prevent duplicate seeds on re-run
 - Example: `if (!context.Accounts.Any()) { /* seed */ }`
 
-Waar nodig voor implementatie: raadpleeg de gedetailleerde MVP-documenten in `docs/`.
+Waar nodig voor implementatie: raadpleeg de gedetailleerde MVP-documenten in `docs/MVP/`.

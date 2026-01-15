@@ -38,7 +38,7 @@ Storage
 Error handling & UX
 
 - Per-row errors reported with line numbers; option voor partial import (skip errors) of all-or-nothing.
-- Error responses follow RFC 7231 Problem Details format (see `Implementation-Guidelines.md` Error Response Format section)
+- Error responses follow RFC 7231 Problem Details format (see `../Implementation-Guidelines.md` Error Response Format section)
 - Per-row errors include: line number, field name, and error message
 - API returns 400 Bad Request for validation failures with structured errors
 - Example: `{ "type": "...", "status": 400, "errors": { "Date": ["Invalid date format"] } }`
@@ -75,7 +75,7 @@ Tests
 
 Logging Strategy
 
-(see `Implementation-Guidelines.md` Logging Strategy section):
+(see `../Implementation-Guidelines.md` Logging Strategy section):
 
 - Use `ILogger<ImportService>` for import operations
 - Log levels:

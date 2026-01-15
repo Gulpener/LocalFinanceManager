@@ -1,13 +1,15 @@
 # MVP 6 Implementation Summary
 
 ## Overview
+
 MVP 6 implements automated ML-powered category assignment with comprehensive safety controls, monitoring, and undo functionality. The implementation provides a production-ready foundation for automated transaction categorization with human oversight.
 
 ## Components Implemented
 
 ### 1. Configuration (`AutomationOptions.cs`)
+
 - **Confidence Threshold**: 0.85 (85% minimum confidence for auto-apply)
-- **Schedules**: 
+- **Schedules**:
   - Retraining: Sunday 2 AM UTC (weekly)
   - Auto-apply: Daily 6 AM UTC
 - **Retention**: 30-day undo window
@@ -18,13 +20,15 @@ MVP 6 implements automated ML-powered category assignment with comprehensive saf
 ### 2. Background Services
 
 #### MLRetrainingBackgroundService
+
 - Runs on configurable cron schedule (default: weekly Sunday 2 AM UTC)
 - Calls `IMLService.RetrainAsync()` on latest labeled transaction data
 - **Threshold-Based Approval**: New models must exceed F1 > 0.85 before activation
 - Rejected models are logged with metrics for monitoring
 - Previous model remains active if new model fails approval
 
-#### AutoApplyBackgroundService  
+#### AutoApplyBackgroundService
+
 - Runs on configurable cron schedule (default: daily 6 AM UTC)
 - Processes unassigned transactions in batches (configurable batch size)
 - Only applies suggestions meeting confidence threshold (≥85%)
@@ -35,16 +39,18 @@ MVP 6 implements automated ML-powered category assignment with comprehensive saf
 ### 3. Monitoring & Alerts
 
 #### MonitoringService
+
 - Tracks auto-apply statistics over configurable time windows
 - Calculates:
   - Total auto-applied assignments
-  - Total undone assignments  
+  - Total undone assignments
   - Undo rate (% of auto-applies that were reversed)
   - Average confidence score
 - Generates alerts when undo rate exceeds 20% threshold
 - Logs warnings to alert operations team of potential model quality issues
 
 #### Admin Monitoring Dashboard (`/admin/monitoring`)
+
 - Real-time display of auto-apply statistics
 - Configurable time windows (7/14/30/90 days)
 - Visual indicators for undo rate threshold violations
@@ -54,6 +60,7 @@ MVP 6 implements automated ML-powered category assignment with comprehensive saf
 ### 4. Undo Functionality
 
 #### UndoService
+
 - Reverts auto-applied assignments within 30-day retention window
 - **Concurrency Control**: Detects if transaction was modified after auto-apply
 - Returns HTTP 409 Conflict if concurrent modifications detected
@@ -74,7 +81,9 @@ All endpoints follow RFC 7231 Problem Details format for error responses.
 ### 6. Data Model Enhancements
 
 #### TransactionAudit
+
 New fields for auto-apply tracking:
+
 - `IsAutoApplied` (bool): Indicates automated assignment
 - `AutoAppliedBy` (string): Service identifier (e.g., "AutoApplyService")
 - `AutoAppliedAt` (DateTime?): Timestamp of auto-application
@@ -84,9 +93,10 @@ New fields for auto-apply tracking:
 ### 7. Utilities
 
 #### CronParser
+
 - Custom cron expression parser supporting standard 5-field format
 - Format: `minute hour day-of-month month day-of-week`
-- Handles wildcards (*), ranges (1-5), lists (1,3,5), steps (*/5)
+- Handles wildcards (_), ranges (1-5), lists (1,3,5), steps (_/5)
 - Properly implements day-of-week and day-of-month OR logic
 - Efficient next occurrence calculation with 4-year lookahead limit
 
@@ -95,6 +105,7 @@ New fields for auto-apply tracking:
 ### Unit Tests (17 tests created)
 
 **CronParserTests** (6 tests, all passing):
+
 - Daily schedule calculations
 - Weekly schedule (day-of-week matching)
 - Hourly schedules
@@ -103,6 +114,7 @@ New fields for auto-apply tracking:
 - Boundary conditions
 
 **UndoServiceTests** (5 tests):
+
 - Successful undo within retention window
 - Outside retention window rejection
 - Concurrency conflict detection
@@ -110,6 +122,7 @@ New fields for auto-apply tracking:
 - Audit trail verification
 
 **MonitoringServiceTests** (6 tests):
+
 - Zero-state statistics
 - Auto-apply only scenarios
 - Undo rate calculations
@@ -118,7 +131,9 @@ New fields for auto-apply tracking:
 - Average confidence calculations
 
 ### Known Test Issues
+
 Some tests fail due to database foreign key constraints that need to be addressed:
+
 - TransactionSplit requires valid BudgetLineId
 - Current implementation uses CategoryId as proxy (documented with TODO)
 - Production deployment requires proper BudgetLine lookup logic
@@ -132,7 +147,7 @@ Some tests fail due to database foreign key constraints that need to be addresse
     "RetrainingScheduleCron": "0 2 * * 0",
     "AutoApplyScheduleCron": "0 6 * * *",
     "UndoRetentionDays": 30,
-    "UndoRateAlertThreshold": 0.20,
+    "UndoRateAlertThreshold": 0.2,
     "MaxRetries": 5,
     "AutoApplyEnabled": false,
     "BatchSize": 100
@@ -168,6 +183,7 @@ The following features were identified but deferred for future implementation:
 Migrations will be automatically applied on application startup via `Database.MigrateAsync()` in `Program.cs`. No manual CLI steps required.
 
 The following schema changes will be applied:
+
 - Add columns to `TransactionAudits` table:
   - `IsAutoApplied` (bit, default 0)
   - `AutoAppliedBy` (nvarchar(max), nullable)
@@ -188,6 +204,7 @@ The following schema changes will be applied:
 ## Dependencies
 
 No new external NuGet packages were added. All functionality uses built-in .NET libraries:
+
 - Microsoft.Extensions.Hosting (IHostedService, BackgroundService)
 - System.Text.Json (serialization)
 - Microsoft.EntityFrameworkCore (database access)
@@ -196,7 +213,7 @@ No new external NuGet packages were added. All functionality uses built-in .NET 
 
 - ✅ `docs/TODO.md` - Marked MVP 6 tasks as completed
 - ✅ `docs/MVP-6-Automation-Summary.md` - This implementation summary (created)
-- ⏸️ `docs/Implementation-Guidelines.md` - Should be updated with automation patterns
+- ⏸️ `../Implementation-Guidelines.md` - Should be updated with automation patterns
 - ⏸️ `README.md` - Should include automation configuration instructions
 
 ---
