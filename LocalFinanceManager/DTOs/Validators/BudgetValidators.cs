@@ -112,9 +112,9 @@ public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
     {
         RuleFor(x => x.Name)
             .NotEmpty()
-            .WithMessage("Category name is required.")
+            .WithMessage("Naam is verplicht")
             .MaximumLength(100)
-            .WithMessage("Category name cannot exceed 100 characters.");
+            .WithMessage("Naam mag maximaal 100 tekens bevatten");
     }
 }
 

@@ -132,11 +132,6 @@ else
                 successMessage = $"Categorie '{categoryToArchive.Name}' is succesvol gearchiveerd.";
                 categoryToArchive = null;
                 await LoadCategories(); // Reload the list
-                
-                // Clear success message after 3 seconds
-                await Task.Delay(3000);
-                successMessage = null;
-                StateHasChanged();
             }
             else
             {

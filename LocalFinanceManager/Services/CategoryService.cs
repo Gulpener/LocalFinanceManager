@@ -107,10 +107,7 @@ public class CategoryService
         }
 
         category.Name = request.Name;
-        if (request.RowVersion != null)
-        {
-            category.RowVersion = request.RowVersion;
-        }
+        category.RowVersion = request.RowVersion;
 
         await _categoryRepository.UpdateAsync(category);
 

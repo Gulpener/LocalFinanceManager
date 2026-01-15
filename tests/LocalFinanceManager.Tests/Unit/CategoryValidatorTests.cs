@@ -49,7 +49,7 @@ public class CategoryValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Name)
-            .WithErrorMessage("Category name is required.");
+            .WithErrorMessage("Naam is verplicht");
     }
 
     [Test]
@@ -66,7 +66,7 @@ public class CategoryValidatorTests
 
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Name)
-            .WithErrorMessage("Category name cannot exceed 100 characters.");
+            .WithErrorMessage("Naam mag maximaal 100 tekens bevatten");
     }
 
     [Test]

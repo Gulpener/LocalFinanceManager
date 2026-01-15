@@ -72,6 +72,7 @@ else
 
     private CategoryDto? category;
     private string categoryName = string.Empty;
+    private byte[]? originalRowVersion;
     private Dictionary<string, string[]> validationErrors = new();
     private string? errorMessage;
     private string? concurrencyMessage;
@@ -94,6 +95,7 @@ else
             }
 
             categoryName = category.Name;
+            originalRowVersion = category.RowVersion;
         }
         catch (Exception ex)
         {
@@ -110,19 +112,11 @@ else
 
         try
         {
-            // Need to fetch current RowVersion from server before update
-            var currentCategory = await CategoryService.GetByIdAsync(Id);
-            if (currentCategory == null)
-            {
-                errorMessage = "Categorie niet gevonden.";
-                return;
-            }
-
-            // Create request with current RowVersion
+            // Create request with the RowVersion from when we loaded the page
             var updateRequest = new UpdateCategoryDto
             {
                 Name = categoryName,
-                RowVersion = currentCategory.RowVersion
+                RowVersion = originalRowVersion
             };
 
             var response = await CategoryService.UpdateAsync(Id, updateRequest);
