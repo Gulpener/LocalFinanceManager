@@ -102,7 +102,7 @@ public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Naam is verplicht")
             .MaximumLength(100).WithMessage("Naam mag maximaal 100 tekens bevatten");
-        
+
         RuleFor(x => x.Type)
             .IsInEnum().WithMessage("Type moet Income of Expense zijn"); // NIEUW
     }
@@ -116,10 +116,10 @@ public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Naam is verplicht")
             .MaximumLength(100).WithMessage("Naam mag maximaal 100 tekens bevatten");
-        
+
         RuleFor(x => x.Type)
             .IsInEnum().WithMessage("Type moet Income of Expense zijn"); // NIEUW
-        
+
         RuleFor(x => x.RowVersion)
             .NotNull().WithMessage("RowVersion is verplicht voor concurrency controle");
     }
@@ -129,6 +129,7 @@ public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
 **API responses:**
 
 - `GET /api/categories` response voorbeeld:
+
   ```json
   [
     { "id": "...", "name": "Salaris", "type": "Income" },
@@ -152,13 +153,14 @@ UI aanwijzingen (Blazor)
 **Updates in Components/Pages/CategoryCreate.razor en CategoryEdit.razor:**
 
 1. **Type selectie input:**
+
    ```razor
    <div class="form-group">
        <label for="type">Type</label>
        <div>
            <input type="radio" id="typeIncome" name="type" value="@CategoryType.Income" @bind="_categoryType" />
            <label for="typeIncome">Inkomsten</label>
-           
+
            <input type="radio" id="typeExpense" name="type" value="@CategoryType.Expense" @bind="_categoryType" />
            <label for="typeExpense">Uitgaven</label>
        </div>
@@ -166,6 +168,7 @@ UI aanwijzingen (Blazor)
    ```
 
 2. **CategoryList.razor (Components/Pages/Categories.razor) update:**
+
    - Voeg kolom "Type" toe aan tabel:
      ```razor
      <thead>
@@ -189,25 +192,27 @@ UI aanwijzingen (Blazor)
 
 3. **Optioneel: Budget editor grouping (BudgetPlanEdit.razor):**
    - Groepeer budgetregels per categorie-type:
+
      ```razor
      <h4>Inkomsten</h4>
      <table>
          @foreach (var line in _budgetLines.Where(l => l.CategoryType == CategoryType.Income))
          { ... }
      </table>
-     
+
      <h4>Uitgaven</h4>
      <table>
          @foreach (var line in _budgetLines.Where(l => l.CategoryType == CategoryType.Expense))
          { ... }
      </table>
-     
+
      <div>
          <strong>Totaal Inkomsten:</strong> @_incomeTotal
          <strong>Totaal Uitgaven:</strong> @_expenseTotal
          <strong>Netto:</strong> @(_incomeTotal - _expenseTotal)
      </div>
      ```
+
    - Hiervoor moet `BudgetLineDto` uitgebreid worden met `CategoryType`:
      ```csharp
      public record BudgetLineDto
@@ -226,6 +231,7 @@ Edgecases
 Tests
 
 **Unit tests** (`LocalFinanceManager.Tests`):
+
 - `CreateCategoryDtoValidator` test suite update:
   - Missing Type → validation error
   - Invalid enum value (e.g., 99) → validation error
@@ -236,6 +242,7 @@ Tests
   - JSON "Expense" → `CategoryType.Expense`
 
 **Integration tests** (`LocalFinanceManager.Tests` met in-memory SQLite):
+
 - Create category with Type = Income → verify persistence
 - Create category with Type = Expense → verify persistence
 - Update category Type from Expense to Income → verify update
@@ -243,6 +250,7 @@ Tests
 - Migration test: run migration, verify Type column exists with default value
 
 **E2E tests** (`LocalFinanceManager.E2E` met Playwright):
+
 - **Test:** Create Income category workflow
   - Navigate `/categories/new` → Enter name "Salaris" → Select "Inkomsten" radio → Submit → Verify appears in list with type "Inkomsten"
 - **Test:** Create Expense category workflow
@@ -270,7 +278,7 @@ if (!context.Categories.Any())
         new() { Id = Guid.NewGuid(), Name = "Salaris", Type = CategoryType.Income, IsArchived = false },
         new() { Id = Guid.NewGuid(), Name = "Freelance", Type = CategoryType.Income, IsArchived = false },
         new() { Id = Guid.NewGuid(), Name = "Dividend", Type = CategoryType.Income, IsArchived = false },
-        
+
         // Uitgaven
         new() { Id = Guid.NewGuid(), Name = "Huur", Type = CategoryType.Expense, IsArchived = false },
         new() { Id = Guid.NewGuid(), Name = "Boodschappen", Type = CategoryType.Expense, IsArchived = false },

@@ -27,12 +27,14 @@ Business regels
 API contract & voorbeelden
 
 **Bestaand endpoint (geen wijzigingen nodig):**
+
 - `PUT /api/budgetplans/{planId}/lines/{lineId}`
   - Request body: `UpdateBudgetLineDto { "categoryId":"...", "monthlyAmounts":[...12 waarden...], "notes":"...", "rowVersion":"..." }`
   - Response: `BudgetLineDto` met bijgewerkte data + nieuwe RowVersion
   - Statuscodes: 200 OK, 400 Bad Request, 404 Not Found, 409 Conflict (RowVersion mismatch)
 
 **409 Conflict response voorbeeld:**
+
 ```json
 {
   "title": "Concurrency conflict",
@@ -51,6 +53,7 @@ UI aanwijzingen (Blazor)
 **Updates in Components/Pages/BudgetPlanEdit.razor:**
 
 1. **Tabel structuur:**
+
    - Standaard modus: toon categorie naam, 12 maand-kolommen (read-only waarden), notes, year total, Actions (Edit, Archive)
    - Edit modus: zelfde rij toont:
      - Category dropdown (alle actieve categorieën)
@@ -60,6 +63,7 @@ UI aanwijzingen (Blazor)
      - Actions: Save, Cancel knoppen (geen Edit/Archive)
 
 2. **State management:**
+
    ```csharp
    private Guid? _editingLineId = null;
    private BudgetLineDto? _editingLineSnapshot = null; // originele waarden voor cancel
@@ -71,6 +75,7 @@ UI aanwijzingen (Blazor)
    ```
 
 3. **Edit flow:**
+
    - Klik "Edit" → Set `_editingLineId`, sla originele waarden op in `_editingLineSnapshot`, laad data in edit velden
    - Wijzig maandwaarden, categorie, notes
    - Uniform amount checkbox:
@@ -82,6 +87,7 @@ UI aanwijzingen (Blazor)
    - Klik "Cancel" → herstel `_editingLineSnapshot` waarden, exit edit mode
 
 4. **Concurrency conflict dialog:**
+
    ```razor
    @if (_showConflictDialog)
    {
@@ -92,7 +98,7 @@ UI aanwijzingen (Blazor)
                        <h5>Concurrency Conflict</h5>
                    </div>
                    <div class="modal-body">
-                       De budgetregel is gewijzigd door een ander proces. 
+                       De budgetregel is gewijzigd door een ander proces.
                        Wilt u de laatste versie herladen? (Uw wijzigingen gaan verloren.)
                    </div>
                    <div class="modal-footer">
@@ -120,6 +126,7 @@ Edgecases
 Tests
 
 **Unit tests** (`LocalFinanceManager.Tests`):
+
 - `UpdateBudgetLineDtoValidator` test suite (reeds bestaand):
   - MonthlyAmounts array length ≠ 12 → validation error
   - Negative monthly amounts → validation error (optioneel, afhankelijk van business regel)
@@ -129,12 +136,14 @@ Tests
   - Toggle uniform off → maandwaarden blijven behouden
 
 **Integration tests** (`LocalFinanceManager.Tests` met in-memory SQLite):
+
 - Create budget line → edit monthly amounts → verify persistence
 - Edit with stale RowVersion → 409 Conflict response met current state
 - Edit category en monthly amounts tegelijk → verify both updated
 - Edit archived budget plan line → verify updates allowed (historische wijzigingen)
 
 **E2E tests** (`LocalFinanceManager.E2E` met Playwright):
+
 - **Test:** Edit budget line workflow
   - Create budget plan met één line → Navigate edit page → Click "Edit" op budgetregel → Change month 1 van 100 naar 150 → Click "Save" → Verify updated value persisted (reload page, check value)
 - **Test:** Cancel edit workflow

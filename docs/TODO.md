@@ -57,6 +57,81 @@ See detailed spec in `docs/MVP-0-Infrastructure.md`. This phase must be complete
 - [x] Seed data: Sample budget plan for test account with 5 budget lines + monthly allocations
 - [x] Definition of Done: JSON storage working, aggregations accurate, RowVersion enforced
 
+## MVP 2.1 — Category Management UI [Not Started]
+
+See detailed spec in `docs/MVP-2.1-CategoryManagement.md`.
+
+- [ ] Create `Components/Pages/Categories.razor` (list all categories)
+- [ ] Create `Components/Pages/CategoryCreate.razor` (create new category)
+- [ ] Create `Components/Pages/CategoryEdit.razor` (rename category)
+- [ ] Add `UpdateAsync` method to `CategoryService`
+- [ ] Add `PUT /api/categories/{id}` endpoint to `CategoriesController`
+- [ ] Create `UpdateCategoryDto` and `UpdateCategoryDtoValidator`
+- [ ] Add "Categorieën" link to `NavMenu.razor`
+- [ ] Unit tests: UpdateCategoryDto validation, CategoryService.UpdateAsync logic
+- [ ] Integration tests: Update category with RowVersion conflict → 409 Conflict
+- [ ] E2E tests: Create, edit/rename, archive category workflows (remove [Ignore] attributes)
+- [ ] Definition of Done: Full Category CRUD via UI, RowVersion concurrency working, all E2E tests passing
+
+## MVP 2.2 — BudgetLine Inline Editing [Not Started]
+
+See detailed spec in `docs/MVP-2.2-BudgetLineEditing.md`.
+
+- [ ] Add edit mode state to `BudgetPlanEdit.razor` (Edit/Save/Cancel buttons per line)
+- [ ] Transform budget line table row to input fields when editing
+- [ ] Implement category dropdown + 12 month inputs + notes input in edit mode
+- [ ] Wire Save button to existing `PUT /api/budgetplans/{planId}/lines/{lineId}` endpoint
+- [ ] Handle 409 Conflict with reload prompt dialog
+- [ ] Preserve uniform amount feature in edit mode (checkbox + auto-fill)
+- [ ] Implement Cancel button to restore original values without API call
+- [ ] Unit tests: Uniform amount logic, edit mode state transitions
+- [ ] Integration tests: Edit budget line with stale RowVersion → 409 Conflict response
+- [ ] E2E tests: Edit workflow, cancel workflow, uniform amount in edit, concurrency conflict handling
+- [ ] Definition of Done: Users can edit budget lines inline, 409 Conflict handled, uniform amount works
+
+## MVP 2.3 — CategoryType (Income/Expense) [Not Started]
+
+See detailed spec in `docs/MVP-2.3-CategoryType.md`.
+
+- [ ] Add `CategoryType` enum (Income, Expense) to `Models/Category.cs`
+- [ ] Add `Type` property to `Category` model
+- [ ] EF Core migration: `AddCategoryTypeField` (automatic migration on startup)
+- [ ] Configure EF Core: `HasConversion<int>()` and `HasDefaultValue(CategoryType.Expense)`
+- [ ] Update all DTOs: `CategoryDto`, `CreateCategoryDto`, `UpdateCategoryDto` to include `Type`
+- [ ] Update validators: `CreateCategoryDtoValidator`, `UpdateCategoryDtoValidator` to require `Type`
+- [ ] Add Type radio buttons (Income/Expense) to category create/edit forms
+- [ ] Add Type column to category list page
+- [ ] Update seed data to include Type for all sample categories
+- [ ] Optional: Group budget lines by Income/Expense in budget editor
+- [ ] Optional: Add Income/Expense totals + Net calculation in budget editor
+- [ ] Unit tests: Enum validation, enum serialization (Income/Expense ↔ JSON string)
+- [ ] Integration tests: Create/update categories with Type, migration applies correctly
+- [ ] E2E tests: Create Income category, create Expense category, edit category type, verify list displays type
+- [ ] Definition of Done: CategoryType enum implemented, all CRUD includes Type, migration applied, E2E tests passing
+
+## MVP 2.4 — Database Environment Configuration [Not Started]
+
+See detailed spec in `docs/MVP-2.4-DatabaseEnvironments.md`.
+
+- [ ] Update `appsettings.Development.json`: connection string to `Data Source=localfinancemanager.dev.db`
+- [ ] Keep `appsettings.json` (Production default): connection string `Data Source=localfinancemanager.db`
+- [ ] Optional: Create `appsettings.Production.json` for explicit Production settings
+- [ ] Update `.gitignore`: add `*.db`, `*.db-shm`, `*.db-wal`, exclude database files
+- [ ] Update `.gitignore`: allow test fixtures `!tests/**/fixtures/**/*.db`
+- [ ] Update `Program.cs`: safety check for `RecreateDatabase` flag (ignore in Production)
+- [ ] Create `Components/Pages/Admin/Settings.razor` (environment info, database config, migrations, seed data status)
+- [ ] Add "Admin Settings" link to `NavMenu.razor`
+- [ ] Update README.md: Database Configuration section (Development/Production, environment switching, Admin Settings usage)
+- [ ] Update README.md: Troubleshooting section (wrong database file, database location)
+- [ ] Unit tests: Verify Development loads `.dev.db`, Production loads `.db`, RecreateDatabase safety in Production
+- [ ] Integration tests: No changes needed (in-memory SQLite)
+- [ ] E2E tests: Update `PlaywrightFixture` to use `localfinancemanager.test.db` with `RecreateDatabase=true`
+- [ ] E2E tests: Admin Settings page loads and displays correct information
+- [ ] Verify: Run in Development → creates `.dev.db`, navigate `/admin/settings` → verify correct environment/database
+- [ ] Verify: Switch to Production → creates `.db`, navigate `/admin/settings` → verify correct environment
+- [ ] Verify: `git status` shows no `.db` files (gitignore working)
+- [ ] Definition of Done: Separate Dev/Prod databases, Admin Settings page functional, database files excluded from git, README documented
+
 ## MVP 3 — Import transacties [High Priority]
 
 - [ ] Entity: Transaction (extends BaseEntity, Amount, Date, Description, Counterparty, OriginalImport string, ImportBatchId, SourceFileName, ImportedAt, RowVersion)

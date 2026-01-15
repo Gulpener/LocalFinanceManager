@@ -31,12 +31,14 @@ DB / EF details
 API contract details
 
 **Bestaande endpoints (geen wijzigingen):**
+
 - `GET /api/categories` — lijst van actieve categorieën
 - `GET /api/categories/{id}` — ophalen per ID
 - `POST /api/categories` — nieuwe categorie aanmaken
 - `DELETE /api/categories/{id}` — archiveren (soft-delete)
 
 **Nieuw toe te voegen endpoint:**
+
 - `PUT /api/categories/{id}` — update/rename categorie
   - Request body: `UpdateCategoryDto { "name":"Nieuwe Naam", "rowVersion":"..." }`
   - Response: `CategoryDto` met bijgewerkte data
@@ -64,7 +66,7 @@ public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Naam is verplicht")
             .MaximumLength(100).WithMessage("Naam mag maximaal 100 tekens bevatten");
-        
+
         RuleFor(x => x.RowVersion)
             .NotNull().WithMessage("RowVersion is verplicht voor concurrency controle");
     }
@@ -76,6 +78,7 @@ UI aanwijzingen (Blazor)
 **Nieuwe/bijgewerkte pages:**
 
 1. **Components/Pages/Categories.razor** (lijst-overzicht)
+
    - URL: `/categories`
    - Tabel met kolommen: Name, Actions (Edit, Archive)
    - "Nieuwe Categorie" knop navigeert naar `/categories/new`
@@ -83,6 +86,7 @@ UI aanwijzingen (Blazor)
    - Filter om gearchiveerde categorieën te tonen (optioneel)
 
 2. **Components/Pages/CategoryCreate.razor** (nieuwe categorie)
+
    - URL: `/categories/new`
    - Formulier: Name (text input, required)
    - Client-side + server-side validatie via FluentValidation
@@ -99,6 +103,7 @@ UI aanwijzingen (Blazor)
    - Na succes: navigeer naar `/categories` met success toast
 
 **NavMenu update:**
+
 - Voeg toe aan `Components/Layout/NavMenu.razor`:
   ```razor
   <div class="nav-item px-3">
@@ -120,6 +125,7 @@ Tests
 **Project Structure:** Shared test infrastructure from MVP-1 en MVP-2 (`LocalFinanceManager.Tests` en `LocalFinanceManager.E2E`).
 
 **Unit tests** (`LocalFinanceManager.Tests`):
+
 - `UpdateCategoryDtoValidator` test suite:
   - Empty name → validation error
   - Name > 100 characters → validation error
@@ -131,12 +137,14 @@ Tests
   - RowVersion mismatch simulation → `DbUpdateConcurrencyException` path
 
 **Integration tests** (`LocalFinanceManager.Tests` met in-memory SQLite):
+
 - Create category → update name → verify persistence
 - Update with stale RowVersion → 409 Conflict response met huidige entity state
 - Update archived category → 404 Not Found (service filters archived entities)
 - Concurrent update scenario: twee simultane updates → laatste wint na reload
 
 **E2E tests** (`LocalFinanceManager.E2E` met Playwright):
+
 - **Test:** Create category workflow
   - Navigate `/categories` → Click "Nieuwe Categorie" → Fill name "Boodschappen" → Submit → Verify appears in list
 - **Test:** Edit/rename category workflow
