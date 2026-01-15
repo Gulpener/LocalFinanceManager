@@ -28,11 +28,14 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IBudgetPlanRepository, BudgetPlanRepository>();
 builder.Services.AddScoped<IBudgetLineRepository, BudgetLineRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ITransactionSplitRepository, TransactionSplitRepository>();
+builder.Services.AddScoped<ITransactionAuditRepository, TransactionAuditRepository>();
 
 // Register services
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BudgetPlanService>();
+builder.Services.AddScoped<ITransactionAssignmentService, TransactionAssignmentService>();
 
 // Register import services
 builder.Services.AddScoped<LocalFinanceManager.Services.Import.CsvImportParser>();
@@ -49,6 +52,10 @@ builder.Services.AddScoped<IValidator<CreateBudgetPlanDto>, CreateBudgetPlanDtoV
 builder.Services.AddScoped<IValidator<UpdateBudgetPlanDto>, UpdateBudgetPlanDtoValidator>();
 builder.Services.AddScoped<IValidator<CreateBudgetLineDto>, CreateBudgetLineDtoValidator>();
 builder.Services.AddScoped<IValidator<UpdateBudgetLineDto>, UpdateBudgetLineDtoValidator>();
+builder.Services.AddScoped<IValidator<AssignTransactionRequest>, AssignTransactionRequestValidator>();
+builder.Services.AddScoped<IValidator<SplitTransactionRequest>, SplitTransactionRequestValidator>();
+builder.Services.AddScoped<IValidator<BulkAssignTransactionsRequest>, BulkAssignTransactionsRequestValidator>();
+builder.Services.AddScoped<IValidator<UndoAssignmentRequest>, UndoAssignmentRequestValidator>();
 
 // Register IbanNet
 builder.Services.AddSingleton<IIbanValidator, IbanValidator>();

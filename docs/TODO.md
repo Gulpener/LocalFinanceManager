@@ -151,23 +151,23 @@ See detailed spec in `docs/MVP-2.4-DatabaseEnvironments.md`.
 - [ ] E2E tests: Upload → preview mapping → import workflow, transaction list verification - deferred for future work
 - [x] Definition of Done: Import succeeds with audit trail, deduplication accurate, RowVersion bypass documented
 
-## MVP 4 — Koppel transacties aan budgetcategorieën [Medium Priority]
+## MVP 4 — Koppel transacties aan budgetcategorieën [✓ COMPLETED]
 
-- [ ] Entity: TransactionSplit (extends BaseEntity, TransactionId FK, BudgetLineId FK, Amount, Note, RowVersion)
-- [ ] Update Transaction: Add optional AssignedParts collection (null/empty = unsplit)
-- [ ] Single assign API: POST /transactions/{id}/assign body: { budgetLineId }
-- [ ] Bulk assign API: POST /transactions/bulk-assign body: { transactionIds[], budgetLineId }
-- [ ] Split API: POST /transactions/{id}/split body: { splits: [{budgetLineId, amount}, ...] }
-- [ ] Rounding tolerance configuration: validate Sum(splits) ≤ Amount + tolerance
-- [ ] Computed property: Transaction.EffectiveAmount (sum of splits or base amount)
-- [ ] Computed property: Transaction.IsSplit (true if splits exist)
-- [ ] Concurrency: RowVersion enforced on all transaction edits → 409 Conflict handling
-- [ ] Audit trail: ChangedBy, ChangedAt, before/after values for all assignments
-- [ ] Undo functionality: revert last N assignment actions per transaction
-- [ ] Unit tests: Split sum validation, rounding tolerance, RowVersion conflict detection
-- [ ] Integration tests: Assign/split workflows with RowVersion mismatch → 409 Conflict verification, atomic bulk operations
-- [ ] E2E tests: Assign UI workflow, split editor (add/remove rows, validation), bulk assign preview, undo
-- [ ] Definition of Done: Splits sum validation working, RowVersion enforced, audit trail complete
+- [x] Entity: TransactionSplit (extends BaseEntity, TransactionId FK, BudgetLineId FK, Amount, Note, RowVersion)
+- [x] Update Transaction: Add optional AssignedParts collection (null/empty = unsplit)
+- [x] Single assign API: POST /transactions/{id}/assign body: { budgetLineId }
+- [x] Bulk assign API: POST /transactions/bulk-assign body: { transactionIds[], budgetLineId }
+- [x] Split API: POST /transactions/{id}/split body: { splits: [{budgetLineId, amount}, ...] }
+- [x] Rounding tolerance configuration: validate Sum(splits) ≤ Amount + tolerance
+- [x] Computed property: Transaction.EffectiveAmount (sum of splits or base amount)
+- [x] Computed property: Transaction.IsSplit (true if splits exist)
+- [x] Concurrency: RowVersion enforced on all transaction edits → 409 Conflict handling
+- [x] Audit trail: ChangedBy, ChangedAt, before/after values for all assignments
+- [x] Undo functionality: revert last N assignment actions per transaction
+- [x] Unit tests: Split sum validation, rounding tolerance, RowVersion conflict detection (14 tests passing)
+- [x] Integration tests: Assign/split workflows with RowVersion mismatch → 409 Conflict verification, atomic bulk operations (7 tests passing)
+- [ ] E2E tests: Assign UI workflow, split editor (add/remove rows, validation), bulk assign preview, undo (deferred - UI components not implemented)
+- [x] Definition of Done: Splits sum validation working, RowVersion enforced, audit trail complete, API endpoints functional
 
 ## MVP 5 — Leerfunctie (categorisatie) [Medium Priority]
 

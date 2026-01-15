@@ -1,7 +1,9 @@
 using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.DTOs;
+using LocalFinanceManager.Services;
 using LocalFinanceManager.Services.Import;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LocalFinanceManager.Controllers;
 
@@ -14,15 +16,18 @@ public class TransactionsController : ControllerBase
 {
     private readonly ITransactionRepository _repository;
     private readonly ImportService _importService;
+    private readonly ITransactionAssignmentService _assignmentService;
     private readonly ILogger<TransactionsController> _logger;
 
     public TransactionsController(
         ITransactionRepository repository,
         ImportService importService,
+        ITransactionAssignmentService assignmentService,
         ILogger<TransactionsController> logger)
     {
         _repository = repository;
         _importService = importService;
+        _assignmentService = assignmentService;
         _logger = logger;
     }
 
@@ -206,6 +211,176 @@ public class TransactionsController : ControllerBase
                 title = "Internal Server Error",
                 status = 500,
                 detail = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// Assigns a transaction to a budget line or category.
+    /// </summary>
+    [HttpPost]
+    [Route("{id}/assign")]
+    public async Task<ActionResult<TransactionDto>> AssignTransaction(Guid id, [FromBody] AssignTransactionRequest request)
+    {
+        try
+        {
+            var result = await _assignmentService.AssignTransactionAsync(id, request);
+            return Ok(result);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+                title = "Conflict - Resource was modified.",
+                status = 409,
+                detail = "The transaction was modified by another request. Please reload and try again."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                title = "Not Found",
+                status = 404,
+                detail = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assigning transaction {TransactionId}", id);
+            return StatusCode(500, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                title = "Internal Server Error",
+                status = 500
+            });
+        }
+    }
+
+    /// <summary>
+    /// Splits a transaction across multiple budget lines or categories.
+    /// </summary>
+    [HttpPost]
+    [Route("{id}/split")]
+    public async Task<ActionResult<TransactionDto>> SplitTransaction(Guid id, [FromBody] SplitTransactionRequest request)
+    {
+        try
+        {
+            var result = await _assignmentService.SplitTransactionAsync(id, request);
+            return Ok(result);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+                title = "Conflict - Resource was modified.",
+                status = 409,
+                detail = "The transaction was modified by another request. Please reload and try again."
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                title = "Validation error",
+                status = 400,
+                detail = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error splitting transaction {TransactionId}", id);
+            return StatusCode(500, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                title = "Internal Server Error",
+                status = 500
+            });
+        }
+    }
+
+    /// <summary>
+    /// Bulk assigns multiple transactions to the same budget line or category.
+    /// </summary>
+    [HttpPost]
+    [Route("bulk-assign")]
+    public async Task<ActionResult<BulkAssignResultDto>> BulkAssignTransactions([FromBody] BulkAssignTransactionsRequest request)
+    {
+        try
+        {
+            var result = await _assignmentService.BulkAssignTransactionsAsync(request);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error bulk assigning transactions");
+            return StatusCode(500, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                title = "Internal Server Error",
+                status = 500
+            });
+        }
+    }
+
+    /// <summary>
+    /// Undoes the last assignment action on a transaction.
+    /// </summary>
+    [HttpPost]
+    [Route("undo")]
+    public async Task<ActionResult<TransactionDto>> UndoAssignment([FromBody] UndoAssignmentRequest request)
+    {
+        try
+        {
+            var result = await _assignmentService.UndoAssignmentAsync(request);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                title = "Not Found",
+                status = 404,
+                detail = ex.Message
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error undoing assignment");
+            return StatusCode(500, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                title = "Internal Server Error",
+                status = 500
+            });
+        }
+    }
+
+    /// <summary>
+    /// Gets audit history for a transaction.
+    /// </summary>
+    [HttpGet]
+    [Route("{id}/audit")]
+    public async Task<ActionResult<List<TransactionAuditDto>>> GetAuditHistory(Guid id)
+    {
+        try
+        {
+            var audits = await _assignmentService.GetTransactionAuditHistoryAsync(id);
+            return Ok(audits);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting audit history for transaction {TransactionId}", id);
+            return StatusCode(500, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                title = "Internal Server Error",
+                status = 500
             });
         }
     }
