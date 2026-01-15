@@ -4,8 +4,10 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.DTOs.Validators;
+using LocalFinanceManager.Models;
 using FluentValidation;
 using IbanNet;
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,17 +18,28 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(connectionString));
 
+// Register configuration options
+builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
+
 // Register repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IBudgetPlanRepository, BudgetPlanRepository>();
 builder.Services.AddScoped<IBudgetLineRepository, BudgetLineRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 // Register services
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BudgetPlanService>();
+
+// Register import services
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.CsvImportParser>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.JsonImportParser>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.ExactMatchStrategy>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.FuzzyMatchStrategy>();
+builder.Services.AddScoped<LocalFinanceManager.Services.Import.ImportService>();
 
 // Register validators
 builder.Services.AddScoped<IValidator<CreateAccountRequest>, CreateAccountRequestValidator>();
@@ -39,6 +52,13 @@ builder.Services.AddScoped<IValidator<UpdateBudgetLineDto>, UpdateBudgetLineDtoV
 
 // Register IbanNet
 builder.Services.AddSingleton<IIbanValidator, IbanValidator>();
+
+// Register HttpClient for Blazor components
+builder.Services.AddScoped(sp =>
+{
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+});
 
 // Add controllers for API endpoints
 builder.Services.AddControllers();
