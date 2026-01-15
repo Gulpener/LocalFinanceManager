@@ -1,0 +1,143 @@
+@page "/admin/monitoring"
+@using LocalFinanceManager.Services
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILogger<Monitoring> Logger
+
+<PageTitle>Automation Monitoring</PageTitle>
+
+<h1>Automation Monitoring Dashboard</h1>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3>Auto-Apply Statistics (Last @windowDays Days)</h3>
+        
+        @if (isLoading)
+        {
+            <p><em>Loading statistics...</em></p>
+        }
+        else if (stats != null)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h5>Total Auto-Applied</h5>
+                            <p class="display-4">@stats.TotalAutoApplied</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Total Undone</h5>
+                            <p class="display-4">@stats.TotalUndone</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Undo Rate</h5>
+                            <p class="display-4 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "text-success")">
+                                @(stats.UndoRate.ToString("P1"))
+                            </p>
+                            @if (stats.IsUndoRateAboveThreshold)
+                            {
+                                <span class="badge bg-danger">Above Threshold</span>
+                            }
+                        </div>
+                        <div class="col-md-3">
+                            <h5>Avg Confidence</h5>
+                            <p class="display-4">@(stats.AverageConfidence.ToString("P1"))</p>
+                        </div>
+                    </div>
+                    
+                    @if (stats.IsUndoRateAboveThreshold)
+                    {
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <strong>Warning:</strong> Undo rate exceeds configured threshold. 
+                            This may indicate model quality issues. Consider reviewing recent model training or disabling auto-apply.
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        else if (errorMessage != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                @errorMessage
+            </div>
+        }
+        
+        <div class="mt-3">
+            <label for="windowDays">Time Window (days):</label>
+            <select id="windowDays" class="form-select" style="width: 200px; display: inline-block;" @onchange="OnWindowDaysChanged">
+                <option value="7" selected>Last 7 days</option>
+                <option value="14">Last 14 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+            </select>
+            <button class="btn btn-primary ms-2" @onclick="LoadStats">Refresh</button>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h3>Configuration</h3>
+        <div class="card">
+            <div class="card-body">
+                <p><strong>Auto-Apply Status:</strong> Check appsettings.json AutomationOptions.AutoApplyEnabled</p>
+                <p><strong>Confidence Threshold:</strong> 0.85 (85%)</p>
+                <p><strong>Retraining Schedule:</strong> Sunday 2 AM UTC (weekly)</p>
+                <p><strong>Auto-Apply Schedule:</strong> Daily 6 AM UTC</p>
+                <p><strong>Undo Retention:</strong> 30 days</p>
+                <p><strong>Undo Rate Alert Threshold:</strong> 20%</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private AutoApplyStats? stats;
+    private int windowDays = 7;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStats();
+    }
+
+    private async Task LoadStats()
+    {
+        isLoading = true;
+        errorMessage = null;
+        
+        try
+        {
+            stats = await Http.GetFromJsonAsync<AutoApplyStats>($"/api/automation/stats?windowDays={windowDays}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load auto-apply statistics");
+            errorMessage = "Failed to load statistics. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnWindowDaysChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var days))
+        {
+            windowDays = days;
+            await LoadStats();
+        }
+    }
+
+    public class AutoApplyStats
+    {
+        public int WindowDays { get; set; }
+        public int TotalAutoApplied { get; set; }
+        public int TotalUndone { get; set; }
+        public decimal UndoRate { get; set; }
+        public decimal AverageConfidence { get; set; }
+        public bool IsUndoRateAboveThreshold { get; set; }
+    }
+}

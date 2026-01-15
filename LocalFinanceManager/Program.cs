@@ -21,6 +21,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Register configuration options
 builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
 builder.Services.Configure<LocalFinanceManager.Configuration.MLOptions>(builder.Configuration.GetSection("MLOptions"));
+builder.Services.Configure<LocalFinanceManager.Configuration.AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
 
 // Register repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -42,6 +43,14 @@ builder.Services.AddScoped<ITransactionAssignmentService, TransactionAssignmentS
 // Register ML services
 builder.Services.AddScoped<LocalFinanceManager.ML.IFeatureExtractor, LocalFinanceManager.ML.FeatureExtractor>();
 builder.Services.AddScoped<LocalFinanceManager.ML.IMLService, LocalFinanceManager.Services.MLService>();
+
+// Register automation services
+builder.Services.AddScoped<IMonitoringService, MonitoringService>();
+builder.Services.AddScoped<IUndoService, UndoService>();
+
+// Register background services
+builder.Services.AddHostedService<LocalFinanceManager.Services.Background.MLRetrainingBackgroundService>();
+builder.Services.AddHostedService<LocalFinanceManager.Services.Background.AutoApplyBackgroundService>();
 
 // Register import services
 builder.Services.AddScoped<LocalFinanceManager.Services.Import.CsvImportParser>();

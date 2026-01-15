@@ -48,4 +48,31 @@ public class TransactionAudit : BaseEntity
     /// Optional reason or note for the change.
     /// </summary>
     public string? Reason { get; set; }
+
+    /// <summary>
+    /// Indicates whether this assignment was automatically applied by the ML system.
+    /// </summary>
+    public bool IsAutoApplied { get; set; }
+
+    /// <summary>
+    /// Identifier of the automated system that applied this change.
+    /// Typically "AutoApplyService" for auto-applied assignments.
+    /// </summary>
+    public string? AutoAppliedBy { get; set; }
+
+    /// <summary>
+    /// Timestamp when the auto-apply occurred.
+    /// </summary>
+    public DateTime? AutoAppliedAt { get; set; }
+
+    /// <summary>
+    /// ML model confidence score for auto-applied assignments.
+    /// Range: 0.0 to 1.0
+    /// </summary>
+    public float? Confidence { get; set; }
+
+    /// <summary>
+    /// Version of the ML model that generated the auto-applied suggestion.
+    /// </summary>
+    public int? ModelVersion { get; set; }
 }
