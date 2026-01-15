@@ -1,13 +1,15 @@
 using LocalFinanceManager.Services.Background;
+using NUnit.Framework;
 
 namespace LocalFinanceManager.Tests.Unit;
 
 /// <summary>
 /// Unit tests for CronParser utility.
 /// </summary>
+[TestFixture]
 public class CronParserTests
 {
-    [Fact]
+    [Test]
     public void GetNextOccurrence_Daily6AM_ReturnsCorrectTime()
     {
         // Arrange
@@ -18,14 +20,14 @@ public class CronParserTests
         var nextRun = CronParser.GetNextOccurrence(cronExpression, fromTime);
 
         // Assert
-        Assert.Equal(2026, nextRun.Year);
-        Assert.Equal(1, nextRun.Month);
-        Assert.Equal(16, nextRun.Day); // Next day
-        Assert.Equal(6, nextRun.Hour);
-        Assert.Equal(0, nextRun.Minute);
+        Assert.That(nextRun.Year, Is.EqualTo(2026));
+        Assert.That(nextRun.Month, Is.EqualTo(1));
+        Assert.That(nextRun.Day, Is.EqualTo(16)); // Next day
+        Assert.That(nextRun.Hour, Is.EqualTo(6));
+        Assert.That(nextRun.Minute, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public void GetNextOccurrence_WeeklySunday2AM_ReturnsCorrectTime()
     {
         // Arrange
@@ -36,13 +38,13 @@ public class CronParserTests
         var nextRun = CronParser.GetNextOccurrence(cronExpression, fromTime);
 
         // Assert
-        Assert.Equal(DayOfWeek.Sunday, nextRun.DayOfWeek);
-        Assert.Equal(2, nextRun.Hour);
-        Assert.Equal(0, nextRun.Minute);
-        Assert.True(nextRun > fromTime); // Must be in the future
+        Assert.That(nextRun.DayOfWeek, Is.EqualTo(DayOfWeek.Sunday));
+        Assert.That(nextRun.Hour, Is.EqualTo(2));
+        Assert.That(nextRun.Minute, Is.EqualTo(0));
+        Assert.That(nextRun > fromTime, Is.True); // Must be in the future
     }
 
-    [Fact]
+    [Test]
     public void GetNextOccurrence_EveryHour_ReturnsNextHour()
     {
         // Arrange
@@ -53,11 +55,11 @@ public class CronParserTests
         var nextRun = CronParser.GetNextOccurrence(cronExpression, fromTime);
 
         // Assert
-        Assert.Equal(11, nextRun.Hour); // Next hour
-        Assert.Equal(0, nextRun.Minute);
+        Assert.That(nextRun.Hour, Is.EqualTo(11)); // Next hour
+        Assert.That(nextRun.Minute, Is.EqualTo(0));
     }
 
-    [Fact]
+    [Test]
     public void GetNextOccurrence_SpecificMinute_ReturnsCorrectTime()
     {
         // Arrange
@@ -68,12 +70,12 @@ public class CronParserTests
         var nextRun = CronParser.GetNextOccurrence(cronExpression, fromTime);
 
         // Assert
-        Assert.Equal(15, nextRun.Day); // Same day
-        Assert.Equal(14, nextRun.Hour);
-        Assert.Equal(30, nextRun.Minute);
+        Assert.That(nextRun.Day, Is.EqualTo(15)); // Same day
+        Assert.That(nextRun.Hour, Is.EqualTo(14));
+        Assert.That(nextRun.Minute, Is.EqualTo(30));
     }
 
-    [Fact]
+    [Test]
     public void GetNextOccurrence_InvalidFormat_ThrowsException()
     {
         // Arrange
@@ -84,7 +86,7 @@ public class CronParserTests
         Assert.Throws<ArgumentException>(() => CronParser.GetNextOccurrence(invalidCronExpression, fromTime));
     }
 
-    [Fact]
+    [Test]
     public void GetNextOccurrence_AfterScheduledTime_ReturnsNextDay()
     {
         // Arrange
@@ -95,7 +97,7 @@ public class CronParserTests
         var nextRun = CronParser.GetNextOccurrence(cronExpression, fromTime);
 
         // Assert
-        Assert.Equal(16, nextRun.Day); // Next day
-        Assert.Equal(6, nextRun.Hour);
+        Assert.That(nextRun.Day, Is.EqualTo(16)); // Next day
+        Assert.That(nextRun.Hour, Is.EqualTo(6));
     }
 }

@@ -3,11 +3,12 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
-using LocalFinanceManager.Tests.Infrastructure;
+using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NUnit.Framework;
 
 namespace LocalFinanceManager.Tests.Unit;
 
@@ -15,6 +16,7 @@ namespace LocalFinanceManager.Tests.Unit;
 /// Unit tests for UndoService.
 /// Tests undo logic, retention window, and concurrency conflict handling.
 /// </summary>
+[TestFixture]
 public class UndoServiceTests : IDisposable
 {
     private readonly AppDbContext _dbContext;
@@ -26,7 +28,7 @@ public class UndoServiceTests : IDisposable
     public UndoServiceTests()
     {
         var contextFactory = new TestDbContextFactory();
-        _dbContext = contextFactory.CreateDbContext();
+        _dbContext = contextFactory.CreateContext();
 
         _mockAuditRepo = new Mock<ITransactionAuditRepository>();
         _mockLogger = new Mock<ILogger<UndoService>>();
@@ -41,7 +43,7 @@ public class UndoServiceTests : IDisposable
         _undoService = new UndoService(_dbContext, _mockAuditRepo.Object, optionsMock, _mockLogger.Object);
     }
 
-    [Fact]
+    [Test]
     public async Task UndoAutoApplyAsync_WithValidAutoApply_SuccessfullyUndoes()
     {
         // Arrange
@@ -99,14 +101,14 @@ public class UndoServiceTests : IDisposable
         var result = await _undoService.UndoAutoApplyAsync(transaction.Id);
 
         // Assert
-        Assert.True(result.Success);
-        Assert.Contains("successfully undone", result.Message);
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Message, Does.Contain("successfully undone"));
 
         // Verify split was removed
         var remainingSplits = await _dbContext.TransactionSplits
             .Where(s => s.TransactionId == transaction.Id)
             .ToListAsync();
-        Assert.Empty(remainingSplits);
+        Assert.That(remainingSplits, Is.Empty);
 
         // Verify audit entry was created
         _mockAuditRepo.Verify(x => x.AddAsync(It.Is<TransactionAudit>(
@@ -114,7 +116,7 @@ public class UndoServiceTests : IDisposable
         )), Times.Once);
     }
 
-    [Fact]
+    [Test]
     public async Task UndoAutoApplyAsync_OutsideRetentionWindow_ReturnsFalse()
     {
         // Arrange
@@ -155,11 +157,11 @@ public class UndoServiceTests : IDisposable
         var result = await _undoService.UndoAutoApplyAsync(transaction.Id);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.Contains("retention window", result.Message);
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Message, Does.Contain("retention window"));
     }
 
-    [Fact]
+    [Test]
     public async Task UndoAutoApplyAsync_WithSubsequentChanges_ReturnsConflict()
     {
         // Arrange
@@ -209,12 +211,12 @@ public class UndoServiceTests : IDisposable
         var result = await _undoService.UndoAutoApplyAsync(transaction.Id);
 
         // Assert
-        Assert.False(result.Success);
-        Assert.True(result.ConflictDetected);
-        Assert.Contains("modified after auto-apply", result.Message);
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.ConflictDetected, Is.True);
+        Assert.That(result.Message, Does.Contain("modified after auto-apply"));
     }
 
-    [Fact]
+    [Test]
     public async Task CanUndoAsync_WithValidAutoApply_ReturnsTrue()
     {
         // Arrange
@@ -249,10 +251,10 @@ public class UndoServiceTests : IDisposable
         var canUndo = await _undoService.CanUndoAsync(transaction.Id);
 
         // Assert
-        Assert.True(canUndo);
+        Assert.That(canUndo, Is.True);
     }
 
-    [Fact]
+    [Test]
     public async Task CanUndoAsync_OutsideRetentionWindow_ReturnsFalse()
     {
         // Arrange
@@ -287,7 +289,7 @@ public class UndoServiceTests : IDisposable
         var canUndo = await _undoService.CanUndoAsync(transaction.Id);
 
         // Assert
-        Assert.False(canUndo);
+        Assert.That(canUndo, Is.False);
     }
 
     public void Dispose()

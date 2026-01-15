@@ -2,11 +2,12 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
-using LocalFinanceManager.Tests.Infrastructure;
+using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NUnit.Framework;
 
 namespace LocalFinanceManager.Tests.Unit;
 
@@ -14,6 +15,7 @@ namespace LocalFinanceManager.Tests.Unit;
 /// Unit tests for MonitoringService.
 /// Tests auto-apply statistics and undo rate threshold detection.
 /// </summary>
+[TestFixture]
 public class MonitoringServiceTests : IDisposable
 {
     private readonly AppDbContext _dbContext;
@@ -24,7 +26,7 @@ public class MonitoringServiceTests : IDisposable
     public MonitoringServiceTests()
     {
         var contextFactory = new TestDbContextFactory();
-        _dbContext = contextFactory.CreateDbContext();
+        _dbContext = contextFactory.CreateContext();
 
         _mockLogger = new Mock<ILogger<MonitoringService>>();
 
@@ -37,20 +39,20 @@ public class MonitoringServiceTests : IDisposable
         _monitoringService = new MonitoringService(_dbContext, optionsMock, _mockLogger.Object);
     }
 
-    [Fact]
+    [Test]
     public async Task GetAutoApplyStatsAsync_WithNoData_ReturnsZeroStats()
     {
         // Act
         var stats = await _monitoringService.GetAutoApplyStatsAsync(7);
 
         // Assert
-        Assert.Equal(0, stats.TotalAutoApplied);
-        Assert.Equal(0, stats.TotalUndone);
-        Assert.Equal(0, stats.UndoRate);
-        Assert.False(stats.IsUndoRateAboveThreshold);
+        Assert.That(stats.TotalAutoApplied, Is.EqualTo(0));
+        Assert.That(stats.TotalUndone, Is.EqualTo(0));
+        Assert.That(stats.UndoRate, Is.EqualTo(0));
+        Assert.That(stats.IsUndoRateAboveThreshold, Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task GetAutoApplyStatsAsync_WithAutoAppliedOnly_ReturnsCorrectStats()
     {
         // Arrange
@@ -68,14 +70,14 @@ public class MonitoringServiceTests : IDisposable
         var stats = await _monitoringService.GetAutoApplyStatsAsync(7);
 
         // Assert
-        Assert.Equal(2, stats.TotalAutoApplied);
-        Assert.Equal(0, stats.TotalUndone);
-        Assert.Equal(0, stats.UndoRate);
-        Assert.Equal(0.89m, stats.AverageConfidence); // (0.90 + 0.88) / 2
-        Assert.False(stats.IsUndoRateAboveThreshold);
+        Assert.That(stats.TotalAutoApplied, Is.EqualTo(2));
+        Assert.That(stats.TotalUndone, Is.EqualTo(0));
+        Assert.That(stats.UndoRate, Is.EqualTo(0));
+        Assert.That(stats.AverageConfidence, Is.EqualTo(0.89m)); // (0.90 + 0.88) / 2
+        Assert.That(stats.IsUndoRateAboveThreshold, Is.False);
     }
 
-    [Fact]
+    [Test]
     public async Task GetAutoApplyStatsAsync_WithUndos_CalculatesUndoRate()
     {
         // Arrange
@@ -97,13 +99,13 @@ public class MonitoringServiceTests : IDisposable
         var stats = await _monitoringService.GetAutoApplyStatsAsync(7);
 
         // Assert
-        Assert.Equal(3, stats.TotalAutoApplied);
-        Assert.Equal(1, stats.TotalUndone);
-        Assert.Equal(0.33m, Math.Round(stats.UndoRate, 2)); // 1/3 ≈ 0.33
-        Assert.True(stats.IsUndoRateAboveThreshold); // 33% > 20% threshold
+        Assert.That(stats.TotalAutoApplied, Is.EqualTo(3));
+        Assert.That(stats.TotalUndone, Is.EqualTo(1));
+        Assert.That(Math.Round(stats.UndoRate, 2), Is.EqualTo(0.33m)); // 1/3 ≈ 0.33
+        Assert.That(stats.IsUndoRateAboveThreshold, Is.True); // 33% > 20% threshold
     }
 
-    [Fact]
+    [Test]
     public async Task GetAutoApplyStatsAsync_WithExactThreshold_TriggesAlert()
     {
         // Arrange
@@ -120,13 +122,13 @@ public class MonitoringServiceTests : IDisposable
         var stats = await _monitoringService.GetAutoApplyStatsAsync(7);
 
         // Assert
-        Assert.Equal(5, stats.TotalAutoApplied);
-        Assert.Equal(1, stats.TotalUndone);
-        Assert.Equal(0.20m, stats.UndoRate); // Exactly at threshold
-        Assert.False(stats.IsUndoRateAboveThreshold); // Not above, equal
+        Assert.That(stats.TotalAutoApplied, Is.EqualTo(5));
+        Assert.That(stats.TotalUndone, Is.EqualTo(1));
+        Assert.That(stats.UndoRate, Is.EqualTo(0.20m)); // Exactly at threshold
+        Assert.That(stats.IsUndoRateAboveThreshold, Is.False); // Not above, equal
     }
 
-    [Fact]
+    [Test]
     public async Task GetAutoApplyStatsAsync_OutsideWindow_NotIncluded()
     {
         // Arrange
@@ -144,10 +146,10 @@ public class MonitoringServiceTests : IDisposable
         var stats = await _monitoringService.GetAutoApplyStatsAsync(7);
 
         // Assert
-        Assert.Equal(1, stats.TotalAutoApplied); // Only recent one
+        Assert.That(stats.TotalAutoApplied, Is.EqualTo(1)); // Only recent one
     }
 
-    [Fact]
+    [Test]
     public async Task IsUndoRateAboveThresholdAsync_AboveThreshold_ReturnsTrue()
     {
         // Arrange
@@ -164,7 +166,7 @@ public class MonitoringServiceTests : IDisposable
         var isAboveThreshold = await _monitoringService.IsUndoRateAboveThresholdAsync(7);
 
         // Assert
-        Assert.True(isAboveThreshold); // 30% > 20% threshold
+        Assert.That(isAboveThreshold, Is.True); // 30% > 20% threshold
     }
 
     private Transaction CreateTransaction()
