@@ -81,7 +81,7 @@ public class AppDbContext : DbContext
 
             entity.Property(c => c.Type)
                 .HasConversion<int>() // Store enum as int
-                .HasDefaultValue(CategoryType.Expense);
+                .HasDefaultValue(CategoryType.Expense); // Expense = 0
 
             entity.HasIndex(c => c.Name);
         });

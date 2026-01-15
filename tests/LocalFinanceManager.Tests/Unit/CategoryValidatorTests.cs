@@ -1,6 +1,7 @@
 using FluentValidation.TestHelper;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.DTOs.Validators;
+using LocalFinanceManager.Models;
 
 namespace LocalFinanceManager.Tests.Unit;
 
@@ -25,7 +26,8 @@ public class CategoryValidatorTests
         // Arrange
         var dto = new CreateCategoryDto
         {
-            Name = "Boodschappen"
+            Name = "Boodschappen",
+            Type = CategoryType.Expense
         };
 
         // Act
@@ -41,7 +43,8 @@ public class CategoryValidatorTests
         // Arrange
         var dto = new CreateCategoryDto
         {
-            Name = ""
+            Name = "",
+            Type = CategoryType.Expense
         };
 
         // Act
@@ -58,7 +61,8 @@ public class CategoryValidatorTests
         // Arrange
         var dto = new CreateCategoryDto
         {
-            Name = new string('A', 101) // 101 characters
+            Name = new string('A', 101), // 101 characters
+            Type = CategoryType.Expense
         };
 
         // Act
@@ -75,7 +79,8 @@ public class CategoryValidatorTests
         // Arrange
         var dto = new CreateCategoryDto
         {
-            Name = new string('A', 100) // Exactly 100 characters
+            Name = new string('A', 100), // Exactly 100 characters
+            Type = CategoryType.Income
         };
 
         // Act
@@ -83,6 +88,58 @@ public class CategoryValidatorTests
 
         // Assert
         result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public async Task CreateCategoryDto_ValidIncomeType_PassesValidation()
+    {
+        // Arrange
+        var dto = new CreateCategoryDto
+        {
+            Name = "Salaris",
+            Type = CategoryType.Income
+        };
+
+        // Act
+        var result = await _createValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public async Task CreateCategoryDto_ValidExpenseType_PassesValidation()
+    {
+        // Arrange
+        var dto = new CreateCategoryDto
+        {
+            Name = "Huur",
+            Type = CategoryType.Expense
+        };
+
+        // Act
+        var result = await _createValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public async Task CreateCategoryDto_InvalidEnumValue_FailsValidation()
+    {
+        // Arrange
+        var dto = new CreateCategoryDto
+        {
+            Name = "Test",
+            Type = (CategoryType)99 // Invalid enum value
+        };
+
+        // Act
+        var result = await _createValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Type)
+            .WithErrorMessage("Type moet Income of Expense zijn");
     }
 
     #endregion
@@ -96,6 +153,7 @@ public class CategoryValidatorTests
         var dto = new UpdateCategoryDto
         {
             Name = "Transport",
+            Type = CategoryType.Expense,
             RowVersion = new byte[] { 1, 2, 3, 4 }
         };
 
@@ -113,6 +171,7 @@ public class CategoryValidatorTests
         var dto = new UpdateCategoryDto
         {
             Name = "",
+            Type = CategoryType.Expense,
             RowVersion = new byte[] { 1, 2, 3, 4 }
         };
 
@@ -131,6 +190,7 @@ public class CategoryValidatorTests
         var dto = new UpdateCategoryDto
         {
             Name = new string('B', 101), // 101 characters
+            Type = CategoryType.Income,
             RowVersion = new byte[] { 1, 2, 3, 4 }
         };
 
@@ -149,6 +209,7 @@ public class CategoryValidatorTests
         var dto = new UpdateCategoryDto
         {
             Name = "Valid Name",
+            Type = CategoryType.Expense,
             RowVersion = null
         };
 
@@ -167,6 +228,80 @@ public class CategoryValidatorTests
         var dto = new UpdateCategoryDto
         {
             Name = new string('C', 100), // Exactly 100 characters
+            Type = CategoryType.Income,
+            RowVersion = new byte[] { 1, 2, 3, 4 }
+        };
+
+        // Act
+        var result = await _updateValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public async Task UpdateCategoryDto_ValidIncomeType_PassesValidation()
+    {
+        // Arrange
+        var dto = new UpdateCategoryDto
+        {
+            Name = "Freelance",
+            Type = CategoryType.Income,
+            RowVersion = new byte[] { 1, 2, 3, 4 }
+        };
+
+        // Act
+        var result = await _updateValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public async Task UpdateCategoryDto_ValidExpenseType_PassesValidation()
+    {
+        // Arrange
+        var dto = new UpdateCategoryDto
+        {
+            Name = "Utilities",
+            Type = CategoryType.Expense,
+            RowVersion = new byte[] { 1, 2, 3, 4 }
+        };
+
+        // Act
+        var result = await _updateValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public async Task UpdateCategoryDto_InvalidEnumValue_FailsValidation()
+    {
+        // Arrange
+        var dto = new UpdateCategoryDto
+        {
+            Name = "Test",
+            Type = (CategoryType)99, // Invalid enum value
+            RowVersion = new byte[] { 1, 2, 3, 4 }
+        };
+
+        // Act
+        var result = await _updateValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.Type)
+            .WithErrorMessage("Type moet Income of Expense zijn");
+    }
+
+    [Test]
+    public async Task UpdateCategoryDto_ChangeTypeFromExpenseToIncome_PassesValidation()
+    {
+        // Arrange
+        var dto = new UpdateCategoryDto
+        {
+            Name = "Converted Category",
+            Type = CategoryType.Income,
             RowVersion = new byte[] { 1, 2, 3, 4 }
         };
 

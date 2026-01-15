@@ -5,8 +5,8 @@ namespace LocalFinanceManager.Models;
 /// </summary>
 public enum CategoryType
 {
-    Income,
-    Expense
+    Expense = 0,
+    Income = 1
 }
 
 /// <summary>

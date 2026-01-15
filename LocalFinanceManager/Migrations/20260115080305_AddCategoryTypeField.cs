@@ -15,7 +15,7 @@ namespace LocalFinanceManager.Migrations
                 table: "Categories",
                 type: "INTEGER",
                 nullable: false,
-                defaultValue: 1);
+                defaultValue: 0);
         }
 
         /// <inheritdoc />
