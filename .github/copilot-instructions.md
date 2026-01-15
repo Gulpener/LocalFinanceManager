@@ -16,6 +16,15 @@ Algemene regels
 - **Soft-delete filtering:** Implementeer `IsArchived` property; alle queries moeten expliciet filteren via `.Where(x => !x.IsArchived)`. Encapsuleer filtering in `IRepository<T>` pattern om foutrisico's te minimaliseren.
 - **BaseEntity inheritance:** Alle entities erven van `BaseEntity` met `Guid Id` en `byte[] RowVersion` properties. CreatedAt/UpdatedAt automatisch ingesteld door EF Core value converters of interceptors.
 
+Git & Version Control Regels (KRITIEK)
+
+- **NOOIT build artifacts committen:** Git commits mogen NOOIT `bin/`, `obj/`, `.dll`, `.exe`, `.pdb`, database files (`.db`), of andere build outputs bevatten.
+- **ALTIJD .gitignore respecteren:** Voor elke commit, controleer `git status` en verifieer dat alleen source code files worden gecommit.
+- **Selective staging:** Gebruik `git add <specific-files>` in plaats van `git add .` om accidentele commits te voorkomen.
+- **Pre-commit verificatie:** Voor het committen, run altijd `git status` en review de lijst van staged files. Als je build artifacts ziet, unstage deze met `git reset HEAD <file>`.
+- **Commit alleen source code:** Alleen `.cs`, `.razor`, `.csproj`, `.json`, `.md`, `.yml`, en andere configuration/documentation files mogen gecommit worden.
+- **Database files:** De `.gitignore` exclude `*.db` files. Commit NOOIT `localfinancemanager.db` of andere runtime database files.
+
 Project Structuur
 
 - `LocalFinanceManager/` — Main Blazor Server app + API controllers + services
