@@ -1,6 +1,17 @@
-using LocalFinanceManager.Models;
-
 namespace LocalFinanceManager.ML;
+
+/// <summary>
+/// Simple DTO for transaction data needed for feature extraction.
+/// Decouples ML project from main project's Transaction model.
+/// </summary>
+public class TransactionData
+{
+    public string Description { get; set; } = string.Empty;
+    public string? Counterparty { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime Date { get; set; }
+    public Guid AccountId { get; set; }
+}
 
 /// <summary>
 /// Service for extracting ML features from transactions.
@@ -8,9 +19,9 @@ namespace LocalFinanceManager.ML;
 public interface IFeatureExtractor
 {
     /// <summary>
-    /// Extracts features from a transaction for ML model training or inference.
+    /// Extracts features from transaction data for ML model training or inference.
     /// </summary>
-    TransactionFeatures ExtractFeatures(Transaction transaction);
+    TransactionFeatures ExtractFeatures(TransactionData transactionData);
 
     /// <summary>
     /// Converts extracted features to ML.NET input format.
@@ -32,21 +43,21 @@ public class FeatureExtractor : IFeatureExtractor
     };
 
     /// <summary>
-    /// Extracts features from a transaction.
+    /// Extracts features from transaction data.
     /// </summary>
-    public TransactionFeatures ExtractFeatures(Transaction transaction)
+    public TransactionFeatures ExtractFeatures(TransactionData transactionData)
     {
         var features = new TransactionFeatures
         {
-            DescriptionTokens = TokenizeDescription(transaction.Description),
-            Counterparty = NormalizeText(transaction.Counterparty),
-            AmountBin = BinAmount(Math.Abs(transaction.Amount)),
-            DayOfWeek = (int)transaction.Date.DayOfWeek,
-            Month = transaction.Date.Month,
-            Quarter = (transaction.Date.Month - 1) / 3 + 1,
-            AccountId = transaction.AccountId,
-            AbsoluteAmount = Math.Abs(transaction.Amount),
-            IsIncome = transaction.Amount > 0
+            DescriptionTokens = TokenizeDescription(transactionData.Description),
+            Counterparty = NormalizeText(transactionData.Counterparty),
+            AmountBin = BinAmount(Math.Abs(transactionData.Amount)),
+            DayOfWeek = (int)transactionData.Date.DayOfWeek,
+            Month = transactionData.Date.Month,
+            Quarter = (transactionData.Date.Month - 1) / 3 + 1,
+            AccountId = transactionData.AccountId,
+            AbsoluteAmount = Math.Abs(transactionData.Amount),
+            IsIncome = transactionData.Amount > 0
         };
 
         return features;
