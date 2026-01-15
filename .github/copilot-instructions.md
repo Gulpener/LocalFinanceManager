@@ -64,7 +64,7 @@ Volledige Scaffolding Voorbeeld (vereist voor Project Initialisatie)
 ```powershell
 # Create solution and main Blazor project
 dotnet new sln -n LocalFinanceManager
-dotnet new blazorserver -n LocalFinanceManager -o LocalFinanceManager
+dotnet new blazorserver -n LocalFinanceManager -o LocalFinanceManager --framework net10.0
 dotnet sln add LocalFinanceManager/LocalFinanceManager.csproj
 
 # Add main project NuGet packages
@@ -75,27 +75,27 @@ dotnet add LocalFinanceManager package IbanNet
 dotnet add LocalFinanceManager package Swashbuckle.AspNetCore
 
 # Create unit/integration test project
-dotnet new nunit -n LocalFinanceManager.Tests -o tests/LocalFinanceManager.Tests
+dotnet new nunit -n LocalFinanceManager.Tests -o tests/LocalFinanceManager.Tests --framework net10.0
 dotnet sln add tests/LocalFinanceManager.Tests/LocalFinanceManager.Tests.csproj
 dotnet add tests/LocalFinanceManager.Tests package Microsoft.EntityFrameworkCore.Sqlite
 dotnet add tests/LocalFinanceManager.Tests project LocalFinanceManager/LocalFinanceManager.csproj
 
 # Create E2E test project (NUnit + Playwright)
-dotnet new nunit -n LocalFinanceManager.E2E -o tests/LocalFinanceManager.E2E
+dotnet new nunit -n LocalFinanceManager.E2E -o tests/LocalFinanceManager.E2E --framework net10.0
 dotnet sln add tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj
 dotnet add tests/LocalFinanceManager.E2E package Microsoft.Playwright
 dotnet add tests/LocalFinanceManager.E2E package Microsoft.Playwright.NUnit
 dotnet add tests/LocalFinanceManager.E2E project LocalFinanceManager/LocalFinanceManager.csproj
 
 # Create ML.NET class library
-dotnet new classlib -n LocalFinanceManager.ML -o LocalFinanceManager.ML
+dotnet new classlib -n LocalFinanceManager.ML -o LocalFinanceManager.ML --framework net10.0
 dotnet sln add LocalFinanceManager.ML/LocalFinanceManager.ML.csproj
 dotnet add LocalFinanceManager.ML package Microsoft.ML
 dotnet add LocalFinanceManager.ML package Microsoft.ML.FastTree
 dotnet add LocalFinanceManager.ML project LocalFinanceManager/LocalFinanceManager.csproj
 
 # Create ML test project
-dotnet new nunit -n LocalFinanceManager.ML.Tests -o tests/LocalFinanceManager.ML.Tests
+dotnet new nunit -n LocalFinanceManager.ML.Tests -o tests/LocalFinanceManager.ML.Tests --framework net10.0
 dotnet sln add tests/LocalFinanceManager.ML.Tests/LocalFinanceManager.ML.Tests.csproj
 dotnet add tests/LocalFinanceManager.ML.Tests package Microsoft.ML
 dotnet add tests/LocalFinanceManager.ML.Tests project LocalFinanceManager.ML/LocalFinanceManager.ML.csproj

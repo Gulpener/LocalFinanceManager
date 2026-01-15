@@ -1,0 +1,151 @@
+@page "/budgets"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@using Microsoft.JSInterop
+@inject BudgetPlanService BudgetPlanService
+@inject AccountService AccountService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Budget Plans</PageTitle>
+
+<h1>Budget Plans</h1>
+
+<div class="mb-3">
+    <div class="row">
+        <div class="col-md-6">
+            <label for="accountSelect" class="form-label">Select Account</label>
+            <select id="accountSelect" class="form-select" @onchange="OnAccountChanged">
+                <option value="">-- Select an account --</option>
+                @if (accounts != null)
+                {
+                    @foreach (var account in accounts)
+                    {
+                        <option value="@account.Id" selected="@(selectedAccountId == account.Id)">
+                            @account.Label (@account.Currency)
+                        </option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            @if (selectedAccountId != Guid.Empty)
+            {
+                <button class="btn btn-primary" @onclick="CreateNewPlan">
+                    <i class="bi bi-plus-circle"></i> Create New Budget Plan
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Loading budget plans...</em></p>
+}
+else if (selectedAccountId == Guid.Empty)
+{
+    <div class="alert alert-info">
+        <p>Please select an account to view its budget plans.</p>
+    </div>
+}
+else if (budgetPlans == null || !budgetPlans.Any())
+{
+    <div class="alert alert-info">
+        <p>No budget plans found for this account. Create your first budget plan to get started!</p>
+    </div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Year</th>
+                <th>Name</th>
+                <th>Budget Lines</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var plan in budgetPlans)
+            {
+                <tr>
+                    <td>@plan.Year</td>
+                    <td>@plan.Name</td>
+                    <td>@plan.BudgetLines.Count</td>
+                    <td>@plan.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <a href="/budgets/@plan.Id/edit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => ArchivePlan(plan.Id)">
+                            <i class="bi bi-archive"></i> Archive
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<AccountResponse>? accounts;
+    private List<BudgetPlanDto>? budgetPlans;
+    private Guid selectedAccountId = Guid.Empty;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccounts();
+    }
+
+    private async Task LoadAccounts()
+    {
+        accounts = await AccountService.GetAllActiveAsync();
+        if (accounts.Any())
+        {
+            selectedAccountId = accounts.First().Id;
+            await LoadBudgetPlans();
+        }
+    }
+
+    private async Task LoadBudgetPlans()
+    {
+        if (selectedAccountId == Guid.Empty) return;
+
+        isLoading = true;
+        budgetPlans = await BudgetPlanService.GetByAccountIdAsync(selectedAccountId);
+        isLoading = false;
+    }
+
+    private async Task OnAccountChanged(ChangeEventArgs e)
+    {
+        if (Guid.TryParse(e.Value?.ToString(), out var accountId))
+        {
+            selectedAccountId = accountId;
+            await LoadBudgetPlans();
+        }
+        else
+        {
+            selectedAccountId = Guid.Empty;
+            budgetPlans = null;
+        }
+    }
+
+    private void CreateNewPlan()
+    {
+        Navigation.NavigateTo($"/budgets/new?accountId={selectedAccountId}");
+    }
+
+    private async Task ArchivePlan(Guid planId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to archive this budget plan?");
+        if (confirmed)
+        {
+            await BudgetPlanService.ArchiveAsync(planId);
+            await LoadBudgetPlans();
+        }
+    }
+}
