@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
 
     // Entity Sets
     public DbSet<MLModel> MLModels => Set<MLModel>();
+    public DbSet<LabeledExample> LabeledExamples => Set<LabeledExample>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<BudgetPlan> BudgetPlans => Set<BudgetPlan>();
@@ -232,6 +233,29 @@ public class AppDbContext : DbContext
             entity.HasIndex(ta => ta.TransactionId);
             entity.HasIndex(ta => ta.ChangedAt);
             entity.HasIndex(ta => ta.ActionType);
+        });
+
+        // Configure LabeledExample entity
+        modelBuilder.Entity<LabeledExample>(entity =>
+        {
+            entity.Property(le => le.UserId)
+                .HasMaxLength(100);
+
+            entity.HasOne(le => le.Transaction)
+                .WithMany()
+                .HasForeignKey(le => le.TransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(le => le.Category)
+                .WithMany()
+                .HasForeignKey(le => le.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes for ML queries (rolling window, category filtering)
+            entity.HasIndex(le => le.TransactionId);
+            entity.HasIndex(le => le.CategoryId);
+            entity.HasIndex(le => le.CreatedAt); // For rolling window queries
+            entity.HasIndex(le => new { le.CategoryId, le.CreatedAt }); // Combined for efficient filtering
         });
     }
 
