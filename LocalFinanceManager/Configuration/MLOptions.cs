@@ -18,12 +18,6 @@ public class MLOptions
     public int TrainingWindowDays { get; set; } = 90;
 
     /// <summary>
-    /// Cron expression for scheduled retraining (Sunday 2 AM UTC by default).
-    /// Format: "minute hour day-of-month month day-of-week"
-    /// </summary>
-    public string RetrainingScheduleCron { get; set; } = "0 2 * * 0";
-
-    /// <summary>
     /// Number of top features to include in explanation output.
     /// Default: 3 features.
     /// </summary>
