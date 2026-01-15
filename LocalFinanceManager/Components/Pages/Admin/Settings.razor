@@ -1,0 +1,214 @@
+@page "/admin/settings"
+@inject IConfiguration Configuration
+@inject IWebHostEnvironment Environment
+@inject AppDbContext DbContext
+@using LocalFinanceManager.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Text.RegularExpressions
+
+<PageTitle>Admin Settings</PageTitle>
+
+<h3>Systeem Instellingen</h3>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Environment Informatie</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless">
+            <tbody>
+                <tr>
+                    <th scope="row">Environment:</th>
+                    <td>
+                        <span class="badge @_environmentBadgeClass">@Environment.EnvironmentName</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Application Name:</th>
+                    <td>@Environment.ApplicationName</td>
+                </tr>
+                <tr>
+                    <th scope="row">Content Root Path:</th>
+                    <td><code>@Environment.ContentRootPath</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h5>Database Configuratie</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless">
+            <tbody>
+                <tr>
+                    <th scope="row">Connection String:</th>
+                    <td><code>@_connectionString</code></td>
+                </tr>
+                <tr>
+                    <th scope="row">Database Pad:</th>
+                    <td><code>@_databasePath</code></td>
+                </tr>
+                <tr>
+                    <th scope="row">Database Bestaat:</th>
+                    <td>
+                        @if (_databaseExists)
+                        {
+                            <span class="badge bg-success">Ja</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning">Nee</span>
+                        }
+                    </td>
+                </tr>
+                @if (_databaseExists)
+                {
+                    <tr>
+                        <th scope="row">Bestandsgrootte:</th>
+                        <td>@_databaseSize</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Laatst Gewijzigd:</th>
+                        <td>@_lastModified?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                }
+                <tr>
+                    <th scope="row">Laatst Uitgevoerde Migratie:</th>
+                    <td><code>@_lastMigration</code></td>
+                </tr>
+                <tr>
+                    <th scope="row">Pending Migrations:</th>
+                    <td>
+                        @if (_pendingMigrations?.Any() == true)
+                        {
+                            <span class="badge bg-warning">@_pendingMigrations.Count() pending</span>
+                            <ul class="mt-2">
+                                @foreach (var migration in _pendingMigrations)
+                                {
+                                    <li><code>@migration</code></li>
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Geen</span>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h5>Seed Data Status</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless">
+            <tbody>
+                <tr>
+                    <th scope="row">Accounts:</th>
+                    <td>@_accountCount records</td>
+                </tr>
+                <tr>
+                    <th scope="row">Categories:</th>
+                    <td>@_categoryCount records</td>
+                </tr>
+                <tr>
+                    <th scope="row">Budget Plans:</th>
+                    <td>@_budgetPlanCount records</td>
+                </tr>
+                <tr>
+                    <th scope="row">Seed Data Geladen:</th>
+                    <td>
+                        @if (_seedDataLoaded)
+                        {
+                            <span class="badge bg-success">Ja</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Nee (Production of handmatig geleegd)</span>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private static readonly Regex DataSourceRegex = new(@"Data Source=([^;]+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    
+    private string? _connectionString;
+    private string? _databasePath;
+    private bool _databaseExists;
+    private string? _databaseSize;
+    private DateTime? _lastModified;
+    private string? _lastMigration;
+    private IEnumerable<string>? _pendingMigrations;
+    private int _accountCount;
+    private int _categoryCount;
+    private int _budgetPlanCount;
+    private bool _seedDataLoaded;
+    private string _environmentBadgeClass = "bg-secondary";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Environment badge color
+        _environmentBadgeClass = Environment.IsDevelopment() ? "bg-primary" : "bg-danger";
+
+        // Connection string
+        _connectionString = Configuration.GetConnectionString("Default");
+
+        // Parse database path from connection string
+        if (!string.IsNullOrEmpty(_connectionString))
+        {
+            var match = DataSourceRegex.Match(_connectionString);
+
+            if (match.Success)
+            {
+                var relativePath = match.Groups[1].Value;
+                _databasePath = Path.IsPathRooted(relativePath)
+                    ? relativePath
+                    : Path.Combine(Environment.ContentRootPath, relativePath);
+
+                // Check if database file exists
+                if (File.Exists(_databasePath))
+                {
+                    _databaseExists = true;
+                    var fileInfo = new FileInfo(_databasePath);
+                    _databaseSize = FormatBytes(fileInfo.Length);
+                    _lastModified = fileInfo.LastWriteTime;
+                }
+            }
+        }
+
+        // Database migrations info
+        var appliedMigrations = await DbContext.Database.GetAppliedMigrationsAsync();
+        _lastMigration = appliedMigrations.LastOrDefault() ?? "Geen";
+        _pendingMigrations = await DbContext.Database.GetPendingMigrationsAsync();
+
+        // Seed data status
+        _accountCount = await DbContext.Accounts.CountAsync();
+        _categoryCount = await DbContext.Categories.CountAsync();
+        _budgetPlanCount = await DbContext.BudgetPlans.CountAsync();
+        _seedDataLoaded = _accountCount > 0 && _categoryCount > 0;
+    }
+
+    private string FormatBytes(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

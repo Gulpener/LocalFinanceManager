@@ -55,7 +55,30 @@ The database will be automatically created and migrations applied on first run. 
 
 ### Configuration
 
-Database configuration is stored in `appsettings.json`:
+#### Database Configuration
+
+The application uses SQLite with separate databases for Development and Production environments.
+
+**Development:**
+
+- Database: `localfinancemanager.dev.db` (project root)
+- Seed data: Automatically loaded on first run
+- Recreate database: Set `RecreateDatabase=true` in `appsettings.Development.json` or environment variable
+
+**Production:**
+
+- Database: `localfinancemanager.db` (project root or custom path via environment variable)
+- Seed data: Not loaded (manual data entry or migration script)
+- Recreate database: Not allowed (safety measure)
+
+**Admin Settings:**
+
+- View current database configuration at `/admin/settings`
+- Shows environment, database path, file size, migrations, and seed data status
+
+**Connection String Configuration:**
+
+Database configuration is stored in `appsettings.json` (Production default):
 
 ```json
 {
@@ -65,11 +88,41 @@ Database configuration is stored in `appsettings.json`:
 }
 ```
 
-You can override this with environment variables:
+Development overrides in `appsettings.Development.json`:
 
-```bash
-$env:ASPNETCORE_ConnectionStrings__Default = "Data Source=mydb.db"
+```json
+{
+  "ConnectionStrings": {
+    "Default": "Data Source=localfinancemanager.dev.db"
+  }
+}
 ```
+
+**Environment Variable Override:**
+
+You can override the connection string with environment variables:
+
+```powershell
+# PowerShell (Windows)
+$env:ASPNETCORE_ConnectionStrings__Default = "Data Source=C:\Data\myapp.db"
+dotnet run
+
+# Bash (Linux/macOS)
+export ASPNETCORE_ConnectionStrings__Default="Data Source=/var/data/myapp.db"
+dotnet run
+```
+
+**Switching Environments:**
+
+```powershell
+# Development (default)
+dotnet run
+
+# Production
+$env:ASPNETCORE_ENVIRONMENT="Production"; dotnet run
+```
+
+**⚠️ Important:** Database files (`.db`, `.db-shm`, `.db-wal`) are excluded from version control. Never commit database files containing real data.
 
 ### Recreating the Database
 
@@ -255,6 +308,39 @@ Entities use `RowVersion` for concurrency control. Update conflicts return HTTP 
 - `POST /api/categories` - Create category
 
 ## Troubleshooting
+
+### Wrong Database File
+
+If you're seeing unexpected data or an empty database:
+
+1. Check which environment you're running:
+   ```powershell
+   echo $env:ASPNETCORE_ENVIRONMENT
+   ```
+
+2. Navigate to `/admin/settings` to verify:
+   - Current environment (Development/Production)
+   - Database file path in use
+   - Database file existence and size
+   - Seed data status
+
+3. Verify database file in use:
+   - Development: `localfinancemanager.dev.db`
+   - Production: `localfinancemanager.db`
+
+4. Switch environment explicitly:
+   ```powershell
+   $env:ASPNETCORE_ENVIRONMENT="Development"; dotnet run
+   ```
+
+### Database File Location
+
+Database files are stored in the project root by default:
+
+- `LocalFinanceManager/localfinancemanager.dev.db` (Development)
+- `LocalFinanceManager/localfinancemanager.db` (Production)
+
+To verify the exact path, visit `/admin/settings` or set a custom location via environment variable (see Configuration section).
 
 ### Database Locked Errors
 
