@@ -7,6 +7,7 @@ using LocalFinanceManager.DTOs.Validators;
 using LocalFinanceManager.Models;
 using FluentValidation;
 using IbanNet;
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,13 @@ builder.Services.AddScoped<IValidator<UpdateBudgetLineDto>, UpdateBudgetLineDtoV
 
 // Register IbanNet
 builder.Services.AddSingleton<IIbanValidator, IbanValidator>();
+
+// Register HttpClient for Blazor components
+builder.Services.AddScoped(sp =>
+{
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+});
 
 // Add controllers for API endpoints
 builder.Services.AddControllers();
