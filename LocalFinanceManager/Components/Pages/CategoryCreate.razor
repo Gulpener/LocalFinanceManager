@@ -1,0 +1,80 @@
+@page "/categories/new"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@inject CategoryService CategoryService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Nieuwe Categorie</PageTitle>
+
+<h1>Nieuwe Categorie Aanmaken</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <EditForm Model="@categoryName" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <div class="mb-3">
+                <label for="name" class="form-label">Naam</label>
+                <InputText id="name" class="form-control" @bind-Value="categoryName" />
+                @if (validationErrors.ContainsKey("Name"))
+                {
+                    <div class="text-danger">@string.Join(", ", validationErrors["Name"])</div>
+                }
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span> Aanmaken...</span>
+                    }
+                    else
+                    {
+                        <span>Categorie Aanmaken</span>
+                    }
+                </button>
+                <a href="/categories" class="btn btn-secondary">Annuleren</a>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private string categoryName = string.Empty;
+    private Dictionary<string, string[]> validationErrors = new();
+    private string? errorMessage;
+    private bool isSubmitting = false;
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        validationErrors.Clear();
+
+        try
+        {
+            var request = new CreateCategoryDto { Name = categoryName };
+            var response = await CategoryService.CreateAsync(request);
+            Navigation.NavigateTo("/categories");
+        }
+        catch (HttpRequestException ex)
+        {
+            errorMessage = $"Fout bij aanmaken van categorie: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij aanmaken van categorie: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

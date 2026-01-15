@@ -78,6 +78,7 @@ public record CategoryDto
 {
     public Guid Id { get; init; }
     public string Name { get; init; } = string.Empty;
+    public byte[]? RowVersion { get; init; }
 }
 
 /// <summary>
@@ -86,4 +87,13 @@ public record CategoryDto
 public record CreateCategoryDto
 {
     public string Name { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// DTO for updating a category.
+/// </summary>
+public record UpdateCategoryDto
+{
+    public string Name { get; init; } = string.Empty;
+    public byte[]? RowVersion { get; init; }
 }

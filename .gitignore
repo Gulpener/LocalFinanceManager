@@ -10,6 +10,13 @@
 *.userosscache
 *.sln.docstates
 
+# SQLite database files (exclude from version control)
+*.db
+*.db-shm
+*.db-wal
+# Allow test fixture databases
+!tests/**/fixtures/**/*.db
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

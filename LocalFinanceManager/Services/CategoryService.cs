@@ -28,7 +28,8 @@ public class CategoryService
         return categories.Select(c => new CategoryDto
         {
             Id = c.Id,
-            Name = c.Name
+            Name = c.Name,
+            RowVersion = c.RowVersion
         }).ToList();
     }
 
@@ -39,7 +40,12 @@ public class CategoryService
     {
         _logger.LogInformation("Retrieving category with ID: {CategoryId}", id);
         var category = await _categoryRepository.GetByIdAsync(id);
-        return category != null ? new CategoryDto { Id = category.Id, Name = category.Name } : null;
+        return category != null ? new CategoryDto 
+        { 
+            Id = category.Id, 
+            Name = category.Name,
+            RowVersion = category.RowVersion
+        } : null;
     }
 
     /// <summary>
@@ -62,7 +68,8 @@ public class CategoryService
         return new CategoryDto
         {
             Id = category.Id,
-            Name = category.Name
+            Name = category.Name,
+            RowVersion = category.RowVersion
         };
     }
 
@@ -83,5 +90,34 @@ public class CategoryService
         await _categoryRepository.ArchiveAsync(id);
         _logger.LogInformation("Category archived successfully: {CategoryId}", id);
         return true;
+    }
+
+    /// <summary>
+    /// Update a category.
+    /// </summary>
+    public async Task<CategoryDto?> UpdateAsync(Guid id, UpdateCategoryDto request)
+    {
+        _logger.LogInformation("Updating category with ID: {CategoryId}", id);
+
+        var category = await _categoryRepository.GetByIdAsync(id);
+        if (category == null)
+        {
+            _logger.LogWarning("Category not found with ID: {CategoryId}", id);
+            return null;
+        }
+
+        category.Name = request.Name;
+        category.RowVersion = request.RowVersion;
+
+        await _categoryRepository.UpdateAsync(category);
+
+        _logger.LogInformation("Category updated successfully: {CategoryId}", id);
+
+        return new CategoryDto
+        {
+            Id = category.Id,
+            Name = category.Name,
+            RowVersion = category.RowVersion
+        };
     }
 }

@@ -1,0 +1,157 @@
+@page "/categories/{id:guid}/edit"
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@inject CategoryService CategoryService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Categorie Bewerken</PageTitle>
+
+<h1>Categorie Bewerken</h1>
+
+@if (category == null)
+{
+    <p><em>Categorie laden...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="@categoryName" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">@errorMessage</div>
+                }
+
+                @if (!string.IsNullOrEmpty(concurrencyMessage))
+                {
+                    <div class="alert alert-warning">
+                        <p>@concurrencyMessage</p>
+                        <button type="button" class="btn btn-sm btn-warning" @onclick="ReloadCategory">
+                            Laatste Versie Herladen
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" @onclick="CancelReload">
+                            Annuleren
+                        </button>
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <label for="name" class="form-label">Naam</label>
+                    <InputText id="name" class="form-control" @bind-Value="categoryName" />
+                    @if (validationErrors.ContainsKey("Name"))
+                    {
+                        <div class="text-danger">@string.Join(", ", validationErrors["Name"])</div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span> Opslaan...</span>
+                        }
+                        else
+                        {
+                            <span>Wijzigingen Opslaan</span>
+                        }
+                    </button>
+                    <a href="/categories" class="btn btn-secondary">Annuleren</a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private CategoryDto? category;
+    private string categoryName = string.Empty;
+    private byte[]? originalRowVersion;
+    private Dictionary<string, string[]> validationErrors = new();
+    private string? errorMessage;
+    private string? concurrencyMessage;
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategory();
+    }
+
+    private async Task LoadCategory()
+    {
+        try
+        {
+            category = await CategoryService.GetByIdAsync(Id);
+            if (category == null)
+            {
+                errorMessage = "Categorie niet gevonden.";
+                return;
+            }
+
+            categoryName = category.Name;
+            originalRowVersion = category.RowVersion;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij laden van categorie: {ex.Message}";
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        concurrencyMessage = null;
+        validationErrors.Clear();
+
+        try
+        {
+            // Create request with the RowVersion from when we loaded the page
+            var updateRequest = new UpdateCategoryDto
+            {
+                Name = categoryName,
+                RowVersion = originalRowVersion
+            };
+
+            var response = await CategoryService.UpdateAsync(Id, updateRequest);
+            if (response != null)
+            {
+                Navigation.NavigateTo("/categories");
+            }
+            else
+            {
+                errorMessage = "Fout bij bijwerken van categorie.";
+            }
+        }
+        catch (HttpRequestException ex) when (ex.Message.Contains("409"))
+        {
+            // Handle concurrency conflict
+            concurrencyMessage = "De categorie is gewijzigd door een ander proces. Wilt u de laatste versie herladen?";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij bijwerken van categorie: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task ReloadCategory()
+    {
+        concurrencyMessage = null;
+        await LoadCategory();
+    }
+
+    private void CancelReload()
+    {
+        Navigation.NavigateTo("/categories");
+    }
+}
