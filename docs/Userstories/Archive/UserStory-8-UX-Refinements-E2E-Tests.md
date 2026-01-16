@@ -1,5 +1,17 @@
 # UserStory-8: Assignment UX Refinements & E2E Testing
 
+> ⚠️ **ARCHIVED:** This story was split into three focused sub-stories on January 16, 2026:
+> - **UserStory-5.1:** E2E Test Infrastructure Setup (~25 tasks, 1-2 days)
+> - **UserStory-5.2:** E2E Tests for Assignment Flows (~42 tasks, 2-3 days)
+> - **UserStory-5.3:** Assignment UX Enhancements (~24 tasks, 2-3 days)
+>
+> **Reason for Split:** Original story contained 86 tasks spanning infrastructure setup, comprehensive E2E testing, and UX enhancements—too large for a single sprint (estimated 10-15 days vs. target 2-4 days per story). Split enables:
+> - **US-5.1** to run in parallel with US-5 (infrastructure ready before assignment UI completes)
+> - **US-5.2** to be implemented incrementally after US-5/6/7 (test each feature as it's built)
+> - **US-5.3** to be prioritized independently (UX enhancements can be deferred if needed)
+>
+> See [UserStory-Refinement-Recommendations.md](../UserStory-Refinement-Recommendations.md) for detailed split rationale.
+
 ## Objective
 
 Deliver comprehensive end-to-end test coverage for all transaction assignment flows (manual, split, bulk, ML suggestions, auto-apply) using NUnit + Playwright, and implement UX enhancements (keyboard shortcuts, quick filters, recent category suggestions) to improve assignment efficiency and accessibility.

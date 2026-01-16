@@ -2,7 +2,7 @@
 
 ## Objective
 
-Enable manual transaction-to-category assignment via Blazor UI, implementing foundational components and patterns for the transaction assignment feature series (US-5 through US-8).
+Enable manual transaction-to-category assignment via Blazor UI, implementing foundational components and patterns for the transaction assignment feature series (US-5, US-5.1, US-5.2, US-5.3, US-6, US-7).
 
 ## Requirements
 
@@ -18,7 +18,7 @@ Enable manual transaction-to-category assignment via Blazor UI, implementing fou
 
 ## Patterns for Subsequent Stories
 
-This story establishes foundational patterns that **MUST** be followed in US-6, US-7, and US-8:
+This story establishes foundational patterns that **MUST** be followed in US-5.1, US-5.2, US-5.3, US-6, and US-7:
 
 ### Component Patterns
 
@@ -205,7 +205,7 @@ This story establishes foundational patterns that **MUST** be followed in US-6, 
 - Integration tests for assignment API endpoint (in-memory SQLite, seed data)
 - No manual migrations required (automatic via `Database.MigrateAsync()` in `Program.cs`)
 - Code follows Implementation-Guidelines.md (async/await, IOptions, nullable reference types)
-- Pattern documentation clear for subsequent stories (US-6, US-7, US-8)
+- Pattern documentation clear for subsequent stories (US-5.1, US-5.2, US-5.3, US-6, US-7)
 
 ## Dependencies
 
@@ -222,4 +222,4 @@ This story establishes foundational patterns that **MUST** be followed in US-6, 
 - This story establishes foundational patterns. **Do NOT refactor** component signatures or service interfaces in US-6/7 without updating this story first.
 - CategorySelector.razor designed for extensibility: Optional budget line selection added in US-6.
 - Error handling pattern (Problem Details) ensures consistent UX across all assignment features.
-- Pagination in transaction list prepares for performance optimization in US-8.
+- Pagination in transaction list prepares for performance optimization in US-5.3.

@@ -441,7 +441,7 @@ This story verifies the full UserStory-3.1 → 3.2 → 3.3 integration chain:
 
 ## Notes
 
-- **E2E Test Infrastructure Dependency:** This story assumes UserStory-8.1 (E2E Test Infrastructure Setup) is complete. If not, add 1 day to set up Playwright + `WebApplicationFactory` + PageObjectModel base classes.
+- **E2E Test Infrastructure Dependency:** This story assumes UserStory-5.1 (E2E Test Infrastructure Setup) is complete. If not, add 1 day to set up Playwright + `WebApplicationFactory` + PageObjectModel base classes.
 - **Performance Baseline:** 5-second threshold based on typical Blazor Server round-trip time (~200ms per interaction × 5 pages × 2 DB queries = ~2s worst case + 3s buffer).
 - **Accessibility:** Ensure all dropdowns have proper `<label>` associations and ARIA attributes for screen readers.
 - **Final Integration Gate:** This story's DoD serves as the completion gate for the entire UserStory-3 split (3.1 → 3.2 → 3.3). All three stories must pass their individual DoD criteria AND this integration DoD.

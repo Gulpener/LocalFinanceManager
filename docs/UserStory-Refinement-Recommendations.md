@@ -10,9 +10,9 @@
 **Status Overview:**
 
 - ✅ **5 stories ready** for immediate implementation (US-1, US-4, US-5, US-6, US-7)
-- ✅ **3 stories refined and ready** (US-3.1, US-3.2, US-3.3) - Split January 16, 2026
+- ✅ **4 stories refined and ready** (US-3.1, US-3.2, US-3.3, US-5.1/5.2/5.3) - Split January 16, 2026
 - ⚠️ **0 stories need minor refinement**
-- 🔴 **5 stories need major refinement** (split or expand) (US-8, US-9, US-11, US-12, US-13)
+- 🔴 **4 stories need major refinement** (split or expand) (US-9, US-11, US-12, US-13)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
@@ -20,84 +20,118 @@
 
 ## 🔴 Needs Major Refinement (Split or Expand)
 
-### UserStory-8: UX Refinements & E2E Test Infrastructure
+### ✅ UserStory-8: UX Refinements & E2E Test Infrastructure (REFINED)
 
-**File:** [docs/Userstories/UserStory-8-UX-Refinements-E2E-Tests.md](docs/Userstories/UserStory-8-UX-Refinements-E2E-Tests.md)
+**Status:** ✅ **Refined January 16, 2026** - Split into UserStory-5.1, 5.2, 5.3
 
-**Issues:**
+**File:** [docs/Userstories/Archive/UserStory-8-UX-Refinements-E2E-Tests.md](docs/Userstories/Archive/UserStory-8-UX-Refinements-E2E-Tests.md) (archived)
 
-1. **Too large:** ~80+ implementation tasks spanning E2E infrastructure, UX enhancements, and accessibility audit
+**Original Issues:**
+
+1. **Too large:** 86 implementation tasks spanning E2E infrastructure, UX enhancements, and accessibility audit
 2. E2E test infrastructure should be completed **before** US-5 finishes to enable parallel test development
 3. UX enhancements are independent features that could be deferred
 4. Accessibility audit is separate concern
 
-**Recommendation:** **Split into 3 sub-stories**
+**Resolution:** **Split into 3 sub-stories with US-5.x numbering (assignment feature family)**
 
-#### UserStory-8.1: E2E Test Infrastructure Setup (PRIORITY)
+#### UserStory-5.1: E2E Test Infrastructure Setup
+
+**File:** [docs/Userstories/UserStory-5.1-E2E-Infrastructure.md](docs/Userstories/UserStory-5.1-E2E-Infrastructure.md)
 
 **Scope:**
 
-- Install NUnit + Microsoft.Playwright in `LocalFinanceManager.E2E`
-- Configure `WebApplicationFactory` with dedicated SQLite test database
-- Create `PageObjectModel` base classes for transaction/category pages
-- Implement test fixtures with seed data helpers
-- Add basic smoke test: Login → View transactions → Logout
+- Enhance existing `TestWebApplicationFactory` with dedicated SQLite test database
+- Create reusable `SeedDataHelper.cs` with 5 seed methods (accounts, categories, transactions, ML data, auto-apply history)
+- Build `PageObjectModel` base classes (TransactionsPageModel, AssignmentModalPageModel, SplitEditorPageModel, BulkAssignModalPageModel)
+- Configure screenshot/video capture on failure
+- Add `.runsettings` for parallel execution (max 4 workers)
+- Refactor existing tests to use new seed helpers
 
 **Estimated Effort:** 1-2 days
-
-**Tasks:** ~20 implementation tasks
-
-**Success Criteria:**
-
-- E2E project runs successfully with Playwright browser automation
-- Seed data helpers reusable across all tests
-- CI pipeline runs E2E tests in headless mode
-
-**⚠️ CRITICAL:** Complete **before US-5 finishes** to enable parallel test development during US-6/7 implementation.
-
----
-
-#### UserStory-8.2: UX Enhancements (Keyboard Shortcuts, Filters, Recent Categories)
-
-**Scope:**
-
-- Add keyboard shortcuts (Ctrl+A for assign, Esc to close modals)
-- Add recent categories cache (show last 5 used categories)
-- Add advanced filters (date range, amount range, counterparty search)
-- Add bulk selection checkboxes in transaction list
-- Add category usage statistics in category dropdown tooltip
-
-**Estimated Effort:** 2-3 days
 
 **Tasks:** ~25 implementation tasks
 
 **Success Criteria:**
 
-- Keyboard shortcuts documented in help modal (Shift+?)
-- Recent categories reduce clicks by 50% for frequent assignments
-- Filters support complex queries (e.g., "amount >100 AND date last 30 days")
+- E2E project runs successfully with Playwright browser automation
+- Seed data helpers reusable across all tests (no inline creation)
+- CI pipeline runs E2E tests in headless mode with screenshot capture
+
+**Dependencies:** None (can start immediately, parallel with US-5)
 
 ---
 
-#### UserStory-8.3: E2E Tests for US-5, US-6, US-7 Flows
+#### UserStory-5.2: E2E Tests for Assignment Flows
+
+**File:** [docs/Userstories/UserStory-5.2-E2E-Tests-Assignment-Flows.md](docs/Userstories/UserStory-5.2-E2E-Tests-Assignment-Flows.md)
 
 **Scope:**
 
-- E2E test: Manual single assignment (US-5 flow)
-- E2E test: Split transaction assignment (US-6 flow)
-- E2E test: Bulk assignment workflow (US-6 flow)
-- E2E test: ML suggestion acceptance (US-7 flow)
-- E2E test: Auto-apply rule creation (US-7 flow)
-- E2E test: Accessibility audit with axe-core
+- E2E tests: Basic assignment (US-5) - 11 test cases
+- E2E tests: Split assignment (US-6) - 9 test cases
+- E2E tests: Bulk assignment (US-6) - 9 test cases
+- E2E tests: ML suggestions (US-7) - 8 test cases
+- E2E tests: Auto-apply configuration (US-7) - 8 test cases
+- E2E tests: Monitoring dashboard (US-7) - 9 test cases
+- E2E tests: Cross-feature workflows - 2 comprehensive tests
+- E2E tests: Accessibility validation with axe-core - 4 test cases
+- E2E tests: Performance validation - 3 test cases
 
 **Estimated Effort:** 2-3 days
 
-**Tasks:** ~30 implementation tasks
+**Tasks:** ~42 implementation tasks
 
 **Success Criteria:**
 
-- 100% coverage of critical user journeys
-- Accessibility audit passes WCAG 2.1 Level AA
+- 63+ E2E test cases covering all assignment features
+- PageObjectModels from US-5.1 used consistently
+- Accessibility audit passes WCAG 2.1 Level AA (zero critical violations)
+- Performance tests validate <500ms load time for 1000+ transactions
+- Coverage >90% for TransactionsController and CategoriesController
+
+**Dependencies:** UserStory-5/6/7 REQUIRED (tests assignment UI components)
+
+---
+
+#### UserStory-5.3: Assignment UX Enhancements
+
+**File:** [docs/Userstories/UserStory-5.3-UX-Enhancements.md](docs/Userstories/UserStory-5.3-UX-Enhancements.md)
+
+**Scope:**
+
+- Keyboard shortcuts (Tab/Enter/Esc/Space/Ctrl+A/Ctrl+D/`/`/`?`) with `ShortcutHelp.razor` modal
+- `QuickFilters.razor` component (assignment status, date range, category, amount, account filters)
+- Filter state persistence in localStorage
+- `RecentCategoriesService` tracking top 5 used categories with one-click assignment
+- Favorite categories feature (star icon, top-of-list placement)
+- Performance optimization (page size selector, loading skeletons, filter debouncing)
+
+**Estimated Effort:** 2-3 days
+
+**Tasks:** ~24 implementation tasks
+
+**Success Criteria:**
+
+- Keyboard shortcuts documented in help modal (accessible via `?` key)
+- Recent categories reduce assignment friction (top 5 most used displayed)
+- Quick filters with 6+ options functional
+- Filter state persists across page reloads (localStorage)
+- Favorites displayed at top of CategorySelector
+
+**Dependencies:** UserStory-5/6/7 REQUIRED (enhances assignment UI components)
+
+---
+
+**Total Estimated Effort (US-5.1/5.2/5.3):** 5-8 days (vs 10-15 days as single story)
+
+**Implementation Order:**
+
+1. **US-5.1** (E2E Infrastructure) → Parallel with US-5 (complete before US-5 finishes)
+2. **US-5.2** (E2E Tests) → Incremental after US-5/6/7 (test each feature as built)
+3. **US-5.3** (UX Enhancements) → After US-7 (can be prioritized independently)
+
+---
 - E2E tests run in <5 minutes in CI pipeline
 
 ---
@@ -713,27 +747,29 @@ Add the following sections:
 
 ### Phase 2: Core Features (Weeks 3-5)
 
-4. ✅ **UserStory-6** (Split & Bulk Assignment) - After US-5 (3-4 days)
-5. ✅ **UserStory-3.1** (Category Budget Plan Scoping) - After US-6 (2-3 days) - **REFINED**
-6. ✅ **UserStory-4** (Account-Budget Matching) - After US-3.1 (3-4 days)
+4. ✅ **UserStory-5** (Basic Assignment UI) - Start now (2-3 days)
+   - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - 1-2 days - **REFINED**
+5. ✅ **UserStory-6** (Split & Bulk Assignment) - After US-5 (3-4 days)
+6. ✅ **UserStory-3.1** (Category Budget Plan Scoping) - After US-6 (2-3 days) - **REFINED**
+7. ✅ **UserStory-4** (Account-Budget Matching) - After US-3.1 (3-4 days)
 
 ### Phase 3: Advanced Features (Weeks 6-8)
 
-7. ✅ **UserStory-3.2** (Category Template System) - After US-4 (1-2 days) - **REFINED**
-8. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6 (4-5 days)
-9. 🔴 **UserStory-8.3** (E2E Tests for US-5/6/7) - Parallel with US-7 (2-3 days)
+8. ✅ **UserStory-3.2** (Category Template System) - After US-4 (1-2 days) - **REFINED**
+9. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6 (4-5 days)
+10. ✅ **UserStory-5.2** (E2E Tests Assignment Flows) - Incremental with US-7 (2-3 days) - **REFINED**
 
 ### Phase 4: UX Improvements (Weeks 9-10)
 
-10. ✅ **UserStory-3.3** (Category UI Updates & E2E Tests) - After US-3.2 (1-2 days) - **REFINED**
-11. 🔴 **UserStory-8.2** (UX Enhancements) - After US-7 (2-3 days)
-12. 🔴 **UserStory-13** (Application Flow) - After refinement (4-5 days)
+11. ✅ **UserStory-3.3** (Category UI Updates & E2E Tests) - After US-3.2 (1-2 days) - **REFINED**
+12. ✅ **UserStory-5.3** (UX Enhancements) - After US-7 (2-3 days) - **REFINED**
+13. 🔴 **UserStory-13** (Application Flow) - After refinement (4-5 days)
 
 ### Phase 5: Post-MVP (Weeks 11+)
 
-13. 🔴 **UserStory-9** (Multi-User Auth) - After refinement (5-7 days)
-14. 🔴 **UserStory-11** (Sharing System) - After US-9 + refinement (5-7 days)
-15. 🔴 **UserStory-12** (Backup & Restore) - After refinement (3-4 days)
+14. 🔴 **UserStory-9** (Multi-User Auth) - After refinement (5-7 days)
+15. 🔴 **UserStory-11** (Sharing System) - After US-9 + refinement (5-7 days)
+16. 🔴 **UserStory-12** (Backup & Restore) - After refinement (3-4 days)
 
 ---
 
@@ -825,17 +861,19 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Start implementing UserStory-1 (CI Pipeline) and UserStory-5 (Basic Assignment UI) - both production-ready
-2. **Within 24 Hours:** Refine UserStory-8.1 (E2E Infrastructure) (1-2 hours)
-3. **This Week:** Split UserStory-8 into sub-stories (2-3 hours)
-4. **Next Week:** Expand UserStory-9, 11, 12, 13 with implementation tasks (6-8 hours total)
+1. **Immediate:** Start implementing UserStory-1 (CI Pipeline) and UserStory-5 (Basic Assignment UI) + UserStory-5.1 (E2E Infrastructure parallel) - all production-ready
+2. **This Week:** Expand UserStory-9, 11, 12, 13 with implementation tasks (6-8 hours total)
 
-**Total Refinement Effort Remaining:** ~7-9 hours across remaining stories
+**Total Refinement Effort Remaining:** ~6-8 hours across remaining stories
 
 **Priority Order:**
 
 1. ✅ ~~UserStory-1 (CI Pipeline)~~ - **COMPLETED** (Refined January 16, 2026)
 2. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED** (Refined January 16, 2026)
 3. ✅ ~~UserStory-3 (Split into 3.1, 3.2, 3.3)~~ - **COMPLETED** (Split January 16, 2026)
-4. UserStory-8 (Split into 8.1, 8.2, 8.3) - Enables parallel test development
+4. ✅ ~~UserStory-8 (Split into 5.1, 5.2, 5.3)~~ - **COMPLETED** (Split January 16, 2026)
+5. UserStory-9 (Multi-User Auth) - Expand implementation tasks
+6. UserStory-11 (Sharing System) - Expand implementation tasks
+7. UserStory-12 (Backup & Restore) - Add conflict resolution details
+8. UserStory-13 (Application Flow) - Add widget specifications
 5. UserStory-9 (Expand) - Post-MVP but critical for multi-user
