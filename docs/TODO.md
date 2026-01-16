@@ -225,6 +225,32 @@ See detailed spec in `docs/MVP-2.4-DatabaseEnvironments.md`.
 
 **Status:** ✅ **COMPLETED** - Core infrastructure complete. Background services, monitoring, and undo functionality implemented and tested. Database migrations will apply automatically on startup. See `docs/MVP-6-Automation-Summary.md` for detailed implementation documentation.
 
+## Post-MVP Infrastructure [✓ COMPLETED]
+
+### UserStory-2: Branching Strategy & GitHub Workflow
+
+- [x] Create `CONTRIBUTING.md` with GitHub Flow documentation
+  - Branch naming conventions (feature/, bugfix/, hotfix/, docs/)
+  - Pull request process (1 approval required)
+  - Link to Implementation-Guidelines.md for technical standards
+  - Merge requirements
+- [x] Create `.github/PULL_REQUEST_TEMPLATE.md` with checklist
+- [x] Create issue templates in `.github/ISSUE_TEMPLATE/`
+  - Bug report template
+  - Feature request template
+  - Documentation template
+  - Performance issue template
+  - Security issue template
+- [x] Add `.github/CODEOWNERS` file (@gjgie automatic review requests)
+- [x] Update README.md with contribution guidelines link
+- [x] CI status badge already present in README.md
+- [ ] **(User Manual)** Configure GitHub branch protection rules for `main`
+  - Require CI passing before merge
+  - Require 1 approval
+  - Require branches to be up to date before merging
+  - Prevent force pushes and deletions
+  - Enable CODEOWNERS review requirement
+
 ## Post-MVP / Nice-to-have [Low Priority]
 
 - [ ] MT940 bank statement parser
