@@ -10,104 +10,29 @@
 **Status Overview:**
 
 - ✅ **5 stories ready** for immediate implementation (US-1, US-4, US-5, US-6, US-7)
-- ✅ **4 stories refined and ready** (US-3.1, US-3.2, US-3.3, US-5.1/5.2/5.3) - Split January 16, 2026
+- ✅ **8 stories refined and ready** (US-3.1, US-3.2, US-3.3, US-5.1, US-8.1, US-8.2, US-9) - Split/Refined January 16, 2026
 - ⚠️ **0 stories need minor refinement**
-- 🔴 **4 stories need major refinement** (split or expand) (US-9, US-11, US-12, US-13)
+- 🔴 **4 stories need major refinement** (split or expand) (US-10, US-11, US-12, US-13, US-14, US-15)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
 ---
 
-## 🔴 Needs Major Refinement (Split or Expand)
+### UserStory-9: Integration Workflow Tests
 
-#### UserStory-8: Integration Workflow Tests
+**File:** [docs/Userstories/UserStory-9-Integration-Workflow-Tests.md](docs/Userstories/UserStory-9-Integration-Workflow-Tests.md)
 
-**File:** [docs/Userstories/UserStory-8-Integration-Workflow-Tests.md](docs/Userstories/UserStory-8-Integration-Workflow-Tests.md)
+**Status:** This story focuses on comprehensive integration workflow tests validating complete end-to-end user journeys spanning multiple features (US-5, US-6, US-7). Feature-specific E2E tests have been redistributed to their respective implementation stories for immediate feedback during development.
 
-**Scope:**
-
-- E2E tests: Basic assignment (US-5) - 11 test cases
-- E2E tests: Split assignment (US-6) - 9 test cases
-- E2E tests: Bulk assignment (US-6) - 9 test cases
-- E2E tests: ML suggestions (US-7) - 8 test cases
-- E2E tests: Auto-apply configuration (US-7) - 8 test cases
-- E2E tests: Monitoring dashboard (US-7) - 9 test cases
-- E2E tests: Cross-feature workflows - 2 comprehensive tests
-- E2E tests: Accessibility validation with axe-core - 4 test cases
-- E2E tests: Performance validation - 3 test cases
-
-**Estimated Effort:** 2-3 days
-
-**Tasks:** ~42 implementation tasks
-
-**Success Criteria:**
-
-- 63+ E2E test cases covering all assignment features
-- PageObjectModels from US-5.1 used consistently
-- Accessibility audit passes WCAG 2.1 Level AA (zero critical violations)
-- Performance tests validate <500ms load time for 1000+ transactions
-- Coverage >90% for TransactionsController and CategoriesController
+**Estimated Effort:** 2-3 days (~42 implementation tasks)
 
 **Dependencies:** UserStory-5/6/7 REQUIRED (tests assignment UI components)
 
 ---
 
-#### UserStory-8: Assignment UX Enhancements
+### UserStory-10: Multi-User Authentication with Supabase
 
-**File:** [docs/Userstories/UserStory-8-UX-Enhancements.md](docs/Userstories/UserStory-8-UX-Enhancements.md)
-
-**Scope:**
-
-- Keyboard shortcuts (Tab/Enter/Esc/Space/Ctrl+A/Ctrl+D/`/`/`?`) with `ShortcutHelp.razor` modal
-- `QuickFilters.razor` component (assignment status, date range, category, amount, account filters)
-- Filter state persistence in localStorage
-- `RecentCategoriesService` tracking top 5 used categories with one-click assignment
-- Favorite categories feature (star icon, top-of-list placement)
-- Performance optimization (page size selector, loading skeletons, filter debouncing)
-
-**Estimated Effort:** 2-3 days
-
-**Tasks:** ~24 implementation tasks
-
-**Success Criteria:**
-
-- Keyboard shortcuts documented in help modal (accessible via `?` key)
-- Recent categories reduce assignment friction (top 5 most used displayed)
-- Quick filters with 6+ options functional
-- Filter state persists across page reloads (localStorage)
-- Favorites displayed at top of CategorySelector
-
-**Dependencies:** UserStory-5/6/7 REQUIRED (enhances assignment UI components)
-
----
-
-**Total Estimated Effort (US-5.1/US-8/US-9):** 5-8 days (vs 10-15 days as single story)
-
-**Implementation Order:**
-
-1. **US-5.1** (E2E Infrastructure) → Parallel with US-5 (complete before US-5 finishes)
-2. **US-9** (Integration Tests) → Incremental after US-5/6/7 (test each feature as built)
-3. **US-8** (UX Enhancements) → After US-7 (can be prioritized independently)
-
----
-
-- E2E tests run in <5 minutes in CI pipeline
-
----
-
-**Total Estimated Effort (US-8 Split):** 5-8 days (vs 10-15 days as single story)
-
-**Implementation Order:**
-
-1. **US-8.1** (E2E Infrastructure) → Start immediately, complete before US-5 finishes
-2. **US-8.3** (E2E Tests) → Implement incrementally after US-5, US-6, US-7 complete
-3. **US-8.2** (UX Enhancements) → Defer to post-MVP or implement in parallel
-
----
-
-### UserStory-9: Multi-User Authentication with Supabase
-
-**File:** [docs/Userstories/UserStory-9-Multi-User-Authentication.md](docs/Userstories/UserStory-9-Multi-User-Authentication.md)
+**File:** [docs/Userstories/UserStory-10-Multi-User-Authentication.md](docs/Userstories/UserStory-10-Multi-User-Authentication.md)
 
 **Issues:**
 
@@ -716,19 +641,22 @@ Add the following sections:
 
 8. ✅ **UserStory-3.2** (Category Template System) - After US-4 (1-2 days) - **REFINED**
 9. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6 (4-5 days)
-10. ✅ **UserStory-9** (Integration Workflow Tests) - Incremental with US-7 (0.5-1 day) - **REFINED**
+10. ✅ **UserStory-9** (Integration Workflow Tests) - Incremental with US-7 (2-3 days) - **REFINED**
 
 ### Phase 4: UX Improvements (Weeks 9-10)
 
 11. ✅ **UserStory-3.3** (Category UI Updates & E2E Tests) - After US-3.2 (1-2 days) - **REFINED**
-12. ✅ **UserStory-8** (UX Enhancements) - After US-7 (2.5-3.5 days) - **REFINED**
+12. ✅ **UserStory-8** (Assignment UX Enhancements) - After US-7 (2-3 days) - **REFINED**
 13. 🔴 **UserStory-14** (Application Flow) - After refinement (4-5 days)
 
 ### Phase 5: Post-MVP (Weeks 11+)
 
 14. 🔴 **UserStory-10** (Multi-User Auth) - After refinement (5-7 days)
-15. 🔴 **UserStory-12** (Sharing System) - After US-10 + refinement (5-7 days)
-16. 🔴 **UserStory-13** (Backup & Restore) - After refinement (3-4 days)
+15. 🔴 **UserStory-11** (Sharing System) - After US-10 + refinement (5-7 days)
+16. 🔴 **UserStory-12** (Backup & Restore) - After refinement (3-4 days)
+17. 🔴 **UserStory-13** (Application Flow) - After refinement (4-5 days)
+18. 🔴 **UserStory-14** (Application Flow) - After refinement (varies)
+19. 🔴 **UserStory-15** (Azure Deployment) - After refinement (varies)
 
 ---
 
@@ -830,9 +758,9 @@ Use this structure for all new stories:
 1. ✅ ~~UserStory-1 (CI Pipeline)~~ - **COMPLETED** (Refined January 16, 2026)
 2. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED** (Refined January 16, 2026)
 3. ✅ ~~UserStory-3 (Split into 3.1, 3.2, 3.3)~~ - **COMPLETED** (Split January 16, 2026)
-4. ✅ ~~UserStory-8 (Split into 5.1, 5.2, 5.3)~~ - **COMPLETED** (Split January 16, 2026)
-5. UserStory-9 (Multi-User Auth) - Expand implementation tasks
-6. UserStory-11 (Sharing System) - Expand implementation tasks
-7. UserStory-12 (Backup & Restore) - Add conflict resolution details
-8. UserStory-13 (Application Flow) - Add widget specifications
-9. UserStory-9 (Expand) - Post-MVP but critical for multi-user
+4. ✅ ~~UserStory-5 (Split into 5.1, 5.2, 5.3)~~ - **COMPLETED** (Split January 16, 2026)
+5. ✅ ~~UserStory-8 duplicate removed~~ - **COMPLETED** (Corrected January 16, 2026)
+6. UserStory-10 (Multi-User Auth) - Expand implementation tasks
+7. UserStory-11 (Sharing System) - Expand implementation tasks
+8. UserStory-12 (Backup & Restore) - Add conflict resolution details
+9. UserStory-13 (Application Flow) - Add widget specifications
