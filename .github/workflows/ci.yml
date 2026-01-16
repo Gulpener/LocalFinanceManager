@@ -24,6 +24,9 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
       
+      - name: Workaround for .NET 10 SDK glob expansion bug
+        run: mkdir -p LocalFinanceManager/bin/Debug
+      
       - name: Build solution
         run: dotnet build --configuration Release --no-restore
       
