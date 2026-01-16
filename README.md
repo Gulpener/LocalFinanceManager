@@ -1,5 +1,7 @@
 # Local Finance Manager
 
+![CI](https://github.com/Gulpener/LocalFinanceManager/actions/workflows/ci.yml/badge.svg)
+
 A personal finance management application built with Blazor Server and .NET 10, featuring budget planning, account management, transaction import, and ML-powered categorization.
 
 ## Features
