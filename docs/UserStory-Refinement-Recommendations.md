@@ -132,6 +132,7 @@
 3. **US-5.3** (UX Enhancements) → After US-7 (can be prioritized independently)
 
 ---
+
 - E2E tests run in <5 minutes in CI pipeline
 
 ---
@@ -876,4 +877,4 @@ Use this structure for all new stories:
 6. UserStory-11 (Sharing System) - Expand implementation tasks
 7. UserStory-12 (Backup & Restore) - Add conflict resolution details
 8. UserStory-13 (Application Flow) - Add widget specifications
-5. UserStory-9 (Expand) - Post-MVP but critical for multi-user
+9. UserStory-9 (Expand) - Post-MVP but critical for multi-user

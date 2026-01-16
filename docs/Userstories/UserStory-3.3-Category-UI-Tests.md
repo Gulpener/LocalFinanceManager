@@ -210,6 +210,7 @@ Implement Blazor UI updates for budget-plan-scoped category management with temp
 ### 5. E2E Tests: Budget Plan Creation with Template
 
 - [ ] Add E2E test in [LocalFinanceManager.E2E/BudgetPlanTests.cs](../../tests/LocalFinanceManager.E2E/BudgetPlanTests.cs):
+
   ```csharp
   [Test]
   public async Task CreateBudgetPlanWithPersonalTemplate_AutoCreatesCategories()
@@ -240,6 +241,7 @@ Implement Blazor UI updates for budget-plan-scoped category management with temp
 ### 6. E2E Tests: Category Management with Budget Plan Scoping
 
 - [ ] Add E2E test for category scoping:
+
   ```csharp
   [Test]
   public async Task CategoryList_FiltersBySelectedBudgetPlan()
@@ -271,6 +273,7 @@ Implement Blazor UI updates for budget-plan-scoped category management with temp
 ### 7. E2E Tests: Transaction Assignment with Scoped Categories
 
 - [ ] Add E2E test for transaction-category scoping:
+
   ```csharp
   [Test]
   public async Task TransactionAssignment_OnlyShowsCategoriesFromAccountBudgetPlan()
@@ -305,6 +308,7 @@ Implement Blazor UI updates for budget-plan-scoped category management with temp
 ### 8. E2E Tests: Category Editing After Template Application
 
 - [ ] Add E2E test for category editability:
+
   ```csharp
   [Test]
   public async Task TemplateCategory_CanBeEdited()
@@ -329,6 +333,7 @@ Implement Blazor UI updates for budget-plan-scoped category management with temp
 ### 9. E2E Performance Test
 
 - [ ] Add performance test for full category workflow:
+
   ```csharp
   [Test]
   public async Task FullCategoryWorkflow_CompletesUnder5Seconds()
