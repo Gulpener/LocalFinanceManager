@@ -10,105 +10,15 @@
 **Status Overview:**
 
 - ✅ **5 stories ready** for immediate implementation (US-1, US-4, US-5, US-6, US-7)
+- ✅ **3 stories refined and ready** (US-3.1, US-3.2, US-3.3) - Split January 16, 2026
 - ⚠️ **0 stories need minor refinement**
-- 🔴 **6 stories need major refinement** (split or expand) (US-3, US-8, US-9, US-11, US-12, US-13)
+- 🔴 **5 stories need major refinement** (split or expand) (US-8, US-9, US-11, US-12, US-13)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
 ---
 
 ## 🔴 Needs Major Refinement (Split or Expand)
-
-### UserStory-3: Category Ownership & Budget Plan Scoping
-
-**File:** [docs/Userstories/UserStory-3-Category-Ownership.md](docs/Userstories/UserStory-3-Category-Ownership.md)
-
-**Issues:**
-
-1. **Too large:** ~40+ implementation tasks spanning database restructuring, template system, and UI updates
-2. Data migration strategy needs detailed step-by-step implementation plan
-3. Template system could be separate feature
-4. Risk of incomplete implementation if done as single story
-
-**Recommendation:** **Split into 3 sub-stories**
-
-#### UserStory-3.1: Category Budget Plan Scoping & Migration
-
-**Scope:**
-
-- Add `Category.BudgetPlanId` foreign key
-- Create EF Core migration with data migration logic
-- Update `Category` entity and repository
-- Add validation: Categories must have `BudgetPlanId`
-- Update API endpoints to filter by `Account.CurrentBudgetPlanId`
-
-**Estimated Effort:** 1-2 days
-
-**Tasks:** ~15 implementation tasks
-
-**Success Criteria:**
-
-- All existing categories assigned to default budget plan
-- New categories require `BudgetPlanId`
-- API returns only categories for account's current budget plan
-
----
-
-#### UserStory-3.2: Category Template System
-
-**Scope:**
-
-- Create `CategoryTemplate` entity (Name, Type, Icon, IsSystemTemplate)
-- Seed system templates (e.g., "Groceries", "Salary", "Rent")
-- Add `POST /api/categories/from-template` endpoint
-- Create Blazor UI component: Template selector modal
-- Add "Create from Template" button in category list
-
-**Estimated Effort:** 2 days
-
-**Tasks:** ~15 implementation tasks
-
-**Success Criteria:**
-
-- System templates seeded on first run
-- Users can create categories from templates
-- Template modal shows filtered templates (Income/Expense)
-
----
-
-#### UserStory-3.3: Category UI Updates & Comprehensive Tests
-
-**Scope:**
-
-- Update all category-related Blazor pages to show budget plan context
-- Add budget plan selector in category creation/edit forms
-- Update category list to group by budget plan
-- Add unit tests for budget plan filtering
-- Add integration tests for template system
-- Add e2e tests for category creation flow
-
-**Estimated Effort:** 2 days
-
-**Tasks:** ~15 implementation tasks
-
-**Success Criteria:**
-
-- UI shows budget plan context in breadcrumbs
-- Category lists filtered by selected account
-- 100% test coverage for category-budget plan relationship
-
----
-
-**Total Estimated Effort (US-3 Split):** 5-6 days (vs 7-10 days as single story)
-
-**Benefits of Splitting:**
-
-- Each sub-story independently testable
-- Incremental progress tracking
-- Reduced risk of incomplete implementation
-- Clear checkpoints for code review
-
----
 
 ### UserStory-8: UX Refinements & E2E Test Infrastructure
 
@@ -804,18 +714,18 @@ Add the following sections:
 ### Phase 2: Core Features (Weeks 3-5)
 
 4. ✅ **UserStory-6** (Split & Bulk Assignment) - After US-5 (3-4 days)
-5. 🔴 **UserStory-3.1** (Category Budget Plan Scoping) - After US-6 (1-2 days)
+5. ✅ **UserStory-3.1** (Category Budget Plan Scoping) - After US-6 (2-3 days) - **REFINED**
 6. ✅ **UserStory-4** (Account-Budget Matching) - After US-3.1 (3-4 days)
 
 ### Phase 3: Advanced Features (Weeks 6-8)
 
-7. 🔴 **UserStory-3.2** (Category Template System) - After US-4 (2 days)
+7. ✅ **UserStory-3.2** (Category Template System) - After US-4 (1-2 days) - **REFINED**
 8. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6 (4-5 days)
 9. 🔴 **UserStory-8.3** (E2E Tests for US-5/6/7) - Parallel with US-7 (2-3 days)
 
 ### Phase 4: UX Improvements (Weeks 9-10)
 
-10. 🔴 **UserStory-3.3** (Category UI Updates) - After US-3.2 (2 days)
+10. ✅ **UserStory-3.3** (Category UI Updates & E2E Tests) - After US-3.2 (1-2 days) - **REFINED**
 11. 🔴 **UserStory-8.2** (UX Enhancements) - After US-7 (2-3 days)
 12. 🔴 **UserStory-13** (Application Flow) - After refinement (4-5 days)
 
@@ -917,15 +827,15 @@ Use this structure for all new stories:
 
 1. **Immediate:** Start implementing UserStory-1 (CI Pipeline) and UserStory-5 (Basic Assignment UI) - both production-ready
 2. **Within 24 Hours:** Refine UserStory-8.1 (E2E Infrastructure) (1-2 hours)
-3. **This Week:** Split UserStory-3 and UserStory-8 into sub-stories (3-4 hours)
+3. **This Week:** Split UserStory-8 into sub-stories (2-3 hours)
 4. **Next Week:** Expand UserStory-9, 11, 12, 13 with implementation tasks (6-8 hours total)
 
-**Total Refinement Effort Remaining:** ~10-12 hours across remaining stories
+**Total Refinement Effort Remaining:** ~7-9 hours across remaining stories
 
 **Priority Order:**
 
 1. ✅ ~~UserStory-1 (CI Pipeline)~~ - **COMPLETED** (Refined January 16, 2026)
 2. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED** (Refined January 16, 2026)
-3. UserStory-8.1 (E2E Infrastructure) - Enables parallel test development
-4. UserStory-3 (Split) - Large scope reduction
+3. ✅ ~~UserStory-3 (Split into 3.1, 3.2, 3.3)~~ - **COMPLETED** (Split January 16, 2026)
+4. UserStory-8 (Split into 8.1, 8.2, 8.3) - Enables parallel test development
 5. UserStory-9 (Expand) - Post-MVP but critical for multi-user

@@ -1,4 +1,18 @@
-# Post-MVP-3: Restructure Category Ownership
+# SUPERSEDED: Split into UserStory-3.1, 3.2, 3.3 (January 16, 2026)
+
+**This user story has been split into three focused sub-stories for better implementation tracking and reduced risk:**
+
+- **[UserStory-3.1: Category Budget Plan Scoping & Migration](UserStory-3.1-Category-Budget-Scoping.md)** - Database schema restructuring, data migration, repository/service updates (~2-3 days)
+- **[UserStory-3.2: Category Template System](UserStory-3.2-Category-Template-System.md)** - Template definitions and auto-creation logic (~1-2 days)
+- **[UserStory-3.3: Category UI Updates & Comprehensive Tests](UserStory-3.3-Category-UI-Tests.md)** - Blazor UI and E2E test coverage (~1-2 days)
+
+**Total Effort:** 4-7 days across three sequential stories (vs 7-10 days as single story)
+
+**Implementation Order:** US-3.1 (REQUIRED) → US-3.2 (REQUIRED) → US-3.3 (final integration gate)
+
+---
+
+# Original User Story (Archived)
 
 ## Objective
 
