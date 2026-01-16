@@ -17,9 +17,10 @@ public class CategoryServiceIntegrationTests
     private CategoryService _categoryService = null!;
     private Mock<ILogger<Repository<Category>>> _categoryRepoLogger = null!;
     private Mock<ILogger<CategoryService>> _serviceLogger = null!;
+    private Guid _testBudgetPlanId;
 
     [SetUp]
-    public void Setup()
+    public async Task Setup()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlite("DataSource=:memory:")
@@ -34,6 +35,33 @@ public class CategoryServiceIntegrationTests
 
         _categoryRepository = new CategoryRepository(_context, _categoryRepoLogger.Object);
         _categoryService = new CategoryService(_categoryRepository, _serviceLogger.Object);
+
+        // Create a default test account and budget plan
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            Type = AccountType.Checking,
+            StartingBalance = 1000m,
+            IsArchived = false
+        };
+        await _context.Accounts.AddAsync(account);
+        await _context.SaveChangesAsync();
+
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2026,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+        await _context.SaveChangesAsync();
+
+        _testBudgetPlanId = budgetPlan.Id;
     }
 
     [TearDown]
@@ -50,7 +78,8 @@ public class CategoryServiceIntegrationTests
         var createDto = new CreateCategoryDto
         {
             Name = "Groceries",
-            Type = CategoryType.Expense
+            Type = CategoryType.Expense,
+            BudgetPlanId = _testBudgetPlanId
         };
 
         // Act
@@ -60,11 +89,13 @@ public class CategoryServiceIntegrationTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Name, Is.EqualTo("Groceries"));
         Assert.That(result.Type, Is.EqualTo(CategoryType.Expense));
+        Assert.That(result.BudgetPlanId, Is.EqualTo(_testBudgetPlanId));
 
         var saved = await _context.Categories.FindAsync(result.Id);
         Assert.That(saved, Is.Not.Null);
         Assert.That(saved!.Name, Is.EqualTo("Groceries"));
         Assert.That(saved.Type, Is.EqualTo(CategoryType.Expense));
+        Assert.That(saved.BudgetPlanId, Is.EqualTo(_testBudgetPlanId));
         Assert.That(saved.IsArchived, Is.False);
     }
 
@@ -77,6 +108,7 @@ public class CategoryServiceIntegrationTests
             Id = Guid.NewGuid(),
             Name = "Original Name",
             Type = CategoryType.Expense,
+            BudgetPlanId = _testBudgetPlanId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -145,6 +177,7 @@ public class CategoryServiceIntegrationTests
             Id = Guid.NewGuid(),
             Name = "Original Name",
             Type = CategoryType.Expense,
+            BudgetPlanId = _testBudgetPlanId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -191,6 +224,7 @@ public class CategoryServiceIntegrationTests
             Id = Guid.NewGuid(),
             Name = "To Archive",
             Type = CategoryType.Expense,
+            BudgetPlanId = _testBudgetPlanId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -221,6 +255,7 @@ public class CategoryServiceIntegrationTests
             Id = Guid.NewGuid(),
             Name = "Active",
             Type = CategoryType.Income,
+            BudgetPlanId = _testBudgetPlanId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -230,6 +265,7 @@ public class CategoryServiceIntegrationTests
             Id = Guid.NewGuid(),
             Name = "Archived",
             Type = CategoryType.Expense,
+            BudgetPlanId = _testBudgetPlanId,
             IsArchived = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -254,7 +290,8 @@ public class CategoryServiceIntegrationTests
         var createDto = new CreateCategoryDto
         {
             Name = "Salary",
-            Type = CategoryType.Income
+            Type = CategoryType.Income,
+            BudgetPlanId = _testBudgetPlanId
         };
 
         // Act
@@ -279,6 +316,7 @@ public class CategoryServiceIntegrationTests
             Id = Guid.NewGuid(),
             Name = "Miscellaneous",
             Type = CategoryType.Expense,
+            BudgetPlanId = _testBudgetPlanId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

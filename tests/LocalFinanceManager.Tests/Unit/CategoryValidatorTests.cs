@@ -27,7 +27,8 @@ public class CategoryValidatorTests
         var dto = new CreateCategoryDto
         {
             Name = "Boodschappen",
-            Type = CategoryType.Expense
+            Type = CategoryType.Expense,
+            BudgetPlanId = Guid.NewGuid()
         };
 
         // Act
@@ -44,7 +45,8 @@ public class CategoryValidatorTests
         var dto = new CreateCategoryDto
         {
             Name = "",
-            Type = CategoryType.Expense
+            Type = CategoryType.Expense,
+            BudgetPlanId = Guid.NewGuid()
         };
 
         // Act
@@ -62,7 +64,8 @@ public class CategoryValidatorTests
         var dto = new CreateCategoryDto
         {
             Name = new string('A', 101), // 101 characters
-            Type = CategoryType.Expense
+            Type = CategoryType.Expense,
+            BudgetPlanId = Guid.NewGuid()
         };
 
         // Act
@@ -80,7 +83,8 @@ public class CategoryValidatorTests
         var dto = new CreateCategoryDto
         {
             Name = new string('A', 100), // Exactly 100 characters
-            Type = CategoryType.Income
+            Type = CategoryType.Income,
+            BudgetPlanId = Guid.NewGuid()
         };
 
         // Act
@@ -97,7 +101,8 @@ public class CategoryValidatorTests
         var dto = new CreateCategoryDto
         {
             Name = "Salaris",
-            Type = CategoryType.Income
+            Type = CategoryType.Income,
+            BudgetPlanId = Guid.NewGuid()
         };
 
         // Act
@@ -114,7 +119,8 @@ public class CategoryValidatorTests
         var dto = new CreateCategoryDto
         {
             Name = "Huur",
-            Type = CategoryType.Expense
+            Type = CategoryType.Expense,
+            BudgetPlanId = Guid.NewGuid()
         };
 
         // Act
@@ -131,7 +137,8 @@ public class CategoryValidatorTests
         var dto = new CreateCategoryDto
         {
             Name = "Test",
-            Type = (CategoryType)99 // Invalid enum value
+            Type = (CategoryType)99, // Invalid enum value
+            BudgetPlanId = Guid.NewGuid()
         };
 
         // Act
@@ -140,6 +147,25 @@ public class CategoryValidatorTests
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Type)
             .WithErrorMessage("Type moet Income of Expense zijn");
+    }
+
+    [Test]
+    public async Task CreateCategoryDto_EmptyBudgetPlanId_FailsValidation()
+    {
+        // Arrange
+        var dto = new CreateCategoryDto
+        {
+            Name = "Test Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = Guid.Empty
+        };
+
+        // Act
+        var result = await _createValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.BudgetPlanId)
+            .WithErrorMessage("Budget Plan ID is verplicht");
     }
 
     #endregion
