@@ -119,6 +119,10 @@ public class CreateCategoryDtoValidator : AbstractValidator<CreateCategoryDto>
         RuleFor(x => x.Type)
             .IsInEnum()
             .WithMessage("Type moet Income of Expense zijn");
+
+        RuleFor(x => x.BudgetPlanId)
+            .NotEmpty()
+            .WithMessage("Budget Plan ID is verplicht");
     }
 }
 
