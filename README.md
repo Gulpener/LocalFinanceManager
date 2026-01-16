@@ -372,11 +372,14 @@ pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install
 
 ## Contributing
 
-1. Create a feature branch from `main`
-2. Follow the implementation guidelines in `docs/Implementation-Guidelines.md`
-3. Write tests for all new features
-4. Ensure all tests pass: `dotnet test`
-5. Submit a pull request
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Branching strategy and workflow
+- Pull request process and requirements
+- Code standards and testing requirements
+- Development setup
+
+For technical implementation details, refer to [`docs/Implementation-Guidelines.md`](docs/Implementation-Guidelines.md).
 
 ## License
 
