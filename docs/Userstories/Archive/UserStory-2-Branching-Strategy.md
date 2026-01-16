@@ -23,13 +23,13 @@ Adopt GitHub Flow with branch protection rules to ensure code quality and review
 - [x] **(User Manual)** Wait for UserStory-1 completion
   - CI workflow must exist and pass on `main` branch
   - Cannot configure branch protection without functional CI
-- [ ] **(Agent)** Create `CONTRIBUTING.md` with branching workflow documentation
+- [x] **(Agent)** Create `CONTRIBUTING.md` with branching workflow documentation
   - Document GitHub Flow workflow
   - Document feature branch naming conventions
   - Document pull request process and review guidelines (1 approval required)
   - Link to `docs/Implementation-Guidelines.md` for code standards and testing requirements
   - Include merge requirements
-- [ ] **(Agent)** Create GitHub templates
+- [x] **(Agent)** Create GitHub templates
   - Create `.github/PULL_REQUEST_TEMPLATE.md` with checklist (tests added, CI passing, linked issue)
   - Create issue templates in `.github/ISSUE_TEMPLATE/`:
     - Bug report template
@@ -37,9 +37,9 @@ Adopt GitHub Flow with branch protection rules to ensure code quality and review
     - Documentation template
     - Performance issue template
     - Security issue template
-- [ ] **(Agent)** Add `.github/CODEOWNERS` file
+- [x] **(Agent)** Add `.github/CODEOWNERS` file
   - Configure `* @gjgie` to automatically request review on all PRs
-- [ ] **(User Manual)** Configure GitHub branch protection rules for `main`
+- [x] **(User Manual)** Configure GitHub branch protection rules for `main`
   - Require CI passing before merge
   - Require 1 approval
   - Require branches to be up to date before merging
