@@ -24,6 +24,8 @@ public class UndoServiceTests : IDisposable
     private readonly Mock<ILogger<UndoService>> _mockLogger;
     private readonly AutomationOptions _options;
     private readonly UndoService _undoService;
+    private readonly Guid _testAccountId;
+    private readonly Guid _testBudgetLineId;
 
     public UndoServiceTests()
     {
@@ -41,6 +43,73 @@ public class UndoServiceTests : IDisposable
 
         var optionsMock = Options.Create(_options);
         _undoService = new UndoService(_dbContext, _mockAuditRepo.Object, optionsMock, _mockLogger.Object);
+
+        // Create test account for foreign key constraint
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            Type = AccountType.Checking,
+            Currency = "EUR",
+            IBAN = "NL91ABNA0417164300",
+            StartingBalance = 1000m,
+            IsArchived = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _dbContext.Accounts.Add(account);
+        _dbContext.SaveChanges();
+        _testAccountId = account.Id;
+
+        // Create test budget line for TransactionSplit foreign key
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _dbContext.BudgetPlans.Add(budgetPlan);
+        _dbContext.SaveChanges();
+
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Category",
+            Type = CategoryType.Expense,
+            IsArchived = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _dbContext.Categories.Add(category);
+        _dbContext.SaveChanges();
+
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = "[100,100,100,100,100,100,100,100,100,100,100,100]",
+            IsArchived = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _dbContext.BudgetLines.Add(budgetLine);
+        _dbContext.SaveChanges();
+        _testBudgetLineId = budgetLine.Id;
+    }
+
+    [SetUp]
+    public void SetUp()
+    {
+        // Clear test data before each test to ensure isolation
+        _dbContext.TransactionSplits.RemoveRange(_dbContext.TransactionSplits);
+        _dbContext.Transactions.RemoveRange(_dbContext.Transactions);
+        _dbContext.TransactionAudits.RemoveRange(_dbContext.TransactionAudits);
+        _dbContext.SaveChanges();
     }
 
     [Test]
@@ -53,7 +122,7 @@ public class UndoServiceTests : IDisposable
             Amount = 100m,
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
-            AccountId = Guid.NewGuid(),
+            AccountId = _testAccountId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -63,7 +132,7 @@ public class UndoServiceTests : IDisposable
         {
             Id = Guid.NewGuid(),
             TransactionId = transaction.Id,
-            BudgetLineId = Guid.NewGuid(),
+            BudgetLineId = _testBudgetLineId,
             Amount = 100m,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
@@ -126,7 +195,7 @@ public class UndoServiceTests : IDisposable
             Amount = 100m,
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
-            AccountId = Guid.NewGuid(),
+            AccountId = _testAccountId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -171,7 +240,7 @@ public class UndoServiceTests : IDisposable
             Amount = 100m,
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
-            AccountId = Guid.NewGuid(),
+            AccountId = _testAccountId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -226,7 +295,7 @@ public class UndoServiceTests : IDisposable
             Amount = 100m,
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
-            AccountId = Guid.NewGuid(),
+            AccountId = _testAccountId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -264,7 +333,7 @@ public class UndoServiceTests : IDisposable
             Amount = 100m,
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
-            AccountId = Guid.NewGuid(),
+            AccountId = _testAccountId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

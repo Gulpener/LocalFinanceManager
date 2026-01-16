@@ -22,6 +22,7 @@ public class MonitoringServiceTests : IDisposable
     private readonly Mock<ILogger<MonitoringService>> _mockLogger;
     private readonly AutomationOptions _options;
     private readonly MonitoringService _monitoringService;
+    private readonly Guid _testAccountId;
 
     public MonitoringServiceTests()
     {
@@ -37,6 +38,32 @@ public class MonitoringServiceTests : IDisposable
 
         var optionsMock = Options.Create(_options);
         _monitoringService = new MonitoringService(_dbContext, optionsMock, _mockLogger.Object);
+
+        // Create test account for foreign key constraint
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            Type = AccountType.Checking,
+            Currency = "EUR",
+            IBAN = "NL91ABNA0417164300",
+            StartingBalance = 1000m,
+            IsArchived = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _dbContext.Accounts.Add(account);
+        _dbContext.SaveChanges();
+        _testAccountId = account.Id;
+    }
+
+    [SetUp]
+    public void SetUp()
+    {
+        // Clear test data before each test to ensure isolation
+        _dbContext.Transactions.RemoveRange(_dbContext.Transactions);
+        _dbContext.TransactionAudits.RemoveRange(_dbContext.TransactionAudits);
+        _dbContext.SaveChanges();
     }
 
     [Test]
@@ -177,7 +204,7 @@ public class MonitoringServiceTests : IDisposable
             Amount = 100m,
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
-            AccountId = Guid.NewGuid(),
+            AccountId = _testAccountId,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
