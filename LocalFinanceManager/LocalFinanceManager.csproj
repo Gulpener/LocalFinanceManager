@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
-    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,5 +23,12 @@
   <ItemGroup>
     <ProjectReference Include="..\LocalFinanceManager.ML\LocalFinanceManager.ML.csproj" />
   </ItemGroup>
+
+  <!-- Workaround for .NET 10 SDK MSB3552 error with resx glob patterns -->
+  <Target Name="RemoveResxGlobPatterns" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <EmbeddedResource Remove="**/*.resx" Condition="'%(Identity)' == '**/*.resx'" />
+    </ItemGroup>
+  </Target>
 
 </Project>
