@@ -87,7 +87,12 @@ public class AppDbContext : DbContext
                 .HasConversion<int>() // Store enum as int
                 .HasDefaultValue(CategoryType.Expense); // Expense = 0
 
-            entity.HasIndex(c => c.Name);
+            entity.HasOne(c => c.BudgetPlan)
+                .WithMany(bp => bp.Categories)
+                .HasForeignKey(c => c.BudgetPlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(c => new { c.BudgetPlanId, c.Name });
         });
 
         // Configure BudgetPlan entity
@@ -126,7 +131,7 @@ public class AppDbContext : DbContext
             entity.HasOne(bl => bl.Category)
                 .WithMany()
                 .HasForeignKey(bl => bl.CategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(bl => bl.BudgetPlanId);
             entity.HasIndex(bl => bl.CategoryId);
@@ -345,37 +350,12 @@ public class AppDbContext : DbContext
             await SaveChangesAsync();
         }
 
-        // Seed categories if none exist
-        if (!await Categories.AnyAsync())
-        {
-            var categories = new[]
-            {
-                // Income categories
-                new Category { Id = Guid.NewGuid(), Name = "Salaris", Type = CategoryType.Income, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Freelance", Type = CategoryType.Income, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Dividend", Type = CategoryType.Income, IsArchived = false },
-                // Expense categories
-                new Category { Id = Guid.NewGuid(), Name = "Huur", Type = CategoryType.Expense, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Boodschappen", Type = CategoryType.Expense, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Transport", Type = CategoryType.Expense, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Utilities", Type = CategoryType.Expense, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Entertainment", Type = CategoryType.Expense, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Healthcare", Type = CategoryType.Expense, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Savings", Type = CategoryType.Expense, IsArchived = false },
-                new Category { Id = Guid.NewGuid(), Name = "Other", Type = CategoryType.Expense, IsArchived = false }
-            };
-
-            await Categories.AddRangeAsync(categories);
-            await SaveChangesAsync();
-        }
-
-        // Seed budget plans if none exist
+        // Seed budget plans if none exist (must be before categories now)
         if (!await BudgetPlans.AnyAsync())
         {
             var firstAccount = await Accounts.FirstOrDefaultAsync();
-            var categoriesList = await Categories.ToListAsync();
 
-            if (firstAccount != null && categoriesList.Any())
+            if (firstAccount != null)
             {
                 var budgetPlan = new BudgetPlan
                 {
@@ -390,7 +370,51 @@ public class AppDbContext : DbContext
 
                 await BudgetPlans.AddAsync(budgetPlan);
                 await SaveChangesAsync();
+            }
+        }
 
+        // Seed categories if none exist (must be after budget plans now)
+        if (!await Categories.AnyAsync())
+        {
+            var firstBudgetPlan = await BudgetPlans.FirstOrDefaultAsync();
+
+            if (firstBudgetPlan != null)
+            {
+                var categories = new[]
+                {
+                    // Income categories
+                    new Category { Id = Guid.NewGuid(), Name = "Salaris", Type = CategoryType.Income, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Freelance", Type = CategoryType.Income, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Dividend", Type = CategoryType.Income, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    // Expense categories
+                    new Category { Id = Guid.NewGuid(), Name = "Huur", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Boodschappen", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Transport", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Utilities", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Entertainment", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Healthcare", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Savings", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
+                    new Category { Id = Guid.NewGuid(), Name = "Other", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false }
+                };
+
+                await Categories.AddRangeAsync(categories);
+                await SaveChangesAsync();
+            }
+        }
+
+        // Update budget plan seeding to use existing categories
+        var budgetPlanWithoutLines = await BudgetPlans
+            .Where(bp => !BudgetLines.Any(bl => bl.BudgetPlanId == bp.Id))
+            .FirstOrDefaultAsync();
+
+        if (budgetPlanWithoutLines != null)
+        {
+            var categoriesList = await Categories
+                .Where(c => c.BudgetPlanId == budgetPlanWithoutLines.Id)
+                .ToListAsync();
+
+            if (categoriesList.Any())
+            {
                 // Add budget lines for some categories
                 var budgetLines = new List<BudgetLine>();
 
@@ -400,7 +424,7 @@ public class AppDbContext : DbContext
                     budgetLines.Add(new BudgetLine
                     {
                         Id = Guid.NewGuid(),
-                        BudgetPlanId = budgetPlan.Id,
+                        BudgetPlanId = budgetPlanWithoutLines.Id,
                         CategoryId = huurCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(850m, 12).ToArray(),
                         Notes = "Monthly rent",
@@ -416,7 +440,7 @@ public class AppDbContext : DbContext
                     budgetLines.Add(new BudgetLine
                     {
                         Id = Guid.NewGuid(),
-                        BudgetPlanId = budgetPlan.Id,
+                        BudgetPlanId = budgetPlanWithoutLines.Id,
                         CategoryId = boodschappenCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(400m, 12).ToArray(),
                         Notes = "Groceries and household items",
@@ -432,7 +456,7 @@ public class AppDbContext : DbContext
                     budgetLines.Add(new BudgetLine
                     {
                         Id = Guid.NewGuid(),
-                        BudgetPlanId = budgetPlan.Id,
+                        BudgetPlanId = budgetPlanWithoutLines.Id,
                         CategoryId = transportCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(150m, 12).ToArray(),
                         Notes = "Public transport and fuel",
@@ -448,7 +472,7 @@ public class AppDbContext : DbContext
                     budgetLines.Add(new BudgetLine
                     {
                         Id = Guid.NewGuid(),
-                        BudgetPlanId = budgetPlan.Id,
+                        BudgetPlanId = budgetPlanWithoutLines.Id,
                         CategoryId = utilitiesCategory.Id,
                         MonthlyAmounts = new decimal[] { 120m, 110m, 100m, 90m, 80m, 70m, 70m, 80m, 90m, 100m, 110m, 120m },
                         Notes = "Gas, electricity, water (seasonal variation)",
@@ -464,7 +488,7 @@ public class AppDbContext : DbContext
                     budgetLines.Add(new BudgetLine
                     {
                         Id = Guid.NewGuid(),
-                        BudgetPlanId = budgetPlan.Id,
+                        BudgetPlanId = budgetPlanWithoutLines.Id,
                         CategoryId = entertainmentCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(200m, 12).ToArray(),
                         Notes = "Movies, dining out, hobbies",

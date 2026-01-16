@@ -63,6 +63,16 @@ public class TransactionAssignmentIntegrationTests
         };
         await _context.Accounts.AddAsync(account);
 
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -78,7 +88,8 @@ public class TransactionAssignmentIntegrationTests
         {
             Id = Guid.NewGuid(),
             Name = "Test Category",
-            Type = CategoryType.Expense
+            Type = CategoryType.Expense,
+            BudgetPlanId = budgetPlan.Id
         };
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
@@ -118,6 +129,16 @@ public class TransactionAssignmentIntegrationTests
         };
         await _context.Accounts.AddAsync(account);
 
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -129,8 +150,8 @@ public class TransactionAssignmentIntegrationTests
         await _context.Transactions.AddAsync(transaction);
         await _context.SaveChangesAsync();
 
-        var category1 = new Category { Id = Guid.NewGuid(), Name = "Category 1", Type = CategoryType.Expense };
-        var category2 = new Category { Id = Guid.NewGuid(), Name = "Category 2", Type = CategoryType.Expense };
+        var category1 = new Category { Id = Guid.NewGuid(), Name = "Category 1", Type = CategoryType.Expense, BudgetPlanId = budgetPlan.Id };
+        var category2 = new Category { Id = Guid.NewGuid(), Name = "Category 2", Type = CategoryType.Expense, BudgetPlanId = budgetPlan.Id };
         await _context.Categories.AddRangeAsync(category1, category2);
         await _context.SaveChangesAsync();
 
@@ -170,6 +191,16 @@ public class TransactionAssignmentIntegrationTests
         };
         await _context.Accounts.AddAsync(account);
 
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -181,7 +212,7 @@ public class TransactionAssignmentIntegrationTests
         await _context.Transactions.AddAsync(transaction);
         await _context.SaveChangesAsync();
 
-        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense, BudgetPlanId = budgetPlan.Id };
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
@@ -216,6 +247,16 @@ public class TransactionAssignmentIntegrationTests
         };
         await _context.Accounts.AddAsync(account);
 
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -227,7 +268,7 @@ public class TransactionAssignmentIntegrationTests
         await _context.Transactions.AddAsync(transaction);
         await _context.SaveChangesAsync();
 
-        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense, BudgetPlanId = budgetPlan.Id };
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
@@ -264,6 +305,16 @@ public class TransactionAssignmentIntegrationTests
         };
         await _context.Accounts.AddAsync(account);
 
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
         var transaction1 = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -283,7 +334,7 @@ public class TransactionAssignmentIntegrationTests
         await _context.Transactions.AddRangeAsync(transaction1, transaction2);
         await _context.SaveChangesAsync();
 
-        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense, BudgetPlanId = budgetPlan.Id };
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
@@ -325,6 +376,16 @@ public class TransactionAssignmentIntegrationTests
         };
         await _context.Accounts.AddAsync(account);
 
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -336,7 +397,7 @@ public class TransactionAssignmentIntegrationTests
         await _context.Transactions.AddAsync(transaction);
         await _context.SaveChangesAsync();
 
-        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense, BudgetPlanId = budgetPlan.Id };
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
@@ -372,6 +433,16 @@ public class TransactionAssignmentIntegrationTests
         };
         await _context.Accounts.AddAsync(account);
 
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
@@ -383,7 +454,7 @@ public class TransactionAssignmentIntegrationTests
         await _context.Transactions.AddAsync(transaction);
         await _context.SaveChangesAsync();
 
-        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Category", Type = CategoryType.Expense, BudgetPlanId = budgetPlan.Id };
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 

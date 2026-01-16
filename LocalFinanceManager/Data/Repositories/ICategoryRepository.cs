@@ -9,7 +9,12 @@ namespace LocalFinanceManager.Data.Repositories;
 public interface ICategoryRepository : IRepository<Category>
 {
     /// <summary>
-    /// Gets a category by name, excluding archived categories.
+    /// Gets all active categories for a specific budget plan.
     /// </summary>
-    Task<Category?> GetByNameAsync(string name);
+    Task<List<Category>> GetByBudgetPlanAsync(Guid budgetPlanId);
+
+    /// <summary>
+    /// Gets a category by name within a budget plan, excluding archived categories.
+    /// </summary>
+    Task<Category?> GetByNameAsync(Guid budgetPlanId, string name);
 }

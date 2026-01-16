@@ -19,8 +19,26 @@ public class CategoryService
     }
 
     /// <summary>
+    /// Get all active categories for a specific budget plan.
+    /// </summary>
+    public async Task<List<CategoryDto>> GetByBudgetPlanAsync(Guid budgetPlanId)
+    {
+        _logger.LogInformation("Retrieving categories for budget plan: {BudgetPlanId}", budgetPlanId);
+        var categories = await _categoryRepository.GetByBudgetPlanAsync(budgetPlanId);
+        return categories.Select(c => new CategoryDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Type = c.Type,
+            BudgetPlanId = c.BudgetPlanId,
+            RowVersion = c.RowVersion
+        }).ToList();
+    }
+
+    /// <summary>
     /// Get all active categories.
     /// </summary>
+    [Obsolete("Use GetByBudgetPlanAsync instead. This method is kept for backwards compatibility during migration.")]
     public async Task<List<CategoryDto>> GetAllActiveAsync()
     {
         _logger.LogInformation("Retrieving all active categories");
@@ -30,6 +48,7 @@ public class CategoryService
             Id = c.Id,
             Name = c.Name,
             Type = c.Type,
+            BudgetPlanId = c.BudgetPlanId,
             RowVersion = c.RowVersion
         }).ToList();
     }
@@ -46,6 +65,7 @@ public class CategoryService
             Id = category.Id, 
             Name = category.Name,
             Type = category.Type,
+            BudgetPlanId = category.BudgetPlanId,
             RowVersion = category.RowVersion
         } : null;
     }
@@ -55,12 +75,13 @@ public class CategoryService
     /// </summary>
     public async Task<CategoryDto> CreateAsync(CreateCategoryDto request)
     {
-        _logger.LogInformation("Creating new category: {Name}", request.Name);
+        _logger.LogInformation("Creating new category: {Name} for budget plan: {BudgetPlanId}", request.Name, request.BudgetPlanId);
 
         var category = new Category
         {
             Name = request.Name,
             Type = request.Type,
+            BudgetPlanId = request.BudgetPlanId,
             IsArchived = false
         };
 
@@ -73,6 +94,7 @@ public class CategoryService
             Id = category.Id,
             Name = category.Name,
             Type = category.Type,
+            BudgetPlanId = category.BudgetPlanId,
             RowVersion = category.RowVersion
         };
     }
@@ -123,6 +145,7 @@ public class CategoryService
             Id = category.Id,
             Name = category.Name,
             Type = category.Type,
+            BudgetPlanId = category.BudgetPlanId,
             RowVersion = category.RowVersion
         };
     }

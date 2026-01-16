@@ -80,6 +80,7 @@ public class UndoServiceTests : IDisposable
             Id = Guid.NewGuid(),
             Name = "Test Category",
             Type = CategoryType.Expense,
+            BudgetPlanId = budgetPlan.Id,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
