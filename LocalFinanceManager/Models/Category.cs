@@ -23,4 +23,14 @@ public class Category : BaseEntity
     /// Category type (Income or Expense).
     /// </summary>
     public CategoryType Type { get; set; }
+
+    /// <summary>
+    /// Foreign key to the BudgetPlan this category belongs to.
+    /// </summary>
+    public Guid BudgetPlanId { get; set; }
+
+    /// <summary>
+    /// Navigation property to the BudgetPlan.
+    /// </summary>
+    public BudgetPlan BudgetPlan { get; set; } = null!;
 }

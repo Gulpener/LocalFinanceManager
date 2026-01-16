@@ -87,7 +87,12 @@ public class AppDbContext : DbContext
                 .HasConversion<int>() // Store enum as int
                 .HasDefaultValue(CategoryType.Expense); // Expense = 0
 
-            entity.HasIndex(c => c.Name);
+            entity.HasOne(c => c.BudgetPlan)
+                .WithMany(bp => bp.Categories)
+                .HasForeignKey(c => c.BudgetPlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(c => new { c.BudgetPlanId, c.Name });
         });
 
         // Configure BudgetPlan entity
@@ -126,7 +131,7 @@ public class AppDbContext : DbContext
             entity.HasOne(bl => bl.Category)
                 .WithMany()
                 .HasForeignKey(bl => bl.CategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(bl => bl.BudgetPlanId);
             entity.HasIndex(bl => bl.CategoryId);
