@@ -20,51 +20,9 @@
 
 ## 🔴 Needs Major Refinement (Split or Expand)
 
-### ✅ UserStory-8: UX Refinements & E2E Test Infrastructure (REFINED)
+#### UserStory-8: Integration Workflow Tests
 
-**Status:** ✅ **Refined January 16, 2026** - Split into UserStory-5.1, 5.2, 5.3
-
-**File:** [docs/Userstories/Archive/UserStory-8-UX-Refinements-E2E-Tests.md](docs/Userstories/Archive/UserStory-8-UX-Refinements-E2E-Tests.md) (archived)
-
-**Original Issues:**
-
-1. **Too large:** 86 implementation tasks spanning E2E infrastructure, UX enhancements, and accessibility audit
-2. E2E test infrastructure should be completed **before** US-5 finishes to enable parallel test development
-3. UX enhancements are independent features that could be deferred
-4. Accessibility audit is separate concern
-
-**Resolution:** **Split into 3 sub-stories with US-5.x numbering (assignment feature family)**
-
-#### UserStory-5.1: E2E Test Infrastructure Setup
-
-**File:** [docs/Userstories/UserStory-5.1-E2E-Infrastructure.md](docs/Userstories/UserStory-5.1-E2E-Infrastructure.md)
-
-**Scope:**
-
-- Enhance existing `TestWebApplicationFactory` with dedicated SQLite test database
-- Create reusable `SeedDataHelper.cs` with 5 seed methods (accounts, categories, transactions, ML data, auto-apply history)
-- Build `PageObjectModel` base classes (TransactionsPageModel, AssignmentModalPageModel, SplitEditorPageModel, BulkAssignModalPageModel)
-- Configure screenshot/video capture on failure
-- Add `.runsettings` for parallel execution (max 4 workers)
-- Refactor existing tests to use new seed helpers
-
-**Estimated Effort:** 1-2 days
-
-**Tasks:** ~25 implementation tasks
-
-**Success Criteria:**
-
-- E2E project runs successfully with Playwright browser automation
-- Seed data helpers reusable across all tests (no inline creation)
-- CI pipeline runs E2E tests in headless mode with screenshot capture
-
-**Dependencies:** None (can start immediately, parallel with US-5)
-
----
-
-#### UserStory-5.2: E2E Tests for Assignment Flows
-
-**File:** [docs/Userstories/UserStory-5.2-E2E-Tests-Assignment-Flows.md](docs/Userstories/UserStory-5.2-E2E-Tests-Assignment-Flows.md)
+**File:** [docs/Userstories/UserStory-8-Integration-Workflow-Tests.md](docs/Userstories/UserStory-8-Integration-Workflow-Tests.md)
 
 **Scope:**
 
@@ -94,9 +52,9 @@
 
 ---
 
-#### UserStory-5.3: Assignment UX Enhancements
+#### UserStory-8: Assignment UX Enhancements
 
-**File:** [docs/Userstories/UserStory-5.3-UX-Enhancements.md](docs/Userstories/UserStory-5.3-UX-Enhancements.md)
+**File:** [docs/Userstories/UserStory-8-UX-Enhancements.md](docs/Userstories/UserStory-8-UX-Enhancements.md)
 
 **Scope:**
 
@@ -123,13 +81,13 @@
 
 ---
 
-**Total Estimated Effort (US-5.1/5.2/5.3):** 5-8 days (vs 10-15 days as single story)
+**Total Estimated Effort (US-5.1/US-8/US-9):** 5-8 days (vs 10-15 days as single story)
 
 **Implementation Order:**
 
 1. **US-5.1** (E2E Infrastructure) → Parallel with US-5 (complete before US-5 finishes)
-2. **US-5.2** (E2E Tests) → Incremental after US-5/6/7 (test each feature as built)
-3. **US-5.3** (UX Enhancements) → After US-7 (can be prioritized independently)
+2. **US-9** (Integration Tests) → Incremental after US-5/6/7 (test each feature as built)
+3. **US-8** (UX Enhancements) → After US-7 (can be prioritized independently)
 
 ---
 
@@ -758,19 +716,19 @@ Add the following sections:
 
 8. ✅ **UserStory-3.2** (Category Template System) - After US-4 (1-2 days) - **REFINED**
 9. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6 (4-5 days)
-10. ✅ **UserStory-5.2** (E2E Tests Assignment Flows) - Incremental with US-7 (2-3 days) - **REFINED**
+10. ✅ **UserStory-9** (Integration Workflow Tests) - Incremental with US-7 (0.5-1 day) - **REFINED**
 
 ### Phase 4: UX Improvements (Weeks 9-10)
 
 11. ✅ **UserStory-3.3** (Category UI Updates & E2E Tests) - After US-3.2 (1-2 days) - **REFINED**
-12. ✅ **UserStory-5.3** (UX Enhancements) - After US-7 (2-3 days) - **REFINED**
-13. 🔴 **UserStory-13** (Application Flow) - After refinement (4-5 days)
+12. ✅ **UserStory-8** (UX Enhancements) - After US-7 (2.5-3.5 days) - **REFINED**
+13. 🔴 **UserStory-14** (Application Flow) - After refinement (4-5 days)
 
 ### Phase 5: Post-MVP (Weeks 11+)
 
-14. 🔴 **UserStory-9** (Multi-User Auth) - After refinement (5-7 days)
-15. 🔴 **UserStory-11** (Sharing System) - After US-9 + refinement (5-7 days)
-16. 🔴 **UserStory-12** (Backup & Restore) - After refinement (3-4 days)
+14. 🔴 **UserStory-10** (Multi-User Auth) - After refinement (5-7 days)
+15. 🔴 **UserStory-12** (Sharing System) - After US-10 + refinement (5-7 days)
+16. 🔴 **UserStory-13** (Backup & Restore) - After refinement (3-4 days)
 
 ---
 

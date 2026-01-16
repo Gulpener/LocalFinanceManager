@@ -207,7 +207,7 @@ This story **enhances** existing infrastructure in `LocalFinanceManager.E2E/`:
 - Smoke tests implemented and passing in `SmokeTests.cs`
 - `E2E_INFRASTRUCTURE.md` documentation complete
 - Code follows Implementation-Guidelines.md (.NET 10.0, async/await, ILogger)
-- Infrastructure ready for US-5.2 (E2E Tests) and US-5.3 (UX Enhancements) implementation
+- Infrastructure ready for US-9 (Integration Tests) and US-8 (UX Enhancements) implementation
 
 ## Dependencies
 
@@ -221,8 +221,8 @@ This story **enhances** existing infrastructure in `LocalFinanceManager.E2E/`:
 
 ## Notes
 
-- This story **enables** parallel test development: Complete before US-5 finishes to allow US-5.2 (E2E Tests) to start immediately after US-5/6/7.
-- Seed helpers designed for reusability: All future E2E tests (US-5.2, US-5.3) will use these helpers.
+- This story **enables** parallel test development: Complete before US-5 finishes to allow US-9 (Integration Tests) to start immediately after US-5/6/7.
+- Seed helpers designed for reusability: All future E2E tests (US-9, US-8) will use these helpers.
 - PageObjectModels follow DRY principle: Avoid selector duplication across tests.
 - Screenshot/video capture invaluable for debugging CI test failures: Always enable in CI pipeline.
 - Parallel execution reduces total test suite runtime: Critical for fast feedback loops.

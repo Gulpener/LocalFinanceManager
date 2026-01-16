@@ -1,4 +1,4 @@
-# UserStory-5.3: Assignment UX Enhancements
+# UserStory-8: Assignment UX Enhancements
 
 ## Objective
 
@@ -220,7 +220,7 @@ This story **enhances** all assignment artifacts from previous stories:
 
 ### 13. Testing - Keyboard Shortcuts
 
-- [ ] Add E2E tests in `LocalFinanceManager.E2E/Tests/` (extend US-8 tests):
+- [ ] Add E2E tests in `LocalFinanceManager.E2E/Tests/` (extend US-9 tests):
   - Test: Press `Tab` in assignment modal → Focus moves through fields (category → budget line → save)
   - Test: Press `Enter` when save button focused → Modal submits
   - Test: Press `Esc` in modal → Modal closes without saving
@@ -234,7 +234,7 @@ This story **enhances** all assignment artifacts from previous stories:
 
 ### 14. Testing - Quick Filters
 
-- [ ] Add E2E tests for filters (extend US-8):
+- [ ] Add E2E tests for filters (extend US-9):
   - Test: Apply "Unassigned" filter → Only unassigned transactions shown
   - Test: Apply date range filter (Last 30 days) → Transactions within range shown
   - Test: Apply amount range filter (min: 50, max: 200) → Transactions in range shown
@@ -247,7 +247,7 @@ This story **enhances** all assignment artifacts from previous stories:
 
 ### 15. Testing - Recent Categories
 
-- [ ] Add E2E tests for recent categories (extend US-8):
+- [ ] Add E2E tests for recent categories (extend US-9):
   - Test: Assign transaction to "Food" category → Next assignment shows "Food" in recent categories
   - Test: Click recent category "Food" → Transaction assigned immediately (no modal)
   - Test: Favorite "Food" category → Shows at top of category selector with ⭐ icon
@@ -259,7 +259,7 @@ This story **enhances** all assignment artifacts from previous stories:
 
 ### 16. Documentation
 
-- [ ] Update `E2E_TEST_GUIDE.md` from US-8 with UX enhancement testing notes
+- [ ] Update `E2E_TEST_GUIDE.md` from US-9 with UX enhancement testing notes
 - [ ] Create `UX_ENHANCEMENTS.md` in `docs/` with:
   - Keyboard shortcuts reference table
   - Quick filters usage guide
@@ -382,7 +382,7 @@ This story **enhances** all assignment artifacts from previous stories:
 - Recent categories section in assignment modal (top 5 most used)
 - Favorite categories feature in category selector (star icon, top-of-list)
 - Performance optimizations: page size selector, loading skeletons, filter debouncing
-- E2E tests cover keyboard shortcuts, filters, recent categories (extend US-8 test suite)
+- E2E tests cover keyboard shortcuts, filters, recent categories (extend US-9 test suite)
 - Unit tests cover `FilterStateService` and `RecentCategoriesService`
 - `UX_ENHANCEMENTS.md` documentation complete
 - Code follows Implementation-Guidelines.md (.NET 10.0, async/await, localStorage via JSInterop)
@@ -394,7 +394,7 @@ This story **enhances** all assignment artifacts from previous stories:
 - **UserStory-6 (Split/Bulk Assignment):** REQUIRED - Adds keyboard shortcuts to SplitEditor, BulkAssignModal components.
 - **UserStory-7 (ML Suggestions):** REQUIRED - Quick filters include ML suggestion status filter.
 - **UserStory-5.1 (E2E Infrastructure):** REQUIRED for E2E tests - Must complete US-5.1 before running E2E tests in this story. Uses PageObjectModels and SeedDataHelper.
-- **UserStory-8 (Integration Workflow Tests):** OPTIONAL - Can extend E2E test suite with additional keyboard/filter workflow tests.
+- **UserStory-9 (Integration Workflow Tests):** OPTIONAL - Can extend E2E test suite with additional keyboard/filter workflow tests.
 
 ## Estimated Effort
 

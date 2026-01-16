@@ -276,7 +276,7 @@ public partial class EnforceBudgetLineIdRequired : Migration
 - **Simplicity:** No complex data migration logic to maintain
 - **MVP Scope:** Early development phase where database reset is acceptable
 - **Test Data:** Seed data ensures consistent test environment after reset
-- **Future Work:** Production-ready migrations will be implemented in later user stories (US-9 Multi-User Authentication)
+- **Future Work:** Production-ready migrations will be implemented in later user stories (US-10 Multi-User Authentication)
 
 ## Implementation Tasks
 

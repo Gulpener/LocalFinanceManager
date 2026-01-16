@@ -185,6 +185,88 @@ This story **MUST** follow patterns established in UserStory-5:
 - [ ] Verify audit trail records bulk assignments
 - [ ] Verify transaction list filters show updated assignment status
 
+### 12. Tests - E2E Tests (Split Assignment)
+
+> **Note:** Write E2E tests **immediately after** implementing corresponding UI components for faster feedback. Uses PageObjectModels and SeedDataHelper from UserStory-5.1.
+
+- [ ] Create `SplitAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [ ] Use `SeedDataHelper` to create account with categories and single €100 transaction
+- [ ] Test: Click "Split" button on transaction → Split editor modal opens
+  - Use `TransactionsPageModel.ClickSplitButtonAsync(transactionId)`
+  - Assert `SplitEditorPageModel.IsVisibleAsync()` returns true
+- [ ] Test: Add 3 splits (€40 Food + €35 Transport + €25 Entertainment = €100) → Real-time sum shows green checkmark
+  - Use `SplitEditorPageModel.AddSplitRowAsync()` twice (starts with 2 rows)
+  - Set amounts: `SetSplitAmountAsync(0, 40m)`, `SetSplitAmountAsync(1, 35m)`, `SetSplitAmountAsync(2, 25m)`
+  - Select categories for each split
+  - Assert `GetSumValidationStatusAsync()` returns "valid"
+- [ ] Test: Enter splits with sum mismatch (€40 + €35 + €20 = €95 ≠ €100) → Red warning shown, "Save" button disabled
+  - Set amounts totaling €95
+  - Assert validation status "invalid"
+  - Assert save button disabled
+- [ ] Test: Adjust last split to match sum (€40 + €35 + €25 = €100) → Green checkmark, "Save" button enabled
+  - Adjust third split to €25
+  - Assert validation status "valid"
+  - Assert save button enabled
+- [ ] Test: Save valid split → Transaction shows "Split" badge with tooltip showing breakdown
+  - Click save button
+  - Assert transaction row shows "Split" badge
+  - Hover over badge, assert tooltip displays breakdown
+- [ ] Test: Remove split row → Remaining splits recalculated → Sum validation updates
+  - Use `SplitEditorPageModel.RemoveSplitRowAsync(1)`
+  - Assert sum validation updates
+- [ ] Test: Attempt split with category from different budget plan → Validation error for that split row
+  - Seed second budget plan
+  - Select mismatched category in one split
+  - Assert error shown for that specific row
+- [ ] Test: Re-split already split transaction → Existing splits replaced with new splits
+  - Split transaction once
+  - Re-open split editor
+  - Create new split configuration
+  - Assert old splits replaced
+- [ ] Test: Navigate to audit trail → Split operation recorded with all split details
+  - Open audit trail modal
+  - Assert split operation entry shows breakdown
+- [ ] Add screenshots for split editor states (valid sum, invalid sum, saved split)
+
+### 13. Tests - E2E Tests (Bulk Assignment)
+
+- [ ] Create `BulkAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [ ] Use `SeedDataHelper` to create 20 unassigned transactions
+- [ ] Test: Select 5 transactions via checkboxes → Bulk toolbar appears showing "5 transactions selected"
+  - Use `TransactionsPageModel.SelectTransactionAsync(transactionId)` for 5 transactions
+  - Assert bulk toolbar visible with correct count
+- [ ] Test: Click "Bulk Assign" button → Bulk modal opens
+  - Use `TransactionsPageModel.ClickBulkAssignAsync()`
+  - Assert `BulkAssignModalPageModel.IsVisibleAsync()` returns true
+- [ ] Test: Select category → Click "Assign All" → Progress bar shows 0-100% → Success summary: "5 assigned, 0 failed"
+  - Select category in modal
+  - Click "Assign All"
+  - Poll `BulkAssignModalPageModel.GetProgressPercentageAsync()` until 100%
+  - Assert `GetSuccessCountAsync()` returns 5
+  - Assert `GetFailureCountAsync()` returns 0
+- [ ] Test: Select 10 transactions (5 valid, 5 with mismatched budget plan) → Bulk assign → Partial success: "5 assigned, 5 failed"
+  - Seed 5 transactions from different account/budget plan
+  - Select all 10 transactions
+  - Bulk assign to category from first account
+  - Assert partial success (5 succeeded, 5 failed)
+- [ ] Test: Expand error accordion in bulk modal → Shows per-transaction error details
+  - Use `BulkAssignModalPageModel.ExpandErrorDetailsAsync()`
+  - Assert error messages displayed for failed transactions
+- [ ] Test: Deselect all transactions → Bulk toolbar disappears
+  - Use `TransactionsPageModel.DeselectAllAsync()`
+  - Assert bulk toolbar not visible
+- [ ] Test: Select all via header checkbox → All transactions on page selected
+  - Use `TransactionsPageModel.SelectAllOnPageAsync()`
+  - Assert all visible transaction checkboxes checked
+- [ ] Test: Verify bulk-assigned transactions show category badge (no warning)
+  - After bulk assignment, assert category badges visible
+- [ ] Test: Pagination preserves selections (select 3 on page 1, navigate to page 2, select 2 more → 5 total selected)
+  - Select 3 transactions on page 1
+  - Navigate to page 2
+  - Select 2 transactions
+  - Assert bulk toolbar shows "5 selected"
+- [ ] Add screenshots for bulk modal (progress bar, partial success, error details)
+
 ## Testing
 
 ### Unit Test Scenarios
@@ -261,13 +343,14 @@ This story **MUST** follow patterns established in UserStory-5:
   - Extends `ITransactionAssignmentService` interface
   - Follows error handling patterns (Problem Details format)
   - Follows test organization structure
+- **UserStory-5.1 (E2E Infrastructure):** REQUIRED for E2E tests - Must complete US-5.1 before running E2E tests in this story.
 - **UserStory-3 (Category Ownership):** REQUIRED - Categories must be budget-plan-scoped
 - **UserStory-4 (Account-Budget Matching):** REQUIRED - Validation rules enforced for splits and bulk
 - **Existing Backend Services:** `TransactionsController.SplitAsync()` and `TransactionsController.BulkAssignAsync()` already implemented
 
 ## Estimated Effort
 
-**3-4 days** (~30-35 implementation tasks)
+**4-5 days** (~48-53 implementation tasks: 30-35 implementation + 18 E2E tests)
 
 ## Notes
 

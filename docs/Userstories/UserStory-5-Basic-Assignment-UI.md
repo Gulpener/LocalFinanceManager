@@ -2,7 +2,7 @@
 
 ## Objective
 
-Enable manual transaction-to-category assignment via Blazor UI, implementing foundational components and patterns for the transaction assignment feature series (US-5, US-5.1, US-5.2, US-5.3, US-6, US-7).
+Enable manual transaction-to-category assignment via Blazor UI, implementing foundational components and patterns for the transaction assignment feature series (US-5, US-5.1, US-6, US-7, US-8, US-9).
 
 ## Requirements
 
@@ -18,7 +18,7 @@ Enable manual transaction-to-category assignment via Blazor UI, implementing fou
 
 ## Patterns for Subsequent Stories
 
-This story establishes foundational patterns that **MUST** be followed in US-5.1, US-5.2, US-5.3, US-6, and US-7:
+This story establishes foundational patterns that **MUST** be followed in US-5.1, US-6, US-7, US-8, and US-9:
 
 ### Component Patterns
 
@@ -153,6 +153,47 @@ This story establishes foundational patterns that **MUST** be followed in US-5.1
 - [ ] Test filtering transactions by assignment status (assigned/uncategorized)
 - [ ] Verify response format follows RFC 7231 Problem Details
 
+### 10. Tests - E2E Tests (Basic Assignment)
+
+> **Note:** Write E2E tests **immediately after** implementing corresponding UI components for faster feedback. Uses PageObjectModels and SeedDataHelper from UserStory-5.1.
+
+- [ ] Create `BasicAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [ ] Use `SeedDataHelper` to create account, categories, and transactions in test setup
+- [ ] Test: Navigate to Transactions page → Verify unassigned transactions show warning badges
+  - Use `TransactionsPageModel.NavigateToAsync()`
+  - Assert warning badge visible for unassigned transactions
+- [ ] Test: Click "Assign" button on unassigned transaction → Modal opens with transaction details
+  - Use `TransactionsPageModel.ClickAssignButtonAsync(transactionId)`
+  - Assert `AssignmentModalPageModel.IsVisibleAsync()` returns true
+- [ ] Test: Select category from `CategorySelector` dropdown → Click "Assign" → Transaction assigned successfully
+  - Use `AssignmentModalPageModel.SelectCategoryAsync(categoryId)`
+  - Use `AssignmentModalPageModel.ClickAssignAsync()`
+  - Assert transaction shows category badge (no warning)
+- [ ] Test: Verify assigned transaction shows category badge (no warning)
+  - Assert badge text matches category name
+- [ ] Test: Open assignment modal for assigned transaction → Shows current category → Re-assign to different category
+  - Verify current category pre-selected in dropdown
+  - Select new category and save
+  - Assert category badge updated
+- [ ] Test: Attempt to assign transaction with category from different budget plan → Validation error shown (HTTP 400)
+  - Seed second account with different budget plan
+  - Attempt mismatched assignment
+  - Assert error message displayed in modal
+- [ ] Test: Click "Audit Trail" link → Audit modal opens showing assignment history
+  - Use `TransactionsPageModel.ClickAuditTrailAsync(transactionId)`
+  - Assert audit entries displayed with timestamps
+- [ ] Test: Filter transactions by "Uncategorized" → Only unassigned transactions shown
+  - Use `TransactionsPageModel.SelectFilterAsync("Uncategorized")`
+  - Assert only unassigned transactions visible
+- [ ] Test: Filter transactions by "Assigned" → Only assigned transactions shown
+  - Use `TransactionsPageModel.SelectFilterAsync("Assigned")`
+  - Assert only assigned transactions visible
+- [ ] Test: Pagination works correctly (50 transactions per page)
+  - Seed 150 transactions
+  - Assert page 1 shows 50 transactions
+  - Navigate to page 2, assert next 50 transactions visible
+- [ ] Add screenshots for key UI states (modal open, validation error, success toast)
+
 ## Testing
 
 ### Unit Test Scenarios
@@ -205,21 +246,22 @@ This story establishes foundational patterns that **MUST** be followed in US-5.1
 - Integration tests for assignment API endpoint (in-memory SQLite, seed data)
 - No manual migrations required (automatic via `Database.MigrateAsync()` in `Program.cs`)
 - Code follows Implementation-Guidelines.md (async/await, IOptions, nullable reference types)
-- Pattern documentation clear for subsequent stories (US-5.1, US-5.2, US-5.3, US-6, US-7)
+- Pattern documentation clear for subsequent stories (US-5.1, US-6, US-7, US-8, US-9)
 
 ## Dependencies
 
 - **UserStory-3 (Category Ownership):** REQUIRED - Categories must be budget-plan-scoped for filtering
 - **UserStory-4 (Account-Budget Matching):** REQUIRED - Validation rules defined
+- **UserStory-5.1 (E2E Infrastructure):** REQUIRED for E2E tests - Must complete US-5.1 before running E2E tests in this story. Can be developed in parallel with US-5 implementation tasks.
 - **Existing Backend Services:** `TransactionsController.AssignAsync()` and audit endpoints already implemented
 
 ## Estimated Effort
 
-**2-3 days** (~20 implementation tasks)
+**3-4 days** (~31 implementation tasks: 20 implementation + 11 E2E tests)
 
 ## Notes
 
 - This story establishes foundational patterns. **Do NOT refactor** component signatures or service interfaces in US-6/7 without updating this story first.
 - CategorySelector.razor designed for extensibility: Optional budget line selection added in US-6.
 - Error handling pattern (Problem Details) ensures consistent UX across all assignment features.
-- Pagination in transaction list prepares for performance optimization in US-5.3.
+- Pagination in transaction list prepares for performance optimization in US-8.
