@@ -16,7 +16,9 @@
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
-**Recent Completion:** UserStory-2 (Branching Strategy) implemented January 16, 2026 - GitHub Flow workflow, PR/issue templates, and CODEOWNERS established.
+**Recent Completions:** 
+- UserStory-2 (Branching Strategy) implemented January 16, 2026 - GitHub Flow workflow, PR/issue templates, and CODEOWNERS established.
+- UserStory-3.1 (Category Budget Plan Scoping) implemented January 16, 2026 - Categories restructured to be budget-plan-scoped with data migration.
 
 ---
 
@@ -636,7 +638,7 @@ Add the following sections:
 4. ✅ **UserStory-5** (Basic Assignment UI) - Start now (2-3 days)
    - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - 1-2 days - **REFINED**
 5. ✅ **UserStory-6** (Split & Bulk Assignment) - After US-5 (3-4 days)
-6. ✅ **UserStory-3.1** (Category Budget Plan Scoping) - After US-6 (2-3 days) - **REFINED**
+6. ✅ ~~**UserStory-3.1** (Category Budget Plan Scoping)~~ - **COMPLETED** (Implemented January 16, 2026)
 7. ✅ **UserStory-4** (Account-Budget Matching) - After US-3.1 (3-4 days)
 
 ### Phase 3: Advanced Features (Weeks 6-8)
@@ -759,11 +761,12 @@ Use this structure for all new stories:
 
 1. ✅ ~~UserStory-1 (CI Pipeline)~~ - **COMPLETED** (Refined January 16, 2026)
 2. ✅ ~~UserStory-2 (Branching Strategy)~~ - **COMPLETED** (Implemented January 16, 2026)
-3. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED** (Refined January 16, 2026)
-4. ✅ ~~UserStory-3 (Split into 3.1, 3.2, 3.3)~~ - **COMPLETED** (Split January 16, 2026)
-5. ✅ ~~UserStory-5 (Split into 5.1, 5.2, 5.3)~~ - **COMPLETED** (Split January 16, 2026)
-6. ✅ ~~UserStory-8 duplicate removed~~ - **COMPLETED** (Corrected January 16, 2026)
-7. UserStory-10 (Multi-User Auth) - Expand implementation tasks
+3. ✅ ~~UserStory-3.1 (Category Budget Plan Scoping)~~ - **COMPLETED** (Implemented January 16, 2026)
+4. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED** (Refined January 16, 2026)
+5. ✅ ~~UserStory-3 (Split into 3.1, 3.2, 3.3)~~ - **COMPLETED** (Split January 16, 2026)
+6. ✅ ~~UserStory-5 (Split into 5.1, 5.2, 5.3)~~ - **COMPLETED** (Split January 16, 2026)
+7. ✅ ~~UserStory-8 duplicate removed~~ - **COMPLETED** (Corrected January 16, 2026)
+8. UserStory-10 (Multi-User Auth) - Expand implementation tasks
 8. UserStory-11 (Sharing System) - Expand implementation tasks
 9. UserStory-12 (Backup & Restore) - Add conflict resolution details
 10. UserStory-13 (Application Flow) - Add widget specifications
