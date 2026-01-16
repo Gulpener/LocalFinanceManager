@@ -46,7 +46,7 @@ Adopt GitHub Flow with branch protection rules to ensure code quality and review
   - Prevent force pushes
   - Prevent deletions
   - Enable CODEOWNERS review requirement
-- [ ] **(Agent)** Update README.md with contribution guidelines
+- [x] **(Agent)** Update README.md with contribution guidelines
   - Replace basic contribution section (lines 371-377) with link to `CONTRIBUTING.md`
   - Add CI status badge
 
