@@ -10,184 +10,13 @@
 **Status Overview:**
 
 - ✅ **6 stories ready** for immediate implementation (US-1, US-2, US-4, US-5, US-6, US-7)
-- ✅ **9 stories refined and ready** (US-3.1, US-3.2, US-3.3, US-5.1, US-8.1, US-8.2, US-9) - Split/Refined January 16-17, 2026
+- ✅ **10 stories refined and ready** (US-3.1, US-3.2, US-3.3, US-5.1, US-8.1, US-8.2, US-9, US-10) - Split/Refined January 16-17, 2026
 - ⚠️ **0 stories need minor refinement**
-- 🔴 **4 stories need major refinement** (split or expand) (US-10, US-11, US-12, US-13, US-14, US-15)
+- 🔴 **3 stories need major refinement** (split or expand) (US-11, US-12, US-13, US-14, US-15)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
 **Recent Completion:** UserStory-2 (Branching Strategy) implemented January 16, 2026 - GitHub Flow workflow, PR/issue templates, and CODEOWNERS established.
-
----
-
-### UserStory-10: Multi-User Authentication with Supabase
-
-**File:** [docs/Userstories/UserStory-10-Multi-User-Authentication.md](docs/Userstories/UserStory-10-Multi-User-Authentication.md)
-
-**Issues:**
-
-1. **Missing implementation tasks section** - Only high-level requirements listed
-2. No concrete technical breakdown for Supabase integration
-3. Missing JWT middleware configuration details
-4. No migration strategy for adding `UserId` to existing entities
-5. No testing scenarios defined
-6. No Definition of Done checklist
-
-**Required Refinements:**
-
-Add the following sections:
-
-#### Implementation Tasks
-
-**1. Supabase Setup & Configuration**
-
-- [ ] Create Supabase project (user manual via Supabase dashboard)
-- [ ] Install `Supabase.Gotrue` NuGet package in `LocalFinanceManager`
-- [ ] Add Supabase configuration to `appsettings.json`:
-  ```json
-  {
-    "Supabase": {
-      "Url": "https://<project-ref>.supabase.co",
-      "Key": "<anon-public-key>",
-      "JwtSecret": "<jwt-secret>"
-    }
-  }
-  ```
-- [ ] Create `SupabaseOptions` configuration class with `IOptions<T>` pattern
-
-**2. JWT Authentication Middleware**
-
-- [ ] Install `Microsoft.AspNetCore.Authentication.JwtBearer` package
-- [ ] Configure JWT bearer authentication in `Program.cs`:
-  ```csharp
-  builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-      .AddJwtBearer(options => {
-          options.TokenValidationParameters = new TokenValidationParameters {
-              ValidateIssuer = true,
-              ValidateAudience = true,
-              ValidateLifetime = true,
-              ValidIssuer = supabaseOptions.Url,
-              ValidAudience = supabaseOptions.Url,
-              IssuerSigningKey = new SymmetricSecurityKey(
-                  Encoding.UTF8.GetBytes(supabaseOptions.JwtSecret))
-          };
-      });
-  ```
-- [ ] Add `app.UseAuthentication()` and `app.UseAuthorization()` middleware
-
-**3. User Entity & Database Schema**
-
-- [ ] Create `User` entity in `Models/`:
-  ```csharp
-  public class User : BaseEntity {
-      public string SupabaseUserId { get; set; } // UUID from Supabase Auth
-      public string Email { get; set; }
-      public string DisplayName { get; set; }
-      // Navigation properties
-      public ICollection<Account> Accounts { get; set; }
-      public ICollection<BudgetPlan> BudgetPlans { get; set; }
-  }
-  ```
-- [ ] Add `UserId` foreign key to `Account`, `BudgetPlan`, `Category`, `Transaction` entities
-- [ ] Update `BaseEntity` to include `public Guid UserId { get; set; }`
-- [ ] Create EF Core migration: `dotnet ef migrations add AddUserEntity`
-
-**4. Data Migration Strategy**
-
-- [ ] Create migration script to assign all existing entities to "System" user:
-
-  ```csharp
-  migrationBuilder.Sql(@"
-      INSERT INTO Users (Id, SupabaseUserId, Email, DisplayName, CreatedAt, UpdatedAt)
-      VALUES ('system-user-guid', 'system', 'system@local', 'System User', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
-
-      UPDATE Accounts SET UserId = 'system-user-guid' WHERE UserId IS NULL;
-      UPDATE BudgetPlans SET UserId = 'system-user-guid' WHERE UserId IS NULL;
-      -- Repeat for all entities
-  ");
-  ```
-
-- [ ] Add non-nullable constraint after data migration
-
-**5. Repository Query Filters**
-
-- [ ] Update `IRepository<T>` interface to include `GetByUserIdAsync(Guid userId)` method
-- [ ] Implement user-scoped queries in all repositories:
-  ```csharp
-  public async Task<List<Account>> GetByUserIdAsync(Guid userId) {
-      return await _context.Accounts
-          .Where(a => a.UserId == userId && !a.IsArchived)
-          .ToListAsync();
-  }
-  ```
-- [ ] Update all existing repository methods to filter by `UserId`
-
-**6. Authorization Attributes**
-
-- [ ] Add `[Authorize]` attribute to all API controllers
-- [ ] Create `UserContext` service to extract current user from JWT claims:
-  ```csharp
-  public interface IUserContext {
-      Guid GetCurrentUserId();
-      string GetCurrentUserEmail();
-  }
-  ```
-- [ ] Inject `IUserContext` into services and repositories
-
-**7. Blazor Auth Components**
-
-- [ ] Create `Login.razor` page with Supabase Auth UI
-- [ ] Create `Register.razor` page
-- [ ] Create `AuthStateProvider` inheriting `AuthenticationStateProvider`
-- [ ] Add `<AuthorizeView>` wrapper in `App.razor`
-- [ ] Store JWT token in local storage or session storage
-
-**8. Tests**
-
-- [ ] Add unit tests for `UserContext.GetCurrentUserId()` in `LocalFinanceManager.Tests/Services/`
-- [ ] Add integration tests for user-scoped queries in `LocalFinanceManager.Tests/Integration/`
-- [ ] Test scenario: User A cannot access User B's accounts (HTTP 403)
-- [ ] Test scenario: Anonymous request returns HTTP 401
-- [ ] Add E2E tests for login/logout flow in `LocalFinanceManager.E2E/`
-
-#### Testing Scenarios
-
-1. **Authentication:**
-
-   - Valid JWT token grants access to API (HTTP 200)
-   - Invalid/expired JWT token returns HTTP 401
-   - Missing JWT token returns HTTP 401
-
-2. **Authorization:**
-
-   - User can only access their own entities (accounts, budget plans, etc.)
-   - Attempt to access another user's entity returns HTTP 403
-   - System user can access legacy data migrated from pre-auth system
-
-3. **User Registration:**
-
-   - New user registration creates `User` entity in database
-   - Email verification required before login (configurable)
-
-4. **Data Isolation:**
-   - User A creates account → User B cannot see it in GET /api/accounts
-   - Seed data creates separate entities for each test user
-
-#### Definition of Done
-
-- [ ] Supabase Auth integration complete with JWT middleware
-- [ ] All entities have `UserId` foreign key and user-scoped queries
-- [ ] Data migration assigns existing entities to "System" user
-- [ ] `[Authorize]` attribute applied to all API controllers
-- [ ] Blazor login/register pages functional with AuthStateProvider
-- [ ] Unit tests cover user context extraction from JWT claims
-- [ ] Integration tests verify data isolation between users
-- [ ] E2E tests cover login → create account → logout → verify data persists
-- [ ] No manual migrations required (automatic via `Database.MigrateAsync()`)
-
-**Estimated Refinement Time:** 3-4 hours
-
-**Estimated Implementation Effort After Refinement:** 5-7 days
 
 ---
 
@@ -314,14 +143,12 @@ public class BudgetPlanShare : BaseEntity {
 #### Testing Scenarios
 
 1. **Sharing Flow:**
-
    - User A shares Account X with User B (Write permission)
    - User B sees Account X in "Shared With Me" page
    - User B can create transactions on Account X
    - User B cannot delete Account X (requires Admin permission)
 
 2. **Revocation:**
-
    - User A revokes share → User B loses access immediately
    - User B receives HTTP 403 on subsequent API calls
 
@@ -433,14 +260,12 @@ Add the following sections:
 #### Testing Scenarios
 
 1. **Full Backup & Restore:**
-
    - User has 5 accounts, 2 budget plans, 100 transactions
    - Export backup → JSON file size ~50KB
    - Clear local database
    - Import backup → 100% data restored
 
 2. **Partial Conflict:**
-
    - Local has Account A (UpdatedAt: Jan 15)
    - Backup has Account A (UpdatedAt: Jan 16) with different name
    - Import with merge strategy → Local Account A updated to Jan 16 version
@@ -641,7 +466,7 @@ Add the following sections:
 
 ### Phase 5: Post-MVP (Weeks 11+)
 
-14. 🔴 **UserStory-10** (Multi-User Auth) - After refinement (5-7 days)
+14. ✅ **UserStory-10** (Multi-User Auth) - **REFINED - Ready for implementation** (5-7 days)
 15. 🔴 **UserStory-11** (Sharing System) - After US-10 + refinement (5-7 days)
 16. 🔴 **UserStory-12** (Backup & Restore) - After refinement (3-4 days)
 17. 🔴 **UserStory-13** (Application Flow) - After refinement (4-5 days)
@@ -739,9 +564,9 @@ Use this structure for all new stories:
 ## Next Actions
 
 1. **Immediate:** Start implementing UserStory-1 (CI Pipeline) and UserStory-5 (Basic Assignment UI) + UserStory-5.1 (E2E Infrastructure parallel) - all production-ready
-2. **This Week:** Expand UserStory-9, 11, 12, 13 with implementation tasks (6-8 hours total)
+2. **This Week:** Expand UserStory-11, 12, 13, 14, 15 with implementation tasks (6-8 hours total)
 
-**Total Refinement Effort Remaining:** ~6-8 hours across remaining stories
+**Total Refinement Effort Remaining:** ~6-8 hours across 5 remaining stories
 
 **Priority Order:**
 
@@ -751,7 +576,7 @@ Use this structure for all new stories:
 4. ✅ ~~UserStory-3 (Split into 3.1, 3.2, 3.3)~~ - **COMPLETED** (Split January 16, 2026)
 5. ✅ ~~UserStory-5 (Split into 5.1, 5.2, 5.3)~~ - **COMPLETED** (Split January 16, 2026)
 6. ✅ ~~UserStory-8 duplicate removed~~ - **COMPLETED** (Corrected January 16, 2026)
-7. UserStory-10 (Multi-User Auth) - Expand implementation tasks
+7. ✅ ~~UserStory-10 (Multi-User Auth)~~ - **COMPLETED** (Refined January 17, 2026)
 8. UserStory-11 (Sharing System) - Expand implementation tasks
 9. UserStory-12 (Backup & Restore) - Add conflict resolution details
 10. UserStory-13 (Application Flow) - Add widget specifications
