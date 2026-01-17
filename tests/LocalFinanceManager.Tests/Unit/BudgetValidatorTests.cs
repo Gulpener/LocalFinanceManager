@@ -311,4 +311,118 @@ public class BudgetValidatorTests
         // Assert
         result.ShouldHaveValidationErrorFor(x => x.Name);
     }
+
+    [Test]
+    public async Task CreateBudgetPlanDto_ValidTemplateNamePersonal_PassesValidation()
+    {
+        // Arrange
+        var dto = new CreateBudgetPlanDto
+        {
+            AccountId = Guid.NewGuid(),
+            Year = 2026,
+            Name = "Test Budget",
+            TemplateName = "Personal"
+        };
+
+        // Act
+        var result = await _createPlanValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.TemplateName);
+    }
+
+    [Test]
+    public async Task CreateBudgetPlanDto_ValidTemplateNameBusiness_PassesValidation()
+    {
+        // Arrange
+        var dto = new CreateBudgetPlanDto
+        {
+            AccountId = Guid.NewGuid(),
+            Year = 2026,
+            Name = "Test Budget",
+            TemplateName = "Business"
+        };
+
+        // Act
+        var result = await _createPlanValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.TemplateName);
+    }
+
+    [Test]
+    public async Task CreateBudgetPlanDto_ValidTemplateNameHousehold_PassesValidation()
+    {
+        // Arrange
+        var dto = new CreateBudgetPlanDto
+        {
+            AccountId = Guid.NewGuid(),
+            Year = 2026,
+            Name = "Test Budget",
+            TemplateName = "Household"
+        };
+
+        // Act
+        var result = await _createPlanValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.TemplateName);
+    }
+
+    [Test]
+    public async Task CreateBudgetPlanDto_ValidTemplateNameEmpty_PassesValidation()
+    {
+        // Arrange
+        var dto = new CreateBudgetPlanDto
+        {
+            AccountId = Guid.NewGuid(),
+            Year = 2026,
+            Name = "Test Budget",
+            TemplateName = "Empty"
+        };
+
+        // Act
+        var result = await _createPlanValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.TemplateName);
+    }
+
+    [Test]
+    public async Task CreateBudgetPlanDto_NullTemplateName_PassesValidation()
+    {
+        // Arrange
+        var dto = new CreateBudgetPlanDto
+        {
+            AccountId = Guid.NewGuid(),
+            Year = 2026,
+            Name = "Test Budget",
+            TemplateName = null
+        };
+
+        // Act
+        var result = await _createPlanValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldNotHaveValidationErrorFor(x => x.TemplateName);
+    }
+
+    [Test]
+    public async Task CreateBudgetPlanDto_InvalidTemplateName_FailsValidation()
+    {
+        // Arrange
+        var dto = new CreateBudgetPlanDto
+        {
+            AccountId = Guid.NewGuid(),
+            Year = 2026,
+            Name = "Test Budget",
+            TemplateName = "InvalidTemplate"
+        };
+
+        // Act
+        var result = await _createPlanValidator.TestValidateAsync(dto);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.TemplateName);
+    }
 }
