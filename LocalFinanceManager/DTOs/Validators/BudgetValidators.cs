@@ -1,5 +1,6 @@
 using FluentValidation;
 using LocalFinanceManager.DTOs;
+using LocalFinanceManager.Services;
 
 namespace LocalFinanceManager.DTOs.Validators;
 
@@ -23,6 +24,10 @@ public class CreateBudgetPlanDtoValidator : AbstractValidator<CreateBudgetPlanDt
             .WithMessage("Name is required.")
             .MaximumLength(150)
             .WithMessage("Name cannot exceed 150 characters.");
+
+        RuleFor(x => x.TemplateName)
+            .Must(name => name == null || CategoryTemplates.IsValidTemplate(name))
+            .WithMessage("Template name must be one of: Personal, Business, Household, Empty");
     }
 }
 
