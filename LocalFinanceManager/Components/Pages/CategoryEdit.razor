@@ -1,14 +1,25 @@
-@page "/categories/{id:guid}/edit"
+@page "/budgets/{budgetPlanId:guid}/categories/{id:guid}/edit"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
-@inject CategoryService CategoryService
+@using LocalFinanceManager.Components.Shared
+@using static LocalFinanceManager.Components.Shared.Breadcrumb
 @inject NavigationManager Navigation
+@inject CategoryService CategoryService
+@inject BudgetPlanService BudgetPlanService
 @rendermode InteractiveServer
 
 <PageTitle>Categorie Bewerken</PageTitle>
 
-<h1>Categorie Bewerken</h1>
+@if (budgetPlan == null)
+{
+    <p><em>Budget plan laden...</em></p>
+}
+else
+{
+    <Breadcrumb Items="@breadcrumbItems" />
+
+    <h1>Categorie Bewerken</h1>
 
 @if (category == null)
 {
@@ -86,18 +97,24 @@ else
                             <span>Wijzigingen Opslaan</span>
                         }
                     </button>
-                    <a href="/categories" class="btn btn-secondary">Annuleren</a>
+                    <a href="/budgets/@BudgetPlanId/edit" class="btn btn-secondary">Annuleren</a>
                 </div>
             </EditForm>
         </div>
     </div>
 }
+}
 
 @code {
     [Parameter]
+    public Guid BudgetPlanId { get; set; }
+
+    [Parameter]
     public Guid Id { get; set; }
 
+    private BudgetPlanDto? budgetPlan;
     private CategoryDto? category;
+    private List<BreadcrumbItem> breadcrumbItems = new();
     private string categoryName = string.Empty;
     private CategoryType categoryType = CategoryType.Expense;
     private byte[]? originalRowVersion;
@@ -108,7 +125,33 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadBudgetPlan();
         await LoadCategory();
+    }
+
+    private async Task LoadBudgetPlan()
+    {
+        try
+        {
+            budgetPlan = await BudgetPlanService.GetByIdAsync(BudgetPlanId);
+            if (budgetPlan == null)
+            {
+                errorMessage = "Budget plan niet gevonden.";
+                return;
+            }
+
+            breadcrumbItems = new List<BreadcrumbItem>
+            {
+                new BreadcrumbItem("Budget Plans", "/budgets"),
+                new BreadcrumbItem(budgetPlan.Name, $"/budgets/{BudgetPlanId}/edit"),
+                new BreadcrumbItem("Categorieën", null),
+                new BreadcrumbItem("Bewerken", null)
+            };
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij laden van budget plan: {ex.Message}";
+        }
     }
 
     private async Task LoadCategory()
@@ -119,6 +162,13 @@ else
             if (category == null)
             {
                 errorMessage = "Categorie niet gevonden.";
+                return;
+            }
+
+            // Verify category belongs to this budget plan
+            if (category.BudgetPlanId != BudgetPlanId)
+            {
+                errorMessage = "Deze categorie behoort niet tot dit budget plan.";
                 return;
             }
 
@@ -152,7 +202,7 @@ else
             var response = await CategoryService.UpdateAsync(Id, updateRequest);
             if (response != null)
             {
-                Navigation.NavigateTo("/categories");
+                Navigation.NavigateTo($"/budgets/{BudgetPlanId}/edit");
             }
             else
             {
@@ -182,6 +232,6 @@ else
 
     private void CancelReload()
     {
-        Navigation.NavigateTo("/categories");
+        Navigation.NavigateTo($"/budgets/{BudgetPlanId}/edit");
     }
 }

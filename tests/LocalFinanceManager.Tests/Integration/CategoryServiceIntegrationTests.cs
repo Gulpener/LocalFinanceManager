@@ -247,7 +247,7 @@ public class CategoryServiceIntegrationTests
     }
 
     [Test]
-    public async Task GetAllActiveAsync_FiltersArchivedCategories()
+    public async Task GetByBudgetPlanAsync_FiltersArchivedCategories()
     {
         // Arrange
         var activeCategory = new Category
@@ -275,7 +275,7 @@ public class CategoryServiceIntegrationTests
         await _categoryRepository.AddAsync(archivedCategory);
 
         // Act
-        var result = await _categoryService.GetAllActiveAsync();
+        var result = await _categoryService.GetByBudgetPlanAsync(_testBudgetPlanId);
 
         // Assert
         Assert.That(result.Count, Is.EqualTo(1));
