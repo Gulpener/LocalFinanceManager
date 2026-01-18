@@ -13,10 +13,17 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     {
     }
 
-    public async Task<Category?> GetByNameAsync(string name)
+    public async Task<List<Category>> GetByBudgetPlanAsync(Guid budgetPlanId)
     {
         return await _dbSet
-            .Where(c => !c.IsArchived && c.Name == name)
+            .Where(c => !c.IsArchived && c.BudgetPlanId == budgetPlanId)
+            .ToListAsync();
+    }
+
+    public async Task<Category?> GetByNameAsync(Guid budgetPlanId, string name)
+    {
+        return await _dbSet
+            .Where(c => !c.IsArchived && c.BudgetPlanId == budgetPlanId && c.Name == name)
             .FirstOrDefaultAsync();
     }
 }

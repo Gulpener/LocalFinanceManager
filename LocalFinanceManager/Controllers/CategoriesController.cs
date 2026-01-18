@@ -31,12 +31,22 @@ public class CategoriesController : ControllerBase
     }
 
     /// <summary>
-    /// Get all active categories.
+    /// Get all active categories for a specific budget plan.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<List<CategoryDto>>> GetAll()
+    public async Task<ActionResult<List<CategoryDto>>> GetAll([FromQuery] Guid budgetPlanId)
     {
-        var categories = await _categoryService.GetAllActiveAsync();
+        if (budgetPlanId == Guid.Empty)
+        {
+            return BadRequest(new
+            {
+                title = "Budget Plan ID is required",
+                status = 400,
+                detail = "The budgetPlanId query parameter is required."
+            });
+        }
+
+        var categories = await _categoryService.GetByBudgetPlanAsync(budgetPlanId);
         return Ok(categories);
     }
 

@@ -52,11 +52,34 @@ public class BudgetRepositoryTests
     [Test]
     public async Task AddAsync_Category_AddsToDatabase()
     {
-        // Arrange
+        // Arrange - Create a budget plan first
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            Type = AccountType.Checking,
+            StartingBalance = 1000m,
+            IsArchived = false
+        };
+        await _accountRepository.AddAsync(account);
+
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2026,
+            Name = "Test Budget Plan",
+            IsArchived = false
+        };
+        await _budgetPlanRepository.AddAsync(budgetPlan);
+
         var category = new Category
         {
             Id = Guid.NewGuid(),
             Name = "Test Category",
+            BudgetPlanId = budgetPlan.Id,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -69,16 +92,40 @@ public class BudgetRepositoryTests
         var saved = await _context.Categories.FindAsync(category.Id);
         Assert.That(saved, Is.Not.Null);
         Assert.That(saved!.Name, Is.EqualTo("Test Category"));
+        Assert.That(saved.BudgetPlanId, Is.EqualTo(budgetPlan.Id));
     }
 
     [Test]
     public async Task GetByNameAsync_ExistingCategory_ReturnsCategory()
     {
-        // Arrange
+        // Arrange - Create a budget plan first
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            Type = AccountType.Checking,
+            StartingBalance = 1000m,
+            IsArchived = false
+        };
+        await _accountRepository.AddAsync(account);
+
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2026,
+            Name = "Test Budget Plan",
+            IsArchived = false
+        };
+        await _budgetPlanRepository.AddAsync(budgetPlan);
+
         var category = new Category
         {
             Id = Guid.NewGuid(),
             Name = "Groceries",
+            BudgetPlanId = budgetPlan.Id,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -86,7 +133,7 @@ public class BudgetRepositoryTests
         await _categoryRepository.AddAsync(category);
 
         // Act
-        var result = await _categoryRepository.GetByNameAsync("Groceries");
+        var result = await _categoryRepository.GetByNameAsync(budgetPlan.Id, "Groceries");
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -96,11 +143,34 @@ public class BudgetRepositoryTests
     [Test]
     public async Task GetByNameAsync_ArchivedCategory_ReturnsNull()
     {
-        // Arrange
+        // Arrange - Create a budget plan first
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            Type = AccountType.Checking,
+            StartingBalance = 1000m,
+            IsArchived = false
+        };
+        await _accountRepository.AddAsync(account);
+
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2026,
+            Name = "Test Budget Plan",
+            IsArchived = false
+        };
+        await _budgetPlanRepository.AddAsync(budgetPlan);
+
         var category = new Category
         {
             Id = Guid.NewGuid(),
             Name = "Archived Category",
+            BudgetPlanId = budgetPlan.Id,
             IsArchived = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -109,7 +179,7 @@ public class BudgetRepositoryTests
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _categoryRepository.GetByNameAsync("Archived Category");
+        var result = await _categoryRepository.GetByNameAsync(budgetPlan.Id, "Archived Category");
 
         // Assert
         Assert.That(result, Is.Null);
@@ -412,10 +482,26 @@ public class BudgetRepositoryTests
 
     private async Task<Category> CreateTestCategoryAsync(string name = "Test Category")
     {
+        // Create account and budget plan first if they don't exist
+        var account = await CreateTestAccountAsync();
+        
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2026,
+            Name = "Test Budget Plan",
+            IsArchived = false,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        await _budgetPlanRepository.AddAsync(budgetPlan);
+
         var category = new Category
         {
             Id = Guid.NewGuid(),
             Name = name,
+            BudgetPlanId = budgetPlan.Id,
             IsArchived = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow

@@ -1,6 +1,7 @@
 using FluentValidation.TestHelper;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.DTOs.Validators;
+using LocalFinanceManager.Models;
 
 namespace LocalFinanceManager.Tests.Unit;
 
@@ -266,7 +267,12 @@ public class BudgetValidatorTests
     public async Task CreateCategoryDto_ValidData_PassesValidation()
     {
         // Arrange
-        var dto = new CreateCategoryDto { Name = "Test Category" };
+        var dto = new CreateCategoryDto 
+        { 
+            Name = "Test Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = Guid.NewGuid()
+        };
 
         // Act
         var result = await _createCategoryValidator.TestValidateAsync(dto);
@@ -279,7 +285,12 @@ public class BudgetValidatorTests
     public async Task CreateCategoryDto_EmptyName_FailsValidation()
     {
         // Arrange
-        var dto = new CreateCategoryDto { Name = "" };
+        var dto = new CreateCategoryDto 
+        { 
+            Name = "",
+            Type = CategoryType.Expense,
+            BudgetPlanId = Guid.NewGuid()
+        };
 
         // Act
         var result = await _createCategoryValidator.TestValidateAsync(dto);

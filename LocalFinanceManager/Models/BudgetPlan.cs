@@ -29,4 +29,9 @@ public class BudgetPlan : BaseEntity
     /// Collection of budget lines for this plan.
     /// </summary>
     public ICollection<BudgetLine> BudgetLines { get; set; } = new List<BudgetLine>();
+
+    /// <summary>
+    /// Collection of categories for this plan.
+    /// </summary>
+    public ICollection<Category> Categories { get; set; } = new List<Category>();
 }
