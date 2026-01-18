@@ -170,7 +170,7 @@ public class CategoryServiceIntegrationTests
         // SQLite in-memory mode doesn't properly handle RowVersion concurrency.
         // In production with a persistent SQLite file or SQL Server, the Repository
         // UpdateAsync will throw DbUpdateConcurrencyException as expected.
-        
+
         // Arrange - Create a category
         var category = new Category
         {
@@ -196,7 +196,7 @@ public class CategoryServiceIntegrationTests
         _context.Entry(user1Category).State = EntityState.Detached;
         var user2Category = await _categoryRepository.GetByIdAsync(category.Id);
         Assert.That(user2Category, Is.Not.Null);
-        
+
         user2Category!.Name = "User 2 Update";
         await _categoryRepository.UpdateAsync(user2Category);
         _context.Entry(user2Category).State = EntityState.Detached;
@@ -204,7 +204,7 @@ public class CategoryServiceIntegrationTests
         // First user tries to update with stale RowVersion
         var user1Update = await _categoryRepository.GetByIdAsync(category.Id);
         Assert.That(user1Update, Is.Not.Null);
-        
+
         user1Update!.Name = "User 1 Update";
         user1Update.RowVersion = user1RowVersion; // Use the stale version
 

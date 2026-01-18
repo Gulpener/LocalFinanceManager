@@ -42,9 +42,9 @@ public class CategoryService
     {
         _logger.LogInformation("Retrieving category with ID: {CategoryId}", id);
         var category = await _categoryRepository.GetByIdAsync(id);
-        return category != null ? new CategoryDto 
-        { 
-            Id = category.Id, 
+        return category != null ? new CategoryDto
+        {
+            Id = category.Id,
             Name = category.Name,
             Type = category.Type,
             BudgetPlanId = category.BudgetPlanId,

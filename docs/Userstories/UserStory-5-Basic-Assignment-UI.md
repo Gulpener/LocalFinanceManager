@@ -201,13 +201,11 @@ This story establishes foundational patterns that **MUST** be followed in US-5.1
 ### Unit Test Scenarios
 
 1. **Validation Logic:**
-
    - Valid assignment request passes validation
    - Missing CategoryId fails validation
    - Invalid TransactionId fails validation
 
 2. **Service Logic:**
-
    - Assignment creates TransactionSplit with correct CategoryId/BudgetLineId
    - UserStory-4 validation rejects category from different budget plan
    - Concurrent updates handled with reload + retry
@@ -220,7 +218,6 @@ This story establishes foundational patterns that **MUST** be followed in US-5.1
 ### Integration Test Scenarios
 
 1. **API Endpoint:**
-
    - POST /api/transactions/{id}/assign with valid data succeeds (HTTP 200)
    - POST /api/transactions/{id}/assign with mismatched budget plan fails (HTTP 400)
    - GET /api/transactions/{id}/audit returns audit trail
