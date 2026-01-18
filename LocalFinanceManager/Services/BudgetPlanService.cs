@@ -14,6 +14,7 @@ public class BudgetPlanService
     private readonly IBudgetLineRepository _budgetLineRepository;
     private readonly IAccountRepository _accountRepository;
     private readonly ICategoryRepository _categoryRepository;
+    private readonly CategoryService _categoryService;
     private readonly ILogger<BudgetPlanService> _logger;
 
     public BudgetPlanService(
@@ -21,12 +22,14 @@ public class BudgetPlanService
         IBudgetLineRepository budgetLineRepository,
         IAccountRepository accountRepository,
         ICategoryRepository categoryRepository,
+        CategoryService categoryService,
         ILogger<BudgetPlanService> logger)
     {
         _budgetPlanRepository = budgetPlanRepository;
         _budgetLineRepository = budgetLineRepository;
         _accountRepository = accountRepository;
         _categoryRepository = categoryRepository;
+        _categoryService = categoryService;
         _logger = logger;
     }
 
@@ -65,33 +68,69 @@ public class BudgetPlanService
     /// </summary>
     public async Task<BudgetPlanDto> CreateAsync(CreateBudgetPlanDto request)
     {
-        _logger.LogInformation("Creating new budget plan for account {AccountId}, year {Year}", request.AccountId, request.Year);
+        var templateName = request.TemplateName ?? "Empty";
+        return await CreateFromTemplateAsync(request, templateName);
+    }
 
-        // Verify account exists
-        var account = await _accountRepository.GetByIdAsync(request.AccountId);
+    /// <summary>
+    /// Create a new budget plan with a category template.
+    /// </summary>
+    public async Task<BudgetPlanDto> CreateFromTemplateAsync(CreateBudgetPlanDto dto, string templateName)
+    {
+        _logger.LogInformation("Creating new budget plan for account {AccountId}, year {Year} with template {TemplateName}", 
+            dto.AccountId, dto.Year, templateName);
+
+        // 1. Validate template name
+        if (!CategoryTemplates.IsValidTemplate(templateName))
+        {
+            throw new FluentValidation.ValidationException($"Invalid template name: {templateName}");
+        }
+
+        // 2. Verify account exists
+        var account = await _accountRepository.GetByIdAsync(dto.AccountId);
         if (account == null)
         {
-            throw new InvalidOperationException($"Account with ID {request.AccountId} not found.");
+            throw new InvalidOperationException($"Account with ID {dto.AccountId} not found.");
         }
 
-        // Check if a plan already exists for this account and year
-        var existingPlan = await _budgetPlanRepository.GetByAccountAndYearAsync(request.AccountId, request.Year);
+        // 3. Check if a plan already exists for this account and year
+        var existingPlan = await _budgetPlanRepository.GetByAccountAndYearAsync(dto.AccountId, dto.Year);
         if (existingPlan != null)
         {
-            throw new InvalidOperationException($"A budget plan already exists for account {request.AccountId} and year {request.Year}.");
+            throw new InvalidOperationException($"A budget plan already exists for account {dto.AccountId} and year {dto.Year}.");
         }
 
+        // 4. Create budget plan
         var plan = new BudgetPlan
         {
-            AccountId = request.AccountId,
-            Year = request.Year,
-            Name = request.Name,
+            AccountId = dto.AccountId,
+            Year = dto.Year,
+            Name = dto.Name,
             IsArchived = false
         };
 
         await _budgetPlanRepository.AddAsync(plan);
 
         _logger.LogInformation("Budget plan created with ID: {BudgetPlanId}", plan.Id);
+
+        // 5. Auto-create categories from template
+        if (templateName != "Empty")
+        {
+            var categoryDefinitions = CategoryTemplates.Templates[templateName];
+            foreach (var (name, type) in categoryDefinitions)
+            {
+                var categoryDto = new CreateCategoryDto
+                {
+                    Name = name,
+                    Type = type,
+                    BudgetPlanId = plan.Id
+                };
+                await _categoryService.CreateAsync(categoryDto);
+            }
+
+            _logger.LogInformation("Created {Count} categories from template {TemplateName} for budget plan {BudgetPlanId}",
+                categoryDefinitions.Count, templateName, plan.Id);
+        }
 
         return MapToDto(plan);
     }

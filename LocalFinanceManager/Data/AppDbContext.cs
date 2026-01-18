@@ -370,34 +370,22 @@ public class AppDbContext : DbContext
 
                 await BudgetPlans.AddAsync(budgetPlan);
                 await SaveChangesAsync();
-            }
-        }
 
-        // Seed categories if none exist (must be after budget plans now)
-        if (!await Categories.AnyAsync())
-        {
-            var firstBudgetPlan = await BudgetPlans.FirstOrDefaultAsync();
-
-            if (firstBudgetPlan != null)
-            {
-                var categories = new[]
+                // Apply Personal template - auto-create categories
+                var personalCategories = Services.CategoryTemplates.Templates["Personal"];
+                foreach (var (name, type) in personalCategories)
                 {
-                    // Income categories
-                    new Category { Id = Guid.NewGuid(), Name = "Salaris", Type = CategoryType.Income, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Freelance", Type = CategoryType.Income, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Dividend", Type = CategoryType.Income, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    // Expense categories
-                    new Category { Id = Guid.NewGuid(), Name = "Huur", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Boodschappen", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Transport", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Utilities", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Entertainment", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Healthcare", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Savings", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false },
-                    new Category { Id = Guid.NewGuid(), Name = "Other", Type = CategoryType.Expense, BudgetPlanId = firstBudgetPlan.Id, IsArchived = false }
-                };
-
-                await Categories.AddRangeAsync(categories);
+                    Categories.Add(new Category
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = name,
+                        Type = type,
+                        BudgetPlanId = budgetPlan.Id,
+                        IsArchived = false,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
                 await SaveChangesAsync();
             }
         }

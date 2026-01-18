@@ -10,6 +10,7 @@ public record CreateBudgetPlanDto
     public Guid AccountId { get; set; }
     public int Year { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string? TemplateName { get; set; }  // Optional, defaults to "Empty"
 }
 
 /// <summary>
