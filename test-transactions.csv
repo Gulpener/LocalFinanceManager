@@ -1,0 +1,4 @@
+Date,Amount,Description,Counterparty,ExternalId
+2026-01-01,100.50,Salary Payment,Employer Inc,TXN001
+2026-01-02,-25.00,Grocery Shopping,Supermarket,TXN002
+2026-01-03,-50.00,Electric Bill,Power Company,TXN003
