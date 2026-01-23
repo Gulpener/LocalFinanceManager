@@ -148,37 +148,38 @@ static async Task UpdateAccountBudgetPlanReferencesAsync(AppDbContext context)
         .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
         .ToListAsync();
 
+    if (!accountsWithoutBudgetPlan.Any())
+    {
+        return;
+    }
+
     // Collect account IDs to batch-load budget plans and avoid N+1 queries
     var accountIds = accountsWithoutBudgetPlan
         .Select(a => a.Id)
         .ToList();
 
-    if (accountIds.Any())
+    // Load all non-archived budget plans for these accounts in a single query
+    var budgetPlans = await context.BudgetPlans
+        .Where(bp => !bp.IsArchived && accountIds.Contains(bp.AccountId))
+        .ToListAsync();
+
+    // Group in memory and find the most recent budget plan per account
+    var latestByAccountId = budgetPlans
+        .GroupBy(bp => bp.AccountId)
+        .ToDictionary(
+            g => g.Key,
+            g => g.OrderByDescending(bp => bp.Year).First()
+        );
+
+    foreach (var account in accountsWithoutBudgetPlan)
     {
-        // Load the most recent non-archived budget plan per account in a single query
-        var latestBudgetPlans = await context.BudgetPlans
-            .Where(bp => !bp.IsArchived && accountIds.Contains(bp.AccountId))
-            .GroupBy(bp => bp.AccountId)
-            .Select(g => g.OrderByDescending(bp => bp.Year).FirstOrDefault())
-            .ToListAsync();
-
-        var latestByAccountId = latestBudgetPlans
-            .Where(bp => bp != null)
-            .ToDictionary(bp => bp!.AccountId, bp => bp!);
-
-        foreach (var account in accountsWithoutBudgetPlan)
+        if (latestByAccountId.TryGetValue(account.Id, out var latestBudgetPlan))
         {
-            if (latestByAccountId.TryGetValue(account.Id, out var latestBudgetPlan))
-            {
-                account.CurrentBudgetPlanId = latestBudgetPlan.Id;
-            }
+            account.CurrentBudgetPlanId = latestBudgetPlan.Id;
         }
     }
 
-    if (accountsWithoutBudgetPlan.Any())
-    {
-        await context.SaveChangesAsync();
-    }
+    await context.SaveChangesAsync();
 }
 
 // Configure the HTTP request pipeline.
