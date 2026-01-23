@@ -136,7 +136,7 @@ public class CsvImportParserTests
 
         // Assert
         Assert.That(transactions, Has.Count.EqualTo(2));
-        
+
         Assert.That(transactions[0].Date, Is.EqualTo(new DateTime(2026, 1, 1)));
         Assert.That(transactions[0].Amount, Is.EqualTo(100.50m));
         Assert.That(transactions[0].Description, Is.EqualTo("Salary"));
@@ -209,7 +209,7 @@ public class CsvImportParserTests
 
         // Assert
         Assert.That(transactions, Has.Count.EqualTo(2));
-        
+
         // First transaction: "Af" (debit) should be negative
         Assert.That(transactions[0].Date, Is.EqualTo(new DateTime(2023, 2, 15)));
         Assert.That(transactions[0].Amount, Is.EqualTo(-50.00m));
@@ -424,10 +424,10 @@ public class CsvImportParserTests
 
         // Assert
         Assert.That(transactions, Has.Count.EqualTo(2));
-        
+
         Assert.That(transactions[0].Counterparty, Is.EqualTo("Employer Inc"));
         Assert.That(transactions[0].ExternalId, Is.EqualTo("TXN001"));
-        
+
         Assert.That(transactions[1].Counterparty, Is.Null.Or.Empty);
         Assert.That(transactions[1].ExternalId, Is.Null.Or.Empty);
     }
