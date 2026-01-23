@@ -254,4 +254,113 @@ public class AccountBudgetPlanAssignmentTests
         var updatedAccount = await _context.Accounts.FindAsync(accountId);
         Assert.That(updatedAccount!.CurrentBudgetPlanId, Is.Null);
     }
+
+    [Test]
+    public async Task UpdateAccountBudgetPlanReferences_MultipleAccountsCanReferenceTheirOwnBudgetPlans()
+    {
+        // Arrange
+        var account1Id = Guid.NewGuid();
+        var account2Id = Guid.NewGuid();
+        var account3Id = Guid.NewGuid();
+
+        var account1 = new Account
+        {
+            Id = account1Id,
+            Label = "Checking Account",
+            Type = AccountType.Checking,
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            StartingBalance = 1000m,
+            CurrentBudgetPlanId = null
+        };
+
+        var account2 = new Account
+        {
+            Id = account2Id,
+            Label = "Savings Account",
+            Type = AccountType.Savings,
+            IBAN = "NL91ABNA0417164301",
+            Currency = "EUR",
+            StartingBalance = 5000m,
+            CurrentBudgetPlanId = null
+        };
+
+        var account3 = new Account
+        {
+            Id = account3Id,
+            Label = "Investment Account",
+            Type = AccountType.Investment,
+            IBAN = "NL91ABNA0417164302",
+            Currency = "USD",
+            StartingBalance = 10000m,
+            CurrentBudgetPlanId = null
+        };
+
+        await _context.Accounts.AddRangeAsync(account1, account2, account3);
+
+        // Create budget plans for each account
+        var budgetPlan1 = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account1Id,
+            Year = 2025,
+            Name = "Checking Budget 2025",
+            IsArchived = false
+        };
+
+        var budgetPlan2 = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account2Id,
+            Year = 2025,
+            Name = "Savings Budget 2025",
+            IsArchived = false
+        };
+
+        var budgetPlan3 = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account3Id,
+            Year = 2025,
+            Name = "Investment Budget 2025",
+            IsArchived = false
+        };
+
+        await _context.BudgetPlans.AddRangeAsync(budgetPlan1, budgetPlan2, budgetPlan3);
+        await _context.SaveChangesAsync();
+
+        // Act - Simulate the update logic from Program.cs
+        var accountsWithoutBudgetPlan = await _context.Accounts
+            .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
+            .ToListAsync();
+
+        foreach (var acc in accountsWithoutBudgetPlan)
+        {
+            var latestBudgetPlan = await _context.BudgetPlans
+                .Where(bp => bp.AccountId == acc.Id && !bp.IsArchived)
+                .OrderByDescending(bp => bp.Year)
+                .FirstOrDefaultAsync();
+
+            if (latestBudgetPlan != null)
+            {
+                acc.CurrentBudgetPlanId = latestBudgetPlan.Id;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+        // Assert - Each account should reference its own budget plan
+        var updatedAccount1 = await _context.Accounts.FindAsync(account1Id);
+        var updatedAccount2 = await _context.Accounts.FindAsync(account2Id);
+        var updatedAccount3 = await _context.Accounts.FindAsync(account3Id);
+
+        Assert.That(updatedAccount1!.CurrentBudgetPlanId, Is.EqualTo(budgetPlan1.Id));
+        Assert.That(updatedAccount2!.CurrentBudgetPlanId, Is.EqualTo(budgetPlan2.Id));
+        Assert.That(updatedAccount3!.CurrentBudgetPlanId, Is.EqualTo(budgetPlan3.Id));
+
+        // Verify all three accounts have different budget plan references
+        Assert.That(updatedAccount1.CurrentBudgetPlanId, Is.Not.EqualTo(updatedAccount2.CurrentBudgetPlanId));
+        Assert.That(updatedAccount1.CurrentBudgetPlanId, Is.Not.EqualTo(updatedAccount3.CurrentBudgetPlanId));
+        Assert.That(updatedAccount2.CurrentBudgetPlanId, Is.Not.EqualTo(updatedAccount3.CurrentBudgetPlanId));
+    }
 }
