@@ -6,16 +6,20 @@
 @inject IBudgetLineRepository BudgetLineRepository
 @inject IBudgetPlanRepository BudgetPlanRepository
 @inject ILogger<TransactionAssignModal> Logger
+@implements IAsyncDisposable
 
 @if (IsVisible && Transaction != null)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog"
+        aria-modal="true" aria-labelledby="assignModalTitle" @onclick="Close" @onkeydown="HandleKeyDown">
+        <div class="modal-dialog modal-lg" @onclick:stopPropagation>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Transactie toewijzen @(Transaction?.Date.Year > 0 ? $"({Transaction.Date.Year})"
+                    <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
+                                            $"({Transaction.Date.Year})"
                                             : "")</h5>
-                    <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"></button>
+                    <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"
+                        @ref="closeButtonRef"></button>
                 </div>
                 <div class="modal-body">
                     @if (!string.IsNullOrEmpty(errorMessage))
@@ -143,6 +147,8 @@
     private string? note;
     private string? errorMessage;
     private bool isSubmitting;
+    private ElementReference closeButtonRef;
+    private IJSObjectReference? jsModule;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
 
@@ -152,6 +158,21 @@
         {
             await LoadBudgetLines();
             ResetForm();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsVisible && closeButtonRef.Context != null)
+        {
+            try
+            {
+                await closeButtonRef.FocusAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to set focus on close button");
+            }
         }
     }
 
@@ -268,9 +289,25 @@
         }
     }
 
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await Close();
+        }
+    }
+
     private async Task Close()
     {
         ResetForm();
         await OnClose.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (jsModule != null)
+        {
+            await jsModule.DisposeAsync();
+        }
     }
 }
