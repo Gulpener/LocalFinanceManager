@@ -175,7 +175,7 @@ static async Task UpdateAccountBudgetPlanReferencesAsync(AppDbContext context)
     {
         if (latestByAccountId.TryGetValue(account.Id, out var latestBudgetPlan))
         {
-            account.CurrentBudgetPlanId = latestBudgetPlan.Id;
+    if (accountsWithoutBudgetPlan.Any(a => a.CurrentBudgetPlanId != null))
         }
     }
 
