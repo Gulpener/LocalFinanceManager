@@ -69,14 +69,16 @@ else
                     <td>
                         @if (!transaction.IsAssigned)
                         {
-                            <span class="badge bg-warning text-dark" title="Transactie niet toegewezen aan categorie">
-                                <i class="bi bi-exclamation-triangle"></i>
+                            <span class="badge bg-warning text-dark" title="Transactie niet toegewezen aan categorie" aria-label="Niet toegewezen">
+                                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                                <span class="visually-hidden">Niet toegewezen</span>
                             </span>
                         }
                         else
                         {
-                            <span class="badge bg-success" title="Transactie toegewezen">
-                                <i class="bi bi-check-circle"></i>
+                            <span class="badge bg-success" title="Transactie toegewezen" aria-label="Toegewezen">
+                                <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                <span class="visually-hidden">Toegewezen</span>
                             </span>
                         }
                     </td>
