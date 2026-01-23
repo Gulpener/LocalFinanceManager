@@ -72,6 +72,12 @@ public class AppDbContext : DbContext
             entity.Property(a => a.StartingBalance)
                 .HasColumnType("decimal(18,2)");
 
+            // Configure relationship to current budget plan (optional)
+            entity.HasOne(a => a.CurrentBudgetPlan)
+                .WithOne()
+                .HasForeignKey<Account>(a => a.CurrentBudgetPlanId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Index for common queries
             entity.HasIndex(a => a.Label);
         });

@@ -134,6 +134,52 @@ using (var scope = app.Services.CreateScope())
     {
         await context.SeedAsync();
     }
+
+    // Update accounts to reference their current budget plan (all environments)
+    await UpdateAccountBudgetPlanReferencesAsync(context);
+}
+
+/// <summary>
+/// Updates accounts to reference their current budget plan (most recent year).
+/// </summary>
+static async Task UpdateAccountBudgetPlanReferencesAsync(AppDbContext context)
+{
+    var accountsWithoutBudgetPlan = await context.Accounts
+        .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
+        .ToListAsync();
+
+    if (!accountsWithoutBudgetPlan.Any())
+    {
+        return;
+    }
+
+    // Collect account IDs to batch-load budget plans and avoid N+1 queries
+    var accountIds = accountsWithoutBudgetPlan
+        .Select(a => a.Id)
+        .ToList();
+
+    // Load all non-archived budget plans for these accounts in a single query
+    var budgetPlans = await context.BudgetPlans
+        .Where(bp => !bp.IsArchived && accountIds.Contains(bp.AccountId))
+        .ToListAsync();
+
+    // Group in memory and find the most recent budget plan per account
+    var latestByAccountId = budgetPlans
+        .GroupBy(bp => bp.AccountId)
+        .ToDictionary(
+            g => g.Key,
+            g => g.OrderByDescending(bp => bp.Year).First()
+        );
+
+    foreach (var account in accountsWithoutBudgetPlan)
+    {
+        if (latestByAccountId.TryGetValue(account.Id, out var latestBudgetPlan))
+        {
+            account.CurrentBudgetPlanId = latestBudgetPlan.Id;
+        }
+    }
+
+    await context.SaveChangesAsync();
 }
 
 // Configure the HTTP request pipeline.

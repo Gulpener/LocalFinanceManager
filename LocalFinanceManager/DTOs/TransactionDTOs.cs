@@ -15,6 +15,21 @@ public class TransactionDto
     public string? SourceFileName { get; set; }
     public DateTime? ImportedAt { get; set; }
     public byte[]? RowVersion { get; set; }
+    public Guid? AccountBudgetPlanId { get; set; }
+    public List<TransactionSplitDetailDto>? Splits { get; set; }
+    public bool IsAssigned => Splits?.Any() == true;
+}
+
+/// <summary>
+/// Detailed transaction split info for UI display.
+/// </summary>
+public class TransactionSplitDetailDto
+{
+    public Guid Id { get; set; }
+    public Guid BudgetLineId { get; set; }
+    public string BudgetLineName { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string? Note { get; set; }
 }
 
 /// <summary>

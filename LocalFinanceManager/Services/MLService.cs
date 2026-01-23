@@ -81,7 +81,6 @@ public class MLService : IMLService
 
         // Convert to ML.NET input format
         var trainingData = labeledExamples
-            .Where(le => le.Transaction != null)
             .Select(le =>
             {
                 var transactionData = new TransactionData

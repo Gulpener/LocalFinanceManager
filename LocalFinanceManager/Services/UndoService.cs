@@ -114,7 +114,7 @@ public class UndoService : IUndoService
             });
 
             // Remove the auto-applied splits
-            if (transaction.AssignedParts != null && transaction.AssignedParts.Any())
+            if (transaction.AssignedParts?.Any() == true)
             {
                 foreach (var split in transaction.AssignedParts.ToList())
                 {

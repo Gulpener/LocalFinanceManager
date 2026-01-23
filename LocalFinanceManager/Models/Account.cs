@@ -31,6 +31,17 @@ public class Account : BaseEntity
     public decimal StartingBalance { get; set; }
 
     /// <summary>
+    /// Foreign key to the current active budget plan for this account.
+    /// Null if no budget plan is active.
+    /// </summary>
+    public Guid? CurrentBudgetPlanId { get; set; }
+
+    /// <summary>
+    /// Navigation property to the current budget plan.
+    /// </summary>
+    public BudgetPlan? CurrentBudgetPlan { get; set; }
+
+    /// <summary>
     /// Computed current balance (for MVP-1, equals StartingBalance; will include transactions in later MVPs).
     /// </summary>
     public decimal CurrentBalance => StartingBalance; // Will be updated in MVP-3

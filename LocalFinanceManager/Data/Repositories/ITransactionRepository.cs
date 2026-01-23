@@ -39,4 +39,14 @@ public interface ITransactionRepository : IRepository<Transaction>
     /// Used for validation that requires account information.
     /// </summary>
     Task<Transaction?> GetByIdWithAccountAsync(Guid id);
+
+    /// <summary>
+    /// Gets all transactions with their splits and related budget line/category data.
+    /// </summary>
+    Task<List<Transaction>> GetAllWithSplitsAsync();
+
+    /// <summary>
+    /// Gets transactions for a specific account with their splits and related data.
+    /// </summary>
+    Task<List<Transaction>> GetByAccountIdWithSplitsAsync(Guid accountId);
 }

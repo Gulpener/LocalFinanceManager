@@ -56,11 +56,11 @@
                     <td>
                         @if (_databaseExists)
                         {
-                            <span class="badge bg-success">Ja</span>
+                            <span class="badge bg-success" aria-label="Database bestaat">Ja</span>
                         }
                         else
                         {
-                            <span class="badge bg-warning">Nee</span>
+                            <span class="badge bg-warning" aria-label="Database bestaat niet">Nee</span>
                         }
                     </td>
                 </tr>
@@ -84,7 +84,8 @@
                     <td>
                         @if (_pendingMigrations?.Any() == true)
                         {
-                            <span class="badge bg-warning">@_pendingMigrations.Count() pending</span>
+                            <span class="badge bg-warning" aria-label="Pending migrations">@_pendingMigrations.Count()
+                                pending</span>
                             <ul class="mt-2">
                                 @foreach (var migration in _pendingMigrations)
                                 {
@@ -94,7 +95,7 @@
                         }
                         else
                         {
-                            <span class="badge bg-success">Geen</span>
+                            <span class="badge bg-success" aria-label="Geen pending migrations">Geen</span>
                         }
                     </td>
                 </tr>
@@ -139,7 +140,7 @@
                     <td>
                         @if (_seedDataLoaded)
                         {
-                            <span class="badge bg-success">Ja</span>
+                            <span class="badge bg-success" aria-label="Seed data geladen">Ja</span>
                         }
                         else
                         {

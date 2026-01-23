@@ -10,15 +10,25 @@
 
 <h1>Transacties</h1>
 
-<div class="mb-3">
-    <label for="accountFilter" class="form-label">Filter op rekening:</label>
-    <select id="accountFilter" class="form-select" @bind="selectedAccountIdString" @bind:after="OnAccountChanged">
-        <option value="">Alle rekeningen</option>
-        @foreach (var account in accounts)
-        {
-            <option value="@account.Id">@account.Label</option>
-        }
-    </select>
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label for="accountFilter" class="form-label">Filter op rekening:</label>
+        <select id="accountFilter" class="form-select" @bind="selectedAccountIdString" @bind:after="OnAccountChanged">
+            <option value="">Alle rekeningen</option>
+            @foreach (var account in accounts)
+            {
+                <option value="@account.Id">@account.Label</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label for="assignmentFilter" class="form-label">Filter op toewijzing:</label>
+        <select id="assignmentFilter" class="form-select" @bind="assignmentFilter" @bind:after="OnFilterChanged">
+            <option value="all">Alle</option>
+            <option value="assigned">Toegewezen</option>
+            <option value="unassigned">Niet toegewezen</option>
+        </select>
+    </div>
 </div>
 
 <div class="mb-3">
@@ -31,7 +41,7 @@
 {
     <p><em>Laden...</em></p>
 }
-else if (transactions.Count == 0)
+else if (filteredTransactions.Count == 0)
 {
     <div class="alert alert-info">
         Geen transacties gevonden. @(selectedAccountId.HasValue ? "Selecteer een andere rekening of " : "")
@@ -43,36 +53,66 @@ else
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>Status</th>
                 <th>Datum</th>
                 <th>Beschrijving</th>
                 <th>Tegenpartij</th>
                 <th>Bedrag</th>
-                <th>Rekening</th>
-                <th>Bron</th>
+                <th>Toewijzing</th>
+                <th>Acties</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var transaction in transactions)
+            @foreach (var transaction in filteredTransactions)
             {
                 <tr>
+                    <td>
+                        @if (!transaction.IsAssigned)
+                        {
+                            <span class="badge bg-warning text-dark" title="Transactie niet toegewezen aan categorie"
+                                aria-label="Niet toegewezen">
+                                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                                <span class="visually-hidden">Niet toegewezen</span>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success" title="Transactie toegewezen" aria-label="Toegewezen">
+                                <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                <span class="visually-hidden">Toegewezen</span>
+                            </span>
+                        }
+                    </td>
                     <td>@transaction.Date.ToString("dd-MM-yyyy")</td>
                     <td>@transaction.Description</td>
                     <td>@transaction.Counterparty</td>
                     <td class="@(transaction.Amount >= 0 ? "text-success" : "text-danger")">
                         @transaction.Amount.ToString("C2")
                     </td>
-                    <td>@GetAccountLabel(transaction.AccountId)</td>
                     <td>
-                        @if (!string.IsNullOrEmpty(transaction.SourceFileName))
+                        @if (transaction.IsAssigned && transaction.Splits != null)
                         {
-                            <span class="badge bg-secondary"
-                                title="Geïmporteerd op @transaction.ImportedAt?.ToString("dd-MM-yyyy HH:mm")">
-                                @transaction.SourceFileName
-                            </span>
+                            @foreach (var split in transaction.Splits)
+                            {
+                                <span class="badge bg-info text-dark me-1">@split.BudgetLineName</span>
+                            }
                         }
                         else
                         {
-                            <span class="badge bg-primary">Handmatig</span>
+                            <span class="text-muted">-</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenAssignModal(transaction)"
+                            title="@(transaction.IsAssigned ? "Wijzig toewijzing" : "Wijs toe")">
+                            <i class="bi bi-pencil"></i> @(transaction.IsAssigned ? "Wijzig" : "Toewijzen")
+                        </button>
+                        @if (transaction.IsAssigned)
+                        {
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenAuditTrail(transaction.Id)"
+                                title="Bekijk toewijzingsgeschiedenis" aria-label="Bekijk toewijzingsgeschiedenis">
+                                <i class="bi bi-clock-history" aria-hidden="true"></i>
+                            </button>
                         }
                     </td>
                 </tr>
@@ -80,23 +120,44 @@ else
         </tbody>
         <tfoot>
             <tr>
-                <th colspan="3" class="text-end">Totaal:</th>
-                <th class="@(totalAmount >= 0 ? "text-success" : "text-danger")">@totalAmount.ToString("C2")</th>
+                <th colspan="4" class="text-end">Totaal (gefilterd):</th>
+                <th class="@(filteredTotalAmount >= 0 ? "text-success" : "text-danger")">@filteredTotalAmount.ToString("C2")
+                </th>
                 <th colspan="2"></th>
             </tr>
         </tfoot>
     </table>
 
-    <p class="text-muted">@transactions.Count transactie(s) weergegeven</p>
+    <p class="text-muted">
+        @filteredTransactions.Count van @transactionDtos.Count transactie(s) weergegeven
+        @if (unassignedCount > 0)
+        {
+            <span class="text-warning">(@unassignedCount niet toegewezen)</span>
+        }
+    </p>
 }
 
+<TransactionAssignModal Transaction="@selectedTransaction" IsVisible="@showAssignModal" OnClose="@CloseAssignModal"
+    OnAssignmentSuccess="@OnAssignmentSuccess" />
+
+<AssignmentAuditTrail TransactionId="@auditTransactionId" IsVisible="@showAuditTrail" OnClose="@CloseAuditTrail" />
+
 @code {
-    private List<LocalFinanceManager.Models.Transaction> transactions = new();
+    private List<TransactionDto> transactionDtos = new();
+    private List<TransactionDto> filteredTransactions = new();
     private List<LocalFinanceManager.Models.Account> accounts = new();
     private Guid? selectedAccountId = null;
     private string selectedAccountIdString = "";
+    private string assignmentFilter = "all";
     private bool loading = true;
-    private decimal totalAmount = 0;
+    private decimal filteredTotalAmount = 0;
+    private int unassignedCount = 0;
+
+    private bool showAssignModal = false;
+    private TransactionDto? selectedTransaction = null;
+
+    private bool showAuditTrail = false;
+    private Guid? auditTransactionId = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,17 +174,55 @@ else
     {
         loading = true;
 
+        List<LocalFinanceManager.Models.Transaction> transactions;
         if (selectedAccountId.HasValue)
         {
-            transactions = await TransactionRepository.GetByAccountIdAsync(selectedAccountId.Value);
+            transactions = await TransactionRepository.GetByAccountIdWithSplitsAsync(selectedAccountId.Value);
         }
         else
         {
-            transactions = await TransactionRepository.GetActiveAsync();
+            transactions = await TransactionRepository.GetAllWithSplitsAsync();
         }
 
-        totalAmount = transactions.Sum(t => t.Amount);
+        // Convert to DTOs
+        transactionDtos = transactions.Select(t => new TransactionDto
+        {
+            Id = t.Id,
+            Amount = t.Amount,
+            Date = t.Date,
+            Description = t.Description,
+            Counterparty = t.Counterparty,
+            AccountId = t.AccountId,
+            ExternalId = t.ExternalId,
+            SourceFileName = t.SourceFileName,
+            ImportedAt = t.ImportedAt,
+            RowVersion = t.RowVersion,
+            AccountBudgetPlanId = t.Account?.CurrentBudgetPlanId,
+            Splits = t.AssignedParts?.Select(s => new TransactionSplitDetailDto
+            {
+                Id = s.Id,
+                BudgetLineId = s.BudgetLineId,
+                BudgetLineName = s.BudgetLine?.Category?.Name ?? "Onbekend",
+                Amount = s.Amount,
+                Note = s.Note
+            }).ToList()
+        }).OrderByDescending(t => t.Date).ToList();
+
+        ApplyFilters();
         loading = false;
+    }
+
+    private void ApplyFilters()
+    {
+        filteredTransactions = assignmentFilter switch
+        {
+            "assigned" => transactionDtos.Where(t => t.IsAssigned).ToList(),
+            "unassigned" => transactionDtos.Where(t => !t.IsAssigned).ToList(),
+            _ => transactionDtos.ToList()
+        };
+
+        filteredTotalAmount = filteredTransactions.Sum(t => t.Amount);
+        unassignedCount = transactionDtos.Count(t => !t.IsAssigned);
     }
 
     private async Task OnAccountChanged()
@@ -135,9 +234,39 @@ else
         await LoadTransactionsAsync();
     }
 
-    private string GetAccountLabel(Guid accountId)
+    private void OnFilterChanged()
     {
-        var account = accounts.FirstOrDefault(a => a.Id == accountId);
-        return account?.Label ?? "Onbekend";
+        ApplyFilters();
+    }
+
+    private void OpenAssignModal(TransactionDto transaction)
+    {
+        selectedTransaction = transaction;
+        showAssignModal = true;
+    }
+
+    private void CloseAssignModal()
+    {
+        showAssignModal = false;
+        selectedTransaction = null;
+    }
+
+    private async Task OnAssignmentSuccess()
+    {
+        // Reload transactions to reflect the assignment
+        await LoadTransactionsAsync();
+        StateHasChanged();
+    }
+
+    private void OpenAuditTrail(Guid transactionId)
+    {
+        auditTransactionId = transactionId;
+        showAuditTrail = true;
+    }
+
+    private void CloseAuditTrail()
+    {
+        showAuditTrail = false;
+        auditTransactionId = null;
     }
 }

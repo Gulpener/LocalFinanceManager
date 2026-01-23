@@ -88,4 +88,30 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .Include(t => t.Account)
             .FirstOrDefaultAsync(t => t.Id == id && !t.IsArchived);
     }
+
+    public async Task<List<Transaction>> GetAllWithSplitsAsync()
+    {
+        return await _dbSet
+            .Where(t => !t.IsArchived)
+            .Include(t => t.Account)
+            .Include(t => t.AssignedParts!)
+                .ThenInclude(s => s.BudgetLine)
+                    .ThenInclude(bl => bl.Category)
+            .OrderByDescending(t => t.Date)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<List<Transaction>> GetByAccountIdWithSplitsAsync(Guid accountId)
+    {
+        return await _dbSet
+            .Where(t => !t.IsArchived && t.AccountId == accountId)
+            .Include(t => t.Account)
+            .Include(t => t.AssignedParts!)
+                .ThenInclude(s => s.BudgetLine)
+                    .ThenInclude(bl => bl.Category)
+            .OrderByDescending(t => t.Date)
+            .ThenByDescending(t => t.CreatedAt)
+            .ToListAsync();
+    }
 }
