@@ -133,6 +133,38 @@ using (var scope = app.Services.CreateScope())
     if (app.Environment.IsDevelopment())
     {
         await context.SeedAsync();
+
+        // Update accounts to reference their current budget plan
+        await UpdateAccountBudgetPlanReferencesAsync(context);
+    }
+}
+
+/// <summary>
+/// Updates accounts to reference their current budget plan (most recent year).
+/// </summary>
+static async Task UpdateAccountBudgetPlanReferencesAsync(AppDbContext context)
+{
+    var accountsWithoutBudgetPlan = await context.Accounts
+        .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
+        .ToListAsync();
+
+    foreach (var account in accountsWithoutBudgetPlan)
+    {
+        // Find the most recent budget plan for this account
+        var latestBudgetPlan = await context.BudgetPlans
+            .Where(bp => bp.AccountId == account.Id && !bp.IsArchived)
+            .OrderByDescending(bp => bp.Year)
+            .FirstOrDefaultAsync();
+
+        if (latestBudgetPlan != null)
+        {
+            account.CurrentBudgetPlanId = latestBudgetPlan.Id;
+        }
+    }
+
+    if (accountsWithoutBudgetPlan.Any())
+    {
+        await context.SaveChangesAsync();
     }
 }
 

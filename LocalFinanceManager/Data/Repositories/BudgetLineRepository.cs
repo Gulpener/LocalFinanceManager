@@ -15,11 +15,18 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
 
     public async Task<List<BudgetLine>> GetByBudgetPlanIdAsync(Guid budgetPlanId)
     {
-        return await _dbSet
+        _logger.LogInformation("Loading budget lines for BudgetPlanId: {BudgetPlanId}", budgetPlanId);
+
+        var budgetLines = await _dbSet
             .Where(bl => !bl.IsArchived && bl.BudgetPlanId == budgetPlanId)
             .Include(bl => bl.Category)
             .OrderBy(bl => bl.Category.Name)
             .ToListAsync();
+
+        _logger.LogInformation("Loaded {Count} budget lines for BudgetPlanId: {BudgetPlanId}",
+            budgetLines.Count, budgetPlanId);
+
+        return budgetLines;
     }
 
     public async Task<Guid?> GetAccountIdForBudgetLineAsync(Guid budgetLineId)

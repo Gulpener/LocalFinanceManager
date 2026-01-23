@@ -72,6 +72,12 @@ public class AppDbContext : DbContext
             entity.Property(a => a.StartingBalance)
                 .HasColumnType("decimal(18,2)");
 
+            // Configure relationship to current budget plan (optional)
+            entity.HasOne(a => a.CurrentBudgetPlan)
+                .WithOne()
+                .HasForeignKey<Account>(a => a.CurrentBudgetPlanId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             // Index for common queries
             entity.HasIndex(a => a.Label);
         });
@@ -554,6 +560,35 @@ public class AppDbContext : DbContext
                 await Transactions.AddRangeAsync(transactions);
                 await SaveChangesAsync();
             }
+        }
+    }
+
+    /// <summary>
+    /// Updates accounts to reference their current budget plan (most recent year).
+    /// </summary>
+    private async Task UpdateAccountBudgetPlanReferencesAsync()
+    {
+        var accountsWithoutBudgetPlan = await Accounts
+            .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
+            .ToListAsync();
+
+        foreach (var account in accountsWithoutBudgetPlan)
+        {
+            // Find the most recent budget plan for this account
+            var latestBudgetPlan = await BudgetPlans
+                .Where(bp => bp.AccountId == account.Id && !bp.IsArchived)
+                .OrderByDescending(bp => bp.Year)
+                .FirstOrDefaultAsync();
+
+            if (latestBudgetPlan != null)
+            {
+                account.CurrentBudgetPlanId = latestBudgetPlan.Id;
+            }
+        }
+
+        if (accountsWithoutBudgetPlan.Any())
+        {
+            await SaveChangesAsync();
         }
     }
 }

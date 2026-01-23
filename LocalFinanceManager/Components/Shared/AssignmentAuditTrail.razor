@@ -1,0 +1,190 @@
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Services
+@inject ITransactionAssignmentService AssignmentService
+@inject ILogger<AssignmentAuditTrail> Logger
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Toewijzingsgeschiedenis</h5>
+                    <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"></button>
+                </div>
+                <div class="modal-body">
+                    @if (loading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Laden...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> @errorMessage
+                        </div>
+                    }
+                    else if (auditEntries == null || !auditEntries.Any())
+                    {
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> Geen toewijzingsgeschiedenis gevonden.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="timeline">
+                            @foreach (var entry in auditEntries.OrderByDescending(e => e.ChangedAt))
+                            {
+                                <div class="timeline-item mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="card-subtitle mb-2">
+                                                        <i class="bi @GetActionIcon(entry.ActionType) me-1"></i>
+                                                        @GetActionText(entry.ActionType)
+                                                    </h6>
+                                                    <p class="card-text text-muted mb-1">
+                                                        <small>
+                                                            <i class="bi bi-clock me-1"></i>
+                                                            @entry.ChangedAt.ToString("dd-MM-yyyy HH:mm:ss")
+                                                        </small>
+                                                    </p>
+                                                    @if (!string.IsNullOrEmpty(entry.ChangedBy))
+                                                    {
+                                                        <p class="card-text text-muted mb-1">
+                                                            <small>
+                                                                <i class="bi bi-person me-1"></i>
+                                                                @entry.ChangedBy
+                                                            </small>
+                                                        </p>
+                                                    }
+                                                </div>
+                                                <span class="badge @GetActionBadgeClass(entry.ActionType)">
+                                                    @entry.ActionType
+                                                </span>
+                                            </div>
+
+                                            @if (!string.IsNullOrEmpty(entry.AfterState))
+                                            {
+                                                <div class="mt-2">
+                                                    <strong>Details:</strong>
+                                                    <pre
+                                                        class="mt-1 mb-0 p-2 bg-light border rounded"><code>@entry.AfterState</code></pre>
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(entry.Reason))
+                                            {
+                                                <div class="mt-2">
+                                                    <strong>Reden:</strong>
+                                                    <p class="mb-0">@entry.Reason</p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Close">
+                        Sluiten
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid? TransactionId { get; set; }
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private List<TransactionAuditDto>? auditEntries;
+    private string? errorMessage;
+    private bool loading;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && TransactionId.HasValue && TransactionId.Value != Guid.Empty)
+        {
+            await LoadAuditHistory();
+        }
+    }
+
+    private async Task LoadAuditHistory()
+    {
+        try
+        {
+            loading = true;
+            errorMessage = null;
+            auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(TransactionId!.Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load audit history for transaction {TransactionId}", TransactionId);
+            errorMessage = "Fout bij het laden van de toewijzingsgeschiedenis.";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        auditEntries = null;
+        errorMessage = null;
+        await OnClose.InvokeAsync();
+    }
+
+    private string GetActionIcon(string actionType)
+    {
+        return actionType.ToLowerInvariant() switch
+        {
+            "assign" => "bi-plus-circle",
+            "reassign" => "bi-arrow-repeat",
+            "unassign" => "bi-dash-circle",
+            "split" => "bi-scissors",
+            "bulk_assign" => "bi-collection",
+            _ => "bi-pencil"
+        };
+    }
+
+    private string GetActionText(string actionType)
+    {
+        return actionType.ToLowerInvariant() switch
+        {
+            "assign" => "Toegewezen",
+            "reassign" => "Opnieuw toegewezen",
+            "unassign" => "Toewijzing ongedaan gemaakt",
+            "split" => "Gesplitst",
+            "bulk_assign" => "Bulk toewijzing",
+            _ => actionType
+        };
+    }
+
+    private string GetActionBadgeClass(string actionType)
+    {
+        return actionType.ToLowerInvariant() switch
+        {
+            "assign" => "bg-success",
+            "reassign" => "bg-info",
+            "unassign" => "bg-warning text-dark",
+            "split" => "bg-primary",
+            "bulk_assign" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+}

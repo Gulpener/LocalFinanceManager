@@ -1,0 +1,265 @@
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.Data.Repositories
+@using System.Net.Http.Json
+@inject ITransactionAssignmentService AssignmentService
+@inject IBudgetLineRepository BudgetLineRepository
+@inject ILogger<TransactionAssignModal> Logger
+
+@if (IsVisible && Transaction != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Transactie toewijzen</h5>
+                    <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> @errorMessage
+                        </div>
+                    }
+
+                    <!-- Transaction Details -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Transactie details</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Datum:</dt>
+                                <dd class="col-sm-9">@Transaction.Date.ToString("dd-MM-yyyy")</dd>
+
+                                <dt class="col-sm-3">Beschrijving:</dt>
+                                <dd class="col-sm-9">@Transaction.Description</dd>
+
+                                <dt class="col-sm-3">Tegenpartij:</dt>
+                                <dd class="col-sm-9">@(Transaction.Counterparty ?? "-")</dd>
+
+                                <dt class="col-sm-3">Bedrag:</dt>
+                                <dd class="col-sm-9">
+                                    <span class="@(Transaction.Amount >= 0 ? "text-success" : "text-danger") fw-bold">
+                                        @Transaction.Amount.ToString("C2")
+                                    </span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Current Assignment Status -->
+                    @if (Transaction.Splits?.Any() == true)
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Deze transactie is al toegewezen aan:
+                            <ul class="mb-0 mt-2">
+                                @foreach (var split in Transaction.Splits)
+                                {
+                                    <li>
+                                        <strong>@split.BudgetLineName</strong>
+                                        @if (!string.IsNullOrEmpty(split.Note))
+                                        {
+                                            <span class="text-muted"> - @split.Note</span>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <!-- Budget Line Selection -->
+                    <div class="mb-3">
+                        <label for="budgetLineSelect" class="form-label">Budgetlijn <span
+                                class="text-danger">*</span></label>
+                        @if (budgetLines == null)
+                        {
+                            <select id="budgetLineSelect" class="form-select" disabled>
+                                <option>Laden...</option>
+                            </select>
+                        }
+                        else if (budgetLines.Count == 0)
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Geen budgetlijnen gevonden voor deze rekening. Maak eerst budgetlijnen aan.
+                            </div>
+                        }
+                        else
+                        {
+                            <select id="budgetLineSelect" class="form-select" @bind="selectedBudgetLineId">
+                                <option value="">-- Selecteer een budgetlijn --</option>
+                                @foreach (var budgetLine in budgetLines)
+                                {
+                                    <option value="@budgetLine.Id">@budgetLine.CategoryName</option>
+                                }
+                            </select>
+                        }
+                    </div>
+
+                    <!-- Optional Note -->
+                    <div class="mb-3">
+                        <label for="noteInput" class="form-label">Notitie (optioneel)</label>
+                        <textarea id="noteInput" class="form-control" rows="2" maxlength="500" @bind="note"
+                        placeholder="Voeg een notitie toe..."></textarea>
+                        <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@isSubmitting">
+                        Annuleren
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="AssignTransaction"
+                        disabled="@(!CanAssign || isSubmitting)">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        }
+                        Toewijzen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public TransactionDto? Transaction { get; set; }
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnAssignmentSuccess { get; set; }
+
+    private List<BudgetLineDto>? budgetLines;
+    private string? selectedBudgetLineId;
+    private string? note;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && Transaction != null)
+        {
+            await LoadBudgetLines();
+            ResetForm();
+        }
+    }
+
+    private async Task LoadBudgetLines()
+    {
+        try
+        {
+            errorMessage = null;
+
+            Logger.LogInformation("LoadBudgetLines called for Transaction {TransactionId}", Transaction?.Id);
+
+            // Get the account's current budget plan
+            var accountBudgetPlanId = Transaction?.AccountBudgetPlanId;
+            Logger.LogInformation("Account CurrentBudgetPlanId: {BudgetPlanId}", accountBudgetPlanId);
+
+            if (accountBudgetPlanId == null)
+            {
+                errorMessage = "Deze rekening heeft geen actief budgetplan. Ga naar Budgetbeheer om een budgetplan aan te maken en te activeren.";
+                budgetLines = new List<BudgetLineDto>();
+                return;
+            }
+
+            // Load budget lines for this budget plan
+            Logger.LogInformation("About to call BudgetLineRepository.GetByBudgetPlanIdAsync with {BudgetPlanId}",
+            accountBudgetPlanId.Value);
+            var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(accountBudgetPlanId.Value);
+            Logger.LogInformation("Received {Count} budget lines from repository", lines.Count);
+            budgetLines = lines.Select(bl => new BudgetLineDto
+            {
+                Id = bl.Id,
+                BudgetPlanId = bl.BudgetPlanId,
+                CategoryId = bl.CategoryId,
+                CategoryName = bl.Category?.Name ?? "Onbekend",
+                MonthlyAmounts = bl.MonthlyAmounts,
+                YearTotal = bl.MonthlyAmounts.Sum(),
+                Notes = bl.Notes,
+                RowVersion = bl.RowVersion
+            }).ToList();
+
+            if (budgetLines.Count == 0)
+            {
+                errorMessage = "Dit budgetplan heeft nog geen budgetlijnen. Ga naar Budgetbeheer om categorieën en budgetlijnen toe te voegen.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load budget lines for transaction {TransactionId}", Transaction?.Id);
+            errorMessage = "Fout bij het laden van budgetlijnen.";
+            budgetLines = new List<BudgetLineDto>();
+        }
+    }
+
+    private void ResetForm()
+    {
+        selectedBudgetLineId = null;
+        note = null;
+        errorMessage = null;
+        isSubmitting = false;
+    }
+
+    private async Task AssignTransaction()
+    {
+        if (Transaction == null || string.IsNullOrEmpty(selectedBudgetLineId))
+            return;
+
+        try
+        {
+            isSubmitting = true;
+            errorMessage = null;
+
+            var request = new AssignTransactionRequest
+            {
+                BudgetLineId = Guid.Parse(selectedBudgetLineId),
+                Note = note,
+                RowVersion = Transaction.RowVersion
+            };
+
+            await AssignmentService.AssignTransactionAsync(Transaction.Id, request);
+
+            await OnAssignmentSuccess.InvokeAsync();
+            await Close();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to assign transaction {TransactionId}", Transaction.Id);
+
+            // Parse error message from exception
+            if (ex.Message.Contains("budget plan"))
+            {
+                errorMessage = ex.Message;
+            }
+            else if (ex.Message.Contains("not found"))
+            {
+                errorMessage = "De geselecteerde budgetlijn is niet gevonden.";
+            }
+            else
+            {
+                errorMessage = "Er is een fout opgetreden bij het toewijzen van de transactie.";
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        ResetForm();
+        await OnClose.InvokeAsync();
+    }
+}
