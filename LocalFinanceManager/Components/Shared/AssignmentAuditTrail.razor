@@ -2,15 +2,18 @@
 @using LocalFinanceManager.Services
 @inject ITransactionAssignmentService AssignmentService
 @inject ILogger<AssignmentAuditTrail> Logger
+@implements IAsyncDisposable
 
 @if (IsVisible)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog"
+        aria-modal="true" aria-labelledby="auditTrailModalTitle" @onclick="Close" @onkeydown="HandleKeyDown">
+        <div class="modal-dialog modal-lg" @onclick:stopPropagation>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Toewijzingsgeschiedenis</h5>
-                    <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"></button>
+                    <h5 class="modal-title" id="auditTrailModalTitle">Toewijzingsgeschiedenis</h5>
+                    <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"
+                        @ref="closeButtonRef"></button>
                 </div>
                 <div class="modal-body">
                     @if (loading)
@@ -114,12 +117,29 @@
     private List<TransactionAuditDto>? auditEntries;
     private string? errorMessage;
     private bool loading;
+    private ElementReference closeButtonRef;
+    private IJSObjectReference? jsModule;
 
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && TransactionId.HasValue && TransactionId.Value != Guid.Empty)
         {
             await LoadAuditHistory();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsVisible && closeButtonRef.Context != null)
+        {
+            try
+            {
+                await closeButtonRef.FocusAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to set focus on close button");
+            }
         }
     }
 
@@ -139,6 +159,14 @@
         finally
         {
             loading = false;
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await Close();
         }
     }
 
@@ -186,5 +214,13 @@
             "bulk_assign" => "bg-secondary",
             _ => "bg-light text-dark"
         };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (jsModule != null)
+        {
+            await jsModule.DisposeAsync();
+        }
     }
 }
