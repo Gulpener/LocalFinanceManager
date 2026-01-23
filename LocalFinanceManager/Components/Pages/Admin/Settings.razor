@@ -84,7 +84,8 @@
                     <td>
                         @if (_pendingMigrations?.Any() == true)
                         {
-                            <span class="badge bg-warning" aria-label="Pending migrations">@_pendingMigrations.Count() pending</span>
+                            <span class="badge bg-warning" aria-label="Pending migrations">@_pendingMigrations.Count()
+                                pending</span>
                             <ul class="mt-2">
                                 @foreach (var migration in _pendingMigrations)
                                 {
