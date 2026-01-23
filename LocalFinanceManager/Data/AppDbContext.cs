@@ -193,17 +193,12 @@ public class AppDbContext : DbContext
             entity.HasOne(ts => ts.BudgetLine)
                 .WithMany()
                 .HasForeignKey(ts => ts.BudgetLineId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(ts => ts.Category)
-                .WithMany()
-                .HasForeignKey(ts => ts.CategoryId)
+                .IsRequired() // BudgetLineId is required
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Indexes for queries
             entity.HasIndex(ts => ts.TransactionId);
             entity.HasIndex(ts => ts.BudgetLineId);
-            entity.HasIndex(ts => ts.CategoryId);
         });
 
         // Configure TransactionAudit entity

@@ -1,6 +1,9 @@
 using FluentValidation.TestHelper;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.DTOs.Validators;
+using LocalFinanceManager.Data.Repositories;
+using LocalFinanceManager.Services;
+using Moq;
 
 namespace LocalFinanceManager.Tests.Unit;
 
@@ -14,7 +17,13 @@ public class TransactionAssignmentValidatorTests
     public void AssignTransactionRequest_ValidWithBudgetLineId_ShouldPassValidation()
     {
         // Arrange
-        var validator = new AssignTransactionRequestValidator();
+        var lookupServiceMock = new Mock<IBudgetAccountLookupService>();
+        var transactionRepoMock = new Mock<ITransactionRepository>();
+        var budgetLineRepoMock = new Mock<IBudgetLineRepository>();
+        var validator = new AssignTransactionRequestValidator(
+            lookupServiceMock.Object,
+            transactionRepoMock.Object,
+            budgetLineRepoMock.Object);
         var request = new AssignTransactionRequest
         {
             BudgetLineId = Guid.NewGuid(),
@@ -29,28 +38,16 @@ public class TransactionAssignmentValidatorTests
     }
 
     [Test]
-    public void AssignTransactionRequest_ValidWithCategoryId_ShouldPassValidation()
+    public void AssignTransactionRequest_NoBudgetLineId_ShouldFailValidation()
     {
         // Arrange
-        var validator = new AssignTransactionRequestValidator();
-        var request = new AssignTransactionRequest
-        {
-            CategoryId = Guid.NewGuid(),
-            Note = "Test assignment"
-        };
-
-        // Act
-        var result = validator.TestValidate(request);
-
-        // Assert
-        result.ShouldNotHaveAnyValidationErrors();
-    }
-
-    [Test]
-    public void AssignTransactionRequest_NoBudgetLineOrCategoryId_ShouldFailValidation()
-    {
-        // Arrange
-        var validator = new AssignTransactionRequestValidator();
+        var lookupServiceMock = new Mock<IBudgetAccountLookupService>();
+        var transactionRepoMock = new Mock<ITransactionRepository>();
+        var budgetLineRepoMock = new Mock<IBudgetLineRepository>();
+        var validator = new AssignTransactionRequestValidator(
+            lookupServiceMock.Object,
+            transactionRepoMock.Object,
+            budgetLineRepoMock.Object);
         var request = new AssignTransactionRequest
         {
             Note = "Test assignment"
@@ -60,14 +57,20 @@ public class TransactionAssignmentValidatorTests
         var result = validator.TestValidate(request);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x);
+        result.ShouldHaveValidationErrorFor(x => x.BudgetLineId);
     }
 
     [Test]
     public void AssignTransactionRequest_NoteTooLong_ShouldFailValidation()
     {
         // Arrange
-        var validator = new AssignTransactionRequestValidator();
+        var lookupServiceMock = new Mock<IBudgetAccountLookupService>();
+        var transactionRepoMock = new Mock<ITransactionRepository>();
+        var budgetLineRepoMock = new Mock<IBudgetLineRepository>();
+        var validator = new AssignTransactionRequestValidator(
+            lookupServiceMock.Object,
+            transactionRepoMock.Object,
+            budgetLineRepoMock.Object);
         var request = new AssignTransactionRequest
         {
             BudgetLineId = Guid.NewGuid(),
@@ -85,13 +88,17 @@ public class TransactionAssignmentValidatorTests
     public void SplitTransactionRequest_ValidSplits_ShouldPassValidation()
     {
         // Arrange
-        var validator = new SplitTransactionRequestValidator();
+        var lookupServiceMock = new Mock<IBudgetAccountLookupService>();
+        var transactionRepoMock = new Mock<ITransactionRepository>();
+        var validator = new SplitTransactionRequestValidator(
+            lookupServiceMock.Object,
+            transactionRepoMock.Object);
         var request = new SplitTransactionRequest
         {
             Splits = new List<SplitAllocationDto>
             {
                 new SplitAllocationDto { BudgetLineId = Guid.NewGuid(), Amount = 50.00m },
-                new SplitAllocationDto { CategoryId = Guid.NewGuid(), Amount = 50.00m }
+                new SplitAllocationDto { BudgetLineId = Guid.NewGuid(), Amount = 50.00m }
             }
         };
 
@@ -106,7 +113,11 @@ public class TransactionAssignmentValidatorTests
     public void SplitTransactionRequest_EmptySplits_ShouldFailValidation()
     {
         // Arrange
-        var validator = new SplitTransactionRequestValidator();
+        var lookupServiceMock = new Mock<IBudgetAccountLookupService>();
+        var transactionRepoMock = new Mock<ITransactionRepository>();
+        var validator = new SplitTransactionRequestValidator(
+            lookupServiceMock.Object,
+            transactionRepoMock.Object);
         var request = new SplitTransactionRequest
         {
             Splits = new List<SplitAllocationDto>()
@@ -123,7 +134,11 @@ public class TransactionAssignmentValidatorTests
     public void SplitTransactionRequest_OnlyOneSplit_ShouldFailValidation()
     {
         // Arrange
-        var validator = new SplitTransactionRequestValidator();
+        var lookupServiceMock = new Mock<IBudgetAccountLookupService>();
+        var transactionRepoMock = new Mock<ITransactionRepository>();
+        var validator = new SplitTransactionRequestValidator(
+            lookupServiceMock.Object,
+            transactionRepoMock.Object);
         var request = new SplitTransactionRequest
         {
             Splits = new List<SplitAllocationDto>
@@ -212,7 +227,7 @@ public class TransactionAssignmentValidatorTests
     }
 
     [Test]
-    public void BulkAssignTransactionsRequest_NoBudgetLineOrCategory_ShouldFailValidation()
+    public void BulkAssignTransactionsRequest_NoBudgetLineId_ShouldFailValidation()
     {
         // Arrange
         var validator = new BulkAssignTransactionsRequestValidator();
@@ -225,6 +240,6 @@ public class TransactionAssignmentValidatorTests
         var result = validator.TestValidate(request);
 
         // Assert
-        result.ShouldHaveValidationErrorFor(x => x);
+        result.ShouldHaveValidationErrorFor(x => x.BudgetLineId);
     }
 }

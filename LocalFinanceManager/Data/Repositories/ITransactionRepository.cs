@@ -33,4 +33,10 @@ public interface ITransactionRepository : IRepository<Transaction>
     /// Adds multiple transactions in a single batch operation.
     /// </summary>
     Task AddRangeAsync(IEnumerable<Transaction> transactions);
+
+    /// <summary>
+    /// Gets a transaction by ID with Account eager-loaded.
+    /// Used for validation that requires account information.
+    /// </summary>
+    Task<Transaction?> GetByIdWithAccountAsync(Guid id);
 }

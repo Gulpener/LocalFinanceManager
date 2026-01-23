@@ -33,7 +33,7 @@ public class TransactionSplitRepository : ITransactionSplitRepository
     {
         return await _context.TransactionSplits
             .Include(ts => ts.BudgetLine)
-            .Include(ts => ts.Category)
+                .ThenInclude(bl => bl.Category)
             .Where(ts => !ts.IsArchived)
             .FirstOrDefaultAsync(ts => ts.Id == id);
     }
@@ -42,7 +42,7 @@ public class TransactionSplitRepository : ITransactionSplitRepository
     {
         return await _context.TransactionSplits
             .Include(ts => ts.BudgetLine)
-            .Include(ts => ts.Category)
+                .ThenInclude(bl => bl.Category)
             .Where(ts => ts.TransactionId == transactionId && !ts.IsArchived)
             .ToListAsync();
     }

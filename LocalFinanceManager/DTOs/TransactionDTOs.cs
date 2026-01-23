@@ -197,27 +197,21 @@ public class TransactionSplitDto
 {
     public Guid Id { get; set; }
     public Guid TransactionId { get; set; }
-    public Guid? BudgetLineId { get; set; }
-    public Guid? CategoryId { get; set; }
+    public Guid BudgetLineId { get; set; }
     public decimal Amount { get; set; }
     public string? Note { get; set; }
     public byte[]? RowVersion { get; set; }
 }
 
 /// <summary>
-/// Request to assign a transaction to a budget line or category.
+/// Request to assign a transaction to a budget line.
 /// </summary>
 public class AssignTransactionRequest
 {
     /// <summary>
-    /// Budget line ID to assign to (optional if CategoryId provided).
+    /// Budget line ID to assign to (required).
     /// </summary>
-    public Guid? BudgetLineId { get; set; }
-
-    /// <summary>
-    /// Category ID to assign to (optional if BudgetLineId provided).
-    /// </summary>
-    public Guid? CategoryId { get; set; }
+    public Guid BudgetLineId { get; set; }
 
     /// <summary>
     /// Optional note for this assignment.
@@ -252,14 +246,9 @@ public class SplitTransactionRequest
 public class SplitAllocationDto
 {
     /// <summary>
-    /// Budget line ID to assign to (optional if CategoryId provided).
+    /// Budget line ID to assign to (required).
     /// </summary>
-    public Guid? BudgetLineId { get; set; }
-
-    /// <summary>
-    /// Category ID to assign to (optional if BudgetLineId provided).
-    /// </summary>
-    public Guid? CategoryId { get; set; }
+    public Guid BudgetLineId { get; set; }
 
     /// <summary>
     /// Amount for this split part.
@@ -273,7 +262,7 @@ public class SplitAllocationDto
 }
 
 /// <summary>
-/// Request to bulk assign multiple transactions to same budget line or category.
+/// Request to bulk assign multiple transactions to same budget line.
 /// </summary>
 public class BulkAssignTransactionsRequest
 {
@@ -283,14 +272,9 @@ public class BulkAssignTransactionsRequest
     public List<Guid> TransactionIds { get; set; } = new();
 
     /// <summary>
-    /// Budget line ID to assign all transactions to (optional if CategoryId provided).
+    /// Budget line ID to assign all transactions to (required).
     /// </summary>
-    public Guid? BudgetLineId { get; set; }
-
-    /// <summary>
-    /// Category ID to assign all transactions to (optional if BudgetLineId provided).
-    /// </summary>
-    public Guid? CategoryId { get; set; }
+    public Guid BudgetLineId { get; set; }
 
     /// <summary>
     /// Optional note for the bulk assignment.
