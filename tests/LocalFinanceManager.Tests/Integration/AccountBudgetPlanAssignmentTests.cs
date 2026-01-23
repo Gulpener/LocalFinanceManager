@@ -288,11 +288,11 @@ public class AccountBudgetPlanAssignmentTests
         var account3 = new Account
         {
             Id = account3Id,
-            Label = "Investment Account",
-            Type = AccountType.Investment,
+            Label = "Second Checking Account",
+            Type = AccountType.Checking,
             IBAN = "NL91ABNA0417164302",
             Currency = "USD",
-            StartingBalance = 10000m,
+            StartingBalance = 2000m,
             CurrentBudgetPlanId = null
         };
 
@@ -322,7 +322,7 @@ public class AccountBudgetPlanAssignmentTests
             Id = Guid.NewGuid(),
             AccountId = account3Id,
             Year = 2025,
-            Name = "Investment Budget 2025",
+            Name = "Second Checking Budget 2025",
             IsArchived = false
         };
 
