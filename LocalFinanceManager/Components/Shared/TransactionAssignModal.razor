@@ -269,19 +269,13 @@
         {
             Logger.LogError(ex, "Failed to assign transaction {TransactionId}", Transaction.Id);
 
-            // Parse error message from exception
-            if (ex.Message.Contains("budget plan"))
+            // Use structured error handling based on exception type instead of parsing exception messages
+            errorMessage = ex switch
             {
-                errorMessage = ex.Message;
-            }
-            else if (ex.Message.Contains("not found"))
-            {
-                errorMessage = "De geselecteerde budgetlijn is niet gevonden.";
-            }
-            else
-            {
-                errorMessage = "Er is een fout opgetreden bij het toewijzen van de transactie.";
-            }
+                InvalidOperationException => ex.Message,
+                KeyNotFoundException => "De geselecteerde budgetlijn is niet gevonden.",
+                _ => "Er is een fout opgetreden bij het toewijzen van de transactie."
+            };
         }
         finally
         {
