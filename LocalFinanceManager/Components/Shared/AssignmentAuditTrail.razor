@@ -118,7 +118,6 @@
     private string? errorMessage;
     private bool loading;
     private ElementReference closeButtonRef;
-    private IJSObjectReference? jsModule;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -216,11 +215,8 @@
         };
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (jsModule != null)
-        {
-            await jsModule.DisposeAsync();
-        }
+        return ValueTask.CompletedTask;
     }
 }
