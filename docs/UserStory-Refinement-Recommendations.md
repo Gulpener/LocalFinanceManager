@@ -1,6 +1,6 @@
 # User Story Refinement Recommendations
 
-**Date:** January 16, 2026  
+**Date:** January 17, 2026  
 **Purpose:** Identify which user stories need refinement before implementation
 
 ---
@@ -9,349 +9,515 @@
 
 **Status Overview:**
 
-- ✅ **6 stories ready** for immediate implementation (US-1, US-2, US-4, US-5, US-6, US-7)
-- ✅ **8 stories refined and ready** (US-3.1, US-3.2, US-3.3, US-5.1, US-8.1, US-8.2, US-9) - Split/Refined January 16, 2026
-- ⚠️ **0 stories need minor refinement**
-- 🔴 **4 stories need major refinement** (split or expand) (US-10, US-11, US-12, US-13, US-14, US-15)
+- ✅ **8 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-8, US-8-refinements) - Archived
+- ✅ **8 stories ready** for immediate implementation (US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8.1, US-8.2, US-9, US-10)
+- 🔴 **5 stories need refinement** (US-11, US-12, US-13, US-14, US-15) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
-**Recent Completions:** 
-- UserStory-2 (Branching Strategy) implemented January 16, 2026 - GitHub Flow workflow, PR/issue templates, and CODEOWNERS established.
-- UserStory-3.1 (Category Budget Plan Scoping) implemented January 16, 2026 - Categories restructured to be budget-plan-scoped with data migration.
+**Completed & Archived Stories:**
+
+- UserStory-1 (CI Pipeline) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-2 (Branching Strategy) - ✅ **COMPLETED & ARCHIVED** - GitHub Flow workflow, PR/issue templates, CODEOWNERS
+- UserStory-3 (Category Ownership) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-3.1 (Category Budget Plan Scoping) - ✅ **COMPLETED & ARCHIVED** - Budget-plan-scoped categories with migration
+- UserStory-3.2 (Category Template System) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-3.3 (Category UI Tests) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
 
 ---
 
-### UserStory-9: Integration Workflow Tests
+## Detailed User Story Status
+
+### ✅ Ready for Implementation (No Refinement Needed)
+
+#### UserStory-4: Account-Budget Matching
+
+**File:** [docs/Userstories/UserStory-4-Account-Budget-Matching.md](docs/Userstories/UserStory-4-Account-Budget-Matching.md)
+
+**Status:** ✅ **Ready** - Comprehensive data model changes, validation infrastructure, and implementation tasks defined.
+
+**Key Features:**
+
+- Enforce `BudgetLineId` as required on `TransactionSplit`
+- Implement `IBudgetAccountLookupService` with caching
+- Batch validation optimization
+- Complete API changes and validation rules
+
+**Estimated Effort:** 3-4 days
+
+---
+
+#### UserStory-5: Basic Assignment UI
+
+**File:** [docs/Userstories/UserStory-5-Basic-Assignment-UI.md](docs/Userstories/UserStory-5-Basic-Assignment-UI.md)
+
+**Status:** ✅ **Ready** - **Gold standard template** for all user stories. Comprehensive component patterns, service interfaces, and test scenarios.
+
+**Key Features:**
+
+- Reusable `CategorySelector.razor` component
+- Transaction assignment modal
+- Uncategorized transaction warnings
+- Assignment audit trail
+
+**Estimated Effort:** 2-3 days
+
+---
+
+#### UserStory-5.1: E2E Infrastructure
+
+**File:** [docs/Userstories/UserStory-5.1-E2E-Infrastructure.md](docs/Userstories/UserStory-5.1-E2E-Infrastructure.md)
+
+**Status:** ✅ **Ready** - E2E test infrastructure with NUnit + Playwright.
+
+**Key Features:**
+
+- `WebApplicationFactory` setup with test database
+- Playwright page object pattern
+- Authentication fixture
+- Browser context management
+
+**Estimated Effort:** 1-2 days
+
+---
+
+#### UserStory-5.3: UX Enhancements
+
+**File:** [docs/Userstories/UserStory-5.3-UX-Enhancements.md](docs/Userstories/UserStory-5.3-UX-Enhancements.md)
+
+**Status:** ✅ **Ready** - UX improvements for assignment workflow.
+
+**Estimated Effort:** 2-3 days
+
+---
+
+#### UserStory-6: Split & Bulk Assignment
+
+**File:** [docs/Userstories/UserStory-6-Split-Bulk-Assignment.md](docs/Userstories/UserStory-6-Split-Bulk-Assignment.md)
+
+**Status:** ✅ **Ready** - Comprehensive split editor UI and bulk assignment features with validation.
+
+**Key Features:**
+
+- Dynamic split editor with add/remove rows
+- Real-time sum validation (±0.01 tolerance)
+- Bulk assignment with multi-select
+- Progress bar and error handling
+
+**Estimated Effort:** 3-4 days
+
+---
+
+#### UserStory-7: ML Suggestion & Auto-Apply
+
+**File:** [docs/Userstories/UserStory-7-ML-Suggestion-Auto-Apply.md](docs/Userstories/UserStory-7-ML-Suggestion-Auto-Apply.md)
+
+**Status:** ✅ **Ready** - AI-powered suggestions with auto-apply configuration and monitoring dashboard.
+
+**Key Features:**
+
+- ML category suggestions with confidence scores
+- One-click accept/reject
+- Auto-apply configuration (threshold, account selection)
+- Monitoring dashboard with statistics
+
+**Estimated Effort:** 4-5 days
+
+---
+
+#### UserStory-8.1: Keyboard Shortcuts
+
+**File:** [docs/Userstories/UserStory-8.1-Keyboard-Shortcuts.md](docs/Userstories/UserStory-8.1-Keyboard-Shortcuts.md)
+
+**Status:** ✅ **Ready** - Keyboard navigation for power users.
+
+**Estimated Effort:** 1-2 days
+
+---
+
+#### UserStory-8.2: Quick Filters & Performance
+
+**File:** [docs/Userstories/UserStory-8.2-Quick-Filters-Performance.md](docs/Userstories/UserStory-8.2-Quick-Filters-Performance.md)
+
+**Status:** ✅ **Ready** - Performance optimizations and quick filter UI.
+
+**Estimated Effort:** 2-3 days
+
+---
+
+#### UserStory-9: Integration Workflow Tests
 
 **File:** [docs/Userstories/UserStory-9-Integration-Workflow-Tests.md](docs/Userstories/UserStory-9-Integration-Workflow-Tests.md)
 
-**Status:** This story focuses on comprehensive integration workflow tests validating complete end-to-end user journeys spanning multiple features (US-5, US-6, US-7). Feature-specific E2E tests have been redistributed to their respective implementation stories for immediate feedback during development.
+**Status:** ✅ **Ready** - End-to-end integration testing for complete workflows.
 
-**Estimated Effort:** 2-3 days (~42 implementation tasks)
-
-**Dependencies:** UserStory-5/6/7 REQUIRED (tests assignment UI components)
+**Estimated Effort:** 2-3 days
 
 ---
 
-### UserStory-10: Multi-User Authentication with Supabase
+#### UserStory-10: Multi-User Authentication
 
 **File:** [docs/Userstories/UserStory-10-Multi-User-Authentication.md](docs/Userstories/UserStory-10-Multi-User-Authentication.md)
 
+**Status:** ✅ **Ready** - Supabase authentication with JWT tokens and multi-tenant data isolation.
+
+**Key Features:**
+
+- Supabase authentication integration
+- JWT token management
+- User registration/login UI
+- Tenant-isolated queries
+
+**Estimated Effort:** 5-7 days
+
+---
+
+### 🔴 Needs Major Refinement
+
+#### UserStory-11: Supabase PostgreSQL Migration
+
+**File:** [docs/Userstories/UserStory-11-Supabase-PostgreSQL.md](docs/Userstories/UserStory-11-Supabase-PostgreSQL.md)
+
 **Issues:**
 
-1. **Missing implementation tasks section** - Only high-level requirements listed
-2. No concrete technical breakdown for Supabase integration
-3. Missing JWT middleware configuration details
-4. No migration strategy for adding `UserId` to existing entities
-5. No testing scenarios defined
-6. No Definition of Done checklist
+1. **Missing test strategy** - Should tests remain SQLite in-memory or migrate to PostgreSQL?
+2. **No rollback plan** - If migration fails, how to revert to SQLite?
+3. **Data migration strategy undefined** - How to migrate existing SQLite data to PostgreSQL?
+4. **Health check implementation incomplete** - Need detailed health check logic
+5. **No performance benchmarks** - Should include before/after performance comparison
 
 **Required Refinements:**
 
 Add the following sections:
 
-#### Implementation Tasks
+#### Test Strategy
 
-**1. Supabase Setup & Configuration**
+**Decision Required:**
 
-- [ ] Create Supabase project (user manual via Supabase dashboard)
-- [ ] Install `Supabase.Gotrue` NuGet package in `LocalFinanceManager`
-- [ ] Add Supabase configuration to `appsettings.json`:
-  ```json
-  {
-    "Supabase": {
-      "Url": "https://<project-ref>.supabase.co",
-      "Key": "<anon-public-key>",
-      "JwtSecret": "<jwt-secret>"
+1. **Option A:** Keep unit/integration tests with in-memory SQLite, only E2E tests use PostgreSQL
+   - **Pros:** Fast test execution, no external dependencies
+   - **Cons:** Doesn't catch PostgreSQL-specific issues in unit tests
+
+2. **Option B:** Migrate all tests to PostgreSQL test database
+   - **Pros:** Tests match production environment
+   - **Cons:** Slower execution, requires test database setup
+
+**Recommendation:** Option A (SQLite for unit tests, PostgreSQL for E2E)
+
+#### Rollback Plan
+
+**Pre-Migration Backup:**
+
+- [ ] Create SQLite backup file before migration
+- [ ] Store backup in `backups/` directory with timestamp
+- [ ] Document connection string for rollback
+
+**Rollback Steps:**
+
+1. Restore SQLite backup file
+2. Revert `AppDbContext` to use SQLite provider
+3. Update `Program.cs` to use SQLite connection
+4. Run application with `--skip-migration` flag
+
+**Rollback Trigger Criteria:**
+
+- Migration fails with data integrity errors
+- Performance degradation >50% in critical queries
+- PostgreSQL connection issues persist >24 hours
+
+#### Data Migration Strategy
+
+**Approach: Export/Import with Validation**
+
+1. **Export SQLite data:**
+   - [ ] Create `MigrationService` with `ExportSqliteDataAsync()` method
+   - [ ] Export all entities to JSON format (reuse backup format from US-13)
+   - [ ] Validate data integrity (foreign keys, constraints)
+
+2. **PostgreSQL schema creation:**
+   - [ ] Apply migrations to empty PostgreSQL database
+   - [ ] Verify schema matches SQLite structure
+
+3. **Import data:**
+   - [ ] Create `MigrationService.ImportPostgresDataAsync(jsonData)` method
+   - [ ] Import in dependency order (Accounts → BudgetPlans → Categories → Transactions)
+   - [ ] Validate relationships after import
+
+4. **Verification:**
+   - [ ] Compare row counts between SQLite and PostgreSQL
+   - [ ] Run smoke tests on imported data
+
+**Estimated Migration Time:** 2-3 hours for typical dataset (<10,000 transactions)
+
+#### Health Check Implementation
+
+**Detailed Health Check Logic:**
+
+```csharp
+[HttpGet("/health")]
+public async Task<IActionResult> Health()
+{
+    var health = new HealthStatus
+    {
+        Status = "Healthy",
+        Checks = new List<Check>()
+    };
+
+    // Database connectivity check
+    try
+    {
+        await _context.Database.CanConnectAsync();
+        health.Checks.Add(new Check { Name = "Database", Status = "Healthy" });
     }
-  }
-  ```
-- [ ] Create `SupabaseOptions` configuration class with `IOptions<T>` pattern
+    catch (Exception ex)
+    {
+        health.Checks.Add(new Check { Name = "Database", Status = "Unhealthy", Error = ex.Message });
+        health.Status = "Unhealthy";
+    }
 
-**2. JWT Authentication Middleware**
+    // Query performance check (should complete <1s)
+    var stopwatch = Stopwatch.StartNew();
+    try
+    {
+        await _context.Accounts.CountAsync();
+        stopwatch.Stop();
+        var queryTime = stopwatch.ElapsedMilliseconds;
+        health.Checks.Add(new Check
+        {
+            Name = "Query Performance",
+            Status = queryTime < 1000 ? "Healthy" : "Degraded",
+            Metadata = new { QueryTimeMs = queryTime }
+        });
+    }
+    catch (Exception ex)
+    {
+        health.Checks.Add(new Check { Name = "Query Performance", Status = "Unhealthy", Error = ex.Message });
+        health.Status = "Unhealthy";
+    }
 
-- [ ] Install `Microsoft.AspNetCore.Authentication.JwtBearer` package
-- [ ] Configure JWT bearer authentication in `Program.cs`:
-  ```csharp
-  builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-      .AddJwtBearer(options => {
-          options.TokenValidationParameters = new TokenValidationParameters {
-              ValidateIssuer = true,
-              ValidateAudience = true,
-              ValidateLifetime = true,
-              ValidIssuer = supabaseOptions.Url,
-              ValidAudience = supabaseOptions.Url,
-              IssuerSigningKey = new SymmetricSecurityKey(
-                  Encoding.UTF8.GetBytes(supabaseOptions.JwtSecret))
-          };
-      });
-  ```
-- [ ] Add `app.UseAuthentication()` and `app.UseAuthorization()` middleware
+    return health.Status == "Healthy" ? Ok(health) : StatusCode(503, health);
+}
+```
 
-**3. User Entity & Database Schema**
+#### Performance Benchmarks
 
-- [ ] Create `User` entity in `Models/`:
-  ```csharp
-  public class User : BaseEntity {
-      public string SupabaseUserId { get; set; } // UUID from Supabase Auth
-      public string Email { get; set; }
-      public string DisplayName { get; set; }
-      // Navigation properties
-      public ICollection<Account> Accounts { get; set; }
-      public ICollection<BudgetPlan> BudgetPlans { get; set; }
-  }
-  ```
-- [ ] Add `UserId` foreign key to `Account`, `BudgetPlan`, `Category`, `Transaction` entities
-- [ ] Update `BaseEntity` to include `public Guid UserId { get; set; }`
-- [ ] Create EF Core migration: `dotnet ef migrations add AddUserEntity`
+**Benchmark Scenarios:**
 
-**4. Data Migration Strategy**
+1. **Account List Query (100 accounts):**
+   - SQLite baseline: Target <50ms
+   - PostgreSQL target: <30ms (20% improvement expected)
 
-- [ ] Create migration script to assign all existing entities to "System" user:
+2. **Transaction Assignment (1000 transactions):**
+   - SQLite baseline: Target <200ms
+   - PostgreSQL target: <150ms (25% improvement expected)
 
-  ```csharp
-  migrationBuilder.Sql(@"
-      INSERT INTO Users (Id, SupabaseUserId, Email, DisplayName, CreatedAt, UpdatedAt)
-      VALUES ('system-user-guid', 'system', 'system@local', 'System User', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+3. **Budget Line Lookup (cached):**
+   - SQLite baseline: Target <10ms
+   - PostgreSQL target: <10ms (no change expected, cache dominant)
 
-      UPDATE Accounts SET UserId = 'system-user-guid' WHERE UserId IS NULL;
-      UPDATE BudgetPlans SET UserId = 'system-user-guid' WHERE UserId IS NULL;
-      -- Repeat for all entities
-  ");
-  ```
+**Measurement Tool:** BenchmarkDotNet in `LocalFinanceManager.Tests/Benchmarks/`
 
-- [ ] Add non-nullable constraint after data migration
+**Estimated Refinement Time:** 2-3 hours
 
-**5. Repository Query Filters**
-
-- [ ] Update `IRepository<T>` interface to include `GetByUserIdAsync(Guid userId)` method
-- [ ] Implement user-scoped queries in all repositories:
-  ```csharp
-  public async Task<List<Account>> GetByUserIdAsync(Guid userId) {
-      return await _context.Accounts
-          .Where(a => a.UserId == userId && !a.IsArchived)
-          .ToListAsync();
-  }
-  ```
-- [ ] Update all existing repository methods to filter by `UserId`
-
-**6. Authorization Attributes**
-
-- [ ] Add `[Authorize]` attribute to all API controllers
-- [ ] Create `UserContext` service to extract current user from JWT claims:
-  ```csharp
-  public interface IUserContext {
-      Guid GetCurrentUserId();
-      string GetCurrentUserEmail();
-  }
-  ```
-- [ ] Inject `IUserContext` into services and repositories
-
-**7. Blazor Auth Components**
-
-- [ ] Create `Login.razor` page with Supabase Auth UI
-- [ ] Create `Register.razor` page
-- [ ] Create `AuthStateProvider` inheriting `AuthenticationStateProvider`
-- [ ] Add `<AuthorizeView>` wrapper in `App.razor`
-- [ ] Store JWT token in local storage or session storage
-
-**8. Tests**
-
-- [ ] Add unit tests for `UserContext.GetCurrentUserId()` in `LocalFinanceManager.Tests/Services/`
-- [ ] Add integration tests for user-scoped queries in `LocalFinanceManager.Tests/Integration/`
-- [ ] Test scenario: User A cannot access User B's accounts (HTTP 403)
-- [ ] Test scenario: Anonymous request returns HTTP 401
-- [ ] Add E2E tests for login/logout flow in `LocalFinanceManager.E2E/`
-
-#### Testing Scenarios
-
-1. **Authentication:**
-
-   - Valid JWT token grants access to API (HTTP 200)
-   - Invalid/expired JWT token returns HTTP 401
-   - Missing JWT token returns HTTP 401
-
-2. **Authorization:**
-
-   - User can only access their own entities (accounts, budget plans, etc.)
-   - Attempt to access another user's entity returns HTTP 403
-   - System user can access legacy data migrated from pre-auth system
-
-3. **User Registration:**
-
-   - New user registration creates `User` entity in database
-   - Email verification required before login (configurable)
-
-4. **Data Isolation:**
-   - User A creates account → User B cannot see it in GET /api/accounts
-   - Seed data creates separate entities for each test user
-
-#### Definition of Done
-
-- [ ] Supabase Auth integration complete with JWT middleware
-- [ ] All entities have `UserId` foreign key and user-scoped queries
-- [ ] Data migration assigns existing entities to "System" user
-- [ ] `[Authorize]` attribute applied to all API controllers
-- [ ] Blazor login/register pages functional with AuthStateProvider
-- [ ] Unit tests cover user context extraction from JWT claims
-- [ ] Integration tests verify data isolation between users
-- [ ] E2E tests cover login → create account → logout → verify data persists
-- [ ] No manual migrations required (automatic via `Database.MigrateAsync()`)
-
-**Estimated Refinement Time:** 3-4 hours
-
-**Estimated Implementation Effort After Refinement:** 5-7 days
+**Estimated Implementation Effort After Refinement:** 3-4 days
 
 ---
 
-### UserStory-11: Sharing System (Multi-Tenant Permissions)
+#### UserStory-12: Sharing System
 
-**File:** [docs/Userstories/UserStory-11-Sharing-System.md](docs/Userstories/UserStory-11-Sharing-System.md)
+**File:** [docs/Userstories/UserStory-12-Sharing-System.md](docs/Userstories/UserStory-12-Sharing-System.md)
 
 **Issues:**
 
-1. **Missing implementation tasks section** - Only requirements listed
-2. No schema design for `AccountShare` and `BudgetPlanShare` entities
-3. Permission cascade rules unclear (e.g., shared BudgetPlan → automatic Category access?)
-4. Authorization filter implementation details missing
-5. No test scenarios defined
+1. **Missing authorization middleware implementation** - How to integrate with existing controllers?
+2. **UI mockups needed** - No visual guidance for sharing modal/page
+3. **Permission inheritance unclear** - If Account is shared, are Transactions automatically accessible?
+4. **Notification system undefined** - Should users be notified when something is shared with them?
+5. **Share expiration mechanism missing** - No cron job or background service for expiration checks
 
 **Required Refinements:**
 
 Add the following sections:
 
-#### Database Schema Design
+#### Authorization Middleware Implementation
 
-**1. AccountShare Entity:**
+**Custom Authorization Policy:**
 
 ```csharp
-public class AccountShare : BaseEntity {
-    public Guid AccountId { get; set; }
-    public Account Account { get; set; }
+// Startup/Program.cs
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AccountAccess", policy =>
+        policy.Requirements.Add(new AccountAccessRequirement()));
+});
 
-    public Guid SharedWithUserId { get; set; }
-    public User SharedWithUser { get; set; }
-
-    public Guid SharedByUserId { get; set; }
-    public User SharedByUser { get; set; }
-
-    public SharePermission Permission { get; set; } // Read, Write, Admin
-    public DateTime? ExpiresAt { get; set; }
-    public bool IsRevoked { get; set; }
-}
-
-public enum SharePermission { Read, Write, Admin }
+builder.Services.AddScoped<IAuthorizationHandler, AccountAccessHandler>();
 ```
 
-**2. BudgetPlanShare Entity:**
+**Authorization Handler:**
 
 ```csharp
-public class BudgetPlanShare : BaseEntity {
-    public Guid BudgetPlanId { get; set; }
-    public BudgetPlan BudgetPlan { get; set; }
+public class AccountAccessHandler : AuthorizationHandler<AccountAccessRequirement, Guid>
+{
+    private readonly IShareService _shareService;
 
-    public Guid SharedWithUserId { get; set; }
-    public User SharedWithUser { get; set; }
+    protected override async Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        AccountAccessRequirement requirement,
+        Guid accountId)
+    {
+        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var hasAccess = await _shareService.CanAccessAccountAsync(userId, accountId, requirement.MinimumPermission);
 
-    public Guid SharedByUserId { get; set; }
-    public User SharedByUser { get; set; }
-
-    public SharePermission Permission { get; set; }
-    public DateTime? ExpiresAt { get; set; }
-    public bool IsRevoked { get; set; }
+        if (hasAccess)
+            context.Succeed(requirement);
+    }
 }
 ```
 
-#### Permission Cascade Rules
+**Controller Usage:**
 
-**Sharing an Account:**
+```csharp
+[HttpGet("{id}")]
+[Authorize(Policy = "AccountAccess")]
+public async Task<IActionResult> GetAccount(Guid id)
+{
+    // User is already authorized by policy
+    var account = await _accountService.GetByIdAsync(id);
+    return Ok(account);
+}
+```
 
-- **Read:** User can view account details, transactions (read-only)
-- **Write:** User can create/edit transactions, assign categories
-- **Admin:** User can share account with others, delete account
+#### Permission Inheritance Rules
 
-**Sharing a BudgetPlan:**
+**Explicit Rules:**
 
-- **Automatic Access:** Shared budget plan grants access to all categories within that plan
-- **Read:** User can view budget lines, categories (read-only)
-- **Write:** User can edit budget lines, create categories
-- **Admin:** User can share budget plan, delete plan
+1. **Account Shared → Transaction Access:**
+   - If User B has "Viewer" access to Account A → User B can view all Transactions on Account A (read-only)
+   - If User B has "Editor" access to Account A → User B can create/edit Transactions on Account A
+   - If User B has "Owner" access to Account A → User B can delete Transactions on Account A
 
-**Inheritance:**
+2. **BudgetPlan Shared → Category/BudgetLine Access:**
+   - If User B has "Viewer" access to BudgetPlan X → User B can view all Categories and BudgetLines in BudgetPlan X
+   - If User B has "Editor" access to BudgetPlan X → User B can create/edit Categories and BudgetLines in BudgetPlan X
+   - If User B has "Owner" access to BudgetPlan X → User B can delete BudgetPlan X and all child entities
 
-- If Account A is shared with Write permission → User can view/edit all transactions on Account A
-- If BudgetPlan B is shared with Read permission → User can view all categories in BudgetPlan B (but not edit)
+3. **No Cross-Entity Inheritance:**
+   - Sharing an Account does NOT grant access to BudgetPlans
+   - Sharing a BudgetPlan does NOT grant access to Accounts
 
-#### Implementation Tasks
+#### Notification System
 
-**1. Entity & Migration:**
+**Notification Strategy:**
 
-- [ ] Create `AccountShare` entity
-- [ ] Create `BudgetPlanShare` entity
-- [ ] Add `SharePermission` enum
-- [ ] Create EF Core migration: `dotnet ef migrations add AddSharingEntities`
+- [ ] Create `Notification` entity:
 
-**2. Repository & Service Layer:**
+  ```csharp
+  public class Notification : BaseEntity
+  {
+      public string UserId { get; set; }
+      public string Title { get; set; }
+      public string Message { get; set; }
+      public string Type { get; set; } // "Share", "Revoke", "System"
+      public bool IsRead { get; set; }
+      public Guid? RelatedEntityId { get; set; }
+      public string RelatedEntityType { get; set; } // "Account", "BudgetPlan"
+  }
+  ```
 
-- [ ] Create `IShareService` interface with methods:
-  - `ShareAccountAsync(Guid accountId, Guid userId, SharePermission permission)`
-  - `RevokeAccountShareAsync(Guid shareId)`
-  - `GetSharedAccountsAsync(Guid userId)` → Returns accounts shared with user
-- [ ] Create `IAuthorizationService` interface with methods:
-  - `CanAccessAccountAsync(Guid userId, Guid accountId, SharePermission required)`
-  - `CanAccessBudgetPlanAsync(Guid userId, Guid budgetPlanId, SharePermission required)`
+- [ ] Trigger notifications on share/revoke:
 
-**3. Authorization Filters:**
+  ```csharp
+  // When User A shares Account X with User B
+  await _notificationService.CreateAsync(new Notification
+  {
+      UserId = userBId,
+      Title = "Account Shared With You",
+      Message = $"{userA.Name} shared account '{account.Name}' with you (Viewer access)",
+      Type = "Share",
+      RelatedEntityId = accountId,
+      RelatedEntityType = "Account"
+  });
+  ```
 
-- [ ] Create custom authorization attribute: `[RequireAccountAccess(Permission.Write)]`
-- [ ] Implement authorization handler checking both ownership and shares
-- [ ] Apply attribute to all account-related API endpoints
+- [ ] Create `Notifications.razor` page showing unread notifications
+- [ ] Add notification bell icon in header with unread count badge
 
-**4. Blazor UI:**
+#### Share Expiration Background Service
 
-- [ ] Create `ShareAccountModal.razor` component:
-  - Search users by email
-  - Select permission level (Read/Write/Admin)
-  - Set optional expiration date
-- [ ] Add "Share" button to account details page
-- [ ] Create `SharedWithMe.razor` page showing all shared accounts/budget plans
-- [ ] Add "Revoke" button for shared entities
+**Hosted Service Implementation:**
 
-**5. Tests:**
+```csharp
+public class ShareExpirationService : BackgroundService
+{
+    private readonly IServiceProvider _serviceProvider;
 
-- [ ] Unit tests for permission cascade logic
-- [ ] Integration tests: User B can access shared account from User A
-- [ ] Integration tests: User B cannot access revoked share (HTTP 403)
-- [ ] E2E tests: Share account → Login as User B → View transactions → Logout
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var shareService = scope.ServiceProvider.GetRequiredService<IShareService>();
 
-#### Testing Scenarios
+            // Find expired shares
+            var expiredShares = await shareService.GetExpiredSharesAsync();
 
-1. **Sharing Flow:**
+            foreach (var share in expiredShares)
+            {
+                share.IsRevoked = true;
+                await shareService.UpdateAsync(share);
 
-   - User A shares Account X with User B (Write permission)
-   - User B sees Account X in "Shared With Me" page
-   - User B can create transactions on Account X
-   - User B cannot delete Account X (requires Admin permission)
+                // Notify user
+                await _notificationService.CreateAsync(new Notification
+                {
+                    UserId = share.SharedWithUserId,
+                    Title = "Share Expired",
+                    Message = $"Your access to {share.ResourceName} has expired",
+                    Type = "System"
+                });
+            }
 
-2. **Revocation:**
+            // Check every hour
+            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+        }
+    }
+}
+```
 
-   - User A revokes share → User B loses access immediately
-   - User B receives HTTP 403 on subsequent API calls
+**Register in Program.cs:**
 
-3. **Expiration:**
-   - Share expires at `ExpiresAt` timestamp → User B loses access
-   - Cron job checks expired shares daily and marks as revoked
+```csharp
+builder.Services.AddHostedService<ShareExpirationService>();
+```
 
-**Estimated Refinement Time:** 3-4 hours
+#### UI Wireframe Requirements
+
+**ShareAccountModal.razor:**
+
+- Search input: "Find user by email"
+- Dropdown: Permission level (Viewer/Editor/Owner)
+- Date picker: Expiration date (optional)
+- Checkbox: "Send notification to user"
+- Buttons: "Share" (primary), "Cancel" (secondary)
+
+**SharedWithMe.razor Page:**
+
+- Table columns: Resource Type, Name, Shared By, Permission, Shared Date, Expiration
+- Filter: Show only Accounts / Show only BudgetPlans
+- Sort: By shared date (newest first)
+- Action buttons: "Open", "Request Full Access" (if Viewer)
+
+**Estimated Refinement Time:** 2-3 hours
 
 **Estimated Implementation Effort After Refinement:** 5-7 days
 
 ---
 
-### UserStory-12: Backup & Restore System
+#### UserStory-13: Backup & Restore
 
-**File:** [docs/Userstories/UserStory-12-Backup-Restore.md](docs/Userstories/UserStory-12-Backup-Restore.md)
+**File:** [docs/Userstories/UserStory-13-Backup-Restore.md](docs/Userstories/UserStory-13-Backup-Restore.md)
 
 **Issues:**
 
@@ -359,6 +525,8 @@ public class BudgetPlanShare : BaseEntity {
 2. Missing implementation tasks for Blazor UI
 3. No integration test scenarios defined
 4. Backup format example provided but not validated against current schema
+5. **Missing security considerations** - Should backups be encrypted?
+6. **No versioning strategy** - How to handle schema changes between backup and restore?
 
 **Required Refinements:**
 
@@ -447,14 +615,12 @@ Add the following sections:
 #### Testing Scenarios
 
 1. **Full Backup & Restore:**
-
    - User has 5 accounts, 2 budget plans, 100 transactions
    - Export backup → JSON file size ~50KB
    - Clear local database
    - Import backup → 100% data restored
 
 2. **Partial Conflict:**
-
    - Local has Account A (UpdatedAt: Jan 15)
    - Backup has Account A (UpdatedAt: Jan 16) with different name
    - Import with merge strategy → Local Account A updated to Jan 16 version
@@ -464,15 +630,74 @@ Add the following sections:
    - Backup has Account B with same IBAN
    - Import fails with error: "IBAN NL01ABCD0123456789 already exists on account 'Account A'"
 
+#### Security Considerations
+
+**Encryption Strategy:**
+
+- [ ] Add optional encryption for backup files using AES-256
+- [ ] Generate encryption key from user password (PBKDF2, 10,000 iterations)
+- [ ] Store IV (Initialization Vector) in backup file header
+- [ ] UI: Checkbox "Encrypt backup" with password input field
+
+**Implementation:**
+
+```csharp
+public async Task<byte[]> CreateEncryptedBackupAsync(string userId, string password)
+{
+    var backupData = await CreateBackupAsync(userId);
+    var json = JsonSerializer.Serialize(backupData);
+
+    using var aes = Aes.Create();
+    aes.KeySize = 256;
+
+    var key = DeriveKeyFromPassword(password, out var salt);
+    aes.Key = key;
+    aes.GenerateIV();
+
+    using var encryptor = aes.CreateEncryptor();
+    var encryptedData = encryptor.TransformFinalBlock(Encoding.UTF8.GetBytes(json), 0, json.Length);
+
+    // Return: [salt][iv][encryptedData]
+    return salt.Concat(aes.IV).Concat(encryptedData).ToArray();
+}
+```
+
+#### Schema Versioning Strategy
+
+**Backward Compatibility:**
+
+- [ ] Add `schemaVersion` field to backup format (current: "1.0")
+- [ ] Implement version-specific import handlers:
+  ```csharp
+  public async Task<ImportResult> RestoreBackupAsync(BackupData backup)
+  {
+      return backup.SchemaVersion switch
+      {
+          "1.0" => await RestoreV1Async(backup),
+          "1.1" => await RestoreV1_1Async(backup),
+          _ => throw new NotSupportedException($"Schema version {backup.SchemaVersion} not supported")
+      };
+  }
+  ```
+
+**Migration Logic:**
+
+- If backup schema < current schema → Apply transformations before import
+- Example: Schema 1.0 → 1.1 adds `CategoryType` field → Set default `CategoryType = Expense` for old backups
+
+**Forward Compatibility Warning:**
+
+- If backup schema > current schema → Display error: "Backup created with newer version. Please update the application."
+
 **Estimated Refinement Time:** 2-3 hours
 
 **Estimated Implementation Effort After Refinement:** 3-4 days
 
 ---
 
-### UserStory-13: Application Flow & Onboarding
+#### UserStory-14: Application Flow & Onboarding
 
-**File:** [docs/Userstories/UserStory-13-Application-Flow.md](docs/Userstories/UserStory-13-Application-Flow.md)
+**File:** [docs/Userstories/UserStory-14-Application-Flow.md](docs/Userstories/UserStory-14-Application-Flow.md)
 
 **Issues:**
 
@@ -480,6 +705,7 @@ Add the following sections:
 2. Onboarding wizard step-by-step flow needs mockups/wireframes
 3. Breadcrumb generation logic unclear (static routes vs dynamic entity paths?)
 4. Success criteria too vague ("user experience is intuitive")
+5. **Missing user onboarding completion tracking** - How to prevent showing wizard on every login?
 
 **Required Refinements:**
 
@@ -619,48 +845,223 @@ Add the following sections:
 - ✅ Breadcrumb navigation reduces "back button" usage by 30% (tracked via analytics)
 - ✅ Average time to first transaction assignment: <5 minutes after onboarding
 
+#### User Onboarding Completion Tracking
+
+**Database Schema:**
+
+```csharp
+public class User
+{
+    public string Id { get; set; }
+    public string Email { get; set; }
+    public bool HasCompletedOnboarding { get; set; }
+    public DateTime? OnboardingCompletedAt { get; set; }
+}
+```
+
+**Workflow:**
+
+1. User registers → `HasCompletedOnboarding = false`
+2. User logs in → Check `HasCompletedOnboarding`:
+   - If `false` → Redirect to `/onboarding`
+   - If `true` → Redirect to `/dashboard`
+3. User completes onboarding wizard → Set `HasCompletedOnboarding = true`, `OnboardingCompletedAt = DateTime.UtcNow`
+
+**Skip Option:**
+
+- Add "Skip Onboarding" button on wizard pages → Set `HasCompletedOnboarding = true` (tracks completion but not full participation)
+- Add "Show me around" link on dashboard for users who skipped → Reopens onboarding wizard
+
 **Estimated Refinement Time:** 2-3 hours
 
 **Estimated Implementation Effort After Refinement:** 4-5 days
 
 ---
 
+#### UserStory-15: Azure Deployment
+
+**File:** [docs/Userstories/UserStory-15-Azure-Deployment.md](docs/Userstories/UserStory-15-Azure-Deployment.md)
+
+**Issues:**
+
+1. **Missing cost estimation** - Free tier has limits, what happens when exceeded?
+2. **No monitoring/alerting strategy** - How to detect production issues?
+3. **Database backup strategy undefined** - How to backup PostgreSQL in production?
+4. **Environment variable management unclear** - How to manage secrets across environments?
+5. **Rollback strategy missing** - How to revert to previous deployment if bugs occur?
+
+**Required Refinements:**
+
+Add the following sections:
+
+#### Azure Free Tier Limits & Cost Estimation
+
+**Free Tier (F1) Limits:**
+
+- 60 CPU minutes/day
+- 1 GB RAM
+- 1 GB storage
+- 10 GB bandwidth/month
+
+**Expected Usage:**
+
+- ~10 users × 30 requests/day = 300 requests/day
+- Average response time: 200ms
+- Daily CPU usage: ~60 seconds (well within limit)
+
+**Cost Escalation Plan:**
+
+- If CPU minutes exceeded → Upgrade to Basic (B1) tier ($13/month)
+- Monitor daily usage via Azure Portal metrics
+
+#### Monitoring & Alerting Strategy
+
+**Azure Application Insights:**
+
+- [ ] Install NuGet package: `Microsoft.ApplicationInsights.AspNetCore`
+- [ ] Add to `Program.cs`:
+  ```csharp
+  builder.Services.AddApplicationInsightsTelemetry(options =>
+  {
+      options.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+  });
+  ```
+
+**Key Metrics to Monitor:**
+
+1. **Request rate:** Requests per minute (alert if >100/min sustained)
+2. **Response time:** Average response time (alert if >2s)
+3. **Error rate:** HTTP 500 errors (alert if >5% of requests)
+4. **Database connection failures:** Failed connection attempts (alert on any failure)
+
+**Alert Configuration:**
+
+- Email alerts to developer email on critical failures
+- SMS alerts (optional) for production downtime
+
+#### Database Backup Strategy
+
+**Supabase Automatic Backups:**
+
+- Supabase provides daily automated backups (retained for 7 days on free tier)
+- No additional configuration required
+
+**Manual Backup Schedule:**
+
+- Weekly manual backup via `BackupController` export endpoint
+- Store backup JSON files in Azure Blob Storage (cold tier, $0.002/GB/month)
+- Retention: 4 weekly backups, 12 monthly backups
+
+**Backup Automation:**
+
+```csharp
+// Azure Function (Timer Trigger: 0 0 * * 0 = every Sunday)
+public async Task RunWeeklyBackup(TimerInfo timer)
+{
+    var backupData = await _backupService.CreateBackupAsync(adminUserId);
+    var json = JsonSerializer.Serialize(backupData);
+
+    await _blobService.UploadAsync(
+        containerName: "backups",
+        blobName: $"backup_{DateTime.UtcNow:yyyyMMdd}.json",
+        content: json
+    );
+}
+```
+
+#### Environment Variable Management
+
+**GitHub Secrets (Production):**
+
+- `AZURE_WEBAPP_PUBLISH_PROFILE` - Deployment credentials
+- `SUPABASE_CONNECTION_STRING` - PostgreSQL connection
+- `JWT_SECRET` - Token signing key (auto-generated 256-bit key)
+- `APPLICATIONINSIGHTS_CONNECTION_STRING` - Monitoring
+
+**Azure App Service Configuration:**
+
+- Use App Service → Configuration → Application Settings for runtime secrets
+- Enable "Deployment slot settings" to prevent production secrets in staging
+
+**Local Development:**
+
+- Use `appsettings.Development.json` (never commit)
+- Example secrets:
+  ```json
+  {
+    "ConnectionStrings": {
+      "Default": "Host=localhost;Database=lfm_dev;..."
+    },
+    "Jwt": {
+      "Secret": "dev-secret-key-not-for-production"
+    }
+  }
+  ```
+
+#### Rollback Strategy
+
+**Deployment Slots (Not Available on Free Tier):**
+
+- Free tier doesn't support deployment slots → Manual rollback required
+
+**Manual Rollback Steps:**
+
+1. Identify last known good commit: `git log --oneline`
+2. Create rollback branch: `git checkout -b rollback/{commit-hash}`
+3. Trigger deployment: `git push origin rollback/{commit-hash}`
+4. GitHub Actions redeploys previous version
+
+**Automated Rollback Trigger:**
+
+- If health check fails for >5 minutes after deployment → Trigger rollback workflow
+- GitHub Actions workflow monitors `/health` endpoint post-deployment
+
+**Rollback Time Target:** <10 minutes from detection to restored service
+
+**Estimated Refinement Time:** 2-3 hours
+
+**Estimated Implementation Effort After Refinement:** 3-4 days
+
+---
+
 ## Implementation Roadmap
 
-### Phase 1: Foundation (Immediate - Weeks 1-2)
+### Phase 1: Foundation ✅ **COMPLETED**
 
-1. ✅ **UserStory-5** (Basic Assignment UI) - **Start now** (2-3 days)
-2. ⚠️ **UserStory-8.1** (E2E Test Infrastructure) - **Parallel with US-5** (1-2 days)
-3. ✅ **UserStory-1** (CI Pipeline) - **Refined and ready** (1 day)
+1. ✅ **UserStory-1** (CI Pipeline) - **COMPLETED & ARCHIVED**
+2. ✅ **UserStory-2** (Branching Strategy) - **COMPLETED & ARCHIVED**
+3. ✅ **UserStory-3** (Category Ownership) - **COMPLETED & ARCHIVED**
+4. ✅ **UserStory-3.1** (Category Budget Plan Scoping) - **COMPLETED & ARCHIVED**
+5. ✅ **UserStory-3.2** (Category Template System) - **COMPLETED & ARCHIVED**
+6. ✅ **UserStory-3.3** (Category UI Tests) - **COMPLETED & ARCHIVED**
+7. ✅ **UserStory-8** (UX Enhancements) - **COMPLETED & ARCHIVED**
 
 ### Phase 2: Core Features (Weeks 3-5)
 
-4. ✅ **UserStory-5** (Basic Assignment UI) - Start now (2-3 days)
-   - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - 1-2 days - **REFINED**
-5. ✅ **UserStory-6** (Split & Bulk Assignment) - After US-5 (3-4 days)
-6. ✅ ~~**UserStory-3.1** (Category Budget Plan Scoping)~~ - **COMPLETED** (Implemented January 16, 2026)
-7. ✅ **UserStory-4** (Account-Budget Matching) - After US-3.1 (3-4 days)
+4. ✅ **UserStory-4** (Account-Budget Matching) - Ready (3-4 days)
+5. ✅ **UserStory-5** (Basic Assignment UI) - Ready (2-3 days)
+   - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - Ready (1-2 days)
+6. ✅ **UserStory-6** (Split & Bulk Assignment) - Ready after US-5 (3-4 days)
 
 ### Phase 3: Advanced Features (Weeks 6-8)
 
-8. ✅ **UserStory-3.2** (Category Template System) - After US-4 (1-2 days) - **REFINED**
-9. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6 (4-5 days)
-10. ✅ **UserStory-9** (Integration Workflow Tests) - Incremental with US-7 (2-3 days) - **REFINED**
+7. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - Ready after US-6 (4-5 days)
+8. ✅ **UserStory-9** (Integration Workflow Tests) - Ready, incremental with US-7 (2-3 days)
 
 ### Phase 4: UX Improvements (Weeks 9-10)
 
-11. ✅ **UserStory-3.3** (Category UI Updates & E2E Tests) - After US-3.2 (1-2 days) - **REFINED**
-12. ✅ **UserStory-8** (Assignment UX Enhancements) - After US-7 (2-3 days) - **REFINED**
-13. 🔴 **UserStory-14** (Application Flow) - After refinement (4-5 days)
+9. ✅ **UserStory-5.3** (UX Enhancements) - Ready after US-7 (2-3 days)
+10. ✅ **UserStory-8.1** (Keyboard Shortcuts) - Ready (1-2 days)
+11. ✅ **UserStory-8.2** (Quick Filters & Performance) - Ready (2-3 days)
 
-### Phase 5: Post-MVP (Weeks 11+)
+### Phase 5: Multi-User & Post-MVP (Weeks 11+)
 
-14. 🔴 **UserStory-10** (Multi-User Auth) - After refinement (5-7 days)
-15. 🔴 **UserStory-11** (Sharing System) - After US-10 + refinement (5-7 days)
-16. 🔴 **UserStory-12** (Backup & Restore) - After refinement (3-4 days)
-17. 🔴 **UserStory-13** (Application Flow) - After refinement (4-5 days)
-18. 🔴 **UserStory-14** (Application Flow) - After refinement (varies)
-19. 🔴 **UserStory-15** (Azure Deployment) - After refinement (varies)
+12. ✅ **UserStory-10** (Multi-User Auth) - Ready (5-7 days)
+13. 🔴 **UserStory-11** (Supabase PostgreSQL) - After US-10 + refinement (3-4 days)
+14. 🔴 **UserStory-12** (Sharing System) - After US-11 + refinement (5-7 days)
+15. 🔴 **UserStory-13** (Backup & Restore) - After refinement (3-4 days)
+16. 🔴 **UserStory-14** (Application Flow) - After refinement (4-5 days)
+17. 🔴 **UserStory-15** (Azure Deployment) - After refinement (3-4 days)
 
 ---
 
@@ -752,21 +1153,31 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Start implementing UserStory-1 (CI Pipeline) and UserStory-5 (Basic Assignment UI) + UserStory-5.1 (E2E Infrastructure parallel) - all production-ready
-2. **This Week:** Expand UserStory-9, 11, 12, 13 with implementation tasks (6-8 hours total)
+1. **Immediate:** Start implementing UserStory-4 (Account-Budget Matching), UserStory-5 (Basic Assignment UI), and UserStory-5.1 (E2E Infrastructure in parallel) - all production-ready
+2. **This Week:** Expand UserStory-11, 12, 13, 14, 15 with implementation tasks (10-12 hours total)
 
-**Total Refinement Effort Remaining:** ~6-8 hours across remaining stories
+**Total Refinement Effort Remaining:** ~10-12 hours across 5 remaining stories
 
 **Priority Order:**
 
-1. ✅ ~~UserStory-1 (CI Pipeline)~~ - **COMPLETED** (Refined January 16, 2026)
-2. ✅ ~~UserStory-2 (Branching Strategy)~~ - **COMPLETED** (Implemented January 16, 2026)
-3. ✅ ~~UserStory-3.1 (Category Budget Plan Scoping)~~ - **COMPLETED** (Implemented January 16, 2026)
-4. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED** (Refined January 16, 2026)
-5. ✅ ~~UserStory-3 (Split into 3.1, 3.2, 3.3)~~ - **COMPLETED** (Split January 16, 2026)
-6. ✅ ~~UserStory-5 (Split into 5.1, 5.2, 5.3)~~ - **COMPLETED** (Split January 16, 2026)
-7. ✅ ~~UserStory-8 duplicate removed~~ - **COMPLETED** (Corrected January 16, 2026)
-8. UserStory-10 (Multi-User Auth) - Expand implementation tasks
-8. UserStory-11 (Sharing System) - Expand implementation tasks
-9. UserStory-12 (Backup & Restore) - Add conflict resolution details
-10. UserStory-13 (Application Flow) - Add widget specifications
+1. ✅ ~~UserStory-1 (CI Pipeline)~~ - **COMPLETED & ARCHIVED**
+2. ✅ ~~UserStory-2 (Branching Strategy)~~ - **COMPLETED & ARCHIVED**
+3. ✅ ~~UserStory-3 (Category Ownership)~~ - **COMPLETED & ARCHIVED**
+4. ✅ ~~UserStory-3.1 (Category Budget Plan Scoping)~~ - **COMPLETED & ARCHIVED**
+5. ✅ ~~UserStory-3.2 (Category Template System)~~ - **COMPLETED & ARCHIVED**
+6. ✅ ~~UserStory-3.3 (Category UI Tests)~~ - **COMPLETED & ARCHIVED**
+7. ✅ ~~UserStory-8 (UX Enhancements & Refinements)~~ - **COMPLETED & ARCHIVED**
+8. **UserStory-4** (Account-Budget Matching) - **NEXT: Start implementation**
+9. **UserStory-5** (Basic Assignment UI) - **NEXT: Start implementation** (parallel with US-4)
+10. **UserStory-5.1** (E2E Infrastructure) - Start implementation (parallel with US-5)
+11. **UserStory-6** (Split & Bulk Assignment) - After US-5
+12. **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6
+13. **UserStory-8.1** (Keyboard Shortcuts) - After US-7
+14. **UserStory-8.2** (Quick Filters & Performance) - After US-8.1
+15. **UserStory-9** (Integration Workflow Tests) - Incremental with US-7
+16. **UserStory-10** (Multi-User Auth) - Ready for implementation
+17. UserStory-11 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
+18. UserStory-12 (Sharing System) - Needs refinement (authorization middleware, permissions)
+19. UserStory-13 (Backup & Restore) - Needs refinement (security/encryption, versioning)
+20. UserStory-14 (Application Flow) - Needs refinement (onboarding tracking)
+21. UserStory-15 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)
