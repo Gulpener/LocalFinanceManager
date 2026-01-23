@@ -17,6 +17,10 @@
 # Allow test fixture databases
 !tests/**/fixtures/**/*.db
 
+# Bank statement CSV files (sensitive financial data)
+*.csv
+!test-transactions.csv
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

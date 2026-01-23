@@ -1,6 +1,7 @@
 @page "/budgets/new"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
 @inject BudgetPlanService BudgetPlanService
 @inject AccountService AccountService
 @inject NavigationManager Navigation
@@ -42,6 +43,44 @@
                 <ValidationMessage For="@(() => model.Name)" />
             </div>
 
+            <div class="mb-3">
+                <label for="template" class="form-label">Category Template</label>
+                <InputSelect id="template" class="form-select" @bind-Value="model.TemplateName">
+                    @foreach (var templateName in CategoryTemplates.Templates.Keys)
+                    {
+                        <option value="@templateName">@templateName</option>
+                    }
+                </InputSelect>
+                <div class="form-text">Select a template to auto-create categories for this budget plan.</div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(model.TemplateName) && CategoryTemplates.Templates.ContainsKey(model.TemplateName))
+            {
+                <div class="mb-3">
+                    <label class="form-label">Template Preview (@model.TemplateName)</label>
+                    <div class="card">
+                        <div class="card-body">
+                            @if (CategoryTemplates.Templates[model.TemplateName].Any())
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var (name, type) in CategoryTemplates.Templates[model.TemplateName])
+                                    {
+                                        <li>
+                                            <i class="bi @(type == CategoryType.Income ? "bi-arrow-down-circle text-success" : "bi-arrow-up-circle text-danger")"></i>
+                                            @name (@(type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted mb-0">Empty template - no categories will be created.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
             @if (!string.IsNullOrEmpty(errorMessage))
             {
                 <div class="alert alert-danger">@errorMessage</div>
@@ -65,7 +104,7 @@
     [SupplyParameterFromQuery]
     public Guid AccountId { get; set; }
 
-    private CreateBudgetPlanDto model = new() { Year = DateTime.Now.Year };
+    private CreateBudgetPlanDto model = new() { Year = DateTime.Now.Year, TemplateName = "Personal" };
     private List<AccountResponse>? accounts;
     private bool isSubmitting = false;
     private string? errorMessage;

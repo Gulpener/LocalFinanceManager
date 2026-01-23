@@ -36,33 +36,15 @@ public class CategoryService
     }
 
     /// <summary>
-    /// Get all active categories.
-    /// </summary>
-    [Obsolete("Use GetByBudgetPlanAsync instead. This method is kept for backwards compatibility during migration.")]
-    public async Task<List<CategoryDto>> GetAllActiveAsync()
-    {
-        _logger.LogInformation("Retrieving all active categories");
-        var categories = await _categoryRepository.GetActiveAsync();
-        return categories.Select(c => new CategoryDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            Type = c.Type,
-            BudgetPlanId = c.BudgetPlanId,
-            RowVersion = c.RowVersion
-        }).ToList();
-    }
-
-    /// <summary>
     /// Get a category by ID.
     /// </summary>
     public async Task<CategoryDto?> GetByIdAsync(Guid id)
     {
         _logger.LogInformation("Retrieving category with ID: {CategoryId}", id);
         var category = await _categoryRepository.GetByIdAsync(id);
-        return category != null ? new CategoryDto 
-        { 
-            Id = category.Id, 
+        return category != null ? new CategoryDto
+        {
+            Id = category.Id,
             Name = category.Name,
             Type = category.Type,
             BudgetPlanId = category.BudgetPlanId,
