@@ -133,10 +133,10 @@ using (var scope = app.Services.CreateScope())
     if (app.Environment.IsDevelopment())
     {
         await context.SeedAsync();
-
-        // Update accounts to reference their current budget plan
-        await UpdateAccountBudgetPlanReferencesAsync(context);
     }
+
+    // Update accounts to reference their current budget plan (all environments)
+    await UpdateAccountBudgetPlanReferencesAsync(context);
 }
 
 /// <summary>
