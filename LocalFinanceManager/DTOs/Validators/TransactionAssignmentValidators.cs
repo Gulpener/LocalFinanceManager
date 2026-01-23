@@ -73,7 +73,7 @@ public class AssignTransactionRequestValidator : AbstractValidator<AssignTransac
         {
             result.IsValid = false;
             result.ErrorMessage = $"Budget line belongs to a different account's budget plan. " +
-                          $"Transaction is for account '{transaction.Account.Label}', " +
+                          $"Transaction is for account '{transaction.Account?.Label ?? transaction.AccountId.ToString()}', " +
                           $"but budget line belongs to account with ID '{budgetLineAccountId.Value}'";
             return result;
         }
@@ -143,7 +143,7 @@ public class SplitTransactionRequestValidator : AbstractValidator<SplitTransacti
             if (budgetLineAccountId != transaction.AccountId)
             {
                 result.ErrorMessages.Add($"Split {i + 1}: Budget line belongs to a different account's budget plan. " +
-                                $"Transaction is for account '{transaction.Account.Label}', " +
+                                $"Transaction is for account '{transaction.Account?.Label ?? transaction.AccountId.ToString()}', " +
                                 $"but budget line belongs to account with ID '{budgetLineAccountId}'");
             }
         }

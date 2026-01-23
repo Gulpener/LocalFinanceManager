@@ -4,6 +4,7 @@
 @using LocalFinanceManager.Data.Repositories
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
+@inject IBudgetPlanRepository BudgetPlanRepository
 @inject ILogger<TransactionAssignModal> Logger
 
 @if (IsVisible && Transaction != null)
@@ -12,7 +13,8 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Transactie toewijzen</h5>
+                    <h5 class="modal-title">Transactie toewijzen @(Transaction?.Date.Year > 0 ? $"({Transaction.Date.Year})"
+                                            : "")</h5>
                     <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"></button>
                 </div>
                 <div class="modal-body">
@@ -29,18 +31,18 @@
                             <h6 class="card-subtitle mb-2 text-muted">Transactie details</h6>
                             <dl class="row mb-0">
                                 <dt class="col-sm-3">Datum:</dt>
-                                <dd class="col-sm-9">@Transaction.Date.ToString("dd-MM-yyyy")</dd>
+                                <dd class="col-sm-9">@Transaction?.Date.ToString("dd-MM-yyyy")</dd>
 
                                 <dt class="col-sm-3">Beschrijving:</dt>
-                                <dd class="col-sm-9">@Transaction.Description</dd>
+                                <dd class="col-sm-9">@Transaction?.Description</dd>
 
                                 <dt class="col-sm-3">Tegenpartij:</dt>
-                                <dd class="col-sm-9">@(Transaction.Counterparty ?? "-")</dd>
+                                <dd class="col-sm-9">@(Transaction?.Counterparty ?? "-")</dd>
 
                                 <dt class="col-sm-3">Bedrag:</dt>
                                 <dd class="col-sm-9">
-                                    <span class="@(Transaction.Amount >= 0 ? "text-success" : "text-danger") fw-bold">
-                                        @Transaction.Amount.ToString("C2")
+                                    <span class="@(Transaction?.Amount >= 0 ? "text-success" : "text-danger") fw-bold">
+                                        @Transaction?.Amount.ToString("C2")
                                     </span>
                                 </dd>
                             </dl>
@@ -48,7 +50,7 @@
                     </div>
 
                     <!-- Current Assignment Status -->
-                    @if (Transaction.Splits?.Any() == true)
+                    @if (Transaction?.Splits?.Any() == true)
                     {
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle"></i>
@@ -159,23 +161,33 @@
         {
             errorMessage = null;
 
-            Logger.LogInformation("LoadBudgetLines called for Transaction {TransactionId}", Transaction?.Id);
-
-            // Get the account's current budget plan
-            var accountBudgetPlanId = Transaction?.AccountBudgetPlanId;
-            Logger.LogInformation("Account CurrentBudgetPlanId: {BudgetPlanId}", accountBudgetPlanId);
-
-            if (accountBudgetPlanId == null)
+            if (Transaction == null)
             {
-                errorMessage = "Deze rekening heeft geen actief budgetplan. Ga naar Budgetbeheer om een budgetplan aan te maken en te activeren.";
+                errorMessage = "Geen transactie geselecteerd.";
+                budgetLines = new List<BudgetLineDto>();
+                return;
+            }
+
+            Logger.LogInformation("LoadBudgetLines called for Transaction {TransactionId}", Transaction.Id);
+
+            // Find budget plan for transaction's year
+            var transactionYear = Transaction.Date.Year;
+            Logger.LogInformation("Looking for budget plan for AccountId={AccountId}, Year={Year}",
+            Transaction.AccountId, transactionYear);
+
+            var budgetPlan = await BudgetPlanRepository.GetByAccountAndYearAsync(Transaction.AccountId, transactionYear);
+
+            if (budgetPlan == null)
+            {
+                errorMessage = $"Geen budgetplan gevonden voor {transactionYear}. Maak een budgetplan voor {transactionYear} aan om deze transactie toe te wijzen.";
                 budgetLines = new List<BudgetLineDto>();
                 return;
             }
 
             // Load budget lines for this budget plan
-            Logger.LogInformation("About to call BudgetLineRepository.GetByBudgetPlanIdAsync with {BudgetPlanId}",
-            accountBudgetPlanId.Value);
-            var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(accountBudgetPlanId.Value);
+            Logger.LogInformation("Loading budget lines for BudgetPlanId={BudgetPlanId} (Year {Year})",
+            budgetPlan.Id, transactionYear);
+            var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(budgetPlan.Id);
             Logger.LogInformation("Received {Count} budget lines from repository", lines.Count);
             budgetLines = lines.Select(bl => new BudgetLineDto
             {
@@ -191,7 +203,7 @@
 
             if (budgetLines.Count == 0)
             {
-                errorMessage = "Dit budgetplan heeft nog geen budgetlijnen. Ga naar Budgetbeheer om categorieën en budgetlijnen toe te voegen.";
+                errorMessage = $"Het budgetplan voor {transactionYear} heeft nog geen budgetlijnen. Ga naar Budgetbeheer om categorieën en budgetlijnen toe te voegen.";
             }
         }
         catch (Exception ex)

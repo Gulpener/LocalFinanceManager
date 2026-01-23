@@ -13,6 +13,14 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
     {
     }
 
+    public override async Task<BudgetLine?> GetByIdAsync(Guid id)
+    {
+        return await _dbSet
+            .Include(bl => bl.BudgetPlan)
+            .Include(bl => bl.Category)
+            .FirstOrDefaultAsync(bl => bl.Id == id && !bl.IsArchived);
+    }
+
     public async Task<List<BudgetLine>> GetByBudgetPlanIdAsync(Guid budgetPlanId)
     {
         _logger.LogInformation("Loading budget lines for BudgetPlanId: {BudgetPlanId}", budgetPlanId);

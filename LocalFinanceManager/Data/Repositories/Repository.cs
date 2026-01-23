@@ -21,7 +21,7 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         _logger = logger;
     }
 
-    public async Task<T?> GetByIdAsync(Guid id)
+    public virtual async Task<T?> GetByIdAsync(Guid id)
     {
         return await _dbSet
             .Where(e => !e.IsArchived && e.Id == id)

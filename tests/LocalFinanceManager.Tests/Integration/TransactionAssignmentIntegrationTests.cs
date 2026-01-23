@@ -20,6 +20,7 @@ public class TransactionAssignmentIntegrationTests
     private ITransactionRepository _transactionRepository = null!;
     private ITransactionSplitRepository _splitRepository = null!;
     private ITransactionAuditRepository _auditRepository = null!;
+    private IBudgetLineRepository _budgetLineRepository = null!;
     private ITransactionAssignmentService _assignmentService = null!;
 
     [SetUp]
@@ -32,12 +33,15 @@ public class TransactionAssignmentIntegrationTests
         _transactionRepository = new TransactionRepository(_context, transactionLogger.Object);
         _splitRepository = new TransactionSplitRepository(_context);
         _auditRepository = new TransactionAuditRepository(_context);
+        var budgetLineLogger = new Mock<ILogger<Repository<BudgetLine>>>();
+        _budgetLineRepository = new BudgetLineRepository(_context, budgetLineLogger.Object);
 
         var assignmentLogger = new Mock<ILogger<TransactionAssignmentService>>();
         _assignmentService = new TransactionAssignmentService(
             _transactionRepository,
             _splitRepository,
             _auditRepository,
+            _budgetLineRepository,
             assignmentLogger.Object);
     }
 
@@ -557,5 +561,231 @@ public class TransactionAssignmentIntegrationTests
         var audits = await _auditRepository.GetByTransactionIdAsync(transaction.Id);
         Assert.That(audits.Count, Is.EqualTo(2)); // Assign + Undo
         Assert.That(audits[0].ActionType, Is.EqualTo("Undo")); // Most recent first
+    }
+
+    [Test]
+    public async Task AssignTransaction_CrossYearAssignment_ShouldThrowException()
+    {
+        // Arrange
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            Type = AccountType.Checking,
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            StartingBalance = 1000m
+        };
+        await _context.Accounts.AddAsync(account);
+
+        var budgetPlan2025 = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2025,
+            Name = "Budget 2025",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan2025);
+
+        // Transaction from 2026
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Amount = -100.00m,
+            Date = new DateTime(2026, 1, 15),
+            Description = "Transaction from 2026"
+        };
+        await _context.Transactions.AddAsync(transaction);
+        await _context.SaveChangesAsync();
+
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = budgetPlan2025.Id
+        };
+        await _context.Categories.AddAsync(category);
+        await _context.SaveChangesAsync();
+
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan2025.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
+        var request = new AssignTransactionRequest
+        {
+            BudgetLineId = budgetLine.Id,
+            Note = "Cross-year assignment"
+        };
+
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await _assignmentService.AssignTransactionAsync(transaction.Id, request));
+
+        Assert.That(exception!.Message, Does.Contain("Cannot assign 2026 transaction to 2025 budget plan"));
+    }
+
+    [Test]
+    public async Task AssignTransaction_SameYearAssignment_ShouldSucceed()
+    {
+        // Arrange
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            Type = AccountType.Checking,
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            StartingBalance = 1000m
+        };
+        await _context.Accounts.AddAsync(account);
+
+        var budgetPlan2025 = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2025,
+            Name = "Budget 2025",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan2025);
+
+        // Transaction from 2025
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Amount = -100.00m,
+            Date = new DateTime(2025, 12, 31),
+            Description = "Transaction from 2025"
+        };
+        await _context.Transactions.AddAsync(transaction);
+        await _context.SaveChangesAsync();
+
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = budgetPlan2025.Id
+        };
+        await _context.Categories.AddAsync(category);
+        await _context.SaveChangesAsync();
+
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan2025.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
+        var request = new AssignTransactionRequest
+        {
+            BudgetLineId = budgetLine.Id,
+            Note = "Same year assignment"
+        };
+
+        // Act
+        var result = await _assignmentService.AssignTransactionAsync(transaction.Id, request);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        var splits = await _splitRepository.GetByTransactionIdAsync(transaction.Id);
+        Assert.That(splits.Count, Is.EqualTo(1));
+        Assert.That(splits[0].BudgetLineId, Is.EqualTo(budgetLine.Id));
+    }
+
+    [Test]
+    public async Task SplitTransaction_CrossYearSplit_ShouldThrowException()
+    {
+        // Arrange
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            Type = AccountType.Checking,
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            StartingBalance = 1000m
+        };
+        await _context.Accounts.AddAsync(account);
+
+        var budgetPlan2025 = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2025,
+            Name = "Budget 2025",
+            IsArchived = false
+        };
+        var budgetPlan2026 = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = 2026,
+            Name = "Budget 2026",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddRangeAsync(budgetPlan2025, budgetPlan2026);
+
+        // Transaction from 2026
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Amount = -100.00m,
+            Date = new DateTime(2026, 1, 15),
+            Description = "Transaction from 2026"
+        };
+        await _context.Transactions.AddAsync(transaction);
+        await _context.SaveChangesAsync();
+
+        var category2025 = new Category { Id = Guid.NewGuid(), Name = "Category 2025", Type = CategoryType.Expense, BudgetPlanId = budgetPlan2025.Id };
+        var category2026 = new Category { Id = Guid.NewGuid(), Name = "Category 2026", Type = CategoryType.Expense, BudgetPlanId = budgetPlan2026.Id };
+        await _context.Categories.AddRangeAsync(category2025, category2026);
+        await _context.SaveChangesAsync();
+
+        var budgetLine2025 = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan2025.Id,
+            CategoryId = category2025.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        var budgetLine2026 = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan2026.Id,
+            CategoryId = category2026.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddRangeAsync(budgetLine2025, budgetLine2026);
+        await _context.SaveChangesAsync();
+
+        var request = new SplitTransactionRequest
+        {
+            Splits = new List<SplitAllocationDto>
+            {
+                new SplitAllocationDto { BudgetLineId = budgetLine2025.Id, Amount = 60.00m, Note = "Part 2025" },
+                new SplitAllocationDto { BudgetLineId = budgetLine2026.Id, Amount = 40.00m, Note = "Part 2026" }
+            }
+        };
+
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await _assignmentService.SplitTransactionAsync(transaction.Id, request));
+
+        Assert.That(exception!.Message, Does.Contain("Cannot assign 2026 transaction to 2025 budget plan"));
     }
 }

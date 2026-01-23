@@ -26,6 +26,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
     private readonly ITransactionRepository _transactionRepository;
     private readonly ITransactionSplitRepository _splitRepository;
     private readonly ITransactionAuditRepository _auditRepository;
+    private readonly IBudgetLineRepository _budgetLineRepository;
     private readonly ILogger<TransactionAssignmentService> _logger;
     private const decimal RoundingTolerance = 0.01m;
 
@@ -33,11 +34,13 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         ITransactionRepository transactionRepository,
         ITransactionSplitRepository splitRepository,
         ITransactionAuditRepository auditRepository,
+        IBudgetLineRepository budgetLineRepository,
         ILogger<TransactionAssignmentService> logger)
     {
         _transactionRepository = transactionRepository;
         _splitRepository = splitRepository;
         _auditRepository = auditRepository;
+        _budgetLineRepository = budgetLineRepository;
         _logger = logger;
     }
 
@@ -51,6 +54,9 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         {
             throw new InvalidOperationException($"Transaction {transactionId} not found");
         }
+
+        // Validate year matching
+        await ValidateYearMatchAsync(transaction, request.BudgetLineId);
 
         // Clear existing splits
         await _splitRepository.DeleteByTransactionIdAsync(transactionId);
@@ -84,6 +90,12 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         if (transaction == null)
         {
             throw new InvalidOperationException($"Transaction {transactionId} not found");
+        }
+
+        // Validate year matching for all splits
+        foreach (var split in request.Splits)
+        {
+            await ValidateYearMatchAsync(transaction, split.BudgetLineId);
         }
 
         // Validate split sum
@@ -240,6 +252,31 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         };
 
         await _auditRepository.AddAsync(audit);
+    }
+
+    private async Task ValidateYearMatchAsync(Transaction transaction, Guid budgetLineId)
+    {
+        var budgetLine = await _budgetLineRepository.GetByIdAsync(budgetLineId);
+        if (budgetLine == null)
+        {
+            throw new InvalidOperationException($"Budget line {budgetLineId} not found");
+        }
+
+        var transactionYear = transaction.Date.Year;
+
+        // Load budget plan to get year
+        var budgetPlan = budgetLine.BudgetPlan;
+        if (budgetPlan == null)
+        {
+            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLineId}");
+        }
+
+        if (budgetPlan.Year != transactionYear)
+        {
+            throw new InvalidOperationException(
+                $"Cannot assign {transactionYear} transaction to {budgetPlan.Year} budget plan. " +
+                $"Create a budget plan for {transactionYear} first.");
+        }
     }
 
     private TransactionDto MapToDto(Transaction transaction)
