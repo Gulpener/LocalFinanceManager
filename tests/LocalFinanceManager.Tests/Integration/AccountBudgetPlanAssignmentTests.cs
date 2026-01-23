@@ -230,27 +230,7 @@ public class AccountBudgetPlanAssignmentTests
         await _context.Accounts.AddAsync(account);
         await _context.SaveChangesAsync();
 
-        // Act
-        var accountsWithoutBudgetPlan = await _context.Accounts
-            .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
-            .ToListAsync();
-
-        foreach (var acc in accountsWithoutBudgetPlan)
-        {
-            var latestBudgetPlan = await _context.BudgetPlans
-                .Where(bp => bp.AccountId == acc.Id && !bp.IsArchived)
-                .OrderByDescending(bp => bp.Year)
-                .FirstOrDefaultAsync();
-
-            if (latestBudgetPlan != null)
-            {
-                acc.CurrentBudgetPlanId = latestBudgetPlan.Id;
-            }
-        }
-
-        await _context.SaveChangesAsync();
-
-        // Assert - Account should still have null CurrentBudgetPlanId
+        // Act & Assert - No budget plans exist, so CurrentBudgetPlanId should remain null
         var updatedAccount = await _context.Accounts.FindAsync(accountId);
         Assert.That(updatedAccount!.CurrentBudgetPlanId, Is.Null);
     }
