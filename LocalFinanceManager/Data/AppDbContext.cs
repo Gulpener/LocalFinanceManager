@@ -562,34 +562,5 @@ public class AppDbContext : DbContext
             }
         }
     }
-
-    /// <summary>
-    /// Updates accounts to reference their current budget plan (most recent year).
-    /// </summary>
-    private async Task UpdateAccountBudgetPlanReferencesAsync()
-    {
-        var accountsWithoutBudgetPlan = await Accounts
-            .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
-            .ToListAsync();
-
-        foreach (var account in accountsWithoutBudgetPlan)
-        {
-            // Find the most recent budget plan for this account
-            var latestBudgetPlan = await BudgetPlans
-                .Where(bp => bp.AccountId == account.Id && !bp.IsArchived)
-                .OrderByDescending(bp => bp.Year)
-                .FirstOrDefaultAsync();
-
-            if (latestBudgetPlan != null)
-            {
-                account.CurrentBudgetPlanId = latestBudgetPlan.Id;
-            }
-        }
-
-        if (accountsWithoutBudgetPlan.Any())
-        {
-            await SaveChangesAsync();
-        }
-    }
 }
 
