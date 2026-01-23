@@ -81,4 +81,11 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
 
         _logger.LogInformation("Added {Count} transactions in batch", transactions.Count());
     }
+
+    public async Task<Transaction?> GetByIdWithAccountAsync(Guid id)
+    {
+        return await _dbSet
+            .Include(t => t.Account)
+            .FirstOrDefaultAsync(t => t.Id == id && !t.IsArchived);
+    }
 }

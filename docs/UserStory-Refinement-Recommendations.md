@@ -9,8 +9,8 @@
 
 **Status Overview:**
 
-- ✅ **8 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-8, US-8-refinements) - Archived
-- ✅ **8 stories ready** for immediate implementation (US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8.1, US-8.2, US-9, US-10)
+- ✅ **9 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-8, US-8-refinements) - Archived
+- ✅ **7 stories ready** for immediate implementation (US-5, US-5.1, US-5.3, US-6, US-7, US-8.1, US-8.2, US-9, US-10)
 - 🔴 **5 stories need refinement** (US-11, US-12, US-13, US-14, US-15) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
@@ -23,6 +23,7 @@
 - UserStory-3.1 (Category Budget Plan Scoping) - ✅ **COMPLETED & ARCHIVED** - Budget-plan-scoped categories with migration
 - UserStory-3.2 (Category Template System) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-3.3 (Category UI Tests) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-4 (Account-Budget Matching) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
 
@@ -31,23 +32,6 @@
 ## Detailed User Story Status
 
 ### ✅ Ready for Implementation (No Refinement Needed)
-
-#### UserStory-4: Account-Budget Matching
-
-**File:** [docs/Userstories/UserStory-4-Account-Budget-Matching.md](docs/Userstories/UserStory-4-Account-Budget-Matching.md)
-
-**Status:** ✅ **Ready** - Comprehensive data model changes, validation infrastructure, and implementation tasks defined.
-
-**Key Features:**
-
-- Enforce `BudgetLineId` as required on `TransactionSplit`
-- Implement `IBudgetAccountLookupService` with caching
-- Batch validation optimization
-- Complete API changes and validation rules
-
-**Estimated Effort:** 3-4 days
-
----
 
 #### UserStory-5: Basic Assignment UI
 
@@ -1038,7 +1022,7 @@ public async Task RunWeeklyBackup(TimerInfo timer)
 
 ### Phase 2: Core Features (Weeks 3-5)
 
-4. ✅ **UserStory-4** (Account-Budget Matching) - Ready (3-4 days)
+4. ✅ **UserStory-4** (Account-Budget Matching) - **COMPLETED & ARCHIVED**
 5. ✅ **UserStory-5** (Basic Assignment UI) - Ready (2-3 days)
    - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - Ready (1-2 days)
 6. ✅ **UserStory-6** (Split & Bulk Assignment) - Ready after US-5 (3-4 days)
@@ -1167,8 +1151,8 @@ Use this structure for all new stories:
 5. ✅ ~~UserStory-3.2 (Category Template System)~~ - **COMPLETED & ARCHIVED**
 6. ✅ ~~UserStory-3.3 (Category UI Tests)~~ - **COMPLETED & ARCHIVED**
 7. ✅ ~~UserStory-8 (UX Enhancements & Refinements)~~ - **COMPLETED & ARCHIVED**
-8. **UserStory-4** (Account-Budget Matching) - **NEXT: Start implementation**
-9. **UserStory-5** (Basic Assignment UI) - **NEXT: Start implementation** (parallel with US-4)
+8. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED & ARCHIVED**
+9. **UserStory-5** (Basic Assignment UI) - **NEXT: Start implementation**
 10. **UserStory-5.1** (E2E Infrastructure) - Start implementation (parallel with US-5)
 11. **UserStory-6** (Split & Bulk Assignment) - After US-5
 12. **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6

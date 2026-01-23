@@ -27,12 +27,12 @@ public class TransactionAssignmentIntegrationTests
     {
         _factory = new TestDbContextFactory();
         _context = _factory.CreateContext();
-        
+
         var transactionLogger = new Mock<ILogger<TransactionRepository>>();
         _transactionRepository = new TransactionRepository(_context, transactionLogger.Object);
         _splitRepository = new TransactionSplitRepository(_context);
         _auditRepository = new TransactionAuditRepository(_context);
-        
+
         var assignmentLogger = new Mock<ILogger<TransactionAssignmentService>>();
         _assignmentService = new TransactionAssignmentService(
             _transactionRepository,
@@ -94,9 +94,19 @@ public class TransactionAssignmentIntegrationTests
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
         var request = new AssignTransactionRequest
         {
-            CategoryId = category.Id,
+            BudgetLineId = budgetLine.Id,
             Note = "Test assignment"
         };
 
@@ -109,7 +119,7 @@ public class TransactionAssignmentIntegrationTests
 
         var splits = await _splitRepository.GetByTransactionIdAsync(transaction.Id);
         Assert.That(splits.Count, Is.EqualTo(1));
-        Assert.That(splits[0].CategoryId, Is.EqualTo(category.Id));
+        Assert.That(splits[0].BudgetLineId, Is.EqualTo(budgetLine.Id));
         Assert.That(splits[0].Amount, Is.EqualTo(100.00m)); // Absolute value
         Assert.That(splits[0].Note, Is.EqualTo("Test assignment"));
     }
@@ -155,12 +165,29 @@ public class TransactionAssignmentIntegrationTests
         await _context.Categories.AddRangeAsync(category1, category2);
         await _context.SaveChangesAsync();
 
+        var budgetLine1 = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category1.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        var budgetLine2 = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category2.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddRangeAsync(budgetLine1, budgetLine2);
+        await _context.SaveChangesAsync();
+
         var request = new SplitTransactionRequest
         {
             Splits = new List<SplitAllocationDto>
             {
-                new SplitAllocationDto { CategoryId = category1.Id, Amount = 60.00m, Note = "Part 1" },
-                new SplitAllocationDto { CategoryId = category2.Id, Amount = 40.00m, Note = "Part 2" }
+                new SplitAllocationDto { BudgetLineId = budgetLine1.Id, Amount = 60.00m, Note = "Part 1" },
+                new SplitAllocationDto { BudgetLineId = budgetLine2.Id, Amount = 40.00m, Note = "Part 2" }
             }
         };
 
@@ -172,8 +199,8 @@ public class TransactionAssignmentIntegrationTests
 
         var splits = await _splitRepository.GetByTransactionIdAsync(transaction.Id);
         Assert.That(splits.Count, Is.EqualTo(2));
-        Assert.That(splits.Any(s => s.CategoryId == category1.Id && s.Amount == 60.00m), Is.True);
-        Assert.That(splits.Any(s => s.CategoryId == category2.Id && s.Amount == 40.00m), Is.True);
+        Assert.That(splits.Any(s => s.BudgetLineId == budgetLine1.Id && s.Amount == 60.00m), Is.True);
+        Assert.That(splits.Any(s => s.BudgetLineId == budgetLine2.Id && s.Amount == 40.00m), Is.True);
     }
 
     [Test]
@@ -216,19 +243,29 @@ public class TransactionAssignmentIntegrationTests
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
         var request = new SplitTransactionRequest
         {
             Splits = new List<SplitAllocationDto>
             {
-                new SplitAllocationDto { CategoryId = category.Id, Amount = 50.00m },
-                new SplitAllocationDto { CategoryId = category.Id, Amount = 40.00m } // Sum = 90, not 100
+                new SplitAllocationDto { BudgetLineId = budgetLine.Id, Amount = 50.00m },
+                new SplitAllocationDto { BudgetLineId = budgetLine.Id, Amount = 40.00m } // Sum = 90, not 100
             }
         };
 
         // Act & Assert
         var exception = Assert.ThrowsAsync<InvalidOperationException>(
             async () => await _assignmentService.SplitTransactionAsync(transaction.Id, request));
-        
+
         Assert.That(exception!.Message, Does.Contain("must equal transaction amount"));
     }
 
@@ -272,12 +309,22 @@ public class TransactionAssignmentIntegrationTests
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
         var request = new SplitTransactionRequest
         {
             Splits = new List<SplitAllocationDto>
             {
-                new SplitAllocationDto { CategoryId = category.Id, Amount = 50.00m },
-                new SplitAllocationDto { CategoryId = category.Id, Amount = 50.005m } // Sum = 100.005 (within 0.01 tolerance)
+                new SplitAllocationDto { BudgetLineId = budgetLine.Id, Amount = 50.00m },
+                new SplitAllocationDto { BudgetLineId = budgetLine.Id, Amount = 50.005m } // Sum = 100.005 (within 0.01 tolerance)
             }
         };
 
@@ -338,10 +385,20 @@ public class TransactionAssignmentIntegrationTests
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
         var request = new BulkAssignTransactionsRequest
         {
             TransactionIds = new List<Guid> { transaction1.Id, transaction2.Id },
-            CategoryId = category.Id,
+            BudgetLineId = budgetLine.Id,
             Note = "Bulk assignment"
         };
 
@@ -357,8 +414,8 @@ public class TransactionAssignmentIntegrationTests
         var splits2 = await _splitRepository.GetByTransactionIdAsync(transaction2.Id);
         Assert.That(splits1.Count, Is.EqualTo(1));
         Assert.That(splits2.Count, Is.EqualTo(1));
-        Assert.That(splits1[0].CategoryId, Is.EqualTo(category.Id));
-        Assert.That(splits2[0].CategoryId, Is.EqualTo(category.Id));
+        Assert.That(splits1[0].BudgetLineId, Is.EqualTo(budgetLine.Id));
+        Assert.That(splits2[0].BudgetLineId, Is.EqualTo(budgetLine.Id));
     }
 
     [Test]
@@ -401,9 +458,19 @@ public class TransactionAssignmentIntegrationTests
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
         var request = new AssignTransactionRequest
         {
-            CategoryId = category.Id,
+            BudgetLineId = budgetLine.Id,
             Note = "Test assignment"
         };
 
@@ -458,9 +525,19 @@ public class TransactionAssignmentIntegrationTests
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
 
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+        await _context.SaveChangesAsync();
+
         var assignRequest = new AssignTransactionRequest
         {
-            CategoryId = category.Id,
+            BudgetLineId = budgetLine.Id,
             Note = "Test assignment"
         };
         await _assignmentService.AssignTransactionAsync(transaction.Id, assignRequest);

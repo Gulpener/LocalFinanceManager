@@ -22,6 +22,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
 builder.Services.Configure<LocalFinanceManager.Configuration.MLOptions>(builder.Configuration.GetSection("MLOptions"));
 builder.Services.Configure<LocalFinanceManager.Configuration.AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
+builder.Services.Configure<LocalFinanceManager.Configuration.CacheOptions>(builder.Configuration.GetSection("Caching"));
+
+// Register memory cache with size limits
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = 1000; // Maximum 1000 cached entries
+    options.CompactionPercentage = 0.25; // Remove 25% when limit reached
+});
 
 // Register repositories
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -39,6 +47,10 @@ builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<BudgetPlanService>();
 builder.Services.AddScoped<ITransactionAssignmentService, TransactionAssignmentService>();
+
+// Register cache services
+builder.Services.AddSingleton<ICacheKeyTracker, CacheKeyTracker>();
+builder.Services.AddScoped<IBudgetAccountLookupService, BudgetAccountLookupService>();
 
 // Register ML services
 builder.Services.AddScoped<LocalFinanceManager.ML.IFeatureExtractor, LocalFinanceManager.ML.FeatureExtractor>();

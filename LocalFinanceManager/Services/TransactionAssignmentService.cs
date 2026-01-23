@@ -43,8 +43,8 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
     public async Task<TransactionDto> AssignTransactionAsync(Guid transactionId, AssignTransactionRequest request)
     {
-        _logger.LogInformation("Assigning transaction {TransactionId} to BudgetLineId={BudgetLineId}, CategoryId={CategoryId}",
-            transactionId, request.BudgetLineId, request.CategoryId);
+        _logger.LogInformation("Assigning transaction {TransactionId} to BudgetLineId={BudgetLineId}",
+            transactionId, request.BudgetLineId);
 
         var transaction = await _transactionRepository.GetByIdAsync(transactionId);
         if (transaction == null)
@@ -61,7 +61,6 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             Id = Guid.NewGuid(),
             TransactionId = transactionId,
             BudgetLineId = request.BudgetLineId,
-            CategoryId = request.CategoryId,
             Amount = Math.Abs(transaction.Amount), // Use absolute value for split amount
             Note = request.Note
         };
@@ -69,7 +68,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         await _splitRepository.AddAsync(split);
 
         // Record audit trail
-        await RecordAuditAsync(transactionId, "Assign", null, new { request.BudgetLineId, request.CategoryId, request.Note });
+        await RecordAuditAsync(transactionId, "Assign", null, new { request.BudgetLineId, request.Note });
 
         // Reload transaction with splits
         transaction = await _transactionRepository.GetByIdAsync(transactionId);
@@ -90,7 +89,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         // Validate split sum
         var totalSplitAmount = request.Splits.Sum(s => s.Amount);
         var transactionAbsAmount = Math.Abs(transaction.Amount);
-        
+
         if (Math.Abs(totalSplitAmount - transactionAbsAmount) > RoundingTolerance)
         {
             throw new InvalidOperationException(
@@ -106,7 +105,6 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             Id = Guid.NewGuid(),
             TransactionId = transactionId,
             BudgetLineId = s.BudgetLineId,
-            CategoryId = s.CategoryId,
             Amount = s.Amount,
             Note = s.Note
         }).ToList();
@@ -123,8 +121,8 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
     public async Task<BulkAssignResultDto> BulkAssignTransactionsAsync(BulkAssignTransactionsRequest request)
     {
-        _logger.LogInformation("Bulk assigning {Count} transactions to BudgetLineId={BudgetLineId}, CategoryId={CategoryId}",
-            request.TransactionIds.Count, request.BudgetLineId, request.CategoryId);
+        _logger.LogInformation("Bulk assigning {Count} transactions to BudgetLineId={BudgetLineId}",
+            request.TransactionIds.Count, request.BudgetLineId);
 
         var result = new BulkAssignResultDto
         {
@@ -141,7 +139,6 @@ public class TransactionAssignmentService : ITransactionAssignmentService
                 var assignRequest = new AssignTransactionRequest
                 {
                     BudgetLineId = request.BudgetLineId,
-                    CategoryId = request.CategoryId,
                     Note = request.Note
                 };
 

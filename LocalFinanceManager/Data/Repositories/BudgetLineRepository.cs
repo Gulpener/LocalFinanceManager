@@ -21,4 +21,22 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
             .OrderBy(bl => bl.Category.Name)
             .ToListAsync();
     }
+
+    public async Task<Guid?> GetAccountIdForBudgetLineAsync(Guid budgetLineId)
+    {
+        return await _dbSet
+            .Where(bl => !bl.IsArchived && bl.Id == budgetLineId)
+            .Select(bl => bl.BudgetPlan.AccountId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<Dictionary<Guid, Guid>> GetAccountMappingsAsync(IEnumerable<Guid> budgetLineIds)
+    {
+        var budgetLineIdList = budgetLineIds.ToList();
+
+        return await _dbSet
+            .Where(bl => !bl.IsArchived && budgetLineIdList.Contains(bl.Id))
+            .Select(bl => new { bl.Id, bl.BudgetPlan.AccountId })
+            .ToDictionaryAsync(x => x.Id, x => x.AccountId);
+    }
 }
