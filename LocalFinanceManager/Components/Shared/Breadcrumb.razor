@@ -1,0 +1,34 @@
+@namespace LocalFinanceManager.Components.Shared
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        @foreach (var item in Items)
+        {
+            @if (item == Items.Last())
+            {
+                <li class="breadcrumb-item active" aria-current="page">@item.Text</li>
+            }
+            else if (!string.IsNullOrEmpty(item.Href))
+            {
+                <li class="breadcrumb-item"><a href="@item.Href">@item.Text</a></li>
+            }
+            else
+            {
+                <li class="breadcrumb-item">@item.Text</li>
+            }
+        }
+    </ol>
+</nav>
+
+@code {
+    /// <summary>
+    /// List of breadcrumb items to display.
+    /// </summary>
+    [Parameter, EditorRequired]
+    public List<BreadcrumbItem> Items { get; set; } = new();
+
+    /// <summary>
+    /// Represents a single breadcrumb item.
+    /// </summary>
+    public record BreadcrumbItem(string Text, string? Href = null);
+}

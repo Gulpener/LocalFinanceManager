@@ -1,14 +1,25 @@
-@page "/categories/new"
+@page "/budgets/{budgetPlanId:guid}/categories/new"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
+@using LocalFinanceManager.Components.Shared
+@using static LocalFinanceManager.Components.Shared.Breadcrumb
 @inject CategoryService CategoryService
+@inject BudgetPlanService BudgetPlanService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Nieuwe Categorie</PageTitle>
 
-<h1>Nieuwe Categorie Aanmaken</h1>
+@if (budgetPlan == null)
+{
+    <p><em>Budget plan laden...</em></p>
+}
+else
+{
+    <Breadcrumb Items="@breadcrumbItems" />
+
+    <h1>Nieuwe Categorie Aanmaken</h1>
 
 <div class="row">
     <div class="col-md-6">
@@ -67,18 +78,54 @@
                         <span>Categorie Aanmaken</span>
                     }
                 </button>
-                <a href="/categories" class="btn btn-secondary">Annuleren</a>
+                <a href="/budgets/@BudgetPlanId/edit" class="btn btn-secondary">Annuleren</a>
             </div>
         </EditForm>
     </div>
 </div>
+}
 
 @code {
+    [Parameter]
+    public Guid BudgetPlanId { get; set; }
+
+    private BudgetPlanDto? budgetPlan;
+    private List<BreadcrumbItem> breadcrumbItems = new();
     private string categoryName = string.Empty;
     private CategoryType categoryType = CategoryType.Expense;
     private Dictionary<string, string[]> validationErrors = new();
     private string? errorMessage;
     private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBudgetPlan();
+    }
+
+    private async Task LoadBudgetPlan()
+    {
+        try
+        {
+            budgetPlan = await BudgetPlanService.GetByIdAsync(BudgetPlanId);
+            if (budgetPlan == null)
+            {
+                errorMessage = "Budget plan niet gevonden.";
+                return;
+            }
+
+            breadcrumbItems = new List<BreadcrumbItem>
+            {
+                new BreadcrumbItem("Budget Plans", "/budgets"),
+                new BreadcrumbItem(budgetPlan.Name, $"/budgets/{BudgetPlanId}/edit"),
+                new BreadcrumbItem("Categorieën", null),
+                new BreadcrumbItem("Nieuw", null)
+            };
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij laden van budget plan: {ex.Message}";
+        }
+    }
 
     private async Task HandleSubmit()
     {
@@ -88,9 +135,14 @@
 
         try
         {
-            var request = new CreateCategoryDto { Name = categoryName, Type = categoryType };
+            var request = new CreateCategoryDto 
+            { 
+                Name = categoryName, 
+                Type = categoryType,
+                BudgetPlanId = BudgetPlanId
+            };
             var response = await CategoryService.CreateAsync(request);
-            Navigation.NavigateTo("/categories");
+            Navigation.NavigateTo($"/budgets/{BudgetPlanId}/edit");
         }
         catch (HttpRequestException ex)
         {

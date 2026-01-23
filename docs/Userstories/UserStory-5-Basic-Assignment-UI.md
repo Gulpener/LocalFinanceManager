@@ -68,15 +68,17 @@ This story establishes foundational patterns that **MUST** be followed in US-5.1
 
 ### 2. Components - CategorySelector
 
-- [ ] Create `CategorySelector.razor` component in `Components/Shared/`
-- [ ] Add `@Parameter AccountId` (Guid) for filtering
-- [ ] Add `@Parameter OnCategorySelected` (EventCallback<Guid>)
-- [ ] Add `@Parameter AllowBudgetLineSelection` (bool, default false)
-- [ ] Implement category dropdown filtered by `Account.CurrentBudgetPlanId`
-- [ ] Add optional budget line dropdown (shown when category has budget lines)
-- [ ] Display category type indicator (Income/Expense badge)
-- [ ] Add loading spinner during category fetch
-- [ ] Style with consistent badge/dropdown patterns
+- [x] Create `CategorySelector.razor` component in `Components/Shared/` ✅ **Implemented**
+- [x] Add `@Parameter BudgetPlanId` (Guid) for filtering ✅ **Implemented**
+- [x] Add `@Parameter SelectedCategoryId` (Guid?) and `SelectedCategoryIdChanged` EventCallback ✅ **Implemented**
+- [ ] Add `@Parameter AllowBudgetLineSelection` (bool, default false) ⚠️ **Not yet implemented - budget line selection TBD**
+- [x] Implement category dropdown filtered by `BudgetPlanId` ✅ **Implemented via CategoryService.GetByBudgetPlanAsync()**
+- [ ] Add optional budget line dropdown (shown when category has budget lines) ⚠️ **Deferred to UserStory-4**
+- [x] Display category type indicator (Income/Expense badge) ✅ **Implemented in dropdown text**
+- [x] Add loading spinner during category fetch ✅ **Shows "Laden..." disabled state**
+- [x] Style with consistent badge/dropdown patterns ✅ **Uses Bootstrap form-select**
+
+**Note:** CategorySelector is now budget-plan-scoped (not account-scoped). Account.CurrentBudgetPlanId integration deferred to UserStory-4.
 
 ### 3. Components - TransactionAssignModal
 
@@ -199,13 +201,11 @@ This story establishes foundational patterns that **MUST** be followed in US-5.1
 ### Unit Test Scenarios
 
 1. **Validation Logic:**
-
    - Valid assignment request passes validation
    - Missing CategoryId fails validation
    - Invalid TransactionId fails validation
 
 2. **Service Logic:**
-
    - Assignment creates TransactionSplit with correct CategoryId/BudgetLineId
    - UserStory-4 validation rejects category from different budget plan
    - Concurrent updates handled with reload + retry
@@ -218,7 +218,6 @@ This story establishes foundational patterns that **MUST** be followed in US-5.1
 ### Integration Test Scenarios
 
 1. **API Endpoint:**
-
    - POST /api/transactions/{id}/assign with valid data succeeds (HTTP 200)
    - POST /api/transactions/{id}/assign with mismatched budget plan fails (HTTP 400)
    - GET /api/transactions/{id}/audit returns audit trail

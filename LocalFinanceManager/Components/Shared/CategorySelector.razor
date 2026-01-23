@@ -1,0 +1,129 @@
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@inject CategoryService CategoryService
+
+<div class="@CssClass">
+    @if (categories == null)
+    {
+        <select class="form-select" disabled>
+            <option>Laden...</option>
+        </select>
+    }
+    else
+    {
+        <select class="form-select" 
+                value="@SelectedCategoryId" 
+                @onchange="HandleCategorySelected"
+                required="@IsRequired">
+            @if (AllowEmpty)
+            {
+                <option value="">-- Selecteer een categorie --</option>
+            }
+            @foreach (var category in FilteredCategories)
+            {
+                <option value="@category.Id">@category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))</option>
+            }
+        </select>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="text-danger small mt-1">@errorMessage</div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Budget plan ID to filter categories by (required).
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Guid BudgetPlanId { get; set; }
+
+    /// <summary>
+    /// Currently selected category ID.
+    /// </summary>
+    [Parameter]
+    public Guid? SelectedCategoryId { get; set; }
+
+    /// <summary>
+    /// Event callback when category selection changes.
+    /// </summary>
+    [Parameter]
+    public EventCallback<Guid?> SelectedCategoryIdChanged { get; set; }
+
+    /// <summary>
+    /// Allow empty selection (shows "-- Select category --" option).
+    /// </summary>
+    [Parameter]
+    public bool AllowEmpty { get; set; } = true;
+
+    /// <summary>
+    /// Filter categories by type (Income or Expense). If null, show all types.
+    /// </summary>
+    [Parameter]
+    public CategoryType? FilterByType { get; set; }
+
+    /// <summary>
+    /// CSS class to apply to the container div.
+    /// </summary>
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Make the select required (HTML5 validation).
+    /// </summary>
+    [Parameter]
+    public bool IsRequired { get; set; } = false;
+
+    private List<CategoryDto>? categories;
+    private string? errorMessage;
+
+    private IEnumerable<CategoryDto> FilteredCategories
+    {
+        get
+        {
+            if (categories == null) return Enumerable.Empty<CategoryDto>();
+            if (FilterByType.HasValue)
+            {
+                return categories.Where(c => c.Type == FilterByType.Value);
+            }
+            return categories;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Reload categories if BudgetPlanId changes
+        if (categories != null)
+        {
+            await LoadCategories();
+        }
+    }
+
+    private async Task LoadCategories()
+    {
+        try
+        {
+            errorMessage = null;
+            categories = await CategoryService.GetByBudgetPlanAsync(BudgetPlanId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fout bij laden van categorieën: {ex.Message}";
+            categories = new List<CategoryDto>();
+        }
+    }
+
+    private async Task HandleCategorySelected(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        Guid? categoryId = string.IsNullOrEmpty(value) ? null : Guid.Parse(value);
+        SelectedCategoryId = categoryId;
+        await SelectedCategoryIdChanged.InvokeAsync(categoryId);
+    }
+}

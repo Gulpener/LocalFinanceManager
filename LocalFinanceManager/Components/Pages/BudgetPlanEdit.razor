@@ -1,6 +1,7 @@
 @page "/budgets/{Id:guid}/edit"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Components.Shared
 @using Microsoft.EntityFrameworkCore
 @inject BudgetPlanService BudgetPlanService
 @inject CategoryService CategoryService
@@ -40,6 +41,54 @@ else
         </div>
     </div>
 
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>Categories</h5>
+            <a href="/budgets/@Id/categories/new" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Category
+            </a>
+        </div>
+        <div class="card-body">
+            @if (categories == null)
+            {
+                <p><em>Loading categories...</em></p>
+            }
+            else if (!categories.Any())
+            {
+                <div class="alert alert-info">No categories yet. Click "Add Category" to create one.</div>
+            }
+            else
+            {
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var category in categories)
+                        {
+                            <tr>
+                                <td>@category.Name</td>
+                                <td>@(category.Type == LocalFinanceManager.Models.CategoryType.Income ? "Inkomsten" : "Uitgaven")</td>
+                                <td>
+                                    <a href="/budgets/@Id/categories/@category.Id/edit" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ArchiveCategory(category.Id)">
+                                        <i class="bi bi-archive"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5>Budget Lines</h5>
@@ -56,16 +105,11 @@ else
                         <EditForm Model="@newLineModel" OnValidSubmit="HandleAddLine">
                             <div class="mb-3">
                                 <label class="form-label">Category</label>
-                                <InputSelect class="form-select" @bind-Value="newLineModel.CategoryId">
-                                    <option value="">-- Select a category --</option>
-                                    @if (categories != null)
-                                    {
-                                        @foreach (var category in categories)
-                                        {
-                                            <option value="@category.Id">@category.Name</option>
-                                        }
-                                    }
-                                </InputSelect>
+                                <CategorySelector BudgetPlanId="@Id" 
+                                                SelectedCategoryId="newLineModel.CategoryId"
+                                                SelectedCategoryIdChanged="EventCallback.Factory.Create<Guid?>(this, value => newLineModel.CategoryId = value ?? Guid.Empty)"
+                                                IsRequired="true"
+                                                AllowEmpty="true" />
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Monthly Amounts (or enter uniform value)</label>
@@ -127,15 +171,11 @@ else
                                 {
                                     <tr class="table-warning">
                                         <td>
-                                            <InputSelect class="form-select form-select-sm" @bind-Value="_editCategoryId">
-                                                @if (categories != null)
-                                                {
-                                                    @foreach (var category in categories)
-                                                    {
-                                                        <option value="@category.Id">@category.Name</option>
-                                                    }
-                                                }
-                                            </InputSelect>
+                                            <CategorySelector BudgetPlanId="@Id" 
+                                                            SelectedCategoryId="_editCategoryId"
+                                                            SelectedCategoryIdChanged="EventCallback.Factory.Create<Guid?>(this, value => _editCategoryId = value ?? Guid.Empty)"
+                                                            AllowEmpty="false"
+                                                            CssClass="" />
                                         </td>
                                         @for (int i = 0; i < 12; i++)
                                         {
@@ -308,7 +348,11 @@ else
 
     private async Task LoadCategories()
     {
-        categories = await CategoryService.GetAllActiveAsync();
+        // Load categories for the current budget plan (using page parameter Id)
+        if (budgetPlan != null)
+        {
+            categories = await CategoryService.GetByBudgetPlanAsync(Id);
+        }
     }
 
     private async Task HandleUpdatePlan()
@@ -367,6 +411,19 @@ else
     {
         await BudgetPlanService.ArchiveLineAsync(lineId);
         await LoadBudgetPlan();
+    }
+
+    private async Task ArchiveCategory(Guid categoryId)
+    {
+        try
+        {
+            await CategoryService.ArchiveAsync(categoryId);
+            await LoadCategories();
+        }
+        catch (Exception ex)
+        {
+            planErrorMessage = $"Fout bij archiveren van categorie: {ex.Message}";
+        }
     }
 
     private void GoBack()
