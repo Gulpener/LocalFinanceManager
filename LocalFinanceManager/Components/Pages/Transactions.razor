@@ -107,8 +107,8 @@ else
                         @if (transaction.IsAssigned)
                         {
                             <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenAuditTrail(transaction.Id)"
-                                title="Bekijk toewijzingsgeschiedenis">
-                                <i class="bi bi-clock-history"></i>
+                                title="Bekijk toewijzingsgeschiedenis" aria-label="Bekijk toewijzingsgeschiedenis">
+                                <i class="bi bi-clock-history" aria-hidden="true"></i>
                             </button>
                         }
                     </td>
