@@ -148,17 +148,30 @@ static async Task UpdateAccountBudgetPlanReferencesAsync(AppDbContext context)
         .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
         .ToListAsync();
 
-    foreach (var account in accountsWithoutBudgetPlan)
-    {
-        // Find the most recent budget plan for this account
-        var latestBudgetPlan = await context.BudgetPlans
-            .Where(bp => bp.AccountId == account.Id && !bp.IsArchived)
-            .OrderByDescending(bp => bp.Year)
-            .FirstOrDefaultAsync();
+    // Collect account IDs to batch-load budget plans and avoid N+1 queries
+    var accountIds = accountsWithoutBudgetPlan
+        .Select(a => a.Id)
+        .ToList();
 
-        if (latestBudgetPlan != null)
+    if (accountIds.Any())
+    {
+        // Load the most recent non-archived budget plan per account in a single query
+        var latestBudgetPlans = await context.BudgetPlans
+            .Where(bp => !bp.IsArchived && accountIds.Contains(bp.AccountId))
+            .GroupBy(bp => bp.AccountId)
+            .Select(g => g.OrderByDescending(bp => bp.Year).FirstOrDefault())
+            .ToListAsync();
+
+        var latestByAccountId = latestBudgetPlans
+            .Where(bp => bp != null)
+            .ToDictionary(bp => bp!.AccountId, bp => bp!);
+
+        foreach (var account in accountsWithoutBudgetPlan)
         {
-            account.CurrentBudgetPlanId = latestBudgetPlan.Id;
+            if (latestByAccountId.TryGetValue(account.Id, out var latestBudgetPlan))
+            {
+                account.CurrentBudgetPlanId = latestBudgetPlan.Id;
+            }
         }
     }
 
