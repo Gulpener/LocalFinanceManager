@@ -18,91 +18,24 @@ namespace LocalFinanceManager.E2E;
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private const string TestDatabasePath = "localfinancemanager.test.db";
+    private const string TestDatabasePath = "localfinancemanager.e2etest.db";
     private const string TestServerUrl = "http://localhost:5173";
-    private IHost? _realHost;
+    private IHost? _host;
 
     public string ServerAddress => TestServerUrl;
 
-    /// <summary>
-    /// Starts a REAL Kestrel server for Playwright. WebApplicationFactory's TestServer won't work with Playwright.
-    /// </summary>
-    public async Task StartServerAsync()
+    protected override IHost CreateHost(IHostBuilder builder)
     {
-        TestContext.Out.WriteLine("Starting real Kestrel server for Playwright...");
+        // Create a real host that runs Kestrel (not TestServer) for Playwright
+        var dummyHost = builder.Build();
 
-        // Build a real WebApplication with Kestrel (not TestServer)
-        var builder = WebApplication.CreateBuilder();
+        // Build the real host with Kestrel
+        builder.ConfigureWebHost(webHostBuilder => webHostBuilder.UseKestrel());
 
-        // Configure connection string for test database
-        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["ConnectionStrings:Default"] = $"Data Source={TestDatabasePath}",
-            ["Automation:Enabled"] = "false"
-        });
+        _host = builder.Build();
+        _host.Start();
 
-        // Configure Kestrel to listen on our test port
-        builder.WebHost.UseUrls(TestServerUrl);
-
-        // Reduce logging noise in tests
-        builder.Logging.ClearProviders();
-        builder.Logging.AddConsole();
-        builder.Logging.SetMinimumLevel(LogLevel.Warning);
-
-        // Register all services - we need to duplicate Program.cs setup
-        ConfigureServices(builder.Services, builder.Configuration);
-
-        var app = builder.Build();
-
-        // Apply migrations
-        using (var scope = app.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await dbContext.Database.MigrateAsync();
-        }
-
-        // Configure middleware pipeline (simplified for testing)
-        app.UseStaticFiles(); // Simplified static file serving for tests
-        app.UseRouting();
-        app.UseAntiforgery();
-        app.MapRazorComponents<LocalFinanceManager.Components.App>()
-            .AddInteractiveServerRenderMode();
-        app.MapControllers();
-
-        // Start the server
-        _ = app.RunAsync(); // Fire and forget - keep running in background
-        _realHost = app; // Store for cleanup
-
-        TestContext.Out.WriteLine("Real Kestrel server started and listening");
-        // Give it a moment to fully bind
-        await Task.Delay(2000);
-    }
-
-    private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        // Copy service registration from Program.cs
-        var connectionString = configuration.GetConnectionString("Default") ?? "Data Source=localfinancemanager.db";
-        services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
-
-        services.Configure<LocalFinanceManager.Configuration.MLOptions>(configuration.GetSection("MLOptions"));
-        services.Configure<LocalFinanceManager.Configuration.AutomationOptions>(configuration.GetSection("AutomationOptions"));
-        services.Configure<LocalFinanceManager.Configuration.CacheOptions>(configuration.GetSection("Caching"));
-
-        services.AddMemoryCache(options =>
-        {
-            options.SizeLimit = 1000;
-            options.CompactionPercentage = 0.25;
-        });
-
-        // Register repositories (simplified - add more as needed for tests)
-        services.AddScoped(typeof(Data.Repositories.IRepository<>), typeof(Data.Repositories.Repository<>));
-        services.AddScoped<Data.Repositories.IAccountRepository, Data.Repositories.AccountRepository>();
-
-        // Add Blazor services
-        services.AddRazorComponents()
-            .AddInteractiveServerComponents();
-
-        services.AddControllers();
+        return dummyHost;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -138,15 +71,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             {
                 options.UseSqlite($"Data Source={TestDatabasePath}");
             });
-
-            // Build service provider and ensure database is created
-            var serviceProvider = services.BuildServiceProvider();
-            using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            // Recreate database for clean state
-            context.Database.EnsureDeleted();
-            context.Database.Migrate(); // Apply migrations instead of EnsureCreated
         });
 
         // Configure logging to output to test console
@@ -156,6 +80,35 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             logging.AddConsole();
             logging.SetMinimumLevel(LogLevel.Warning); // Reduce noise in test output
         });
+    }
+
+    /// <summary>
+    /// Ensures database is ready for testing by deleting and recreating it.
+    /// Must be called before the server starts to avoid file locks.
+    /// </summary>
+    public static async Task EnsureDatabaseReadyAsync()
+    {
+        // Delete database file if it exists (do this before server starts)
+        if (File.Exists(TestDatabasePath))
+        {
+            try
+            {
+                File.Delete(TestDatabasePath);
+            }
+            catch (IOException)
+            {
+                // File is locked, wait a moment and retry
+                await Task.Delay(100);
+                try
+                {
+                    File.Delete(TestDatabasePath);
+                }
+                catch
+                {
+                    // If still locked, just ignore - migrations will handle it
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -171,8 +124,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        await context.Database.EnsureDeletedAsync();
-        await context.Database.MigrateAsync(); // Apply migrations instead of EnsureCreated
+        // Don't delete the database file (it might be locked), just ensure migrations are applied
+        await context.Database.MigrateAsync();
     }
 
     /// <summary>
@@ -189,8 +142,24 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         if (disposing)
         {
-            _realHost?.StopAsync().GetAwaiter().GetResult();
-            _realHost?.Dispose();
+            // Stop and dispose the host first
+            if (_host != null)
+            {
+                try
+                {
+                    _host.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                }
+                catch
+                {
+                    // Ignore shutdown errors
+                }
+
+                _host.Dispose();
+                _host = null;
+            }
+
+            // Wait a moment for file handles to be released
+            Thread.Sleep(100);
 
             // Clean up test database file
             if (File.Exists(TestDatabasePath))
@@ -201,7 +170,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 }
                 catch
                 {
-                    // Ignore cleanup errors - database might be in use
+                    // Ignore cleanup errors - database might still be in use
                 }
             }
         }

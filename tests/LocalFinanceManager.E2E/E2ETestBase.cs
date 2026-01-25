@@ -23,14 +23,22 @@ public abstract class E2ETestBase : PageTest
     {
         _currentTestName = TestContext.CurrentContext.Test.Name;
 
-        // Create factory
+        // Ensure database file is deleted before creating factory
+        await TestWebApplicationFactory.EnsureDatabaseReadyAsync();
+
+        // Create factory - accessing .Server will automatically start the Kestrel server
         Factory = new TestWebApplicationFactory();
 
-        // Start the Kestrel server
-        await Factory.StartServerAsync();
+        // Reset database to clean state after server is created but before tests run
+        await Factory.ResetDatabaseAsync();
 
-        // Server should be ready now (StartServerAsync waits for full initialization)
-        TestContext.Out.WriteLine($"Connecting to server at: {BaseUrl}");
+        // Trigger server startup by accessing the Server property
+        _ = Factory.Server;
+
+        // Wait for server to be ready
+        await WaitForServerReadyAsync();
+
+        TestContext.Out.WriteLine($"Server ready at: {BaseUrl}");
     }
 
     /// <summary>

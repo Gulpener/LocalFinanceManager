@@ -14,15 +14,15 @@ namespace LocalFinanceManager.E2E.Infrastructure;
 public class SmokeTests : E2ETestBase
 {
     [Test]
-    public async Task Application_Starts_Successfully()
+    public async Task Application_And_Browser_Infrastructure_Works()
     {
-        // Arrange & Act
+        // Arrange
         using var scope = Factory!.CreateDbScope();
         _ = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         TestContext.Out.WriteLine($"Navigating to: {BaseUrl}");
 
-        // Navigate to home page with extended timeout for Blazor Server initialization
+        // Act - Navigate to home page with extended timeout for Blazor Server initialization
         var response = await Page.GotoAsync(BaseUrl, new PageGotoOptions
         {
             WaitUntil = WaitUntilState.NetworkIdle,
@@ -32,8 +32,13 @@ public class SmokeTests : E2ETestBase
         TestContext.Out.WriteLine($"Navigation response status: {response?.Status}");
         TestContext.Out.WriteLine($"Final URL: {Page.Url}");
 
-        // Assert - Verify page loaded
-        Assert.That(Page.Url, Does.Contain(BaseUrl));
+        var title = await Page.TitleAsync();
+        TestContext.Out.WriteLine($"Page title: {title}");
+
+        // Assert - Verify application starts, page loads, and browser renders content
+        Assert.That(response?.Status, Is.EqualTo(200), "Application should return 200 OK");
+        Assert.That(Page.Url, Does.Contain(BaseUrl), "Page URL should match base URL");
+        Assert.That(title, Is.Not.Null.And.Not.Empty, "Page title should be rendered");
     }
 
     [Test]
@@ -48,34 +53,6 @@ public class SmokeTests : E2ETestBase
 
         // Assert - No exception thrown, connection successful
         Assert.That(accountCount, Is.GreaterThanOrEqualTo(0));
-    }
-
-    [Test]
-    public async Task Playwright_Browser_Launches_Successfully()
-    {
-        TestContext.Out.WriteLine("Test started");
-        TestContext.Out.WriteLine($"Page is null: {Page == null}");
-        TestContext.Out.WriteLine($"BaseUrl: {BaseUrl}");
-
-        // Arrange & Act - Navigate to home page with extended timeout for Blazor Server initialization
-        TestContext.Out.WriteLine("About to navigate");
-        var response = await Page.GotoAsync(BaseUrl, new PageGotoOptions
-        {
-            WaitUntil = WaitUntilState.NetworkIdle,
-            Timeout = 30000 // 30 seconds for Blazor Server SignalR connection
-        });
-
-        TestContext.Out.WriteLine("Navigation completed");
-
-        // Log response status
-        TestContext.Out.WriteLine($"Navigation response status: {response?.Status}");
-        TestContext.Out.WriteLine($"Final URL: {Page.Url}");
-
-        // Assert - Verify page title loads
-        var title = await Page.TitleAsync();
-        TestContext.Out.WriteLine($"Page title: {title}");
-        Assert.That(title, Is.Not.Null);
-        Assert.That(title, Is.Not.Empty);
     }
 
     [Test]
