@@ -54,12 +54,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         var app = builder.Build();
 
-        // Apply migrations
-        using (var scope = app.Services.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await dbContext.Database.MigrateAsync();
-        }
+        // NOTE: Database migrations are handled in a single initialization path
+        // (e.g., Program.cs / ConfigureWebHost) to avoid duplicate migration runs.
 
         // Configure middleware pipeline (simplified for testing)
         app.UseStaticFiles(); // Simplified static file serving for tests
