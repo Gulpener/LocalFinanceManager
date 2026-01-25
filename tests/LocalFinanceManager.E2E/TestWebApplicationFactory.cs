@@ -126,6 +126,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public async Task EnsureDatabaseReadyAsync()
     {
+        // Clear all SQLite connection pools first to release file handles
+        SqliteConnection.ClearAllPools();
+        
+        // Give OS time to release handles
+        await Task.Delay(100);
+        
         // Delete database file and related SQLite files if they exist (do this before server starts)
         var filesToDelete = new[]
         {
@@ -136,7 +142,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         foreach (var file in filesToDelete)
         {
-            if (File.Exists(file))
+            if (!File.Exists(file)) continue;
+            
+            // Try up to 3 times to delete the file
+            for (int attempt = 0; attempt < 3; attempt++)
             {
                 try
                 {
@@ -148,29 +157,26 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     }
 
                     File.Delete(file);
+                    break; // Success, exit retry loop
                 }
-                catch (IOException)
+                catch (IOException) when (attempt < 2)
                 {
-                    // File is locked, wait a moment and retry
-                    await Task.Delay(100);
-                    try
-                    {
-                        // Try to remove read-only attribute again
-                        var attributes = File.GetAttributes(file);
-                        if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                        {
-                            File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
-                        }
-
-                        File.Delete(file);
-                    }
-                    catch
-                    {
-                        // If still locked, just ignore - migrations will handle it
-                    }
+                    // File is locked, clear pools and wait before retry
+                    SqliteConnection.ClearAllPools();
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    await Task.Delay(200 * (attempt + 1)); // 200ms, then 400ms
+                }
+                catch
+                {
+                    // Different error or final attempt failed - just break
+                    break;
                 }
             }
         }
+        
+        // Final cleanup
+        SqliteConnection.ClearAllPools();
     }
 
     /// <summary>
@@ -186,8 +192,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Ensure database is created and all migrations are applied
-        await context.Database.EnsureCreatedAsync();
+        // Apply all migrations - this will create the database if it doesn't exist
+        // Do NOT use EnsureCreatedAsync() as it bypasses migrations and causes conflicts
         await context.Database.MigrateAsync();
     }
 
