@@ -126,38 +126,48 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public async Task EnsureDatabaseReadyAsync()
     {
-        // Delete database file if it exists (do this before server starts)
-        if (File.Exists(_testDatabasePath))
+        // Delete database file and related SQLite files if they exist (do this before server starts)
+        var filesToDelete = new[]
         {
-            try
-            {
-                // Remove read-only attribute if set
-                var attributes = File.GetAttributes(_testDatabasePath);
-                if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                {
-                    File.SetAttributes(_testDatabasePath, attributes & ~FileAttributes.ReadOnly);
-                }
+            _testDatabasePath,
+            _testDatabasePath + "-shm", // Shared memory file
+            _testDatabasePath + "-wal"  // Write-Ahead Log file
+        };
 
-                File.Delete(_testDatabasePath);
-            }
-            catch (IOException)
+        foreach (var file in filesToDelete)
+        {
+            if (File.Exists(file))
             {
-                // File is locked, wait a moment and retry
-                await Task.Delay(100);
                 try
                 {
-                    // Try to remove read-only attribute again
-                    var attributes = File.GetAttributes(_testDatabasePath);
+                    // Remove read-only attribute if set
+                    var attributes = File.GetAttributes(file);
                     if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
                     {
-                        File.SetAttributes(_testDatabasePath, attributes & ~FileAttributes.ReadOnly);
+                        File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
                     }
 
-                    File.Delete(_testDatabasePath);
+                    File.Delete(file);
                 }
-                catch
+                catch (IOException)
                 {
-                    // If still locked, just ignore - migrations will handle it
+                    // File is locked, wait a moment and retry
+                    await Task.Delay(100);
+                    try
+                    {
+                        // Try to remove read-only attribute again
+                        var attributes = File.GetAttributes(file);
+                        if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                        {
+                            File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
+                        }
+
+                        File.Delete(file);
+                    }
+                    catch
+                    {
+                        // If still locked, just ignore - migrations will handle it
+                    }
                 }
             }
         }
@@ -176,7 +186,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Don't delete the database file (it might be locked), just ensure migrations are applied
+        // Ensure database is created and all migrations are applied
+        await context.Database.EnsureCreatedAsync();
         await context.Database.MigrateAsync();
     }
 
