@@ -189,6 +189,34 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </remarks>
     public async Task ResetDatabaseAsync()
     {
+        // Force close all connections and clear pools before migration attempt
+        SqliteConnection.ClearAllPools();
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        await Task.Delay(100);
+        
+        // If database file exists and appears corrupted, delete it
+        if (File.Exists(_testDatabasePath))
+        {
+            var fileInfo = new FileInfo(_testDatabasePath);
+            // If file is too small (< 1KB), it's likely corrupted
+            if (fileInfo.Length < 1024)
+            {
+                try
+                {
+                    File.Delete(_testDatabasePath);
+                    // Also delete related files
+                    if (File.Exists(_testDatabasePath + "-shm")) File.Delete(_testDatabasePath + "-shm");
+                    if (File.Exists(_testDatabasePath + "-wal")) File.Delete(_testDatabasePath + "-wal");
+                    SqliteConnection.ClearAllPools();
+                }
+                catch
+                {
+                    // Ignore deletion errors
+                }
+            }
+        }
+        
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
