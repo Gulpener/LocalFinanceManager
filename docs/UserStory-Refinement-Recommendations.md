@@ -9,11 +9,14 @@
 
 **Status Overview:**
 
-- ✅ **9 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-8, US-8-refinements) - Archived
-- ✅ **7 stories ready** for immediate implementation (US-5, US-5.1, US-5.3, US-6, US-7, US-8.1, US-8.2, US-9, US-10)
+- ✅ **11 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-8, US-8-refinements) - Archived
+- ✅ **7 stories ready** for immediate implementation (US-5.3, US-6, US-7, US-8.1, US-8.2, US-9, US-9.1, US-10)
+- 🔶 **1 story deferred** (US-9.2) - Pending UserStory-7 completion
 - 🔴 **5 stories need refinement** (US-11, US-12, US-13, US-14, US-15) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
+
+**E2E Testing Technical Debt Resolution:** US-9 series (Phase 1, Phase 2, Phase 3) addresses accumulated E2E testing technical debt from archived user stories and deferred MVP-3 import tests. Originally scoped as 2 integration tests (0.5-1 day), expanded to 64 tests across three stories (12-13 days total) for comprehensive coverage.
 
 **Completed & Archived Stories:**
 
@@ -24,6 +27,8 @@
 - UserStory-3.2 (Category Template System) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-3.3 (Category UI Tests) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-4 (Account-Budget Matching) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-5 (Basic Assignment UI) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-5.1 (E2E Infrastructure) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
 
@@ -32,40 +37,6 @@
 ## Detailed User Story Status
 
 ### ✅ Ready for Implementation (No Refinement Needed)
-
-#### UserStory-5: Basic Assignment UI
-
-**File:** [docs/Userstories/UserStory-5-Basic-Assignment-UI.md](docs/Userstories/UserStory-5-Basic-Assignment-UI.md)
-
-**Status:** ✅ **Ready** - **Gold standard template** for all user stories. Comprehensive component patterns, service interfaces, and test scenarios.
-
-**Key Features:**
-
-- Reusable `CategorySelector.razor` component
-- Transaction assignment modal
-- Uncategorized transaction warnings
-- Assignment audit trail
-
-**Estimated Effort:** 2-3 days
-
----
-
-#### UserStory-5.1: E2E Infrastructure
-
-**File:** [docs/Userstories/UserStory-5.1-E2E-Infrastructure.md](docs/Userstories/UserStory-5.1-E2E-Infrastructure.md)
-
-**Status:** ✅ **Ready** - E2E test infrastructure with NUnit + Playwright.
-
-**Key Features:**
-
-- `WebApplicationFactory` setup with test database
-- Playwright page object pattern
-- Authentication fixture
-- Browser context management
-
-**Estimated Effort:** 1-2 days
-
----
 
 #### UserStory-5.3: UX Enhancements
 
@@ -131,13 +102,56 @@
 
 ---
 
-#### UserStory-9: Integration Workflow Tests
+#### UserStory-9.x Series (E2E Testing - Technical Debt Resolution)
+
+**Context:** Originally scoped as 2 integration tests (0.5-1 day), expanded to 64 tests across three stories (12-13 days total estimated) to address accumulated E2E testing technical debt from archived user stories and deferred MVP-3 import tests.
+
+**UserStory-9: E2E Tests - Phase 1 Foundation**
 
 **File:** [docs/Userstories/UserStory-9-Integration-Workflow-Tests.md](docs/Userstories/UserStory-9-Integration-Workflow-Tests.md)
 
-**Status:** ✅ **Ready** - End-to-end integration testing for complete workflows.
+**Status:** ✅ **Ready** - Phase 1 Foundation tests (20 tests, 4 days)
 
-**Estimated Effort:** 2-3 days
+**Key Features:**
+
+- Transaction import tests (8): CSV/JSON upload, preview, column mapping, deduplication modes
+- Basic assignment tests (11): Modal interaction, category selection, validation, audit trail, filters, pagination
+- Multi-account validation test (1): UserStory-4 budget plan isolation enforcement
+- PageObjectModel enhancements: TransactionListPage with bulk operation methods
+- ImportModalPageModel creation for CSV/JSON workflows
+- E2E_TEST_GUIDE.md foundation
+
+**Technical Debt Addressed:**
+
+- US-5 archived: 11 basic assignment tests never implemented
+- MVP-3 deferred: 8 transaction import tests
+
+**Estimated Effort:** 4 days
+
+---
+
+**UserStory-9.1: E2E Tests - Phase 2 Advanced**
+
+**File:** [docs/Userstories/UserStory-9.1-Advanced-Assignment-Tests.md](docs/Userstories/UserStory-9.1-Advanced-Assignment-Tests.md)
+
+**Status:** ✅ **Ready** - Phase 2 Advanced tests (19 tests, 4 days). **Requires US-9 completion.**
+
+**Key Features:**
+
+- Split assignment tests (9): Split editor, sum validation (±0.01 tolerance), row management, audit trail
+- Bulk assignment tests (9): Checkbox selection, progress tracking, partial failures, pagination persistence
+- Integration workflow test (1): Cross-feature validation (import → basic → bulk → split)
+- CI parallel execution configuration (3 groups)
+
+**Technical Debt Addressed:**
+
+- US-6 active: 18 split/bulk tests not yet implemented
+
+**Combined Coverage:** US-9 + US-9.1 = 39 tests achieving 80% critical path coverage
+
+**Estimated Effort:** 4 days
+
+**Dependencies:** UserStory-9 REQUIRED (blocking)
 
 ---
 
@@ -158,7 +172,45 @@
 
 ---
 
-### 🔴 Needs Major Refinement
+### � Stories Deferred (Pending Dependencies)
+
+#### UserStory-9.2: E2E Tests - Phase 3 ML
+
+**File:** [docs/Userstories/UserStory-9.2-ML-Tests.md](docs/Userstories/UserStory-9.2-ML-Tests.md)
+
+**Status:** 🔴 **Deferred** - Pending UserStory-7 (ML Suggestion & Auto-Apply) completion
+
+**Planned Scope:**
+
+- ML suggestions tests (~8): Badge display, confidence scoring, accept/reject, feedback, filtering
+- Auto-apply configuration tests (~8): Settings UI, threshold validation, account/category selection
+- Monitoring dashboard tests (~9): Stats display, undo actions, alert banners, auto-refresh
+
+**Total:** ~25 tests estimated (to be validated against actual US-7 implementation)
+
+**Combined Coverage:** US-9 (20) + US-9.1 (19) + US-9.2 (25) = 64 tests achieving >90% feature coverage
+
+**Why Deferred:**
+
+- UserStory-7 ML features not yet implemented
+- Test count estimate requires validation against actual US-7 scope
+- ML-specific PageObjectModels (MLSuggestionBadgePage, MonitoringDashboardPage) cannot be created until UI finalized
+- ML test data seeding strategy (labeled examples, fixture models) depends on US-7 architecture
+
+**Refinement Required:**
+
+- Validate 25-test estimate after US-7 implementation
+- Add detailed test task checklists (similar to US-9/US-9.1 specificity)
+- Define ML-specific PageObjectModel requirements
+- Document confidence threshold edge cases and undo rate alert testing approach
+
+**Estimated Effort:** TBD (~4-5 days estimated, to be refined after US-7)
+
+**Dependencies:** UserStory-7 REQUIRED (blocking), UserStory-9 (foundation), UserStory-9.1 (patterns)
+
+---
+
+### �🔴 Needs Major Refinement
 
 #### UserStory-11: Supabase PostgreSQL Migration
 
@@ -1152,9 +1204,9 @@ Use this structure for all new stories:
 6. ✅ ~~UserStory-3.3 (Category UI Tests)~~ - **COMPLETED & ARCHIVED**
 7. ✅ ~~UserStory-8 (UX Enhancements & Refinements)~~ - **COMPLETED & ARCHIVED**
 8. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED & ARCHIVED**
-9. **UserStory-5** (Basic Assignment UI) - **NEXT: Start implementation**
-10. **UserStory-5.1** (E2E Infrastructure) - Start implementation (parallel with US-5)
-11. **UserStory-6** (Split & Bulk Assignment) - After US-5
+9. ✅ ~~UserStory-5 (Basic Assignment UI)~~ - **COMPLETED & ARCHIVED**
+10. ✅ ~~UserStory-5.1 (E2E Infrastructure)~~ - **COMPLETED & ARCHIVED**
+11. **UserStory-6** (Split & Bulk Assignment) - **NEXT: Start implementation**
 12. **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6
 13. **UserStory-8.1** (Keyboard Shortcuts) - After US-7
 14. **UserStory-8.2** (Quick Filters & Performance) - After US-8.1

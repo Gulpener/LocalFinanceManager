@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configuration for test execution -->
+  
+  <!-- Test Adapter Configuration -->
+  <RunConfiguration>
+    <!-- Maximum number of parallel test workers (4 for optimal performance) -->
+    <MaxCpuCount>4</MaxCpuCount>
+    
+    <!-- Test timeout in milliseconds (60 seconds per test) -->
+    <TestSessionTimeout>60000</TestSessionTimeout>
+    
+    <!-- Results directory for test outputs, screenshots, and videos -->
+    <ResultsDirectory>test-results</ResultsDirectory>
+    
+    <!-- Target platform (AnyCPU, x86, x64) -->
+    <TargetPlatform>x64</TargetPlatform>
+    
+    <!-- Target framework version -->
+    <TargetFrameworkVersion>.NETCoreApp,Version=v10.0</TargetFrameworkVersion>
+  </RunConfiguration>
+
+  <!-- NUnit Adapter Configuration -->
+  <NUnit>
+    <!-- Number of workers for parallel test execution -->
+    <NumberOfTestWorkers>4</NumberOfTestWorkers>
+    
+    <!-- Enable parallel execution at method level -->
+    <DefaultTestNamePattern>{m}{a}</DefaultTestNamePattern>
+    
+    <!-- Capture standard output and error -->
+    <CaptureStandardOutput>true</CaptureStandardOutput>
+  </NUnit>
+
+  <!-- Test Run Parameters (accessible via TestContext.Parameters) -->
+  <TestRunParameters>
+    <!-- Base URL for the application under test -->
+    <Parameter name="BaseUrl" value="http://localhost:5000" />
+    
+    <!-- Run Playwright in headless mode (true) or headed mode (false) -->
+    <Parameter name="Headless" value="false" />
+    
+    <!-- Slow motion delay in milliseconds (0 = no delay, useful for debugging) -->
+    <Parameter name="SlowMo" value="0" />
+    
+    <!-- Enable video recording (true in CI, false locally for performance) -->
+    <Parameter name="RecordVideo" value="false" />
+    
+    <!-- Screenshot on failure (always enabled) -->
+    <Parameter name="ScreenshotOnFailure" value="true" />
+  </TestRunParameters>
+
+  <!-- Data Collection (Code Coverage, etc.) -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <!-- Code coverage collector (optional - enable if needed) -->
+      <!-- <DataCollector friendlyName="Code Coverage" /> -->
+    </DataCollectors>
+  </DataCollectionRunSettings>
+
+  <!-- Logging Configuration -->
+  <LoggerRunSettings>
+    <Loggers>
+      <!-- Console logger for test output -->
+      <Logger friendlyName="console" enabled="True">
+        <Configuration>
+          <Verbosity>normal</Verbosity>
+        </Configuration>
+      </Logger>
+      
+      <!-- TRX logger for Azure DevOps / CI integration -->
+      <Logger friendlyName="trx" enabled="True">
+        <Configuration>
+          <LogFileName>test-results.trx</LogFileName>
+        </Configuration>
+      </Logger>
+    </Loggers>
+  </LoggerRunSettings>
+</RunSettings>
