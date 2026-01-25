@@ -120,13 +120,13 @@ public class BulkAssignModalPageModel : PageObjectBase
     public async Task<List<string>> GetErrorMessagesAsync()
     {
         var errorElements = await Page.QuerySelectorAllAsync("[data-testid='error-message']");
-        
+
         var tasks = errorElements.Select(async element =>
         {
             var text = await element.TextContentAsync();
             return text?.Trim();
         });
-        
+
         var results = await Task.WhenAll(tasks);
         return results.Where(text => !string.IsNullOrWhiteSpace(text)).ToList()!;
     }
