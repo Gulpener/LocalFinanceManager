@@ -12,7 +12,6 @@ namespace LocalFinanceManager.E2E.Admin;
 public class AdminSettingsTests : E2ETestBase
 {
     [Test]
-    [Ignore("Manual testing - Admin UI implementation pending")]
     public async Task AdminSettings_PageLoads_DisplaysEnvironmentInformation()
     {
         // Arrange & Act
