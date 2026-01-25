@@ -109,6 +109,8 @@ public abstract class E2ETestBase : PageTest
             // Dispose factory to clean up test database
             if (Factory != null)
             {
+                // Close any remaining database connections before disposing factory
+                await Factory.CloseAllConnectionsAsync();
                 await Factory.DisposeAsync();
             }
         }

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using LocalFinanceManager.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -16,20 +18,41 @@ namespace LocalFinanceManager.E2E;
 /// Web application factory for E2E tests using Playwright.
 /// Creates a REAL Kestrel server (not TestServer) that Playwright can connect to.
 /// Provides an isolated SQLite database for testing.
+/// Uses dynamic port allocation to avoid port conflicts when tests run sequentially.
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private const string TestServerUrl = "http://localhost:5173";
     private IHost? _host;
     private readonly string _testDatabasePath;
+    private readonly int _port;
 
-    public string ServerAddress => TestServerUrl;
+    public string ServerAddress { get; private set; }
     public string TestDatabasePath => _testDatabasePath;
 
     public TestWebApplicationFactory(string testName)
     {
         _testDatabasePath = $"localfinancemanager.e2etest.{SanitizeTestName(testName)}.db";
+        _port = GetAvailablePort();
+        ServerAddress = $"http://localhost:{_port}";
     }
+
+    /// <summary>
+    /// Gets an available TCP port by binding to port 0 (letting the OS choose)
+    /// and then immediately releasing it.
+    /// </summary>
+    private static int GetAvailablePort()
+    {
+        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+        var port = ((IPEndPoint)socket.LocalEndPoint!).Port;
+        return port;
+    }
+
+    /// <summary>
+    /// Gets the connection string for the test database with pooling disabled.
+    /// Disabling pooling ensures file handles are released immediately after connections close.
+    /// </summary>
+    private string GetConnectionString() => $"Data Source={_testDatabasePath};Pooling=False;Cache=Shared";
 
     private static string SanitizeTestName(string testName)
     {
@@ -55,16 +78,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Use Kestrel with a real HTTP endpoint for Playwright E2E tests
+        // Use dynamically allocated port to avoid conflicts
         builder.UseKestrel();
-        builder.UseUrls(TestServerUrl);
+        builder.UseUrls(ServerAddress);
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
             // Override connection string to use test database
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Default"] = $"Data Source={_testDatabasePath}",
-                ["RecreateDatabase"] = "true", // Always fresh database for E2E tests
+                ["ConnectionStrings:Default"] = GetConnectionString(),
+                ["RecreateDatabase"] = "false", // DON'T recreate database - we manually delete before startup
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
                 ["ML:EnableAutoSuggestions"] = "false" // Disable ML during tests unless explicitly enabled
             });
@@ -83,7 +107,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Use file-based SQLite database for E2E testing
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlite($"Data Source={_testDatabasePath}");
+                options.UseSqlite(GetConnectionString());
             });
         });
 
@@ -107,6 +131,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         {
             try
             {
+                // Remove read-only attribute if set
+                var attributes = File.GetAttributes(_testDatabasePath);
+                if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                {
+                    File.SetAttributes(_testDatabasePath, attributes & ~FileAttributes.ReadOnly);
+                }
+
                 File.Delete(_testDatabasePath);
             }
             catch (IOException)
@@ -115,6 +146,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 await Task.Delay(100);
                 try
                 {
+                    // Try to remove read-only attribute again
+                    var attributes = File.GetAttributes(_testDatabasePath);
+                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
+                    {
+                        File.SetAttributes(_testDatabasePath, attributes & ~FileAttributes.ReadOnly);
+                    }
+
                     File.Delete(_testDatabasePath);
                 }
                 catch
@@ -152,6 +190,29 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         return Services.CreateScope();
     }
 
+    /// <summary>
+    /// Closes all database connections to ensure file handles are released.
+    /// Call this before disposing the factory to prevent file lock issues.
+    /// </summary>
+    public async Task CloseAllConnectionsAsync()
+    {
+        using var scope = Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // Close the connection if it's open
+        var connection = context.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Closed)
+        {
+            await connection.CloseAsync();
+        }
+
+        // Clear connection pools to release all file handles
+        SqliteConnection.ClearAllPools();
+
+        // Give the OS time to release file handles
+        await Task.Delay(50);
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
@@ -181,29 +242,31 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Clear SQLite connection pool to release all file handles
             SqliteConnection.ClearAllPools();
 
-            // Wait longer for file handles to be fully released
-            Thread.Sleep(200);
-
             // Force garbage collection to ensure finalizers run
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
 
-            // Clean up test database file with retry logic
+            // Wait longer for file handles to be fully released
+            Thread.Sleep(300);
+
+            // Clean up test database file with aggressive retry logic
             if (File.Exists(_testDatabasePath))
             {
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 10; i++)
                 {
                     try
                     {
                         File.Delete(_testDatabasePath);
                         break; // Success
                     }
-                    catch (IOException) when (i < 4)
+                    catch (IOException) when (i < 9)
                     {
                         // File still locked, clear pools again and wait
                         SqliteConnection.ClearAllPools();
-                        Thread.Sleep(100 * (i + 1)); // Increasing backoff
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        Thread.Sleep(100 * (i + 1)); // Increasing backoff: 100ms, 200ms, 300ms...
                     }
                     catch
                     {
