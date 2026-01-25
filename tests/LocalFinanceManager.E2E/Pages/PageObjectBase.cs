@@ -80,11 +80,13 @@ public abstract class PageObjectBase
     /// </remarks>
     public async Task WaitForNavigationAsync(Func<Task> action, WaitUntilState waitUntil = WaitUntilState.NetworkIdle)
     {
-#pragma warning disable CS0618 // Type or member is obsolete
-        await Page.RunAndWaitForNavigationAsync(action, new PageRunAndWaitForNavigationOptions
+        var navigationTask = Page.WaitForURLAsync("**", new PageWaitForURLOptions
         {
             WaitUntil = waitUntil
         });
-#pragma warning restore CS0618 // Type or member is obsolete
+
+        var actionTask = action();
+
+        await Task.WhenAll(navigationTask, actionTask);
     }
 }
