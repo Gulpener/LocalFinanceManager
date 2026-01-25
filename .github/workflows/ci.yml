@@ -31,10 +31,10 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run unit and integration tests
-        run: dotnet test tests/LocalFinanceManager.Tests/ --configuration Release --no-build --logger "console;verbosity=normal" --collect:"XPlat Code Coverage"
+        run: dotnet test tests/LocalFinanceManager.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage"
 
       - name: Run ML tests
-        run: dotnet test tests/LocalFinanceManager.ML.Tests/ --configuration Release --no-build --logger "console;verbosity=normal" --collect:"XPlat Code Coverage"
+        run: dotnet test tests/LocalFinanceManager.ML.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage"
 
       - name: Build E2E project (prepares Playwright)
         run: dotnet build tests/LocalFinanceManager.E2E/ --configuration Release --no-restore
@@ -44,7 +44,7 @@ jobs:
         shell: pwsh
 
       - name: Run E2E tests (including ignored tests)
-        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=normal" --collect:"XPlat Code Coverage"
+        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage"
 
       - name: Upload test results
         if: always()
