@@ -18,7 +18,7 @@ public class SmokeTests : E2ETestBase
     {
         // Arrange & Act
         using var scope = Factory!.CreateDbScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        _ = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         TestContext.Out.WriteLine($"Navigating to: {BaseUrl}");
 
