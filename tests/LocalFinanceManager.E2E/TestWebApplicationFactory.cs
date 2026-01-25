@@ -194,7 +194,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         GC.Collect();
         GC.WaitForPendingFinalizers();
         await Task.Delay(100);
-        
+
         // If database file exists and appears corrupted, delete it
         if (File.Exists(_testDatabasePath))
         {
@@ -216,7 +216,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 }
             }
         }
-        
+
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
