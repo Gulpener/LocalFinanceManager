@@ -137,15 +137,19 @@ This story **enhances** all assignment artifacts from previous stories:
   - Retrieve favorite category IDs from localStorage
 - [ ] Register service as scoped in `Program.cs`
 
-### 7. Recent Categories UI
+### 7. Recent Categories UI & Clickable Budget Line Cards
 
-- [ ] Update `TransactionAssignModal.razor` to display recent categories:
-  - Add "Recent Categories" section above category selector
-  - Display top 5 most used categories with usage count: "Food - Used 23 times"
-  - Add click handler for one-click assignment (click category → assign immediately without opening full selector)
+- [ ] Replace dropdown budget line selector with clickable card grid in `TransactionAssignModal.razor`:
+  - Add "Recent Categories" section at top with horizontal pill buttons (top 5 most used)
+  - Display main budget line grid below recent categories
+  - Each card shows: category name (bold), remaining balance (e.g., "€450 remaining"), optional progress bar
+  - Responsive grid layout: 4 columns (>1200px), 3 columns (768-1200px), 2 columns (576-768px), 1 column (<576px)
+  - Visual feedback: selected card gets accent border/background, hover state shows pointer cursor
+  - Click handler binds to `selectedBudgetLineId`
+- [ ] Extend `BudgetLineDto` with `RemainingBalance` and `SpentAmount` calculated properties based on `YearTotal` and assigned transactions
 - [ ] Call `RecentCategoriesService.TrackCategoryUsageAsync()` after successful assignment
-- [ ] Add loading state while fetching recent categories
-- [ ] Style with compact layout (horizontal pills or small cards)
+- [ ] Add loading skeleton for budget line cards
+- [ ] Implement keyboard navigation: Tab moves between cards, Enter/Space selects card, maintain ARIA labels
 
 ### 8. Favorite Categories Feature
 
@@ -319,7 +323,6 @@ This story **enhances** all assignment artifacts from previous stories:
 ### UX Enhancement Test Scenarios
 
 1. **Keyboard Shortcuts:**
-
    - Tab navigation works in all modals (assignment, split, bulk)
    - Enter submits forms when save button focused
    - Esc closes modals without saving
@@ -329,7 +332,6 @@ This story **enhances** all assignment artifacts from previous stories:
    - `?` shows help modal
 
 2. **Quick Filters:**
-
    - Assignment status filter (All/Assigned/Unassigned/Split/Auto-Applied) works
    - Date range filter (Last 7/30/90 days, Custom) works
    - Amount range filter (min/max) works
@@ -339,14 +341,12 @@ This story **enhances** all assignment artifacts from previous stories:
    - Filter state persists across page reloads (localStorage)
 
 3. **Recent Categories:**
-
    - Category usage tracked after assignment
    - Top 5 recent categories displayed in assignment modal
    - One-click assignment from recent categories works
    - Usage count displayed correctly ("Food - Used 23 times")
 
 4. **Favorite Categories:**
-
    - Star icon toggles favorite status
    - Favorites displayed at top of category selector
    - Favorites persist across sessions (localStorage)
