@@ -65,13 +65,11 @@ public static class SeedDataHelper
             UpdatedAt = DateTime.UtcNow
         };
 
+        // Link the budget plan to the account before saving to avoid an extra round-trip
+        account.CurrentBudgetPlanId = budgetPlan.Id;
+
         context.BudgetPlans.Add(budgetPlan);
         await context.SaveChangesAsync();
-
-        // Update account with the budget plan reference
-        account.CurrentBudgetPlanId = budgetPlan.Id;
-        await context.SaveChangesAsync();
-
         return account;
     }
 
