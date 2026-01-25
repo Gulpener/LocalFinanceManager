@@ -34,9 +34,6 @@
 
   <!-- Test Run Parameters (accessible via TestContext.Parameters) -->
   <TestRunParameters>
-    <!-- Base URL for the application under test -->
-    <Parameter name="BaseUrl" value="http://localhost:5000" />
-    
     <!-- Run Playwright in headless mode (true) or headed mode (false) -->
     <Parameter name="Headless" value="true" />
     
