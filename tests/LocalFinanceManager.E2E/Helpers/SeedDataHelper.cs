@@ -10,7 +10,7 @@ namespace LocalFinanceManager.E2E.Helpers;
 /// </summary>
 public static class SeedDataHelper
 {
-    private static readonly Random _random = new();
+    private static readonly Random _random = Random.Shared;
     private static readonly string[] _transactionDescriptions = new[]
     {
         "Grocery Store", "Salary", "Fuel Station", "Restaurant", "Coffee Shop",
