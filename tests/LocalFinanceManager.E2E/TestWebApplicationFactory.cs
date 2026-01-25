@@ -128,10 +128,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         // Clear all SQLite connection pools first to release file handles
         SqliteConnection.ClearAllPools();
-        
+
         // Give OS time to release handles
         await Task.Delay(100);
-        
+
         // Delete database file and related SQLite files if they exist (do this before server starts)
         var filesToDelete = new[]
         {
@@ -143,7 +143,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         foreach (var file in filesToDelete)
         {
             if (!File.Exists(file)) continue;
-            
+
             // Try up to 3 times to delete the file
             for (int attempt = 0; attempt < 3; attempt++)
             {
@@ -174,7 +174,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 }
             }
         }
-        
+
         // Final cleanup
         SqliteConnection.ClearAllPools();
     }
