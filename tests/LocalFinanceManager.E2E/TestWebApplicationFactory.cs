@@ -3,6 +3,7 @@ using LocalFinanceManager.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,11 +19,24 @@ namespace LocalFinanceManager.E2E;
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    private const string TestDatabasePath = "localfinancemanager.e2etest.db";
     private const string TestServerUrl = "http://localhost:5173";
     private IHost? _host;
+    private readonly string _testDatabasePath;
 
     public string ServerAddress => TestServerUrl;
+    public string TestDatabasePath => _testDatabasePath;
+
+    public TestWebApplicationFactory(string testName)
+    {
+        _testDatabasePath = $"localfinancemanager.e2etest.{SanitizeTestName(testName)}.db";
+    }
+
+    private static string SanitizeTestName(string testName)
+    {
+        // Remove invalid filename characters
+        var invalid = Path.GetInvalidFileNameChars();
+        return string.Join("_", testName.Split(invalid, StringSplitOptions.RemoveEmptyEntries));
+    }
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
@@ -49,7 +63,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Override connection string to use test database
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Default"] = $"Data Source={TestDatabasePath}",
+                ["ConnectionStrings:Default"] = $"Data Source={_testDatabasePath}",
                 ["RecreateDatabase"] = "true", // Always fresh database for E2E tests
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
                 ["ML:EnableAutoSuggestions"] = "false" // Disable ML during tests unless explicitly enabled
@@ -69,7 +83,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Use file-based SQLite database for E2E testing
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlite($"Data Source={TestDatabasePath}");
+                options.UseSqlite($"Data Source={_testDatabasePath}");
             });
         });
 
@@ -86,14 +100,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// Ensures database is ready for testing by deleting and recreating it.
     /// Must be called before the server starts to avoid file locks.
     /// </summary>
-    public static async Task EnsureDatabaseReadyAsync()
+    public async Task EnsureDatabaseReadyAsync()
     {
         // Delete database file if it exists (do this before server starts)
-        if (File.Exists(TestDatabasePath))
+        if (File.Exists(_testDatabasePath))
         {
             try
             {
-                File.Delete(TestDatabasePath);
+                File.Delete(_testDatabasePath);
             }
             catch (IOException)
             {
@@ -101,7 +115,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 await Task.Delay(100);
                 try
                 {
-                    File.Delete(TestDatabasePath);
+                    File.Delete(_testDatabasePath);
                 }
                 catch
                 {
@@ -157,23 +171,47 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 _host.Dispose();
                 _host = null;
             }
+        }
 
-            // Wait a moment for file handles to be released
-            Thread.Sleep(100);
+        // Call base disposal to ensure all WebApplicationFactory resources are disposed
+        base.Dispose(disposing);
 
-            // Clean up test database file
-            if (File.Exists(TestDatabasePath))
+        if (disposing)
+        {
+            // Clear SQLite connection pool to release all file handles
+            SqliteConnection.ClearAllPools();
+
+            // Wait longer for file handles to be fully released
+            Thread.Sleep(200);
+
+            // Force garbage collection to ensure finalizers run
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            // Clean up test database file with retry logic
+            if (File.Exists(_testDatabasePath))
             {
-                try
+                for (int i = 0; i < 5; i++)
                 {
-                    File.Delete(TestDatabasePath);
-                }
-                catch
-                {
-                    // Ignore cleanup errors - database might still be in use
+                    try
+                    {
+                        File.Delete(_testDatabasePath);
+                        break; // Success
+                    }
+                    catch (IOException) when (i < 4)
+                    {
+                        // File still locked, clear pools again and wait
+                        SqliteConnection.ClearAllPools();
+                        Thread.Sleep(100 * (i + 1)); // Increasing backoff
+                    }
+                    catch
+                    {
+                        // Final attempt failed or different error, ignore
+                        break;
+                    }
                 }
             }
         }
-        base.Dispose(disposing);
     }
 }

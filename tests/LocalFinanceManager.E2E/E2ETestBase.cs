@@ -23,11 +23,11 @@ public abstract class E2ETestBase : PageTest
     {
         _currentTestName = TestContext.CurrentContext.Test.Name;
 
-        // Ensure database file is deleted before creating factory
-        await TestWebApplicationFactory.EnsureDatabaseReadyAsync();
+        // Create factory with unique database per test
+        Factory = new TestWebApplicationFactory(_currentTestName);
 
-        // Create factory - accessing .Server will automatically start the Kestrel server
-        Factory = new TestWebApplicationFactory();
+        // Ensure database file is deleted before starting server
+        await Factory.EnsureDatabaseReadyAsync();
 
         // Reset database to clean state after server is created but before tests run
         await Factory.ResetDatabaseAsync();
