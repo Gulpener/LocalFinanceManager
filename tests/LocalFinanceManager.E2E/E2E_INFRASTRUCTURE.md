@@ -48,7 +48,9 @@ LocalFinanceManager.E2E/
 
 ### Installing Playwright Browsers
 
-Run the following command to install Playwright browsers:
+#### Local Development (All Browsers)
+
+Run the following command to install all Playwright browsers:
 
 ```powershell
 # From the E2E test project directory
@@ -62,6 +64,16 @@ Or run it after building the project:
 dotnet build tests/LocalFinanceManager.E2E
 pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install
 ```
+
+#### CI Environment (Chromium Only)
+
+In CI workflows, only Chromium is installed with dependencies to reduce setup time:
+
+```powershell
+pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+```
+
+This matches the Chromium-only browser testing strategy used in CI pipelines.
 
 ### Running Tests
 
