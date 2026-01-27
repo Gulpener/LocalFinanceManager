@@ -11,51 +11,58 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 
 namespace LocalFinanceManager.E2E;
 
 /// <summary>
 /// Web application factory for E2E tests using Playwright.
 /// Creates a REAL Kestrel server (not TestServer) that Playwright can connect to.
-/// Provides an isolated SQLite database for testing.
-/// Uses dynamic port allocation to avoid port conflicts when tests run sequentially.
+/// Provides an isolated SQLite database per test fixture for parallel testing.
+/// Uses dynamic port allocation to avoid port conflicts.
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
-    // Static semaphore to prevent parallel migrations (SQLite limitation)
-    private static readonly SemaphoreSlim MigrationSemaphore = new(1, 1);
-
     private IHost? _host;
     private readonly string _testDatabasePath;
     private readonly int _port;
-    private readonly string _uniqueId;
+    private readonly string _fixtureId;
 
     public string ServerAddress { get; private set; }
     public string TestDatabasePath => _testDatabasePath;
 
-    public TestWebApplicationFactory(string testName)
+    public TestWebApplicationFactory(string fixtureId)
     {
-        // Add GUID to ensure unique database per test instance (critical for parallel test execution)
-        _uniqueId = Guid.NewGuid().ToString("N")[..8];
-        _testDatabasePath = $"localfinancemanager.e2etest.{SanitizeTestName(testName)}.{_uniqueId}.db";
+        // Use fixture ID to create one database per test fixture (enables parallel execution)
+        _fixtureId = fixtureId;
+        _testDatabasePath = $"localfinancemanager.e2etest.fixture_{_fixtureId}.db";
         _port = GetAvailablePort();
-        ServerAddress = $"http://localhost:{_port}";
+        // Use 127.0.0.1 instead of localhost for dynamic port binding (Kestrel requirement)
+        ServerAddress = $"http://127.0.0.1:{_port}";
     }
 
     /// <summary>
-    /// Returns 0 to indicate that Kestrel should bind to a dynamically assigned port.
-    /// This avoids the race condition of probing a free port before the server starts.
+    /// Gets an available port by temporarily binding to one, then releasing it.
+    /// Uses a small delay after release to ensure OS fully releases the port before Kestrel binds.
     /// </summary>
     private static int GetAvailablePort()
     {
-        // Let Kestrel/HTTP.sys choose an available ephemeral port when binding.
-        return 0;
+        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        
+        // Small delay to ensure OS releases the port
+        System.Threading.Thread.Sleep(50);
+        
+        return port;
     }
     /// <summary>
-    /// Gets the connection string for the test database with pooling disabled.
-    /// Disabling pooling ensures file handles are released immediately after connections close.
+    /// Gets the connection string for the test database with WAL mode enabled.
+    /// WAL (Write-Ahead Logging) mode enables better concurrent access performance.
     /// </summary>
-    private string GetConnectionString() => $"Data Source={_testDatabasePath};Pooling=False;Cache=Shared";
+    private string GetConnectionString() => $"Data Source={_testDatabasePath};Cache=Shared";
 
     private static string SanitizeTestName(string testName)
     {
@@ -64,36 +71,83 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         return string.Join("_", testName.Split(invalid, StringSplitOptions.RemoveEmptyEntries));
     }
 
+    /// <summary>
+    /// Gets the path to the main application project (LocalFinanceManager).
+    /// Walks up the directory tree from the test project to find the solution root,
+    /// then navigates to the main application folder.
+    /// </summary>
+    private static string GetMainApplicationPath()
+    {
+        // Start from the current assembly location (test bin directory)
+        var assemblyLocation = Path.GetDirectoryName(typeof(TestWebApplicationFactory).Assembly.Location)!;
+        var directory = new DirectoryInfo(assemblyLocation);
+        
+        // Walk up until we find the solution file
+        while (directory != null && !directory.GetFiles("*.sln").Any())
+        {
+            directory = directory.Parent;
+        }
+        
+        if (directory == null)
+        {
+            throw new InvalidOperationException("Could not find solution directory");
+        }
+        
+        // Navigate to the main application project
+        return Path.Combine(directory.FullName, "LocalFinanceManager");
+    }
+
+    /// <summary>
+    /// Ensures the server is started by accessing the Services property which triggers host creation.
+    /// This ensures Kestrel is listening on the configured port.
+    /// </summary>
+    public void EnsureServerStarted()
+    {
+        // Accessing Services property triggers CreateHost if not already called
+        // This ensures Kestrel is listening on the configured port
+        var services = Services;
+        
+        // Verify services are available
+        if (services == null)
+        {
+            throw new InvalidOperationException("Failed to start server - Services property is null");
+        }
+    }
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        // Create a real host that runs Kestrel (not TestServer) for Playwright
+        // Create a dummy host that is returned to WebApplicationFactory
         var dummyHost = builder.Build();
 
-        // Build the real host with Kestrel
+        // Build the real host with Kestrel for Playwright
         builder.ConfigureWebHost(webHostBuilder => webHostBuilder.UseKestrel());
 
-        // Use semaphore to ensure only one test runs migrations at a time
-        // This prevents SQLite lock conflicts during parallel test execution
-        MigrationSemaphore.Wait();
-        try
-        {
-            _host = builder.Build();
-            _host.Start();
-        }
-        finally
-        {
-            MigrationSemaphore.Release();
-        }
+        // Build and start the real Kestrel host
+        // No semaphore needed - each test fixture has its own database file and port
+        _host = builder.Build();
+        _host.Start();
 
         return dummyHost;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Set environment and paths via configuration - this works with WebApplicationFactory
+        var projectDir = GetMainApplicationPath();
+        builder.UseEnvironment("Development");
+        builder.UseContentRoot(projectDir);
+        builder.UseWebRoot(Path.Combine(projectDir, "wwwroot"));
+        
         // Use Kestrel with a real HTTP endpoint for Playwright E2E tests
         // Use dynamically allocated port to avoid conflicts
         builder.UseKestrel();
+        
+        // CRITICAL: Must use 127.0.0.1 instead of localhost for dynamic port binding
+        // Kestrel does not support "localhost:0" - only "127.0.0.1:0" or "[::1]:0"
         builder.UseUrls(ServerAddress);
+        
+        // Also set via configuration to ensure it takes precedence
+        builder.UseSetting(WebHostDefaults.ServerUrlsKey, ServerAddress);
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
@@ -117,10 +171,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(descriptor);
             }
 
-            // Use file-based SQLite database for E2E testing
+            // Use file-based SQLite database for E2E testing with WAL mode
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlite(GetConnectionString());
+                options.UseSqlite(GetConnectionString(), sqliteOptions =>
+                {
+                    sqliteOptions.CommandTimeout(60);
+                });
             });
         });
 
@@ -134,10 +191,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Ensures database is ready for testing by deleting and recreating it.
-    /// Must be called before the server starts to avoid file locks.
+    /// Initializes database for the test fixture by deleting old files.
+    /// Should be called once per fixture (OneTimeSetUp), BEFORE server starts.
+    /// WAL mode should be enabled AFTER migrations complete.
     /// </summary>
-    public async Task EnsureDatabaseReadyAsync()
+    public async Task InitializeDatabaseAsync()
     {
         // Clear all SQLite connection pools first to release file handles
         SqliteConnection.ClearAllPools();
@@ -193,27 +251,27 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Resets the database to a clean state by truncating all tables.
-    /// WARNING: Do NOT call this during initialization - migrations are already applied by Program.cs during startup.
-    /// Only call this method if you need to reset database state mid-test.
+    /// Enables WAL mode for better concurrency.
+    /// Call this AFTER migrations complete (after server starts).
     /// </summary>
-    /// <remarks>
-    /// For most test scenarios, the factory should be recreated for each test to ensure isolation.
-    /// This method is provided for advanced scenarios where you need to reset data without recreating the factory.
-    /// </remarks>
-    public async Task ResetDatabaseAsync()
+    public async Task EnableWALModeAsync()
     {
-        // Force close all connections and clear pools
-        SqliteConnection.ClearAllPools();
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        await Task.Delay(50);
+        using var scope = Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
+    }
 
+    /// <summary>
+    /// Truncates all tables to provide clean state between tests within the same fixture.
+    /// Call this in [SetUp] if your tests need isolation.
+    /// For tests that don't modify data or can tolerate shared state, this is optional.
+    /// </summary>
+    public async Task TruncateTablesAsync()
+    {
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Truncate all tables (migrations already applied by Program.cs)
-        // Using raw SQL for efficiency - EF Core doesn't have a built-in truncate method for SQLite
+        // Truncate all tables in reverse dependency order
         await context.Database.ExecuteSqlRawAsync("DELETE FROM TransactionSplits;");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM TransactionAudits;");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM LabeledExamples;");
@@ -224,7 +282,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         await context.Database.ExecuteSqlRawAsync("DELETE FROM Accounts;");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM MLModels;");
 
-        // Reset SQLite sequence counters (not needed for GUID primary keys, but good practice)
+        // Reset SQLite sequence counters (not strictly needed for GUID PKs)
         await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence;");
     }
 
@@ -265,21 +323,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         if (disposing)
         {
-            // Stop and dispose the host first
-            if (_host != null)
-            {
-                try
-                {
-                    _host.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
-                }
-                catch
-                {
-                    // Ignore shutdown errors
-                }
-
-                _host.Dispose();
-                _host = null;
-            }
+            // WebApplicationFactory base class handles disposal of the host
+            // No need to manually dispose anything here
         }
 
         // Call base disposal to ensure all WebApplicationFactory resources are disposed

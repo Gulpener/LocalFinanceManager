@@ -6,6 +6,7 @@ namespace LocalFinanceManager.E2E;
 /// <summary>
 /// Base class for E2E tests with screenshot/video capture on failure.
 /// Automatically captures screenshots on test failure and videos in CI environment.
+/// Uses one TestWebApplicationFactory per worker for parallel execution.
 /// </summary>
 [TestFixture]
 public abstract class E2ETestBase : PageTest
@@ -13,30 +14,81 @@ public abstract class E2ETestBase : PageTest
     protected TestWebApplicationFactory? Factory;
     protected string BaseUrl => Factory?.ServerAddress ?? "http://localhost:5000";
     private string? _currentTestName;
+    private readonly string _fixtureId = Guid.NewGuid().ToString("N")[..8];
 
     /// <summary>
-    /// Sets up the test fixture before each test.
-    /// Creates a new TestWebApplicationFactory instance and starts the test server.
+    /// Sets up the factory once per worker (test fixture).
+    /// Creates a single TestWebApplicationFactory instance shared across all tests in this worker.
+    /// </summary>
+    [OneTimeSetUp]
+    public async Task WorkerSetUp()
+    {
+        try
+        {
+            // Use fixture-specific ID for isolation (each test fixture gets its own server + database)
+            Console.WriteLine($"[WorkerSetUp] Initializing fixture {_fixtureId}");
+            TestContext.Out.WriteLine($"Initializing fixture {_fixtureId}");
+
+            // Create factory with unique database per fixture
+            Factory = new TestWebApplicationFactory(_fixtureId);
+            Console.WriteLine($"[WorkerSetUp] Factory created with database: {Factory.TestDatabasePath}");
+            Console.WriteLine($"[WorkerSetUp] Server will listen on: {Factory.ServerAddress}");
+
+            // Delete old database files before starting server
+            await Factory.InitializeDatabaseAsync();
+            Console.WriteLine("[WorkerSetUp] Database files cleaned up");
+
+            // Start the server (migrations will run automatically via Program.cs)
+            Factory.EnsureServerStarted();
+            Console.WriteLine("[WorkerSetUp] Factory.EnsureServerStarted() completed");
+
+            // Wait for server to be ready (includes migration time)
+            await WaitForServerReadyAsync();
+            Console.WriteLine("[WorkerSetUp] Server is ready");
+
+            // Now that migrations are complete, enable WAL mode for better concurrency
+            await Factory.EnableWALModeAsync();
+            Console.WriteLine("[WorkerSetUp] WAL mode enabled");
+
+            TestContext.Out.WriteLine($"Fixture {_fixtureId} ready at: {BaseUrl}");
+            Console.WriteLine($"[WorkerSetUp] Fixture {_fixtureId} ready at: {BaseUrl}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WorkerSetUp] ERROR: {ex.GetType().Name}: {ex.Message}");
+            Console.WriteLine($"[WorkerSetUp] Stack trace: {ex.StackTrace}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Tears down the factory once per worker.
+    /// Closes all connections and disposes the factory.
+    /// </summary>
+    [OneTimeTearDown]
+    public async Task WorkerTearDown()
+    {
+        if (Factory != null)
+        {
+            await Factory.CloseAllConnectionsAsync();
+            await Factory.DisposeAsync();
+            Factory = null;
+        }
+    }
+
+    /// <summary>
+    /// Sets up each test.
+    /// Optionally truncate tables here if tests need isolation.
     /// </summary>
     [SetUp]
     public async Task BaseSetUp()
     {
         _currentTestName = TestContext.CurrentContext.Test.Name;
+        TestContext.Out.WriteLine($"Starting test: {_currentTestName}");
 
-        // Create factory with unique database per test
-        Factory = new TestWebApplicationFactory(_currentTestName);
-
-        // Ensure database file is deleted before starting server
-        await Factory.EnsureDatabaseReadyAsync();
-
-        // Trigger server startup by accessing the Server property
-        // This will run migrations via Program.cs
-        _ = Factory.Server;
-
-        // Wait for server to be ready (migrations will complete during this wait)
-        await WaitForServerReadyAsync();
-
-        TestContext.Out.WriteLine($"Server ready at: {BaseUrl}");
+        // Optional: Uncomment if your tests need clean database state
+        // Most tests can share state within a worker for better performance
+        // await Factory!.TruncateTablesAsync();
     }
 
     /// <summary>
@@ -45,6 +97,14 @@ public abstract class E2ETestBase : PageTest
     /// </summary>
     private async Task WaitForServerReadyAsync()
     {
+        if (Factory == null)
+        {
+            throw new InvalidOperationException("Factory is null - cannot check server readiness");
+        }
+
+        var serverUrl = Factory.ServerAddress;
+        TestContext.Out.WriteLine($"Waiting for server at: {serverUrl}");
+
         using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
         var maxAttempts = 20; // Server needs time for migrations to run
         var delayMs = 500;
@@ -53,7 +113,7 @@ public abstract class E2ETestBase : PageTest
         {
             try
             {
-                var response = await httpClient.GetAsync(BaseUrl);
+                var response = await httpClient.GetAsync(serverUrl);
                 // Server responded (even if error response), so it's ready
                 TestContext.Out.WriteLine($"Server ready after {i + 1} attempts (status: {response.StatusCode})");
                 return;
@@ -84,33 +144,20 @@ public abstract class E2ETestBase : PageTest
             }
         }
 
-        throw new InvalidOperationException($"Server failed to start after {maxAttempts} attempts ({maxAttempts * delayMs / 1000}s) at {BaseUrl}");
+        throw new InvalidOperationException($"Server failed to start after {maxAttempts} attempts ({maxAttempts * delayMs / 1000}s) at {serverUrl}");
     }
 
     /// <summary>
-    /// Tears down the test fixture after each test.
-    /// Captures screenshot on failure and cleans up resources.
+    /// Tears down each test.
+    /// Captures screenshot on failure.
     /// </summary>
     [TearDown]
     public async Task BaseTearDown()
     {
-        try
+        // Capture screenshot on test failure
+        if (TestContext.CurrentContext.Result.Outcome.Status == NUnit.Framework.Interfaces.TestStatus.Failed)
         {
-            // Capture screenshot on test failure
-            if (TestContext.CurrentContext.Result.Outcome.Status == NUnit.Framework.Interfaces.TestStatus.Failed)
-            {
-                await CaptureFailureScreenshotAsync();
-            }
-        }
-        finally
-        {
-            // Dispose factory to clean up test database
-            if (Factory != null)
-            {
-                // Close any remaining database connections before disposing factory
-                await Factory.CloseAllConnectionsAsync();
-                await Factory.DisposeAsync();
-            }
+            await CaptureFailureScreenshotAsync();
         }
     }
 

@@ -297,4 +297,15 @@ public static class SeedDataHelper
         await context.SaveChangesAsync();
         return auditEntries;
     }
+
+    /// <summary>
+    /// Clears all data from the database for test isolation.
+    /// Call this in [SetUp] if tests need clean state between runs.
+    /// Note: Most tests can share state within a worker for better performance.
+    /// </summary>
+    /// <param name="factory">Test web application factory to access the database context.</param>
+    public static async Task ClearAllDataAsync(TestWebApplicationFactory factory)
+    {
+        await factory.TruncateTablesAsync();
+    }
 }
