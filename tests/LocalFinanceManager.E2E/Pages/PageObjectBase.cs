@@ -68,22 +68,4 @@ public abstract class PageObjectBase
 
         await Page.ScreenshotAsync(new PageScreenshotOptions { Path = screenshotPath, FullPage = true });
     }
-
-    /// <summary>
-    /// Waits for navigation to complete after performing an action.
-    /// </summary>
-    /// <param name="action">Action that triggers navigation (e.g., clicking a button).</param>
-    /// <param name="waitUntil">Wait condition (default: NetworkIdle).</param>
-    /// <remarks>
-    /// Uses Playwright's modern RunAndWaitForURLAsync API to coordinate the action and navigation wait.
-    /// </remarks>
-    public async Task WaitForNavigationAsync(Func<Task> action, WaitUntilState waitUntil = WaitUntilState.NetworkIdle)
-    {
-        await Page.RunAndWaitForURLAsync("**",
-            action,
-            new PageRunAndWaitForURLOptions
-            {
-                WaitUntil = waitUntil
-            });
-    }
 }
