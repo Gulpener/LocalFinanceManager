@@ -155,7 +155,10 @@ This story **enhances** all assignment artifacts from previous stories:
   - Responsive grid layout: 4 columns (>1200px), 3 columns (768-1200px), 2 columns (576-768px), 1 column (<576px)
   - Visual feedback: selected card gets accent border/background, hover state shows pointer cursor
   - Click handler binds to `selectedBudgetLineId`
-- [ ] Extend `BudgetLineDto` with `RemainingBalance` and `SpentAmount` calculated properties based on `YearTotal` and assigned transactions
+- [ ] Extend `BudgetLineDto` with `RemainingBalance` and `SpentAmount` calculated properties:
+  - `SpentAmount` = sum of all assigned transaction amounts for this budget line in the current budget period/year
+  - `RemainingBalance` = `YearTotal - SpentAmount`
+  - Both properties are read-only/calculated in the application layer; they are not separately persisted in the database
 - [ ] Add loading skeleton for budget line cards
 - [ ] Implement keyboard navigation: Tab moves between cards, Enter/Space selects card, maintain ARIA labels
 
