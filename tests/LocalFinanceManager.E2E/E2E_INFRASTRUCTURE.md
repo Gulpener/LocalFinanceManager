@@ -33,8 +33,8 @@ LocalFinanceManager.E2E/
 │   └── SmokeTests.cs                # Infrastructure validation tests
 ├── Accounts/
 │   └── AccountCrudTests.cs          # Account CRUD tests
-├── Categories/
-│   └── CategoryCrudTests.cs         # Category CRUD tests
+├── Admin/
+│   └── AdminSettingsTests.cs        # Admin settings tests
 └── BudgetPlans/
     └── BudgetPlanTests.cs           # Budget plan tests
 ```
@@ -332,9 +332,9 @@ dotnet test tests/LocalFinanceManager.E2E
 
 ## Test Execution Model
 
-### Sequential Execution
+### Per-Fixture Database Isolation
 
-Tests run **sequentially** (one at a time) to prevent SQLite file access conflicts:
+Tests run **sequentially within each test fixture** but fixtures can run in **parallel** using isolated databases:
 
 ```csharp
 // AssemblyInfo.cs
@@ -342,16 +342,17 @@ Tests run **sequentially** (one at a time) to prevent SQLite file access conflic
 [assembly: Parallelizable(ParallelScope.None)]
 ```
 
-**Why Sequential?** E2E tests use file-based SQLite databases which cannot be safely deleted while another test is potentially accessing them. Attempting parallel execution causes file access conflicts and test failures.
+**Why Sequential?** E2E tests use file-based SQLite databases. Sequential execution prevents SQLite file access conflicts while maintaining isolation between test fixtures.
 
 ### Test Isolation
 
-Each test runs with a fresh database instance:
+Each **test fixture** runs with its own isolated database instance:
 
-- `TestWebApplicationFactory` creates a dedicated SQLite test database per test
+- `TestWebApplicationFactory` creates a dedicated SQLite test database per fixture
 - Database is recreated on factory initialization (clean state)
 - Database is deleted on factory disposal (cleanup)
-- Unique database names prevent conflicts between tests: `localfinancemanager.e2etest.{testName}.{uniqueId}.db`
+- Unique database names prevent conflicts: `localfinancemanager.e2etest.fixture_{fixtureId}.db`
+- Each fixture gets a unique Kestrel server port to enable parallel fixture execution
 
 ## Debugging Test Failures
 
@@ -411,18 +412,15 @@ await Factory.ResetDatabaseAsync();
 
 ### Test Database Location
 
-Each test creates an isolated database with the format:
+Each test fixture creates an isolated database with the format:
 
 ```
-localfinancemanager.e2etest.{testName}.{uniqueId}.db
+localfinancemanager.e2etest.fixture_{fixtureId}.db
 ```
 
-Where:
+Where `{fixtureId}` is a unique identifier per test fixture (e.g., fixture class name or GUID).
 
-- `{testName}` is the sanitized name of the test
-- `{uniqueId}` is an 8-character GUID segment for uniqueness
-
-Example: `localfinancemanager.e2etest.SmokeTests_HealthCheck.a1b2c3d4.db`
+Example: `localfinancemanager.e2etest.fixture_SmokeTests.db`
 
 These files are automatically ignored by Git (see `.gitignore`).
 
