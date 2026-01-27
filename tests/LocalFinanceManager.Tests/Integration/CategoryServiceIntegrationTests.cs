@@ -106,9 +106,7 @@ public class CategoryServiceIntegrationTests
             Name = "Original Name",
             Type = CategoryType.Expense,
             BudgetPlanId = _testBudgetPlanId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _categoryRepository.AddAsync(category);
 
@@ -175,9 +173,7 @@ public class CategoryServiceIntegrationTests
             Name = "Original Name",
             Type = CategoryType.Expense,
             BudgetPlanId = _testBudgetPlanId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _categoryRepository.AddAsync(category);
 
@@ -222,9 +218,7 @@ public class CategoryServiceIntegrationTests
             Name = "To Archive",
             Type = CategoryType.Expense,
             BudgetPlanId = _testBudgetPlanId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _categoryRepository.AddAsync(category);
 
@@ -253,9 +247,7 @@ public class CategoryServiceIntegrationTests
             Name = "Active",
             Type = CategoryType.Income,
             BudgetPlanId = _testBudgetPlanId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         var archivedCategory = new Category
         {
@@ -263,9 +255,7 @@ public class CategoryServiceIntegrationTests
             Name = "Archived",
             Type = CategoryType.Expense,
             BudgetPlanId = _testBudgetPlanId,
-            IsArchived = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = true
         };
 
         await _categoryRepository.AddAsync(activeCategory);
@@ -314,9 +304,7 @@ public class CategoryServiceIntegrationTests
             Name = "Miscellaneous",
             Type = CategoryType.Expense,
             BudgetPlanId = _testBudgetPlanId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _categoryRepository.AddAsync(category);
         _context.Entry(category).State = EntityState.Detached;

@@ -44,9 +44,7 @@ public static class SeedDataHelper
             IBAN = iban,
             StartingBalance = initialBalance,
             Currency = currency,
-            Type = AccountType.Checking,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Type = AccountType.Checking
         };
 
         context.Accounts.Add(account);
@@ -60,9 +58,7 @@ public static class SeedDataHelper
             Id = Guid.NewGuid(),
             Name = $"{label} Budget {DateTime.UtcNow.Year}",
             Year = DateTime.UtcNow.Year,
-            AccountId = account.Id,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            AccountId = account.Id
         };
 
         // Link the budget plan to the account before saving to avoid an extra round-trip
@@ -97,9 +93,7 @@ public static class SeedDataHelper
                 Id = Guid.NewGuid(),
                 Name = $"Income {i}",
                 Type = CategoryType.Income,
-                BudgetPlanId = budgetPlanId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                BudgetPlanId = budgetPlanId
             };
             categories.Add(category);
             context.Categories.Add(category);
@@ -113,9 +107,7 @@ public static class SeedDataHelper
                 Id = Guid.NewGuid(),
                 Name = $"Expense {i}",
                 Type = CategoryType.Expense,
-                BudgetPlanId = budgetPlanId,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                BudgetPlanId = budgetPlanId
             };
             categories.Add(category);
             context.Categories.Add(category);
@@ -158,9 +150,7 @@ public static class SeedDataHelper
                 Amount = Math.Round(amount, 2),
                 Date = startDate.AddDays(daysOffset),
                 Description = description,
-                Counterparty = $"Counterparty {i + 1}",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                Counterparty = $"Counterparty {i + 1}"
             };
 
             transactions.Add(transaction);
@@ -234,9 +224,7 @@ public static class SeedDataHelper
                 CategoryId = category.Id,
                 WasAutoApplied = _random.NextDouble() > 0.5,
                 AcceptedSuggestion = _random.NextDouble() > 0.3,
-                SuggestionConfidence = (float)(_random.NextDouble() * 0.5 + 0.5), // 0.5-1.0
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                SuggestionConfidence = (float)(_random.NextDouble() * 0.5 + 0.5) // 0.5-1.0
             };
 
             labeledExamples.Add(labeledExample);
@@ -299,9 +287,7 @@ public static class SeedDataHelper
                 ModelVersion = 1,
                 BeforeState = isUndone ? "{\"assigned\":true}" : "{\"assigned\":false}",
                 AfterState = isUndone ? "{\"assigned\":false}" : "{\"assigned\":true}",
-                Reason = isUndone ? "User requested undo" : "Auto-applied by ML model",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                Reason = isUndone ? "User requested undo" : "Auto-applied by ML model"
             };
 
             auditEntries.Add(auditEntry);

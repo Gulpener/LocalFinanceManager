@@ -80,9 +80,7 @@ public class BudgetRepositoryTests
             Id = Guid.NewGuid(),
             Name = "Test Category",
             BudgetPlanId = budgetPlan.Id,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         // Act
@@ -126,9 +124,7 @@ public class BudgetRepositoryTests
             Id = Guid.NewGuid(),
             Name = "Groceries",
             BudgetPlanId = budgetPlan.Id,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _categoryRepository.AddAsync(category);
 
@@ -171,9 +167,7 @@ public class BudgetRepositoryTests
             Id = Guid.NewGuid(),
             Name = "Archived Category",
             BudgetPlanId = budgetPlan.Id,
-            IsArchived = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = true
         };
         await _context.Categories.AddAsync(category);
         await _context.SaveChangesAsync();
@@ -196,9 +190,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Test Budget",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         // Act
@@ -221,9 +213,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         var plan2 = new BudgetPlan
         {
@@ -231,9 +221,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2027,
             Name = "Budget 2027",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan1);
         await _budgetPlanRepository.AddAsync(plan2);
@@ -258,9 +246,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -284,9 +270,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -296,9 +280,7 @@ public class BudgetRepositoryTests
             BudgetPlanId = plan.Id,
             CategoryId = category.Id,
             MonthlyAmounts = Enumerable.Repeat(100m, 12).ToArray(),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetLineRepository.AddAsync(line);
 
@@ -323,9 +305,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -336,9 +316,7 @@ public class BudgetRepositoryTests
             CategoryId = category.Id,
             MonthlyAmounts = new decimal[] { 100m, 200m, 300m, 400m, 500m, 600m, 700m, 800m, 900m, 1000m, 1100m, 1200m },
             Notes = "Test notes",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         // Act
@@ -364,9 +342,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -376,9 +352,7 @@ public class BudgetRepositoryTests
             BudgetPlanId = plan.Id,
             CategoryId = category1.Id,
             MonthlyAmounts = Enumerable.Repeat(100m, 12).ToArray(),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         var line2 = new BudgetLine
         {
@@ -386,9 +360,7 @@ public class BudgetRepositoryTests
             BudgetPlanId = plan.Id,
             CategoryId = category2.Id,
             MonthlyAmounts = Enumerable.Repeat(200m, 12).ToArray(),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetLineRepository.AddAsync(line1);
         await _budgetLineRepository.AddAsync(line2);
@@ -412,9 +384,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -437,9 +407,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Active Budget",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         var archivedPlan = new BudgetPlan
         {
@@ -447,9 +415,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2025,
             Name = "Archived Budget",
-            IsArchived = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = true
         };
         await _context.BudgetPlans.AddRangeAsync(activePlan, archivedPlan);
         await _context.SaveChangesAsync();
@@ -472,9 +438,7 @@ public class BudgetRepositoryTests
             IBAN = "NL91ABNA0417164300",
             Currency = "EUR",
             StartingBalance = 1000,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _accountRepository.AddAsync(account);
         return account;
@@ -491,9 +455,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Test Budget Plan",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(budgetPlan);
 
@@ -502,9 +464,7 @@ public class BudgetRepositoryTests
             Id = Guid.NewGuid(),
             Name = name,
             BudgetPlanId = budgetPlan.Id,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _categoryRepository.AddAsync(category);
         return category;
@@ -522,9 +482,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -535,9 +493,7 @@ public class BudgetRepositoryTests
             CategoryId = category.Id,
             MonthlyAmounts = Enumerable.Repeat(100m, 12).ToArray(),
             Notes = "Original notes",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetLineRepository.AddAsync(line);
 
@@ -573,9 +529,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -585,9 +539,7 @@ public class BudgetRepositoryTests
             BudgetPlanId = plan.Id,
             CategoryId = category.Id,
             MonthlyAmounts = Enumerable.Repeat(100m, 12).ToArray(),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetLineRepository.AddAsync(line);
 
@@ -611,7 +563,6 @@ public class BudgetRepositoryTests
             Notes = line1.Notes,
             IsArchived = line1.IsArchived,
             CreatedAt = line1.CreatedAt,
-            UpdatedAt = DateTime.UtcNow,
             RowVersion = originalRowVersion
         };
 
@@ -633,9 +584,7 @@ public class BudgetRepositoryTests
             AccountId = account.Id,
             Year = 2026,
             Name = "Budget 2026",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetPlanRepository.AddAsync(plan);
 
@@ -645,9 +594,7 @@ public class BudgetRepositoryTests
             BudgetPlanId = plan.Id,
             CategoryId = category1.Id,
             MonthlyAmounts = Enumerable.Repeat(100m, 12).ToArray(),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         await _budgetLineRepository.AddAsync(line);
 

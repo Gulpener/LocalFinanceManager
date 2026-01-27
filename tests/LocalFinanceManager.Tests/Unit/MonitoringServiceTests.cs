@@ -48,9 +48,7 @@ public class MonitoringServiceTests : IDisposable
             Currency = "EUR",
             IBAN = "NL91ABNA0417164300",
             StartingBalance = 1000m,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         _dbContext.Accounts.Add(account);
         _dbContext.SaveChanges();
@@ -205,9 +203,7 @@ public class MonitoringServiceTests : IDisposable
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
             AccountId = _testAccountId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
     }
 
@@ -226,9 +222,7 @@ public class MonitoringServiceTests : IDisposable
             AutoAppliedAt = timestamp,
             Confidence = confidence,
             ModelVersion = 1,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
     }
 
@@ -242,9 +236,7 @@ public class MonitoringServiceTests : IDisposable
             ChangedBy = "UndoService",
             ChangedAt = DateTime.UtcNow.AddDays(-daysAgo),
             Reason = "Reverted auto-applied assignment",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
     }
 

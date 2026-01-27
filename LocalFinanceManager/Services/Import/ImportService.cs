@@ -172,8 +172,6 @@ public class ImportService
                             ImportBatchId = importBatchId,
                             SourceFileName = request.SourceFileName,
                             ImportedAt = DateTime.UtcNow,
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow,
                             IsArchived = false
                         };
 

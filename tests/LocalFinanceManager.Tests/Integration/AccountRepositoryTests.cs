@@ -48,8 +48,6 @@ public class AccountRepositoryTests
             IBAN = "NL91ABNA0417164300",
             Currency = "EUR",
             StartingBalance = 1000,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             IsArchived = false
         };
 
@@ -74,8 +72,6 @@ public class AccountRepositoryTests
             IBAN = "NL91ABNA0417164300",
             Currency = "EUR",
             StartingBalance = 1000,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             IsArchived = false
         };
 
@@ -162,8 +158,6 @@ public class AccountRepositoryTests
             IBAN = "NL91ABNA0417164300",
             Currency = "EUR",
             StartingBalance = 1000,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             IsArchived = false
         };
 

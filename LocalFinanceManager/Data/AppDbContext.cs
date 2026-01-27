@@ -317,8 +317,6 @@ public class AppDbContext : DbContext
                     IBAN = "NL91ABNA0417164300",
                     Currency = "EUR",
                     StartingBalance = 1000.00m,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
                     IsArchived = false
                 },
                 new Account
@@ -329,8 +327,6 @@ public class AppDbContext : DbContext
                     IBAN = "NL20INGB0001234567",
                     Currency = "EUR",
                     StartingBalance = 2500.00m,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
                     IsArchived = false
                 },
                 new Account
@@ -341,8 +337,6 @@ public class AppDbContext : DbContext
                     IBAN = "NL39RABO0300065264",
                     Currency = "EUR",
                     StartingBalance = 0.00m,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
                     IsArchived = false
                 }
             };
@@ -364,9 +358,7 @@ public class AppDbContext : DbContext
                     AccountId = firstAccount.Id,
                     Year = DateTime.Now.Year,
                     Name = $"{DateTime.Now.Year} Household Budget",
-                    IsArchived = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    IsArchived = false
                 };
 
                 await BudgetPlans.AddAsync(budgetPlan);
@@ -382,9 +374,7 @@ public class AppDbContext : DbContext
                         Name = name,
                         Type = type,
                         BudgetPlanId = budgetPlan.Id,
-                        IsArchived = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        IsArchived = false
                     });
                 }
                 await SaveChangesAsync();
@@ -417,9 +407,7 @@ public class AppDbContext : DbContext
                         CategoryId = huurCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(850m, 12).ToArray(),
                         Notes = "Monthly rent",
-                        IsArchived = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        IsArchived = false
                     });
                 }
 
@@ -433,9 +421,7 @@ public class AppDbContext : DbContext
                         CategoryId = boodschappenCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(400m, 12).ToArray(),
                         Notes = "Groceries and household items",
-                        IsArchived = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        IsArchived = false
                     });
                 }
 
@@ -449,9 +435,7 @@ public class AppDbContext : DbContext
                         CategoryId = transportCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(150m, 12).ToArray(),
                         Notes = "Public transport and fuel",
-                        IsArchived = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        IsArchived = false
                     });
                 }
 
@@ -465,9 +449,7 @@ public class AppDbContext : DbContext
                         CategoryId = utilitiesCategory.Id,
                         MonthlyAmounts = new decimal[] { 120m, 110m, 100m, 90m, 80m, 70m, 70m, 80m, 90m, 100m, 110m, 120m },
                         Notes = "Gas, electricity, water (seasonal variation)",
-                        IsArchived = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        IsArchived = false
                     });
                 }
 
@@ -481,9 +463,7 @@ public class AppDbContext : DbContext
                         CategoryId = entertainmentCategory.Id,
                         MonthlyAmounts = Enumerable.Repeat(200m, 12).ToArray(),
                         Notes = "Movies, dining out, hobbies",
-                        IsArchived = false,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        IsArchived = false
                     });
                 }
 
@@ -512,8 +492,6 @@ public class AppDbContext : DbContext
                         Description = "Grocery Store Purchase",
                         Counterparty = "Albert Heijn",
                         ExternalId = "TRX001",
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
                         IsArchived = false
                     },
                     new Transaction
@@ -525,8 +503,6 @@ public class AppDbContext : DbContext
                         Description = "Coffee Shop",
                         Counterparty = "Starbucks",
                         ExternalId = "TRX002",
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
                         IsArchived = false
                     },
                     new Transaction
@@ -538,8 +514,6 @@ public class AppDbContext : DbContext
                         Description = "Salary Payment",
                         Counterparty = "Employer Corp",
                         ExternalId = "TRX003",
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
                         IsArchived = false
                     },
                     new Transaction
@@ -551,8 +525,6 @@ public class AppDbContext : DbContext
                         Description = "Rent Payment",
                         Counterparty = "Landlord",
                         ExternalId = "TRX004",
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
                         IsArchived = false
                     }
                 };
