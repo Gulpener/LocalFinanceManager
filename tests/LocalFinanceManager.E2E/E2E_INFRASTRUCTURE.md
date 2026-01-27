@@ -401,13 +401,20 @@ await Factory.ResetDatabaseAsync();
 
 ### Test Database Location
 
-The test database is created as:
+Each test creates an isolated database with the format:
 
 ```
-localfinancemanager.test.db
+localfinancemanager.e2etest.{testName}.{uniqueId}.db
 ```
 
-This file is automatically ignored by Git (see `.gitignore`).
+Where:
+
+- `{testName}` is the sanitized name of the test
+- `{uniqueId}` is an 8-character GUID segment for uniqueness
+
+Example: `localfinancemanager.e2etest.SmokeTests_HealthCheck.a1b2c3d4.db`
+
+These files are automatically ignored by Git (see `.gitignore`).
 
 ## CI Integration
 
