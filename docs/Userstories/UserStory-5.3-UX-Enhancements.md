@@ -137,21 +137,29 @@ This story **enhances** all assignment artifacts from previous stories:
   - Retrieve favorite category IDs from localStorage
 - [ ] Register service as scoped in `Program.cs`
 
-### 7. Recent Categories UI & Clickable Budget Line Cards
+### 7. Recent Categories Pills UI
+
+- [ ] Add "Recent Categories" section to top of `TransactionAssignModal.razor`:
+  - Display horizontal pill buttons showing top 5 most recently used categories
+  - Each pill shows category name with click handler to quickly select that budget line
+  - Visual feedback: active pill gets accent background, hover state shows pointer cursor
+  - Pills auto-update after successful category assignment
+- [ ] Call `RecentCategoriesService.TrackCategoryUsageAsync()` after successful assignment
+- [ ] Implement keyboard navigation: Tab moves between pills, Enter/Space selects pill, maintain ARIA labels
+
+### 8. Budget Line Card Grid
 
 - [ ] Replace dropdown budget line selector with clickable card grid in `TransactionAssignModal.razor`:
-  - Add "Recent Categories" section at top with horizontal pill buttons (top 5 most used)
-  - Display main budget line grid below recent categories
+  - Display grid of budget line cards below Recent Categories section
   - Each card shows: category name (bold), remaining balance (e.g., "€450 remaining"), optional progress bar
   - Responsive grid layout: 4 columns (>1200px), 3 columns (768-1200px), 2 columns (576-768px), 1 column (<576px)
   - Visual feedback: selected card gets accent border/background, hover state shows pointer cursor
   - Click handler binds to `selectedBudgetLineId`
 - [ ] Extend `BudgetLineDto` with `RemainingBalance` and `SpentAmount` calculated properties based on `YearTotal` and assigned transactions
-- [ ] Call `RecentCategoriesService.TrackCategoryUsageAsync()` after successful assignment
 - [ ] Add loading skeleton for budget line cards
 - [ ] Implement keyboard navigation: Tab moves between cards, Enter/Space selects card, maintain ARIA labels
 
-### 8. Favorite Categories Feature
+### 9. Favorite Categories Feature
 
 - [ ] Update `CategorySelector.razor` to display favorites:
   - Fetch favorite categories from `RecentCategoriesService.GetFavoriteCategoriesAsync()`
@@ -166,7 +174,7 @@ This story **enhances** all assignment artifacts from previous stories:
   - Allow reordering or removing favorites
 - [ ] Persist favorites across sessions (localStorage)
 
-### 9. Performance Optimization - Pagination Enhancements
+### 10. Performance Optimization - Pagination Enhancements
 
 - [ ] Update `Transactions.razor` pagination controls:
   - Add page size selector: 25 / 50 / 100 / 200 transactions per page
