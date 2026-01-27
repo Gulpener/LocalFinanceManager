@@ -178,8 +178,9 @@ public abstract class E2ETestBase : PageTest
         // Set default viewport size
         options.ViewportSize = new ViewportSize { Width = 1920, Height = 1080 };
 
-        // Note: SlowMo is no longer supported in BrowserNewContextOptions
-        // Use Playwright launch options instead if slow motion is needed
+        // Note: SlowMo is no longer supported in BrowserNewContextOptions.
+        // To enable slow motion for debugging, configure BrowserTypeLaunchOptions.SlowMo
+        // when launching the browser (e.g., in your Playwright/browser launch setup).
 
         return options;
     }
