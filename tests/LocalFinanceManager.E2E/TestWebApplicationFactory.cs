@@ -210,7 +210,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         await context.Database.ExecuteSqlRawAsync("DELETE FROM BudgetPlans;");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM Accounts;");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM MLModels;");
-        
+
         // Reset SQLite sequence counters (not needed for GUID primary keys, but good practice)
         await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence;");
     }
@@ -283,7 +283,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             GC.Collect();
 
             // Wait longer for file handles to be fully released
-            Thread.Sleep(300);
+            Task.Delay(300);
 
             // Clean up test database file with aggressive retry logic
             if (File.Exists(_testDatabasePath))
@@ -301,7 +301,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                         SqliteConnection.ClearAllPools();
                         GC.Collect();
                         GC.WaitForPendingFinalizers();
-                        Thread.Sleep(100 * (i + 1)); // Increasing backoff: 100ms, 200ms, 300ms...
+                        Task.Delay(100 * (i + 1)); // Increasing backoff: 100ms, 200ms, 300ms...
                     }
                     catch
                     {
