@@ -22,16 +22,22 @@ namespace LocalFinanceManager.E2E;
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    // Static semaphore to prevent parallel migrations (SQLite limitation)
+    private static readonly SemaphoreSlim MigrationSemaphore = new(1, 1);
+    
     private IHost? _host;
     private readonly string _testDatabasePath;
     private readonly int _port;
+    private readonly string _uniqueId;
 
     public string ServerAddress { get; private set; }
     public string TestDatabasePath => _testDatabasePath;
 
     public TestWebApplicationFactory(string testName)
     {
-        _testDatabasePath = $"localfinancemanager.e2etest.{SanitizeTestName(testName)}.db";
+        // Add GUID to ensure unique database per test instance (critical for parallel test execution)
+        _uniqueId = Guid.NewGuid().ToString("N")[..8];
+        _testDatabasePath = $"localfinancemanager.e2etest.{SanitizeTestName(testName)}.{_uniqueId}.db";
         _port = GetAvailablePort();
         ServerAddress = $"http://localhost:{_port}";
     }
@@ -69,8 +75,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         // Build the real host with Kestrel
         builder.ConfigureWebHost(webHostBuilder => webHostBuilder.UseKestrel());
 
-        _host = builder.Build();
-        _host.Start();
+        // Use semaphore to ensure only one test runs migrations at a time
+        // This prevents SQLite lock conflicts during parallel test execution
+        MigrationSemaphore.Wait();
+        try
+        {
+            _host = builder.Build();
+            _host.Start();
+        }
+        finally
+        {
+            MigrationSemaphore.Release();
+        }
 
         return dummyHost;
     }
