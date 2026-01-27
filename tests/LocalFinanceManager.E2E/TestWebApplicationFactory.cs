@@ -24,7 +24,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     // Static semaphore to prevent parallel migrations (SQLite limitation)
     private static readonly SemaphoreSlim MigrationSemaphore = new(1, 1);
-    
+
     private IHost? _host;
     private readonly string _testDatabasePath;
     private readonly int _port;
