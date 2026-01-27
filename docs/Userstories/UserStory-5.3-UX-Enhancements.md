@@ -158,7 +158,7 @@ This story **enhances** all assignment artifacts from previous stories:
 - [ ] Extend `BudgetLineDto` with `RemainingBalance` and `SpentAmount` calculated properties:
   - `SpentAmount` = sum of all assigned transaction amounts for this budget line in the current budget period/year
   - `RemainingBalance` = `YearTotal - SpentAmount`
-  - Both properties are read-only/calculated in the application layer; they are not separately persisted in the database
+- [ ] Ensure a dedicated implementation ticket is created and linked for the Budget Line Card Grid UX (responsive grid, visual feedback, keyboard navigation, loading skeletons) when this refinement is not implemented in the current PR.
 - [ ] Add loading skeleton for budget line cards
 - [ ] Implement keyboard navigation: Tab moves between cards, Enter/Space selects card, maintain ARIA labels
 
