@@ -29,13 +29,11 @@ public abstract class E2ETestBase : PageTest
         // Ensure database file is deleted before starting server
         await Factory.EnsureDatabaseReadyAsync();
 
-        // Reset database to clean state after server is created but before tests run
-        await Factory.ResetDatabaseAsync();
-
         // Trigger server startup by accessing the Server property
+        // This will run migrations via Program.cs
         _ = Factory.Server;
 
-        // Wait for server to be ready
+        // Wait for server to be ready (migrations will complete during this wait)
         await WaitForServerReadyAsync();
 
         TestContext.Out.WriteLine($"Server ready at: {BaseUrl}");

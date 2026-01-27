@@ -180,49 +180,39 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Resets the database to a clean state by deleting and recreating all tables.
-    /// Call this between tests to ensure test isolation.
+    /// Resets the database to a clean state by truncating all tables.
+    /// WARNING: Do NOT call this during initialization - migrations are already applied by Program.cs during startup.
+    /// Only call this method if you need to reset database state mid-test.
     /// </summary>
     /// <remarks>
-    /// This method is useful when running multiple tests in sequence without disposing the factory.
     /// For most test scenarios, the factory should be recreated for each test to ensure isolation.
+    /// This method is provided for advanced scenarios where you need to reset data without recreating the factory.
     /// </remarks>
     public async Task ResetDatabaseAsync()
     {
-        // Force close all connections and clear pools before migration attempt
+        // Force close all connections and clear pools
         SqliteConnection.ClearAllPools();
         GC.Collect();
         GC.WaitForPendingFinalizers();
-        await Task.Delay(100);
-
-        // If database file exists and appears corrupted, delete it
-        if (File.Exists(_testDatabasePath))
-        {
-            var fileInfo = new FileInfo(_testDatabasePath);
-            // If file is too small (< 1KB), it's likely corrupted
-            if (fileInfo.Length < 1024)
-            {
-                try
-                {
-                    File.Delete(_testDatabasePath);
-                    // Also delete related files
-                    if (File.Exists(_testDatabasePath + "-shm")) File.Delete(_testDatabasePath + "-shm");
-                    if (File.Exists(_testDatabasePath + "-wal")) File.Delete(_testDatabasePath + "-wal");
-                    SqliteConnection.ClearAllPools();
-                }
-                catch
-                {
-                    // Ignore deletion errors
-                }
-            }
-        }
+        await Task.Delay(50);
 
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Apply all migrations - this will create the database if it doesn't exist
-        // Do NOT use EnsureCreatedAsync() as it bypasses migrations and causes conflicts
-        await context.Database.MigrateAsync();
+        // Truncate all tables (migrations already applied by Program.cs)
+        // Using raw SQL for efficiency - EF Core doesn't have a built-in truncate method for SQLite
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM TransactionSplits;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM TransactionAudits;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM LabeledExamples;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM Transactions;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM BudgetLines;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM Categories;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM BudgetPlans;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM Accounts;");
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM MLModels;");
+        
+        // Reset SQLite sequence counters (not needed for GUID primary keys, but good practice)
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence;");
     }
 
     /// <summary>
