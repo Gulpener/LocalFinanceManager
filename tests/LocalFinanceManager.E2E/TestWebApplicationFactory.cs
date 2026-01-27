@@ -101,7 +101,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Default"] = GetConnectionString(),
-                ["RecreateDatabase"] = "false", // DON'T recreate database - we manually delete before startup
+                ["RecreateDatabase"] = "true", // Let the app recreate the database on startup for E2E tests
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
                 ["ML:EnableAutoSuggestions"] = "false" // Disable ML during tests unless explicitly enabled
             });
