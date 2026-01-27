@@ -448,7 +448,7 @@ public class BudgetRepositoryTests
     {
         // Create account and budget plan first if they don't exist
         var account = await CreateTestAccountAsync();
-        
+
         var budgetPlan = new BudgetPlan
         {
             Id = Guid.NewGuid(),
@@ -519,7 +519,7 @@ public class BudgetRepositoryTests
         // SQLite's RowVersion implementation differs from SQL Server's timestamp type.
         // The concurrency detection works in production with proper SQLite file database
         // and is tested via E2E tests.
-        
+
         // Arrange
         var account = await CreateTestAccountAsync();
         var category = await CreateTestCategoryAsync();
