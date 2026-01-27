@@ -370,7 +370,7 @@ builder.Services.Configure<AutomationOptions>(builder.Configuration.GetSection("
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Caching"));
 
 // 2. Register MemoryCache (stays in Program.cs)
-builder.Services.AddMemoryCache(options => 
+builder.Services.AddMemoryCache(options =>
 {
     options.SizeLimit = 1000;
     options.CompactionPercentage = 0.25;
@@ -429,7 +429,7 @@ public void Setup()
 
     // Build DI container with all services
     _serviceProvider = new TestServiceProvider(_context);
-    
+
     // Resolve services from container (no manual instantiation)
     _accountService = _serviceProvider.GetService<AccountService>();
     _accountRepository = _serviceProvider.GetService<IAccountRepository>();

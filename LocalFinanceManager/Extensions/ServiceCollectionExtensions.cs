@@ -25,7 +25,7 @@ public static class ServiceCollectionExtensions
     {
         // Generic repository
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-        
+
         // Specialized repositories
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -35,7 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITransactionSplitRepository, TransactionSplitRepository>();
         services.AddScoped<ITransactionAuditRepository, TransactionAuditRepository>();
         services.AddScoped<ILabeledExampleRepository, LabeledExampleRepository>();
-        
+
         return services;
     }
 
@@ -51,7 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<CategoryService>();
         services.AddScoped<BudgetPlanService>();
         services.AddScoped<ITransactionAssignmentService, TransactionAssignmentService>();
-        
+
         return services;
     }
 
@@ -65,7 +65,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<ICacheKeyTracker, CacheKeyTracker>();
         services.AddScoped<IBudgetAccountLookupService, BudgetAccountLookupService>();
-        
+
         return services;
     }
 
@@ -80,12 +80,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ML.IFeatureExtractor, ML.FeatureExtractor>();
         services.AddScoped<ML.IMLService, MLService>();
-        
+
         if (includeBackgroundServices)
         {
             services.AddHostedService<MLRetrainingBackgroundService>();
         }
-        
+
         return services;
     }
 
@@ -100,12 +100,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IMonitoringService, MonitoringService>();
         services.AddScoped<IUndoService, UndoService>();
-        
+
         if (includeBackgroundServices)
         {
             services.AddHostedService<AutoApplyBackgroundService>();
         }
-        
+
         return services;
     }
 
@@ -122,7 +122,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ExactMatchStrategy>();
         services.AddScoped<FuzzyMatchStrategy>();
         services.AddScoped<ImportService>();
-        
+
         return services;
     }
 
@@ -146,10 +146,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidator<SplitTransactionRequest>, SplitTransactionRequestValidator>();
         services.AddScoped<IValidator<BulkAssignTransactionsRequest>, BulkAssignTransactionsRequestValidator>();
         services.AddScoped<IValidator<UndoAssignmentRequest>, UndoAssignmentRequestValidator>();
-        
+
         // IbanNet validator
         services.AddSingleton<IIbanValidator, IbanValidator>();
-        
+
         return services;
     }
 }
