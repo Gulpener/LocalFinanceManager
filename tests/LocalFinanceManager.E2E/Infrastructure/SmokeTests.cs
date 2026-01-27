@@ -1,6 +1,7 @@
 using LocalFinanceManager.Data;
 using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 
@@ -49,7 +50,7 @@ public class SmokeTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // Act - Query database to verify connection
-        var accountCount = context.Accounts.Count();
+        var accountCount = await context.Accounts.CountAsync();
 
         // Assert - No exception thrown, connection successful
         Assert.That(accountCount, Is.GreaterThanOrEqualTo(0));
