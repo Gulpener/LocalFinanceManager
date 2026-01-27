@@ -43,17 +43,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Gets an available TCP port by binding to port 0 (letting the OS choose)
-    /// and then immediately releasing it.
+    /// Returns 0 to indicate that Kestrel should bind to a dynamically assigned port.
+    /// This avoids the race condition of probing a free port before the server starts.
     /// </summary>
     private static int GetAvailablePort()
     {
-        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        socket.Bind(new IPEndPoint(IPAddress.Loopback, 0));
-        var port = ((IPEndPoint)socket.LocalEndPoint!).Port;
-        return port;
+        // Let Kestrel/HTTP.sys choose an available ephemeral port when binding.
+        return 0;
     }
-
     /// <summary>
     /// Gets the connection string for the test database with pooling disabled.
     /// Disabling pooling ensures file handles are released immediately after connections close.
@@ -104,7 +101,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Default"] = GetConnectionString(),
-                ["RecreateDatabase"] = "false", // DON'T recreate database - we manually delete before startup
+                ["RecreateDatabase"] = "true", // Let the app recreate the database on startup for E2E tests
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
                 ["ML:EnableAutoSuggestions"] = "false" // Disable ML during tests unless explicitly enabled
             });

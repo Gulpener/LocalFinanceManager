@@ -22,10 +22,7 @@
 
   <!-- NUnit Adapter Configuration -->
   <NUnit>
-    <!-- Number of workers for parallel test execution -->
-    <NumberOfTestWorkers>4</NumberOfTestWorkers>
-    
-    <!-- Enable parallel execution at method level -->
+    <!-- NUnit test name pattern -->
     <DefaultTestNamePattern>{m}{a}</DefaultTestNamePattern>
     
     <!-- Capture standard output and error -->

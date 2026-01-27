@@ -302,7 +302,7 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 - **Phase 2 Continuation:** UserStory-9.1 implements advanced assignment tests (split, bulk, integration workflows - 19 tests)
 - **Phase 3 Deferred:** UserStory-9.2 implements ML tests pending US-7 completion (25 tests estimated)
 - **Per-Test Cleanup:** Each test creates fresh database state; no test interdependencies
-- **CI Parallel Execution:** Phase 1 tests run in parallel groups (import+basic, multi-account) for <5 minute execution
+- **CI Execution Mode:** Phase 1 tests currently run sequentially in CI due to SQLite file access conflicts; target execution time remains <5 minutes, with parallel groups (import+basic, multi-account) to be revisited once database concurrency issues are resolved
 - **Screenshot Artifacts:** Invaluable for debugging CI failures; captured automatically on test failure
 - **PageObjectModel Enhancements:** TransactionListPage additions unblock both Phase 1 and Phase 2 tests
 - **Import Tests Foundation:** Transaction import tests enable all subsequent test phases (can't test assignment without transactions)

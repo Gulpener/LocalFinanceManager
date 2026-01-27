@@ -18,9 +18,6 @@ public class SmokeTests : E2ETestBase
     public async Task Application_And_Browser_Infrastructure_Works()
     {
         // Arrange
-        using var scope = Factory!.CreateDbScope();
-        _ = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
         TestContext.Out.WriteLine($"Navigating to: {BaseUrl}");
 
         // Act - Navigate to home page with extended timeout for Blazor Server initialization
