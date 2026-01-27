@@ -12,7 +12,7 @@ This document describes the end-to-end (E2E) test infrastructure for LocalFinanc
 2. **E2ETestBase** - Base class for all E2E tests with screenshot/video capture
 3. **SeedDataHelper** - Reusable seed methods for creating test data
 4. **PageObjectModels** - Abstractions for UI interactions
-5. **.runsettings** - Configuration for parallel execution and test parameters
+5. **.runsettings** - Configuration for test execution parameters
 
 ### Test Structure
 
@@ -330,30 +330,28 @@ $env:CI="true"
 dotnet test tests/LocalFinanceManager.E2E
 ```
 
-## Parallel Execution
+## Test Execution Model
 
-### Configuration
+### Sequential Execution
 
-The `.runsettings` file configures 4 parallel test workers:
+Tests run **sequentially** (one at a time) to prevent SQLite file access conflicts:
 
-```xml
-<MaxCpuCount>4</MaxCpuCount>
-<NumberOfTestWorkers>4</NumberOfTestWorkers>
+```csharp
+// AssemblyInfo.cs
+[assembly: LevelOfParallelism(1)]
+[assembly: Parallelizable(ParallelScope.None)]
 ```
 
-### Running Tests in Parallel
-
-```powershell
-dotnet test tests/LocalFinanceManager.E2E --settings tests/LocalFinanceManager.E2E/.runsettings
-```
+**Why Sequential?** E2E tests use file-based SQLite databases which cannot be safely deleted while another test is potentially accessing them. Attempting parallel execution causes file access conflicts and test failures.
 
 ### Test Isolation
 
 Each test runs with a fresh database instance:
 
-- `TestWebApplicationFactory` creates a dedicated SQLite test database
+- `TestWebApplicationFactory` creates a dedicated SQLite test database per test
 - Database is recreated on factory initialization (clean state)
 - Database is deleted on factory disposal (cleanup)
+- Unique database names prevent conflicts between tests: `localfinancemanager.e2etest.{testName}.{uniqueId}.db`
 
 ## Debugging Test Failures
 
@@ -578,7 +576,7 @@ The E2E test infrastructure provides:
 - ✅ **PageObjectModels** for maintainable UI interactions
 - ✅ **Automatic screenshot capture** on test failures
 - ✅ **Video recording** in CI environments
-- ✅ **Parallel execution** for fast feedback
+- ✅ **Sequential execution** to prevent SQLite file conflicts
 - ✅ **Comprehensive documentation** for developer onboarding
 
 For questions or issues, refer to the test code examples in the Infrastructure/SmokeTests.cs file.
