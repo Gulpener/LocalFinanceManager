@@ -34,9 +34,6 @@
     <!-- Run Playwright in headless mode (true) or headed mode (false) -->
     <Parameter name="Headless" value="true" />
     
-    <!-- Slow motion delay in milliseconds (0 = no delay, useful for debugging) -->
-    <Parameter name="SlowMo" value="0" />
-    
     <!-- Enable video recording (true in CI, false locally for performance) -->
     <Parameter name="RecordVideo" value="false" />
     

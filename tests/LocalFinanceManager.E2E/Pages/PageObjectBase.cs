@@ -75,18 +75,15 @@ public abstract class PageObjectBase
     /// <param name="action">Action that triggers navigation (e.g., clicking a button).</param>
     /// <param name="waitUntil">Wait condition (default: NetworkIdle).</param>
     /// <remarks>
-    /// Note: Consider using Playwright's expect API (Page.Expect) for modern navigation handling.
-    /// This method uses a legacy API for backward compatibility.
+    /// Uses Playwright's modern RunAndWaitForURLAsync API to coordinate the action and navigation wait.
     /// </remarks>
     public async Task WaitForNavigationAsync(Func<Task> action, WaitUntilState waitUntil = WaitUntilState.NetworkIdle)
     {
-        var navigationTask = Page.WaitForURLAsync("**", new PageWaitForURLOptions
-        {
-            WaitUntil = waitUntil
-        });
-
-        var actionTask = action();
-
-        await Task.WhenAll(navigationTask, actionTask);
+        await Page.RunAndWaitForURLAsync("**",
+            action,
+            new PageRunAndWaitForURLOptions
+            {
+                WaitUntil = waitUntil
+            });
     }
 }
