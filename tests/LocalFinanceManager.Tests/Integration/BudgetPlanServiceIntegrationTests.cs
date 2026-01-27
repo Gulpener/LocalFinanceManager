@@ -3,9 +3,8 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
+using LocalFinanceManager.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace LocalFinanceManager.Tests.Integration;
 
@@ -13,18 +12,10 @@ namespace LocalFinanceManager.Tests.Integration;
 public class BudgetPlanServiceIntegrationTests
 {
     private AppDbContext _context = null!;
-    private BudgetPlanRepository _budgetPlanRepository = null!;
-    private BudgetLineRepository _budgetLineRepository = null!;
-    private AccountRepository _accountRepository = null!;
-    private CategoryRepository _categoryRepository = null!;
-    private CategoryService _categoryService = null!;
+    private TestServiceProvider _serviceProvider = null!;
     private BudgetPlanService _budgetPlanService = null!;
-    private Mock<ILogger<Repository<BudgetPlan>>> _budgetPlanRepoLogger = null!;
-    private Mock<ILogger<Repository<BudgetLine>>> _budgetLineRepoLogger = null!;
-    private Mock<ILogger<Repository<Account>>> _accountRepoLogger = null!;
-    private Mock<ILogger<Repository<Category>>> _categoryRepoLogger = null!;
-    private Mock<ILogger<CategoryService>> _categoryServiceLogger = null!;
-    private Mock<ILogger<BudgetPlanService>> _budgetPlanServiceLogger = null!;
+    private ICategoryRepository _categoryRepository = null!;
+    private CategoryService _categoryService = null!;
 
     [SetUp]
     public async Task Setup()
@@ -37,26 +28,10 @@ public class BudgetPlanServiceIntegrationTests
         _context.Database.OpenConnection();
         _context.Database.EnsureCreated();
 
-        _budgetPlanRepoLogger = new Mock<ILogger<Repository<BudgetPlan>>>();
-        _budgetLineRepoLogger = new Mock<ILogger<Repository<BudgetLine>>>();
-        _accountRepoLogger = new Mock<ILogger<Repository<Account>>>();
-        _categoryRepoLogger = new Mock<ILogger<Repository<Category>>>();
-        _categoryServiceLogger = new Mock<ILogger<CategoryService>>();
-        _budgetPlanServiceLogger = new Mock<ILogger<BudgetPlanService>>();
-
-        _budgetPlanRepository = new BudgetPlanRepository(_context, _budgetPlanRepoLogger.Object);
-        _budgetLineRepository = new BudgetLineRepository(_context, _budgetLineRepoLogger.Object);
-        _accountRepository = new AccountRepository(_context, _accountRepoLogger.Object);
-        _categoryRepository = new CategoryRepository(_context, _categoryRepoLogger.Object);
-        _categoryService = new CategoryService(_categoryRepository, _categoryServiceLogger.Object);
-        
-        _budgetPlanService = new BudgetPlanService(
-            _budgetPlanRepository,
-            _budgetLineRepository,
-            _accountRepository,
-            _categoryRepository,
-            _categoryService,
-            _budgetPlanServiceLogger.Object);
+        _serviceProvider = new TestServiceProvider(_context);
+        _budgetPlanService = _serviceProvider.GetService<BudgetPlanService>();
+        _categoryRepository = _serviceProvider.GetService<ICategoryRepository>();
+        _categoryService = _serviceProvider.GetService<CategoryService>();
 
         // Create a default test account
         var account = new Account
@@ -76,8 +51,9 @@ public class BudgetPlanServiceIntegrationTests
     [TearDown]
     public void TearDown()
     {
-        _context.Database.CloseConnection();
-        _context.Dispose();
+        _serviceProvider?.Dispose();
+        _context?.Database.CloseConnection();
+        _context?.Dispose();
     }
 
     [Test]

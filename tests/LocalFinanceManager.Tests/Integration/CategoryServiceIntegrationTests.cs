@@ -3,9 +3,8 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
+using LocalFinanceManager.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace LocalFinanceManager.Tests.Integration;
 
@@ -13,10 +12,9 @@ namespace LocalFinanceManager.Tests.Integration;
 public class CategoryServiceIntegrationTests
 {
     private AppDbContext _context = null!;
-    private CategoryRepository _categoryRepository = null!;
+    private TestServiceProvider _serviceProvider = null!;
     private CategoryService _categoryService = null!;
-    private Mock<ILogger<Repository<Category>>> _categoryRepoLogger = null!;
-    private Mock<ILogger<CategoryService>> _serviceLogger = null!;
+    private ICategoryRepository _categoryRepository = null!;
     private Guid _testBudgetPlanId;
 
     [SetUp]
@@ -30,11 +28,9 @@ public class CategoryServiceIntegrationTests
         _context.Database.OpenConnection();
         _context.Database.EnsureCreated();
 
-        _categoryRepoLogger = new Mock<ILogger<Repository<Category>>>();
-        _serviceLogger = new Mock<ILogger<CategoryService>>();
-
-        _categoryRepository = new CategoryRepository(_context, _categoryRepoLogger.Object);
-        _categoryService = new CategoryService(_categoryRepository, _serviceLogger.Object);
+        _serviceProvider = new TestServiceProvider(_context);
+        _categoryService = _serviceProvider.GetService<CategoryService>();
+        _categoryRepository = _serviceProvider.GetService<ICategoryRepository>();
 
         // Create a default test account and budget plan
         var account = new Account
@@ -67,8 +63,9 @@ public class CategoryServiceIntegrationTests
     [TearDown]
     public void TearDown()
     {
-        _context.Database.CloseConnection();
-        _context.Dispose();
+        _serviceProvider?.Dispose();
+        _context?.Database.CloseConnection();
+        _context?.Dispose();
     }
 
     [Test]

@@ -352,30 +352,106 @@ await app.RunAsync();  // Async main
 **Lifetime management:**
 
 - **Scoped** (default for most services): Created per HTTP request
-- **Singleton**: Shared across requests (configuration, logging factories)
+- **Singleton**: Shared across requests (configuration, logging factories, cache)
 - **Transient**: New instance every time (rarely used)
 
-**Registration pattern:**
+**Service registration pattern (extension methods):**
+
+Services are organized into logical extension methods in `LocalFinanceManager.Extensions.ServiceCollectionExtensions`:
 
 ```csharp
-// Program.cs
+// Program.cs - call extension methods in dependency order
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
-builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddScoped<IAccountService, AccountService>();
-builder.Services.AddScoped<IMLService, MLService>();
+// 1. Register configuration options (stays in Program.cs)
+builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
+builder.Services.Configure<MLOptions>(builder.Configuration.GetSection("MLOptions"));
+builder.Services.Configure<AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
+builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Caching"));
 
-// DbContext
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Default")));
+// 2. Register MemoryCache (stays in Program.cs)
+builder.Services.AddMemoryCache(options => 
+{
+    options.SizeLimit = 1000;
+    options.CompactionPercentage = 0.25;
+});
 
-// Background jobs (singleton)
-builder.Services.AddSingleton<IHostedService, MLRetrainingBackgroundService>();
-
-var app = builder.Build();
+// 3. Register application services using extension methods (in dependency order)
+builder.Services.AddDataAccess();           // Repositories (base layer)
+builder.Services.AddValidation();           // Validators (no dependencies)
+builder.Services.AddCachingServices();      // Cache infrastructure
+builder.Services.AddDomainServices();       // Core domain services
+builder.Services.AddImportServices();       // CSV/JSON import
+builder.Services.AddMLServices();           // ML feature extraction & prediction
+builder.Services.AddAutomationServices();   // Automation & background workers
 ```
+
+**Extension method groupings:**
+
+1. **AddDataAccess()**: Generic `Repository<T>` + specialized repositories (9 services)
+2. **AddValidation()**: FluentValidation validators + IbanNet (13 services)
+3. **AddCachingServices()**: Cache key tracker + budget/account lookup (2 services)
+4. **AddDomainServices()**: AccountService, CategoryService, BudgetPlanService, TransactionAssignmentService (4 services)
+5. **AddImportServices()**: CSV/JSON parsers, matching strategies, import orchestration (5 services)
+6. **AddMLServices(bool includeBackgroundServices = true)**: Feature extraction, ML service, optional background retraining worker (3 services)
+7. **AddAutomationServices(bool includeBackgroundServices = true)**: Monitoring, undo, optional auto-apply background worker (3 services)
+
+**Background service control:**
+
+Extension methods for ML and automation services accept `includeBackgroundServices` parameter:
+
+```csharp
+// Production: include background workers
+builder.Services.AddMLServices();              // includeBackgroundServices: true (default)
+builder.Services.AddAutomationServices();
+
+// Tests: exclude background workers to prevent auto-start interference
+services.AddMLServices(includeBackgroundServices: false);
+services.AddAutomationServices(includeBackgroundServices: false);
+```
+
+**Integration test pattern (TestServiceProvider):**
+
+Use `TestServiceProvider` helper class to build full DI container with test database:
+
+```csharp
+// In integration tests
+[SetUp]
+public void Setup()
+{
+    // Create in-memory SQLite context
+    var options = new DbContextOptionsBuilder<AppDbContext>()
+        .UseSqlite("DataSource=:memory:")
+        .Options;
+    _context = new AppDbContext(options);
+    _context.Database.OpenConnection();
+    _context.Database.EnsureCreated();
+
+    // Build DI container with all services
+    _serviceProvider = new TestServiceProvider(_context);
+    
+    // Resolve services from container (no manual instantiation)
+    _accountService = _serviceProvider.GetService<AccountService>();
+    _accountRepository = _serviceProvider.GetService<IAccountRepository>();
+}
+
+[TearDown]
+public void TearDown()
+{
+    _serviceProvider?.Dispose();  // Dispose DI container
+    _context?.Database.CloseConnection();
+    _context?.Dispose();
+}
+```
+
+**TestServiceProvider features:**
+
+- Accepts test `AppDbContext` and optional `ILoggerFactory` (defaults to `NullLoggerFactory` for performance)
+- Registers test-friendly configuration options via `Options.Create()` with empty/default values
+- Calls all extension methods with `includeBackgroundServices: false`
+- Implements `IDisposable` for proper resource cleanup
+- Exposes `GetService<T>()` for simple service resolution
+- Exposes `CreateScope()` for explicit scope control per test method
 
 ---
 
