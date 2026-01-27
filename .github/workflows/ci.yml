@@ -40,7 +40,7 @@ jobs:
         run: dotnet build tests/LocalFinanceManager.E2E/ --configuration Release --no-restore
 
       - name: Install Playwright browsers
-        run: pwsh -Command "cd tests/LocalFinanceManager.E2E; dotnet tool restore; pwsh bin/Release/net10.0/playwright.ps1 install --with-deps chromium"
+        run: pwsh -Command "cd tests/LocalFinanceManager.E2E; pwsh bin/Release/net10.0/playwright.ps1 install --with-deps chromium"
         shell: pwsh
 
       - name: Run E2E tests (including ignored tests)
