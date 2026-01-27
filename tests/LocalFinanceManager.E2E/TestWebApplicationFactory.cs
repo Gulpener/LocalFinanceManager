@@ -52,10 +52,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         listener.Start();
         var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
-        
+
         // Small delay to ensure OS releases the port
         System.Threading.Thread.Sleep(50);
-        
+
         return port;
     }
     /// <summary>
@@ -81,18 +81,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         // Start from the current assembly location (test bin directory)
         var assemblyLocation = Path.GetDirectoryName(typeof(TestWebApplicationFactory).Assembly.Location)!;
         var directory = new DirectoryInfo(assemblyLocation);
-        
+
         // Walk up until we find the solution file
         while (directory != null && !directory.GetFiles("*.sln").Any())
         {
             directory = directory.Parent;
         }
-        
+
         if (directory == null)
         {
             throw new InvalidOperationException("Could not find solution directory");
         }
-        
+
         // Navigate to the main application project
         return Path.Combine(directory.FullName, "LocalFinanceManager");
     }
@@ -106,7 +106,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         // Accessing Services property triggers CreateHost if not already called
         // This ensures Kestrel is listening on the configured port
         var services = Services;
-        
+
         // Verify services are available
         if (services == null)
         {
@@ -137,15 +137,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Development");
         builder.UseContentRoot(projectDir);
         builder.UseWebRoot(Path.Combine(projectDir, "wwwroot"));
-        
+
         // Use Kestrel with a real HTTP endpoint for Playwright E2E tests
         // Use dynamically allocated port to avoid conflicts
         builder.UseKestrel();
-        
+
         // CRITICAL: Must use 127.0.0.1 instead of localhost for dynamic port binding
         // Kestrel does not support "localhost:0" - only "127.0.0.1:0" or "[::1]:0"
         builder.UseUrls(ServerAddress);
-        
+
         // Also set via configuration to ensure it takes precedence
         builder.UseSetting(WebHostDefaults.ServerUrlsKey, ServerAddress);
 
