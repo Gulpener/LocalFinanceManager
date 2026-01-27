@@ -36,9 +36,7 @@ public class TestDbContextFactoryTests
             Version = 1,
             TrainedAt = DateTime.UtcNow,
             ModelBytes = new byte[] { 0x01, 0x02 },
-            Metrics = "{}",
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            Metrics = "{}"
         };
 
         // Act

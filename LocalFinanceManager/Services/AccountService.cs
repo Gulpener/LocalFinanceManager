@@ -54,8 +54,6 @@ public class AccountService
             Currency = request.Currency.ToUpperInvariant(),
             IBAN = request.IBAN.Replace(" ", ""), // Normalize IBAN (remove spaces)
             StartingBalance = request.StartingBalance,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
             IsArchived = false
         };
 
@@ -91,7 +89,6 @@ public class AccountService
         account.Currency = request.Currency.ToUpperInvariant();
         account.IBAN = request.IBAN.Replace(" ", "");
         account.StartingBalance = request.StartingBalance;
-        account.UpdatedAt = DateTime.UtcNow;
 
         try
         {
@@ -121,7 +118,6 @@ public class AccountService
         }
 
         account.IsArchived = true;
-        account.UpdatedAt = DateTime.UtcNow;
 
         try
         {
@@ -151,7 +147,6 @@ public class AccountService
         }
 
         account.IsArchived = false;
-        account.UpdatedAt = DateTime.UtcNow;
 
         try
         {

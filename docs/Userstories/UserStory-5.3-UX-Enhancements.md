@@ -137,17 +137,32 @@ This story **enhances** all assignment artifacts from previous stories:
   - Retrieve favorite category IDs from localStorage
 - [ ] Register service as scoped in `Program.cs`
 
-### 7. Recent Categories UI
+### 7. Recent Categories Pills UI
 
-- [ ] Update `TransactionAssignModal.razor` to display recent categories:
-  - Add "Recent Categories" section above category selector
-  - Display top 5 most used categories with usage count: "Food - Used 23 times"
-  - Add click handler for one-click assignment (click category → assign immediately without opening full selector)
+- [ ] Add "Recent Categories" section to top of `TransactionAssignModal.razor`:
+  - Display horizontal pill buttons showing top 5 most recently used categories
+  - Each pill shows category name with click handler to quickly select that budget line
+  - Visual feedback: active pill gets accent background, hover state shows pointer cursor
+  - Pills auto-update after successful category assignment
 - [ ] Call `RecentCategoriesService.TrackCategoryUsageAsync()` after successful assignment
-- [ ] Add loading state while fetching recent categories
-- [ ] Style with compact layout (horizontal pills or small cards)
+- [ ] Implement keyboard navigation: Tab moves between pills, Enter/Space selects pill, maintain ARIA labels
 
-### 8. Favorite Categories Feature
+### 8. Budget Line Card Grid
+
+- [ ] Replace dropdown budget line selector with clickable card grid in `TransactionAssignModal.razor`:
+  - Display grid of budget line cards below Recent Categories section
+  - Each card shows: category name (bold), remaining balance (e.g., "€450 remaining"), optional progress bar
+  - Responsive grid layout: 4 columns (>1200px), 3 columns (768-1200px), 2 columns (576-768px), 1 column (<576px)
+  - Visual feedback: selected card gets accent border/background, hover state shows pointer cursor
+  - Click handler binds to `selectedBudgetLineId`
+- [ ] Extend `BudgetLineDto` with `RemainingBalance` and `SpentAmount` calculated properties:
+  - `SpentAmount` = sum of all assigned transaction amounts for this budget line in the current budget period/year
+  - `RemainingBalance` = `YearTotal - SpentAmount`
+- [ ] Ensure a dedicated implementation ticket is created and linked for the Budget Line Card Grid UX (responsive grid, visual feedback, keyboard navigation, loading skeletons) when this refinement is not implemented in the current PR.
+- [ ] Add loading skeleton for budget line cards
+- [ ] Implement keyboard navigation: Tab moves between cards, Enter/Space selects card, maintain ARIA labels
+
+### 9. Favorite Categories Feature
 
 - [ ] Update `CategorySelector.razor` to display favorites:
   - Fetch favorite categories from `RecentCategoriesService.GetFavoriteCategoriesAsync()`
@@ -162,7 +177,7 @@ This story **enhances** all assignment artifacts from previous stories:
   - Allow reordering or removing favorites
 - [ ] Persist favorites across sessions (localStorage)
 
-### 9. Performance Optimization - Pagination Enhancements
+### 10. Performance Optimization - Pagination Enhancements
 
 - [ ] Update `Transactions.razor` pagination controls:
   - Add page size selector: 25 / 50 / 100 / 200 transactions per page
@@ -319,7 +334,6 @@ This story **enhances** all assignment artifacts from previous stories:
 ### UX Enhancement Test Scenarios
 
 1. **Keyboard Shortcuts:**
-
    - Tab navigation works in all modals (assignment, split, bulk)
    - Enter submits forms when save button focused
    - Esc closes modals without saving
@@ -329,7 +343,6 @@ This story **enhances** all assignment artifacts from previous stories:
    - `?` shows help modal
 
 2. **Quick Filters:**
-
    - Assignment status filter (All/Assigned/Unassigned/Split/Auto-Applied) works
    - Date range filter (Last 7/30/90 days, Custom) works
    - Amount range filter (min/max) works
@@ -339,14 +352,12 @@ This story **enhances** all assignment artifacts from previous stories:
    - Filter state persists across page reloads (localStorage)
 
 3. **Recent Categories:**
-
    - Category usage tracked after assignment
    - Top 5 recent categories displayed in assignment modal
    - One-click assignment from recent categories works
    - Usage count displayed correctly ("Food - Used 23 times")
 
 4. **Favorite Categories:**
-
    - Star icon toggles favorite status
    - Favorites displayed at top of category selector
    - Favorites persist across sessions (localStorage)

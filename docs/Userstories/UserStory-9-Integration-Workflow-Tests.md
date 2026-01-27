@@ -1,72 +1,144 @@
-# UserStory-9: Integration Workflow Tests
+# UserStory-9: E2E Tests - Phase 1 Foundation
 
 ## Objective
 
-Deliver comprehensive integration workflow tests that validate complete end-to-end user journeys spanning multiple features (US-5, US-6, US-7). Focus on cross-feature workflows (import → suggestions → bulk/split → auto-apply → monitoring) and multi-account validation to ensure seamless integration between assignment components.
-
-> **Note:** Feature-specific E2E tests have been redistributed to their respective implementation stories (US-5, US-6, US-7, US-8) for immediate feedback during development. This story focuses exclusively on integration testing.
+Implement foundational E2E tests (20 tests) covering transaction import, basic assignment, and multi-account validation. Addresses technical debt from archived US-5 and deferred MVP-3 import tests. Establishes foundation for Phase 2 (US-9.1) and Phase 3 (US-9.2).
 
 ## Requirements
 
-- Implement 2 comprehensive integration workflow tests validating complete user journeys
-- Use PageObjectModels and seed helpers from US-5.1 for consistent test structure
-- Test cross-feature workflows (import → suggestions → bulk/split → auto-apply → monitoring)
-- Test multi-account validation scenarios (ensure proper budget plan isolation)
-- Provide centralized E2E test documentation (`E2E_TEST_GUIDE.md`) referencing all distributed tests
-- Capture screenshots for complete workflow stages with specific filenames
-- Configure CI integration for all E2E tests across stories (single unified job, Chromium-only)
+- Implement 20 tests across 3 test suites: TransactionImportTests (8), BasicAssignmentTests (11), MultiAccountValidationTests (1)
+- Use PageObjectModels and SeedDataHelper from US-5.1 for consistent test structure
+- Enhance TransactionListPage with missing methods for filters, audit trail, bulk operations
+- Create ImportModalPageModel for CSV/JSON upload workflow
+- Per-test cleanup strategy (prevent database bloat during test runs)
+- CI execution time target <5 minutes for Phase 1 suite
+- Capture screenshots for workflow stages with specific filenames
+- Create E2E_TEST_GUIDE.md with test execution, debugging, and CI setup documentation
 
-## Patterns for Integration Testing
+## Patterns for E2E Testing
 
-**When to Write Integration Tests:**
-- After multiple features interact (US-5, US-6, US-7 complete)
-- When validating cross-feature data flow (import → assign → monitor)
+**When to Write E2E Tests:**
+
+- Immediately after feature implementation for fast feedback
+- When validating complete user workflows (import → assign → validate)
 - When testing system-level constraints (budget plan isolation, UserStory-4 enforcement)
 
-**Integration Test Structure:**
-- Reuse PageObjectModels from feature stories (consistent UI interactions)
-- Use SeedDataHelper for multi-account test data (no inline creation)
-- Test complete user journeys, not isolated actions
-- Validate business rules across feature boundaries (e.g., category filtering respects budget plan)
+**E2E Test Structure:**
+
+- Use PageObjectModels for all UI interactions (no direct DOM queries)
+- Use SeedDataHelper for test data creation (no inline test data)
+- Per-test cleanup (fresh database state for each test)
+- Test complete user actions, not isolated component behavior
 
 **Test Organization:**
-- Feature tests: `{Feature}Tests.cs` (written immediately with feature implementation)
-- Integration tests: `IntegratedWorkflowTests.cs` (written after all features complete)
-- All tests run in single CI job (`LocalFinanceManager.E2E/**/*Tests.cs`)
+
+- Create dedicated Tests/ directory: `LocalFinanceManager.E2E/Tests/`
+- One test class per feature area: `TransactionImportTests.cs`, `BasicAssignmentTests.cs`
+- All tests run in single CI job with parallel execution groups
 
 **Test Data Isolation:**
+
 - Each test creates isolated accounts/budget plans via SeedDataHelper
-- Tests clean up after execution (in-memory database or explicit teardown)
-- Avoid test interdependencies (each test runnable standalone)
+- Per-test cleanup prevents test interdependencies
+- Tests runnable standalone in any order
 
 ## Implementation Tasks
 
-### 1. E2E Tests - Cross-Feature Integration Workflows
+### 1. Prerequisites (Blocking)
 
-- [ ] Create `IntegratedWorkflowTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
-- [ ] Test: End-to-end import workflow (complete user journey spanning all features):
-  - **Import:** Import 50 transactions from CSV → Preview shown → Import confirmed
-  - **Screenshot:** Capture `workflow-import-complete.png`
-  - **Unassigned State:** Navigate to Transactions page → 50 unassigned transactions shown with warning badges
-  - **Screenshot:** Capture `workflow-unassigned-transactions.png`
-  - **ML Suggestions:** ML suggestions displayed for transactions with high confidence (>80%)
-  - **Screenshot:** Capture `workflow-ml-suggestions.png`
-  - **Accept Suggestions:** Accept 10 suggestions → 10 transactions assigned via ML
-  - **Assertion:** Verify exactly 10 transactions have `AssignmentType = ML`, remaining 40 unassigned
-  - **Bulk Assignment:** Select and bulk assign 20 transactions → Progress bar shown → 20 transactions assigned
-  - **Screenshot:** Capture `workflow-bulk-assign-progress.png`
-  - **Assertion:** Verify bulk assignment count: 20 transactions with `AssignmentType = Bulk`
-  - **Split Assignment:** Split 5 transactions across multiple categories → Sum validation works → 5 transactions split
-  - **Screenshot:** Capture `workflow-split-assignment.png`
-  - **Assertion:** Verify 5 transactions have splits totaling original amount (sum validation)
-  - **Auto-Apply:** Enable auto-apply with 80% threshold → Trigger job manually → Remaining 15 transactions auto-assigned
-  - **Assertion:** Verify auto-apply count: 15 transactions with `AssignmentType = AutoApplied`
-  - **Monitoring:** Navigate to monitoring dashboard → Stats show 15 auto-applied, acceptance rate displayed
-  - **Screenshot:** Capture `workflow-monitoring-dashboard.png`
-  - **Assertion:** Verify dashboard stats: `TotalAutoApplied = 15`, `AcceptanceRate >= 80%`
-  - **Audit Trail:** Open audit trail for each transaction type → Verify all operations recorded (manual, bulk, split, ML, auto-applied)
-  - **Assertion:** Verify audit trail contains exactly 50 entries: `ML:10, Bulk:20, Split:5, AutoApplied:15` (operation type counts)
-- [ ] Test: Multi-account workflow (validates budget plan isolation):
+- [ ] Create `tests/LocalFinanceManager.E2E/Tests/` directory for test files
+- [ ] Enhance `TransactionListPage.cs` with missing methods:
+  - [ ] `Task SelectFilterAsync(string filterType)` - Filter by "All", "Assigned", "Uncategorized"
+  - [ ] `Task ClickAuditTrailAsync(Guid transactionId)` - Open audit trail modal
+  - [ ] `Task SelectTransactionAsync(Guid transactionId)` - Select transaction checkbox for bulk operations
+  - [ ] `Task SelectAllOnPageAsync()` - Select all visible transactions via header checkbox
+  - [ ] `Task DeselectAllAsync()` - Clear all transaction selections
+  - [ ] `Task ClickBulkAssignAsync()` - Open bulk assignment modal
+- [ ] Create `ImportModalPageModel.cs` in `PageObjects/`:
+  - [ ] `Task UploadFileAsync(string filePath)` - Upload CSV/JSON file
+  - [ ] `Task<bool> IsPreviewVisibleAsync()` - Check if preview table shown
+  - [ ] `Task<int> GetPreviewCountAsync()` - Get number of transactions in preview
+  - [ ] `Task MapColumnAsync(string columnName, string targetField)` - Manual column mapping
+  - [ ] `Task SelectDeduplicationModeAsync(string mode)` - Select "Exact", "Fuzzy", or "None"
+  - [ ] `Task ClickImportAsync()` - Execute import
+  - [ ] `Task<string> GetImportResultAsync()` - Get success/error message
+
+### 2. Transaction Import Tests (8 tests)
+
+- [ ] Create `TransactionImportTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [ ] Use `SeedDataHelper` to create account and budget plan in test setup
+- [ ] Test: Upload CSV file → Preview modal shows correct transaction count
+  - Use `ImportModalPageModel.UploadFileAsync("test-transactions.csv")`
+  - Assert `GetPreviewCountAsync()` returns expected count
+  - Screenshot: `import-preview.png`
+- [ ] Test: Column mapping automatically detected → Date, Amount, Description mapped correctly
+  - Verify preview table shows mapped columns with sample data
+  - Assert correct column headers displayed
+- [ ] Test: Manual column mapping adjustment → Preview updates with adjusted mapping
+  - Use `MapColumnAsync("Transaction Date", "Date")`
+  - Assert preview refreshes with new mapping
+- [ ] Test: Import with deduplication mode "Exact" → Duplicate transactions skipped
+  - Upload CSV with duplicate ExternalId
+  - Select "Exact" mode
+  - Assert import result: "X new, Y duplicates skipped"
+- [ ] Test: Import with deduplication mode "Fuzzy" → Similar transactions detected
+  - Upload CSV with similar amount/date/description
+  - Select "Fuzzy" mode
+  - Assert fuzzy duplicates detected and skipped
+- [ ] Test: Import with errors → Partial import with per-row error details shown
+  - Upload CSV with invalid date formats in some rows
+  - Assert partial success message
+  - Assert error accordion shows row numbers and error messages
+- [ ] Test: Import JSON format → Successful import with correct structure
+  - Use `UploadFileAsync("test-transactions.json")`
+  - Assert import succeeds with JSON structure
+- [ ] Test: Navigate to transactions after import → Imported transactions visible in list
+  - After successful import, navigate to Transactions page
+  - Assert imported transactions displayed with correct data
+
+### 3. Basic Assignment Tests (11 tests)
+
+- [ ] Create `BasicAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [ ] Use `SeedDataHelper` to create account, categories, and transactions in test setup
+- [ ] Test: Navigate to Transactions page → Verify unassigned transactions show warning badges
+  - Use `TransactionsPageModel.NavigateToAsync()`
+  - Assert warning badge visible for unassigned transactions
+- [ ] Test: Click "Assign" button on unassigned transaction → Modal opens with transaction details
+  - Use `TransactionsPageModel.ClickAssignButtonAsync(transactionId)`
+  - Assert `AssignmentModalPageModel.IsVisibleAsync()` returns true
+- [ ] Test: Select category from `CategorySelector` dropdown → Click "Assign" → Transaction assigned successfully
+  - Use `AssignmentModalPageModel.SelectCategoryAsync(categoryId)`
+  - Use `AssignmentModalPageModel.ClickAssignAsync()`
+  - Assert transaction shows category badge (no warning)
+- [ ] Test: Verify assigned transaction shows category badge (no warning)
+  - Assert badge text matches category name
+- [ ] Test: Open assignment modal for assigned transaction → Shows current category → Re-assign to different category
+  - Verify current category pre-selected in dropdown
+  - Select new category and save
+  - Assert category badge updated
+- [ ] Test: Attempt to assign transaction with category from different budget plan → Validation error shown (HTTP 400)
+  - Seed second account with different budget plan
+  - Attempt mismatched assignment
+  - Assert error message displayed in modal
+- [ ] Test: Click "Audit Trail" link → Audit modal opens showing assignment history
+  - Use `TransactionsPageModel.ClickAuditTrailAsync(transactionId)`
+  - Assert audit entries displayed with timestamps
+- [ ] Test: Filter transactions by "Uncategorized" → Only unassigned transactions shown
+  - Use `TransactionsPageModel.SelectFilterAsync("Uncategorized")`
+  - Assert only unassigned transactions visible
+- [ ] Test: Filter transactions by "Assigned" → Only assigned transactions shown
+  - Use `TransactionsPageModel.SelectFilterAsync("Assigned")`
+  - Assert only assigned transactions visible
+- [ ] Test: Pagination works correctly (50 transactions per page)
+  - Seed 150 transactions
+  - Assert page 1 shows 50 transactions
+  - Navigate to page 2, assert next 50 transactions visible
+- [ ] Add screenshots for key UI states (modal open, validation error, success toast)
+
+### 4. Multi-Account Validation Test (1 test)
+
+- [ ] Create `MultiAccountValidationTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [ ] Test: Multi-account workflow validates budget plan isolation (UserStory-4 enforcement):
   - **Setup:** Create 2 accounts with separate budget plans (Account A with Budget Plan 1, Account B with Budget Plan 2) via SeedDataHelper
   - **Categories:** Create categories for each budget plan (Food in Plan 1, Entertainment in Plan 2)
   - **Screenshot:** Capture `multi-account-setup.png` showing both accounts
@@ -81,143 +153,158 @@ Deliver comprehensive integration workflow tests that validate complete end-to-e
   - **Assertion:** Transaction list filter dropdown for Account A → Only Budget Plan 1 categories shown
   - **Audit:** Verify audit trail records validation errors correctly
   - **Assertion:** Audit trail contains entry: `Operation = ValidationFailed, Error = CrossAccountCategoryAssignment`
-- [ ] Add Playwright screenshot capture on test failure (inherited from US-5.1 configuration)
-- [ ] Verify all 11 implementation task checkboxes completed before marking story done
 
-### 2. Test Documentation
+### 5. Test Documentation
 
 - [ ] Create `E2E_TEST_GUIDE.md` in `LocalFinanceManager.E2E/` with:
-  - **Test Execution:** Basic commands (`dotnet test`, `dotnet test --filter FullyQualifiedName~IntegratedWorkflowTests`)
+  - **Test Execution:** Basic commands (`dotnet test`, `dotnet test --filter FullyQualifiedName~BasicAssignmentTests`)
   - **Playwright Setup:** Browser installation (`pwsh bin/Debug/net10.0/playwright.ps1 install`)
-  - **Test Data Seeding:** Strategy using `SeedDataHelper` from US-5.1 (multi-account, transactions, labeled examples)
+  - **Test Data Seeding:** Strategy using `SeedDataHelper` from US-5.1 (accounts, categories, transactions)
   - **Screenshot Capture:** Configuration inherited from US-5.1 (auto-capture on failure, manual capture with filenames)
   - **Debugging Tips:** Run headed mode (`Headless=false`), slow-mo (`SlowMo=100`), browser DevTools
-  - **Test Organization:** Document distributed test structure (see Testing section below for complete breakdown)
-  - **CI Integration:** Single unified E2E test job runs all `LocalFinanceManager.E2E/**/*Tests.cs`
-  - **Browser Configuration:** Chromium-only (rationale: fastest execution, sufficient cross-browser coverage for internal finance app)
-  - **Test Naming Conventions:** `{Feature}{Action}Tests.cs` (e.g., `BasicAssignmentTests.cs`, `IntegratedWorkflowTests.cs`)
-  - **Running Specific Tests:** Filter examples (`--filter "FullyQualifiedName~MultiAccount"`)
-- [ ] Configure test coverage reporting (Coverlet + ReportGenerator)
-- [ ] Add coverage badge to README showing E2E test coverage (target: >90% for `TransactionsController`, `CategoriesController`)
-- [ ] Generate HTML coverage report (exclude E2E project itself, cover main app)
-- [ ] Target E2E coverage: >90% for assignment-related endpoints
-- [ ] Document CI integration in README:
-  - GitHub Actions workflow runs all E2E tests on every PR
-  - Screenshot/video artifacts uploaded on failure
-  - Test results summary published as PR comment
+  - **Per-Test Cleanup:** Document cleanup strategy (fresh database state for each test)
+  - **CI Integration:** GitHub Actions workflow configuration with parallel execution groups
+  - **Browser Configuration:** Chromium-only (rationale: fastest execution, sufficient for internal finance app)
+  - **Test Naming Conventions:** `{Feature}Tests.cs` (e.g., `TransactionImportTests.cs`, `BasicAssignmentTests.cs`)
+  - **Running Specific Tests:** Filter examples (`--filter "FullyQualifiedName~Import"`)
+- [ ] Document Phase 1 test organization: 20 tests across 3 suites (8 + 11 + 1)
+- [ ] Add note referencing Phase 2 (US-9.1) and Phase 3 (US-9.2) for complete test coverage
 
 ## Testing
 
-### Test Distribution Across Stories
+### Phase 1 Test Organization
 
-**Feature-Specific Tests (Redistributed to Implementation Stories):**
-- **UserStory-5:** 11 tests (basic assignment modal, category selection, validation, audit trail, filters, pagination)
-- **UserStory-6:** 18 tests (9 split + 9 bulk: sum validation, progress tracking, partial success, pagination persistence)
-- **UserStory-7:** 25 tests (8 suggestions + 8 config + 9 monitoring: badges, accept/reject, settings, alerts, undo)
-- **UserStory-8:** 7 tests (4 accessibility + 3 performance: axe-core, keyboard navigation, load time benchmarks)
+**Test Suites:**
 
-**Integration Tests (This Story - US-9):**
-- **UserStory-9:** 2 comprehensive workflow tests (complete user journey + multi-account validation)
+- **TransactionImportTests.cs** (8 tests): CSV/JSON upload, preview, column mapping, deduplication modes, error handling
+- **BasicAssignmentTests.cs** (11 tests): Modal interaction, category selection, validation, audit trail, filters, pagination
+- **MultiAccountValidationTests.cs** (1 test): UserStory-4 budget plan isolation enforcement
 
-**Total:** 63 E2E tests across all stories (validated count: 11+18+25+7+2=63) ✓
+**Total: 20 tests** establishing foundation for Phase 2 (US-9.1: 19 tests) and Phase 3 (US-9.2: 25 tests estimated)
 
-### Integration Test Scenarios
+### Test Scenarios
 
-**1. Complete User Journey (Cross-Feature Integration):**
-- **Setup:** Import 50 transactions across 3 accounts with 2 budget plans
-- **Workflow Steps:**
-  1. Import 50 transactions → Verify preview modal shows correct count
-  2. ML suggestions display for high-confidence matches (>80%) → Verify suggestion badges visible
-  3. Accept 10 ML suggestions → **Assert:** Exactly 10 transactions `AssignmentType = ML`
-  4. Bulk assign 20 transactions → **Assert:** Bulk count = 20, `AssignmentType = Bulk`
-  5. Split 5 transactions → **Assert:** Split sums equal original amounts (validation passes)
-  6. Enable auto-apply (80% threshold) → Trigger job → **Assert:** Remaining 15 auto-assigned
-  7. Monitor dashboard → **Assert:** Stats: `TotalAutoApplied = 15`, `AcceptanceRate >= 80%`
-  8. Audit trail → **Assert:** 50 entries total: `ML:10, Bulk:20, Split:5, AutoApplied:15`
-- **Validation:** No orphaned records, all assignments respect budget plan rules, seamless transitions between features
-- **Expected Outcome:** All 50 transactions fully assigned with correct audit trail entries
-- **Screenshots:** 6 workflow stage captures (`workflow-*.png`)
+**1. Transaction Import (8 tests):**
 
-**2. Multi-Account Budget Plan Isolation:**
-- **Setup:** Account A (Budget Plan 1 with "Food" category), Account B (Budget Plan 2 with "Entertainment" category)
-- **Workflow Steps:**
-  1. Import 25 transactions per account (50 total)
-  2. Open assignment modal for Account A transaction
-  3. **Assert:** Category dropdown shows only "Food" (Budget Plan 1), NOT "Entertainment" (Budget Plan 2)
-  4. Attempt API call: Assign Account A transaction to "Entertainment" category → **Assert:** HTTP 400 error
-  5. **Assert:** Error message: `"Category 'Entertainment' belongs to Budget Plan 2, but Account A uses Budget Plan 1"`
-  6. Verify transaction list filters → **Assert:** Account A filter shows only Budget Plan 1 categories
-  7. Check audit trail → **Assert:** Validation error logged: `Operation = ValidationFailed, Error = CrossAccountCategoryAssignment`
-- **Validation:** UserStory-4 enforcement verified (Category.BudgetPlanId must match Account.CurrentBudgetPlanId)
-- **Expected Outcome:** Cross-account category assignment blocked, clear validation messages, audit trail complete
-- **Screenshots:** 3 captures (`multi-account-*.png`)
+- CSV upload → preview modal displays
+- Automatic column detection
+- Manual column mapping adjustment
+- Deduplication modes (Exact, Fuzzy, None)
+- Partial import with errors
+- JSON format import
+- Post-import transaction list verification
+- ExternalId uniqueness validation
+
+**2. Basic Assignment (11 tests):**
+
+- Unassigned warning badges display
+- Assignment modal opens with transaction details
+- Category selection and assignment
+- Re-assignment to different category
+- Cross-budget-plan validation error (HTTP 400)
+- Audit trail displays history
+- Filter by Uncategorized/Assigned
+- Pagination (50 per page, 150 total test)
+- Screenshot capture for key states
+
+**3. Multi-Account Validation (1 test):**
+
+- 2 accounts with separate budget plans
+- CategorySelector filters by budget plan
+- Cross-account assignment blocked (HTTP 400)
+- Validation error messages displayed
+- Audit trail records validation failures
+
+### Per-Test Cleanup Strategy
+
+- Each test method creates fresh test data via SeedDataHelper
+- Test database state reset after each test (no cross-test contamination)
+- Tests runnable in any order without dependencies
 
 ## Success Criteria
 
-- ✅ 2 integration workflow tests implemented and passing (complete user journey + multi-account validation)
-- ✅ Tests validate seamless integration across US-5, US-6, US-7 components (no feature isolation issues)
-- ✅ Multi-account test enforces UserStory-4 budget plan isolation rules (cross-account assignment blocked)
-- ✅ PageObjectModels from US-5.1 used consistently for all UI interactions (no direct DOM queries)
-- ✅ SeedDataHelper from US-5.1 used for test data setup (no inline test data creation)
-- ✅ Test execution time <2 minutes for both integration tests (performance threshold for CI)
-- ✅ Screenshots captured for 9 workflow stages with specific filenames (`workflow-*.png`, `multi-account-*.png`)
-- ✅ `E2E_TEST_GUIDE.md` comprehensive documentation (setup, execution, debugging, test distribution)
-- ✅ CI integration configured (single job runs all 63 E2E tests, Chromium-only browser)
-- ✅ Test distribution documented in README (61 feature tests + 2 integration tests = 63 total)
-- ✅ Coverage reporting configured (>90% for `TransactionsController`, `CategoriesController`)
+- ✅ 20 tests implemented and passing (8 import + 11 basic + 1 multi-account)
+- ✅ Tests/ directory created in LocalFinanceManager.E2E project
+- ✅ TransactionListPage enhanced with 6 missing methods (filters, audit, bulk operations)
+- ✅ ImportModalPageModel created for CSV/JSON upload workflow
+- ✅ Tests validate transaction import with multiple formats (CSV, JSON)
+- ✅ Tests validate basic assignment workflow (modal, categories, validation, audit trail)
+- ✅ Multi-account test enforces UserStory-4 budget plan isolation rules
+- ✅ Per-test cleanup strategy implemented (fresh database state for each test)
+- ✅ PageObjectModels from US-5.1 used consistently for all UI interactions
+- ✅ SeedDataHelper from US-5.1 used for test data setup
+- ✅ Test execution time <5 minutes for Phase 1 suite
+- ✅ Screenshots captured for key workflow stages
+- ✅ `E2E_TEST_GUIDE.md` created with comprehensive documentation
+- ✅ CI execution configured (Chromium-only, parallel execution)
 - ✅ All tests pass locally and in CI environment (no flaky tests)
+- ✅ Foundation ready for Phase 2 (US-9.1) implementation
 - ✅ Code follows Implementation-Guidelines.md patterns (async/await, error handling, DI conventions)
 
 ## Definition of Done
 
-- [ ] `IntegratedWorkflowTests.cs` created with 2 comprehensive workflow tests
-- [ ] Complete user journey test validates seamless integration: import → ML suggestions → bulk/split → auto-apply → monitoring
-- [ ] Multi-account test validates UserStory-4 enforcement: category filtering, cross-account validation errors
-- [ ] PageObjectModels from US-5.1 used for all UI interactions (consistent test structure)
-- [ ] SeedDataHelper from US-5.1 used for test data setup (multi-account, transactions, categories)
-- [ ] Screenshots captured for 9 workflow stages with specific filenames (auto-capture on failure)
-- [ ] `E2E_TEST_GUIDE.md` created with comprehensive documentation (setup, execution, debugging, browser config)
-- [ ] Test coverage >90% for assignment-related endpoints (`TransactionsController`, `CategoriesController`)
-- [ ] CI integration configured: GitHub Actions runs all 63 E2E tests, uploads screenshot artifacts on failure
-- [ ] All tests pass locally (headless mode) and in CI environment (Chromium-only)
-- [ ] Test execution time <2 minutes (performance threshold verified)
+- [ ] Tests/ directory created: `LocalFinanceManager.E2E/Tests/`
+- [ ] TransactionListPage.cs enhanced with 6 methods: SelectFilterAsync, ClickAuditTrailAsync, SelectTransactionAsync, SelectAllOnPageAsync, DeselectAllAsync, ClickBulkAssignAsync
+- [ ] ImportModalPageModel.cs created with upload, preview, mapping, import methods
+- [ ] TransactionImportTests.cs created with 8 tests (CSV/JSON, preview, mapping, deduplication, errors)
+- [ ] BasicAssignmentTests.cs created with 11 tests (modal, categories, validation, audit, filters, pagination)
+- [ ] MultiAccountValidationTests.cs created with 1 test (UserStory-4 enforcement)
+- [ ] All 20 tests passing locally (headless mode) and in CI (Chromium-only)
+- [ ] Per-test cleanup verified (no database bloat, tests runnable in any order)
+- [ ] E2E_TEST_GUIDE.md created with test execution, debugging, CI setup documentation
+- [ ] Screenshots captured for import preview, assignment modal, validation errors, multi-account setup
+- [ ] Test execution time <5 minutes verified in CI
 - [ ] No manual migrations required (automatic via `Database.MigrateAsync()`)
 - [ ] Code reviewed and merged to main branch
+- [ ] Phase 2 (US-9.1) unblocked for implementation
 
 ## Dependencies
 
-- **UserStory-5.1 (E2E Infrastructure):** REQUIRED - Must complete before starting US-9. Provides PageObjectModels, SeedDataHelper, screenshot/video configuration.
-- **UserStory-5 (Basic Assignment UI):** REQUIRED - Integration workflows test basic assignment components (CategorySelector, TransactionAssignModal, audit trail).
-- **UserStory-6 (Split/Bulk Assignment):** REQUIRED - Integration workflows test split/bulk components (SplitEditor, BulkAssignModal, bulk selection).
-- **UserStory-7 (ML Suggestion Auto-Apply):** REQUIRED - Integration workflows test ML components (MLSuggestionBadge, AutoApplySettings, MonitoringDashboard).
-- **UserStory-8 (UX Enhancements):** OPTIONAL - Can test keyboard shortcuts and filters in integration workflows if US-8 completed first.
+- **UserStory-5.1 (E2E Infrastructure):** REQUIRED - Must complete before starting US-9. Provides PageObjectModels, SeedDataHelper, screenshot configuration, E2ETestBase, TestWebApplicationFactory.
 
 ## Estimated Effort
 
-**0.5-1 day** (~11 implementation tasks: 2 workflow tests + 9 documentation tasks)
+**4 days** (~45 implementation tasks: 7 prerequisites + 8 import + 11 basic + 1 multi-account + 3 documentation + 15 PageObjectModel enhancements)
 
-> **Note:** Effort reduced from original 3-4 days because 61 feature-specific E2E tests redistributed to US-5, US-6, US-7, US-8 for immediate feedback during implementation. This story focuses exclusively on 2 integration workflows validating cross-feature interactions.
+**Breakdown:**
+
+- Prerequisites: 0.5 days (create Tests/ directory, enhance PageObjectModels)
+- Transaction Import Tests: 1 day (8 tests with CSV/JSON handling)
+- Basic Assignment Tests: 1.5 days (11 tests covering full assignment workflow)
+- Multi-Account Validation: 0.5 days (1 comprehensive test)
+- Documentation: 0.5 days (E2E_TEST_GUIDE.md, CI configuration)
 
 ## Implementation Status
 
-> **Scope Change (Effective: January 16, 2026):** Feature-specific E2E tests redistributed to implementation stories for faster feedback loops. Original scope included 63 tests in single story; refined scope focuses on 2 integration workflows only.
+> **Technical Debt Context:** US-5 and US-6 were archived in January 2026 with E2E tests marked "write immediately after feature implementation", but 29 tests were never completed. Additionally, 8 transaction import tests were deferred from MVP-3 as technical debt. This story consolidates Phase 1 foundation tests (20 total), with Phase 2 advanced tests (19) deferred to US-9.1 and Phase 3 ML tests (25 estimated) deferred to US-9.2 to maintain reasonable story size.
 
-**Feature Tests Redistributed:**
-- 11 tests → UserStory-5 (write immediately after US-5 implementation)
-- 18 tests → UserStory-6 (write immediately after US-6 implementation)
-- 25 tests → UserStory-7 (write immediately after US-7 implementation)
-- 7 tests → UserStory-8 (write immediately after US-8 implementation)
+**Original Scope:**
 
-**Integration Tests (This Story):**
-- 2 tests validating cross-feature workflows and system-level constraints
+- US-9 initially planned for 2 integration tests (0.5-1 day)
+- Redistributed test strategy assumed features would implement their own E2E tests
+
+**Current Reality:**
+
+- US-5 archived: 11 basic assignment tests never implemented
+- US-6 active: 18 split/bulk tests not yet implemented
+- MVP-3 import tests: 8 tests deferred as technical debt
+- Total missing: 39 critical tests (20 in US-9 + 19 in US-9.1)
+
+**US-9 Scope (Phase 1):**
+
+- 8 transaction import tests (addresses MVP-3 technical debt)
+- 11 basic assignment tests (addresses US-5 technical debt)
+- 1 multi-account validation test (UserStory-4 enforcement)
+- **Total: 20 tests establishing foundation for Phase 2**
 
 ## Notes
 
-- **Incremental Testing Strategy:** Feature tests provide fast feedback during development; integration tests validate complete system behavior after features complete
-- **CI Execution:** Single unified E2E test job runs all 63 tests (`LocalFinanceManager.E2E/**/*Tests.cs`) regardless of distribution across stories
-- **Screenshot Artifacts:** Invaluable for debugging CI failures; captured automatically on test failure with specific filenames for workflow stages
-- **Test Maintenance:** Integration workflows require updates when new features added to user journey; keep workflows aligned with current feature set
-- **Chromium-Only Browser Testing:** Provides fastest execution (<2 minutes) and sufficient cross-browser coverage for internal finance app (no public-facing requirements)
-- **Performance Threshold:** <2 minutes execution time ensures fast CI feedback loop; avoid heavy test data (e.g., limit to 50 transactions per test)
-- **Cross-Feature Workflow Tests:** Highest confidence tests simulating real user journeys; validate that features integrate seamlessly without isolation issues
-- **Documentation Central:** `E2E_TEST_GUIDE.md` serves as single source of truth for all E2E tests across stories; update when test patterns change
+- **Phase 2 Continuation:** UserStory-9.1 implements advanced assignment tests (split, bulk, integration workflows - 19 tests)
+- **Phase 3 Deferred:** UserStory-9.2 implements ML tests pending US-7 completion (25 tests estimated)
+- **Per-Test Cleanup:** Each test creates fresh database state; no test interdependencies
+- **CI Execution Mode:** Phase 1 tests currently run sequentially in CI due to SQLite file access conflicts; target execution time remains <5 minutes, with parallel groups (import+basic, multi-account) to be revisited once database concurrency issues are resolved
+- **Screenshot Artifacts:** Invaluable for debugging CI failures; captured automatically on test failure
+- **PageObjectModel Enhancements:** TransactionListPage additions unblock both Phase 1 and Phase 2 tests
+- **Import Tests Foundation:** Transaction import tests enable all subsequent test phases (can't test assignment without transactions)
+- **Chromium-Only Browser Testing:** Fastest execution, sufficient for internal finance app (no public-facing requirements)
+- **Test-First Strategy:** Write Phase 1 tests first to validate import/assignment features before building advanced workflows

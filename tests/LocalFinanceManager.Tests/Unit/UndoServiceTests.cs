@@ -53,9 +53,7 @@ public class UndoServiceTests : IDisposable
             Currency = "EUR",
             IBAN = "NL91ABNA0417164300",
             StartingBalance = 1000m,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         _dbContext.Accounts.Add(account);
         _dbContext.SaveChanges();
@@ -68,9 +66,7 @@ public class UndoServiceTests : IDisposable
             AccountId = account.Id,
             Year = DateTime.UtcNow.Year,
             Name = "Test Budget",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         _dbContext.BudgetPlans.Add(budgetPlan);
         _dbContext.SaveChanges();
@@ -81,9 +77,7 @@ public class UndoServiceTests : IDisposable
             Name = "Test Category",
             Type = CategoryType.Expense,
             BudgetPlanId = budgetPlan.Id,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         _dbContext.Categories.Add(category);
         _dbContext.SaveChanges();
@@ -94,9 +88,7 @@ public class UndoServiceTests : IDisposable
             BudgetPlanId = budgetPlan.Id,
             CategoryId = category.Id,
             MonthlyAmountsJson = "[100,100,100,100,100,100,100,100,100,100,100,100]",
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
         _dbContext.BudgetLines.Add(budgetLine);
         _dbContext.SaveChanges();
@@ -124,9 +116,7 @@ public class UndoServiceTests : IDisposable
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
             AccountId = _testAccountId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         var split = new TransactionSplit
@@ -135,9 +125,7 @@ public class UndoServiceTests : IDisposable
             TransactionId = transaction.Id,
             BudgetLineId = _testBudgetLineId,
             Amount = 100m,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         transaction.AssignedParts = new List<TransactionSplit> { split };
@@ -154,9 +142,7 @@ public class UndoServiceTests : IDisposable
             AutoAppliedAt = DateTime.UtcNow.AddMinutes(-10),
             Confidence = 0.92f,
             ModelVersion = 1,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         _dbContext.Transactions.Add(transaction);
@@ -197,9 +183,7 @@ public class UndoServiceTests : IDisposable
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
             AccountId = _testAccountId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         var autoApplyAudit = new TransactionAudit
@@ -214,9 +198,7 @@ public class UndoServiceTests : IDisposable
             AutoAppliedAt = DateTime.UtcNow.AddDays(-35),
             Confidence = 0.92f,
             ModelVersion = 1,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         _dbContext.Transactions.Add(transaction);
@@ -242,9 +224,7 @@ public class UndoServiceTests : IDisposable
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
             AccountId = _testAccountId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         var autoApplyAudit = new TransactionAudit
@@ -255,9 +235,7 @@ public class UndoServiceTests : IDisposable
             IsAutoApplied = true,
             AutoAppliedAt = DateTime.UtcNow.AddMinutes(-20),
             ChangedAt = DateTime.UtcNow.AddMinutes(-20),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         var manualChangeAudit = new TransactionAudit
@@ -267,9 +245,7 @@ public class UndoServiceTests : IDisposable
             ActionType = "Split",
             IsAutoApplied = false,
             ChangedAt = DateTime.UtcNow.AddMinutes(-5), // After auto-apply
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         _dbContext.Transactions.Add(transaction);
@@ -297,9 +273,7 @@ public class UndoServiceTests : IDisposable
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
             AccountId = _testAccountId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         var autoApplyAudit = new TransactionAudit
@@ -308,9 +282,7 @@ public class UndoServiceTests : IDisposable
             TransactionId = transaction.Id,
             IsAutoApplied = true,
             AutoAppliedAt = DateTime.UtcNow.AddMinutes(-10),
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         _dbContext.Transactions.Add(transaction);
@@ -335,9 +307,7 @@ public class UndoServiceTests : IDisposable
             Date = DateTime.UtcNow.AddDays(-1),
             Description = "Test transaction",
             AccountId = _testAccountId,
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         var autoApplyAudit = new TransactionAudit
@@ -346,9 +316,7 @@ public class UndoServiceTests : IDisposable
             TransactionId = transaction.Id,
             IsAutoApplied = true,
             AutoAppliedAt = DateTime.UtcNow.AddDays(-35), // Outside window
-            IsArchived = false,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsArchived = false
         };
 
         _dbContext.Transactions.Add(transaction);

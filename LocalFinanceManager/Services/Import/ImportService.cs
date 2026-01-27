@@ -172,8 +172,6 @@ public class ImportService
                             ImportBatchId = importBatchId,
                             SourceFileName = request.SourceFileName,
                             ImportedAt = DateTime.UtcNow,
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow,
                             IsArchived = false
                         };
 
@@ -182,7 +180,7 @@ public class ImportService
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Error processing transaction at line {LineNumber}", parsed.LineNumber);
-                        
+
                         var error = new ImportRowError
                         {
                             LineNumber = parsed.LineNumber,

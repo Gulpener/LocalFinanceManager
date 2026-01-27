@@ -204,9 +204,7 @@ public class AutoApplyBackgroundService : BackgroundService
                     BudgetLineId = prediction.CategoryId, // Using CategoryId as BudgetLineId proxy for MVP
                     Amount = transaction.Amount,
                     Note = $"Auto-applied by ML (confidence: {prediction.Confidence:F4})",
-                    IsArchived = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    IsArchived = false
                 };
 
                 dbContext.TransactionSplits.Add(split);
@@ -229,9 +227,7 @@ public class AutoApplyBackgroundService : BackgroundService
                     AutoAppliedAt = DateTime.UtcNow,
                     Confidence = prediction.Confidence,
                     ModelVersion = modelVersion,
-                    IsArchived = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    IsArchived = false
                 };
 
                 await auditRepo.AddAsync(audit);

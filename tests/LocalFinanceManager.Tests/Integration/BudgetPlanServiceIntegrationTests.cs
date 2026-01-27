@@ -3,9 +3,8 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
+using LocalFinanceManager.Tests.Helpers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace LocalFinanceManager.Tests.Integration;
 
@@ -13,18 +12,10 @@ namespace LocalFinanceManager.Tests.Integration;
 public class BudgetPlanServiceIntegrationTests
 {
     private AppDbContext _context = null!;
-    private BudgetPlanRepository _budgetPlanRepository = null!;
-    private BudgetLineRepository _budgetLineRepository = null!;
-    private AccountRepository _accountRepository = null!;
-    private CategoryRepository _categoryRepository = null!;
-    private CategoryService _categoryService = null!;
+    private TestServiceProvider _serviceProvider = null!;
     private BudgetPlanService _budgetPlanService = null!;
-    private Mock<ILogger<Repository<BudgetPlan>>> _budgetPlanRepoLogger = null!;
-    private Mock<ILogger<Repository<BudgetLine>>> _budgetLineRepoLogger = null!;
-    private Mock<ILogger<Repository<Account>>> _accountRepoLogger = null!;
-    private Mock<ILogger<Repository<Category>>> _categoryRepoLogger = null!;
-    private Mock<ILogger<CategoryService>> _categoryServiceLogger = null!;
-    private Mock<ILogger<BudgetPlanService>> _budgetPlanServiceLogger = null!;
+    private ICategoryRepository _categoryRepository = null!;
+    private CategoryService _categoryService = null!;
 
     [SetUp]
     public async Task Setup()
@@ -37,26 +28,10 @@ public class BudgetPlanServiceIntegrationTests
         _context.Database.OpenConnection();
         _context.Database.EnsureCreated();
 
-        _budgetPlanRepoLogger = new Mock<ILogger<Repository<BudgetPlan>>>();
-        _budgetLineRepoLogger = new Mock<ILogger<Repository<BudgetLine>>>();
-        _accountRepoLogger = new Mock<ILogger<Repository<Account>>>();
-        _categoryRepoLogger = new Mock<ILogger<Repository<Category>>>();
-        _categoryServiceLogger = new Mock<ILogger<CategoryService>>();
-        _budgetPlanServiceLogger = new Mock<ILogger<BudgetPlanService>>();
-
-        _budgetPlanRepository = new BudgetPlanRepository(_context, _budgetPlanRepoLogger.Object);
-        _budgetLineRepository = new BudgetLineRepository(_context, _budgetLineRepoLogger.Object);
-        _accountRepository = new AccountRepository(_context, _accountRepoLogger.Object);
-        _categoryRepository = new CategoryRepository(_context, _categoryRepoLogger.Object);
-        _categoryService = new CategoryService(_categoryRepository, _categoryServiceLogger.Object);
-        
-        _budgetPlanService = new BudgetPlanService(
-            _budgetPlanRepository,
-            _budgetLineRepository,
-            _accountRepository,
-            _categoryRepository,
-            _categoryService,
-            _budgetPlanServiceLogger.Object);
+        _serviceProvider = new TestServiceProvider(_context);
+        _budgetPlanService = _serviceProvider.GetService<BudgetPlanService>();
+        _categoryRepository = _serviceProvider.GetService<ICategoryRepository>();
+        _categoryService = _serviceProvider.GetService<CategoryService>();
 
         // Create a default test account
         var account = new Account
@@ -76,8 +51,9 @@ public class BudgetPlanServiceIntegrationTests
     [TearDown]
     public void TearDown()
     {
-        _context.Database.CloseConnection();
-        _context.Dispose();
+        _serviceProvider?.Dispose();
+        _context?.Database.CloseConnection();
+        _context?.Dispose();
     }
 
     [Test]
@@ -99,10 +75,10 @@ public class BudgetPlanServiceIntegrationTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Name, Is.EqualTo("Personal Budget 2026"));
-        
+
         var categories = await _categoryRepository.GetByBudgetPlanAsync(result.Id);
         Assert.That(categories, Has.Count.EqualTo(6), "Personal template should create 6 categories");
-        
+
         // Verify specific categories exist
         Assert.That(categories.Any(c => c.Name == "Salary" && c.Type == CategoryType.Income), Is.True);
         Assert.That(categories.Any(c => c.Name == "Housing" && c.Type == CategoryType.Expense), Is.True);
@@ -131,7 +107,7 @@ public class BudgetPlanServiceIntegrationTests
         // Assert
         var categories = await _categoryRepository.GetByBudgetPlanAsync(result.Id);
         Assert.That(categories, Has.Count.EqualTo(5), "Business template should create 5 categories");
-        
+
         Assert.That(categories.Any(c => c.Name == "Revenue" && c.Type == CategoryType.Income), Is.True);
         Assert.That(categories.Any(c => c.Name == "COGS" && c.Type == CategoryType.Expense), Is.True);
         Assert.That(categories.Any(c => c.Name == "Operating Expenses" && c.Type == CategoryType.Expense), Is.True);
@@ -158,7 +134,7 @@ public class BudgetPlanServiceIntegrationTests
         // Assert
         var categories = await _categoryRepository.GetByBudgetPlanAsync(result.Id);
         Assert.That(categories, Has.Count.EqualTo(6), "Household template should create 6 categories");
-        
+
         Assert.That(categories.Any(c => c.Name == "Income" && c.Type == CategoryType.Income), Is.True);
         Assert.That(categories.Any(c => c.Name == "Rent/Mortgage" && c.Type == CategoryType.Expense), Is.True);
         Assert.That(categories.Any(c => c.Name == "Utilities" && c.Type == CategoryType.Expense), Is.True);
@@ -203,10 +179,10 @@ public class BudgetPlanServiceIntegrationTests
 
         var budgetPlan = await _budgetPlanService.CreateAsync(createDto);
         var categories = await _categoryRepository.GetByBudgetPlanAsync(budgetPlan.Id);
-        
+
         // Find the "Salary" category created by template
         var salaryCategory = categories.First(c => c.Name == "Salary");
-        
+
         // Act - Update the category name from "Salary" to "Income"
         var updateDto = new UpdateCategoryDto
         {
@@ -214,14 +190,14 @@ public class BudgetPlanServiceIntegrationTests
             Type = CategoryType.Income,
             RowVersion = salaryCategory.RowVersion
         };
-        
+
         var updatedCategory = await _categoryService.UpdateAsync(salaryCategory.Id, updateDto);
 
         // Assert - Verify update succeeded
         Assert.That(updatedCategory, Is.Not.Null);
         Assert.That(updatedCategory!.Name, Is.EqualTo("Income"));
         Assert.That(updatedCategory.Type, Is.EqualTo(CategoryType.Income));
-        
+
         // Verify in database
         var fromDb = await _categoryRepository.GetByIdAsync(salaryCategory.Id);
         Assert.That(fromDb, Is.Not.Null);
@@ -251,17 +227,17 @@ public class BudgetPlanServiceIntegrationTests
     {
         // Note: This tests that the seed data in AppDbContext uses the Personal template
         // The seed should already have been run in Setup via EnsureCreated
-        
+
         // Act
         await _context.SeedAsync();
 
         // Assert
         var budgetPlans = await _context.BudgetPlans.ToListAsync();
         Assert.That(budgetPlans, Has.Count.GreaterThanOrEqualTo(1), "Seed should create at least one budget plan");
-        
+
         var firstBudgetPlan = budgetPlans.First();
         var categories = await _categoryRepository.GetByBudgetPlanAsync(firstBudgetPlan.Id);
-        
+
         // Verify Personal template was applied (6 categories)
         Assert.That(categories, Has.Count.EqualTo(6), "Seed data should use Personal template with 6 categories");
         Assert.That(categories.Any(c => c.Name == "Salary"), Is.True);

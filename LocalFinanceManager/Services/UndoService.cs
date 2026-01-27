@@ -135,9 +135,7 @@ public class UndoService : IUndoService
                 BeforeState = beforeState,
                 AfterState = afterState,
                 Reason = $"Reverted auto-applied assignment (model v{autoApplyAudit.ModelVersion}, confidence: {autoApplyAudit.Confidence:F4})",
-                IsArchived = false,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                IsArchived = false
             };
 
             await _auditRepo.AddAsync(undoAudit);

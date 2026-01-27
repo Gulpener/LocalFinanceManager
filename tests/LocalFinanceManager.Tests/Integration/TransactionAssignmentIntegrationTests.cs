@@ -4,8 +4,7 @@ using LocalFinanceManager.DTOs;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.Tests.Fixtures;
-using Microsoft.Extensions.Logging;
-using Moq;
+using LocalFinanceManager.Tests.Helpers;
 
 namespace LocalFinanceManager.Tests.Integration;
 
@@ -17,10 +16,10 @@ public class TransactionAssignmentIntegrationTests
 {
     private TestDbContextFactory _factory = null!;
     private AppDbContext _context = null!;
+    private TestServiceProvider _serviceProvider = null!;
     private ITransactionRepository _transactionRepository = null!;
     private ITransactionSplitRepository _splitRepository = null!;
     private ITransactionAuditRepository _auditRepository = null!;
-    private IBudgetLineRepository _budgetLineRepository = null!;
     private ITransactionAssignmentService _assignmentService = null!;
 
     [SetUp]
@@ -29,25 +28,17 @@ public class TransactionAssignmentIntegrationTests
         _factory = new TestDbContextFactory();
         _context = _factory.CreateContext();
 
-        var transactionLogger = new Mock<ILogger<TransactionRepository>>();
-        _transactionRepository = new TransactionRepository(_context, transactionLogger.Object);
-        _splitRepository = new TransactionSplitRepository(_context);
-        _auditRepository = new TransactionAuditRepository(_context);
-        var budgetLineLogger = new Mock<ILogger<Repository<BudgetLine>>>();
-        _budgetLineRepository = new BudgetLineRepository(_context, budgetLineLogger.Object);
-
-        var assignmentLogger = new Mock<ILogger<TransactionAssignmentService>>();
-        _assignmentService = new TransactionAssignmentService(
-            _transactionRepository,
-            _splitRepository,
-            _auditRepository,
-            _budgetLineRepository,
-            assignmentLogger.Object);
+        _serviceProvider = new TestServiceProvider(_context);
+        _transactionRepository = _serviceProvider.GetService<ITransactionRepository>();
+        _splitRepository = _serviceProvider.GetService<ITransactionSplitRepository>();
+        _auditRepository = _serviceProvider.GetService<ITransactionAuditRepository>();
+        _assignmentService = _serviceProvider.GetService<ITransactionAssignmentService>();
     }
 
     [TearDown]
     public void TearDown()
     {
+        _serviceProvider?.Dispose();
         _context?.Dispose();
         _factory?.Dispose();
     }
