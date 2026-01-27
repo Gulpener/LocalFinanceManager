@@ -332,17 +332,17 @@ dotnet test tests/LocalFinanceManager.E2E
 
 ## Test Execution Model
 
-### Per-Fixture Database Isolation
+### Parallel Test Execution with Per-Fixture Isolation
 
-Tests run **sequentially within each test fixture** but fixtures can run in **parallel** using isolated databases:
+Tests run in **parallel at the fixture level** with up to 4 concurrent workers, each using isolated databases:
 
 ```csharp
 // AssemblyInfo.cs
-[assembly: LevelOfParallelism(1)]
-[assembly: Parallelizable(ParallelScope.None)]
+[assembly: LevelOfParallelism(4)]
+[assembly: Parallelizable(ParallelScope.Fixtures)]
 ```
 
-**Why Sequential?** E2E tests use file-based SQLite databases. Sequential execution prevents SQLite file access conflicts while maintaining isolation between test fixtures.
+**Why Parallel at Fixture Level?** Each test fixture gets its own isolated SQLite database file and web server instance. This architecture enables safe parallel execution, significantly reducing total test run time while preventing database file conflicts between fixtures. Tests within a single fixture still run sequentially to maintain predictable state management.
 
 ### Test Isolation
 
