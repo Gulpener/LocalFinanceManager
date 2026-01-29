@@ -9,8 +9,9 @@
 
 <PageTitle>Transacties</PageTitle>
 
-<h1>Transacties 
-    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => showShortcutHelp = true" title="Toetsenbord sneltoetsen">
+<h1>Transacties
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => showShortcutHelp = true"
+        title="Toetsenbord sneltoetsen">
         <i class="bi bi-question-circle"></i>
     </button>
 </h1>
@@ -243,9 +244,9 @@ else
                 _ => DateTime.MinValue
             };
 
-            var endDate = filterState.DateRange == "custom" 
-                ? filterState.CustomEndDate ?? DateTime.MaxValue 
-                : DateTime.MaxValue;
+            var endDate = filterState.DateRange == "custom"
+            ? filterState.CustomEndDate ?? DateTime.MaxValue
+            : DateTime.MaxValue;
 
             query = query.Where(t => t.Date >= startDate && t.Date <= endDate);
         }
