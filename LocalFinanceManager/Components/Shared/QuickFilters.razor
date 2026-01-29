@@ -39,7 +39,7 @@
                 <div class="col-md-6 col-lg-4">
                     <label for="assignmentStatusFilter" class="form-label">Toewijzingsstatus</label>
                     <select id="assignmentStatusFilter" class="form-select form-select-sm" 
-                            @bind="CurrentFilters.AssignmentStatus" 
+                            @bind="localFilters.AssignmentStatus" 
                             @bind:after="OnFilterChanged">
                         <option value="all">Alle</option>
                         <option value="assigned">Toegewezen</option>
@@ -53,7 +53,7 @@
                 <div class="col-md-6 col-lg-4">
                     <label for="suggestionStatusFilter" class="form-label">Suggestiestatus</label>
                     <select id="suggestionStatusFilter" class="form-select form-select-sm" 
-                            @bind="CurrentFilters.SuggestionStatus" 
+                            @bind="localFilters.SuggestionStatus" 
                             @bind:after="OnFilterChanged">
                         <option value="all">Alle</option>
                         <option value="has-suggestion">Met suggestie</option>
@@ -65,7 +65,7 @@
                 <div class="col-md-6 col-lg-4">
                     <label for="dateRangeFilter" class="form-label">Datumbereik</label>
                     <select id="dateRangeFilter" class="form-select form-select-sm" 
-                            @bind="CurrentFilters.DateRange" 
+                            @bind="localFilters.DateRange" 
                             @bind:after="OnFilterChanged">
                         <option value="all">Alle datums</option>
                         <option value="last7">Laatste 7 dagen</option>
@@ -76,19 +76,19 @@
                 </div>
 
                 <!-- Custom Date Range Inputs -->
-                @if (CurrentFilters.DateRange == "custom")
+                @if (localFilters.DateRange == "custom")
                 {
                     <div class="col-md-6 col-lg-4">
                         <label for="startDateFilter" class="form-label">Van datum</label>
                         <input type="date" id="startDateFilter" class="form-control form-control-sm" 
-                               @bind="CurrentFilters.CustomStartDate" 
+                               @bind="localFilters.CustomStartDate" 
                                @bind:after="OnFilterChanged" />
                     </div>
 
                     <div class="col-md-6 col-lg-4">
                         <label for="endDateFilter" class="form-label">Tot datum</label>
                         <input type="date" id="endDateFilter" class="form-control form-control-sm" 
-                               @bind="CurrentFilters.CustomEndDate" 
+                               @bind="localFilters.CustomEndDate" 
                                @bind:after="OnFilterChanged" />
                     </div>
                 }
@@ -98,7 +98,7 @@
                     <label for="minAmountFilter" class="form-label">Minimaal bedrag</label>
                     <input type="number" id="minAmountFilter" class="form-control form-control-sm" 
                            step="0.01" placeholder="€0.00"
-                           @bind="CurrentFilters.MinAmount" 
+                           @bind="localFilters.MinAmount" 
                            @bind:after="OnFilterChangedDebounced" />
                 </div>
 
@@ -106,7 +106,7 @@
                     <label for="maxAmountFilter" class="form-label">Maximaal bedrag</label>
                     <input type="number" id="maxAmountFilter" class="form-control form-control-sm" 
                            step="0.01" placeholder="€9999.99"
-                           @bind="CurrentFilters.MaxAmount" 
+                           @bind="localFilters.MaxAmount" 
                            @bind:after="OnFilterChangedDebounced" />
                 </div>
             </div>
@@ -124,19 +124,45 @@
     private bool isExpanded = true;
     private System.Threading.Timer? debounceTimer;
     private CancellationTokenSource? debounceCts;
+    private FilterState localFilters = new();
 
     protected override async Task OnInitializedAsync()
     {
+        // Initialize local copy from parameter
+        localFilters = CloneFilterState(CurrentFilters);
+        
         // Only load saved filters if parent hasn't provided non-default values
         if (IsDefaultFilterState(CurrentFilters))
         {
             var savedFilters = await FilterStateService.LoadFiltersAsync();
             if (savedFilters != null)
             {
-                // Don't reassign parameter - emit to parent to update state
+                localFilters = CloneFilterState(savedFilters);
                 await OnFiltersChanged.InvokeAsync(savedFilters);
             }
         }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Sync local copy when parent updates parameter
+        localFilters = CloneFilterState(CurrentFilters);
+    }
+
+    private FilterState CloneFilterState(FilterState source)
+    {
+        return new FilterState
+        {
+            AssignmentStatus = source.AssignmentStatus,
+            SuggestionStatus = source.SuggestionStatus,
+            DateRange = source.DateRange,
+            CustomStartDate = source.CustomStartDate,
+            CustomEndDate = source.CustomEndDate,
+            MinAmount = source.MinAmount,
+            MaxAmount = source.MaxAmount,
+            SelectedCategories = new List<Guid>(source.SelectedCategories),
+            SelectedAccountId = source.SelectedAccountId
+        };
     }
 
     private bool IsDefaultFilterState(FilterState filters)
@@ -159,8 +185,8 @@
 
     private async Task OnFilterChanged()
     {
-        await FilterStateService.SaveFiltersAsync(CurrentFilters);
-        await OnFiltersChanged.InvokeAsync(CurrentFilters);
+        await FilterStateService.SaveFiltersAsync(localFilters);
+        await OnFiltersChanged.InvokeAsync(CloneFilterState(localFilters));
     }
 
     private void OnFilterChangedDebounced()
@@ -212,13 +238,13 @@
     private int GetActiveFilterCount()
     {
         int count = 0;
-        if (CurrentFilters.AssignmentStatus != "all") count++;
-        if (CurrentFilters.SuggestionStatus != "all") count++;
-        if (CurrentFilters.DateRange != "all") count++;
-        if (CurrentFilters.MinAmount.HasValue) count++;
-        if (CurrentFilters.MaxAmount.HasValue) count++;
-        if (CurrentFilters.SelectedCategories.Any()) count++;
-        if (CurrentFilters.SelectedAccountId.HasValue) count++;
+        if (localFilters.AssignmentStatus != "all") count++;
+        if (localFilters.SuggestionStatus != "all") count++;
+        if (localFilters.DateRange != "all") count++;
+        if (localFilters.MinAmount.HasValue) count++;
+        if (localFilters.MaxAmount.HasValue) count++;
+        if (localFilters.SelectedCategories.Any()) count++;
+        if (localFilters.SelectedAccountId.HasValue) count++;
         return count;
     }
 
