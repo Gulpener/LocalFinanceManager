@@ -254,7 +254,7 @@ public class UXEnhancementsTests : E2ETestBase
         using var scope = Factory!.CreateDbScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
+        await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
 
         // Act - Navigate to transactions page (fast check for skeleton)
         var navigationTask = Page.GotoAsync($"{BaseUrl}/transactions");
