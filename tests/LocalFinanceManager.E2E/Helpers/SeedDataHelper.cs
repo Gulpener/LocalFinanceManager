@@ -129,21 +129,17 @@ public static class SeedDataHelper
         Guid budgetPlanId,
         params string[] categoryNames)
     {
-        var categories = new List<Category>();
-
-        foreach (var name in categoryNames)
-        {
-            var category = new Category
+        var categories = categoryNames
+            .Select(name => new Category
             {
                 Id = Guid.NewGuid(),
                 Name = name,
                 Type = CategoryType.Expense,
                 BudgetPlanId = budgetPlanId
-            };
-            categories.Add(category);
-            context.Categories.Add(category);
-        }
+            })
+            .ToList();
 
+        context.Categories.AddRange(categories);
         await context.SaveChangesAsync();
         return categories;
     }
