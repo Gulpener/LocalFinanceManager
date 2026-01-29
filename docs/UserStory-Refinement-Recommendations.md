@@ -9,8 +9,8 @@
 
 **Status Overview:**
 
-- ✅ **11 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-8, US-8-refinements) - Archived
-- ✅ **7 stories ready** for immediate implementation (US-5.3, US-6, US-7, US-8.1, US-8.2, US-9, US-9.1, US-10)
+- ✅ **12 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-8, US-8-refinements) - Archived
+- ✅ **6 stories ready** for immediate implementation (US-6, US-7, US-8.1, US-8.2, US-9, US-9.1, US-10)
 - 🔶 **1 story deferred** (US-9.2) - Pending UserStory-7 completion
 - 🔴 **5 stories need refinement** (US-11, US-12, US-13, US-14, US-15) - Post-MVP features
 
@@ -29,6 +29,7 @@
 - UserStory-4 (Account-Budget Matching) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-5 (Basic Assignment UI) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-5.1 (E2E Infrastructure) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-5.3 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
 
@@ -37,16 +38,6 @@
 ## Detailed User Story Status
 
 ### ✅ Ready for Implementation (No Refinement Needed)
-
-#### UserStory-5.3: UX Enhancements
-
-**File:** [docs/Userstories/UserStory-5.3-UX-Enhancements.md](docs/Userstories/UserStory-5.3-UX-Enhancements.md)
-
-**Status:** ✅ **Ready** - UX improvements for assignment workflow.
-
-**Estimated Effort:** 2-3 days
-
----
 
 #### UserStory-6: Split & Bulk Assignment
 
@@ -1086,7 +1077,7 @@ public async Task RunWeeklyBackup(TimerInfo timer)
 
 ### Phase 4: UX Improvements (Weeks 9-10)
 
-9. ✅ **UserStory-5.3** (UX Enhancements) - Ready after US-7 (2-3 days)
+9. ✅ **UserStory-5.3** (UX Enhancements) - **COMPLETED & ARCHIVED**
 10. ✅ **UserStory-8.1** (Keyboard Shortcuts) - Ready (1-2 days)
 11. ✅ **UserStory-8.2** (Quick Filters & Performance) - Ready (2-3 days)
 
@@ -1206,14 +1197,15 @@ Use this structure for all new stories:
 8. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED & ARCHIVED**
 9. ✅ ~~UserStory-5 (Basic Assignment UI)~~ - **COMPLETED & ARCHIVED**
 10. ✅ ~~UserStory-5.1 (E2E Infrastructure)~~ - **COMPLETED & ARCHIVED**
-11. **UserStory-6** (Split & Bulk Assignment) - **NEXT: Start implementation**
-12. **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6
-13. **UserStory-8.1** (Keyboard Shortcuts) - After US-7
-14. **UserStory-8.2** (Quick Filters & Performance) - After US-8.1
-15. **UserStory-9** (Integration Workflow Tests) - Incremental with US-7
-16. **UserStory-10** (Multi-User Auth) - Ready for implementation
-17. UserStory-11 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
-18. UserStory-12 (Sharing System) - Needs refinement (authorization middleware, permissions)
-19. UserStory-13 (Backup & Restore) - Needs refinement (security/encryption, versioning)
-20. UserStory-14 (Application Flow) - Needs refinement (onboarding tracking)
-21. UserStory-15 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)
+11. ✅ ~~UserStory-5.3 (UX Enhancements)~~ - **COMPLETED & ARCHIVED**
+12. **UserStory-6** (Split & Bulk Assignment) - **NEXT: Start implementation**
+13. **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6
+14. **UserStory-8.1** (Keyboard Shortcuts) - After US-7
+15. **UserStory-8.2** (Quick Filters & Performance) - After US-8.1
+16. **UserStory-9** (Integration Workflow Tests) - Incremental with US-7
+17. **UserStory-10** (Multi-User Auth) - Ready for implementation
+18. UserStory-11 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
+19. UserStory-12 (Sharing System) - Needs refinement (authorization middleware, permissions)
+20. UserStory-13 (Backup & Restore) - Needs refinement (security/encryption, versioning)
+21. UserStory-14 (Application Flow) - Needs refinement (onboarding tracking)
+22. UserStory-15 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)

@@ -1,0 +1,266 @@
+@using LocalFinanceManager.Services
+@inject IFilterStateService FilterStateService
+@implements IDisposable
+
+<div class="quick-filters mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">
+            <i class="bi bi-funnel"></i> Filters
+            @if (GetActiveFilterCount() > 0)
+            {
+                <span class="badge bg-primary ms-2">@GetActiveFilterCount() actief</span>
+            }
+        </h6>
+        <div>
+            <button type="button" class="btn btn-sm btn-link" @onclick="ToggleFilters">
+                @if (isExpanded)
+                {
+                    <i class="bi bi-chevron-up"></i> <span>Verberg</span>
+                }
+                else
+                {
+                    <i class="bi bi-chevron-down"></i> <span>Toon</span>
+                }
+            </button>
+            @if (GetActiveFilterCount() > 0)
+            {
+                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ClearFilters">
+                    <i class="bi bi-x-circle"></i> Wis filters
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (isExpanded)
+    {
+        <div class="filter-panel border rounded p-3">
+            <div class="row g-3">
+                <!-- Assignment Status Filter -->
+                <div class="col-md-6 col-lg-4">
+                    <label for="assignmentStatusFilter" class="form-label">Toewijzingsstatus</label>
+                    <select id="assignmentStatusFilter" class="form-select form-select-sm" 
+                            @bind="localFilters.AssignmentStatus" 
+                            @bind:after="OnFilterChanged">
+                        <option value="all">Alle</option>
+                        <option value="assigned">Toegewezen</option>
+                        <option value="unassigned">Niet toegewezen</option>
+                        <option value="split">Split</option>
+                        <option value="auto-applied">Automatisch toegepast</option>
+                    </select>
+                </div>
+
+                <!-- Suggestion Status Filter -->
+                <div class="col-md-6 col-lg-4">
+                    <label for="suggestionStatusFilter" class="form-label">Suggestiestatus</label>
+                    <select id="suggestionStatusFilter" class="form-select form-select-sm" 
+                            @bind="localFilters.SuggestionStatus" 
+                            @bind:after="OnFilterChanged">
+                        <option value="all">Alle</option>
+                        <option value="has-suggestion">Met suggestie</option>
+                        <option value="no-suggestion">Zonder suggestie</option>
+                    </select>
+                </div>
+
+                <!-- Date Range Filter -->
+                <div class="col-md-6 col-lg-4">
+                    <label for="dateRangeFilter" class="form-label">Datumbereik</label>
+                    <select id="dateRangeFilter" class="form-select form-select-sm" 
+                            @bind="localFilters.DateRange" 
+                            @bind:after="OnFilterChanged">
+                        <option value="all">Alle datums</option>
+                        <option value="last7">Laatste 7 dagen</option>
+                        <option value="last30">Laatste 30 dagen</option>
+                        <option value="last90">Laatste 90 dagen</option>
+                        <option value="custom">Aangepast bereik</option>
+                    </select>
+                </div>
+
+                <!-- Custom Date Range Inputs -->
+                @if (localFilters.DateRange == "custom")
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <label for="startDateFilter" class="form-label">Van datum</label>
+                        <input type="date" id="startDateFilter" class="form-control form-control-sm" 
+                               @bind="localFilters.CustomStartDate" 
+                               @bind:after="OnFilterChanged" />
+                    </div>
+
+                    <div class="col-md-6 col-lg-4">
+                        <label for="endDateFilter" class="form-label">Tot datum</label>
+                        <input type="date" id="endDateFilter" class="form-control form-control-sm" 
+                               @bind="localFilters.CustomEndDate" 
+                               @bind:after="OnFilterChanged" />
+                    </div>
+                }
+
+                <!-- Amount Range Filter -->
+                <div class="col-md-6 col-lg-4">
+                    <label for="minAmountFilter" class="form-label">Minimaal bedrag</label>
+                    <input type="number" id="minAmountFilter" class="form-control form-control-sm" 
+                           step="0.01" placeholder="€0.00"
+                           @bind="localFilters.MinAmount" 
+                           @bind:after="OnFilterChangedDebounced" />
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <label for="maxAmountFilter" class="form-label">Maximaal bedrag</label>
+                    <input type="number" id="maxAmountFilter" class="form-control form-control-sm" 
+                           step="0.01" placeholder="€9999.99"
+                           @bind="localFilters.MaxAmount" 
+                           @bind:after="OnFilterChangedDebounced" />
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public FilterState CurrentFilters { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<FilterState> OnFiltersChanged { get; set; }
+
+    private bool isExpanded = true;
+    private System.Threading.Timer? debounceTimer;
+    private CancellationTokenSource? debounceCts;
+    private FilterState localFilters = new();
+    private readonly object debounceTimerLock = new object();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize local copy from parameter
+        localFilters = CloneFilterState(CurrentFilters);
+        
+        // Only load saved filters if parent hasn't provided non-default values
+        if (IsDefaultFilterState(CurrentFilters))
+        {
+            var savedFilters = await FilterStateService.LoadFiltersAsync();
+            if (savedFilters != null)
+            {
+                localFilters = CloneFilterState(savedFilters);
+                await OnFiltersChanged.InvokeAsync(savedFilters);
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Sync local copy when parent updates parameter
+        localFilters = CloneFilterState(CurrentFilters);
+    }
+
+    private FilterState CloneFilterState(FilterState source)
+    {
+        return new FilterState
+        {
+            AssignmentStatus = source.AssignmentStatus,
+            SuggestionStatus = source.SuggestionStatus,
+            DateRange = source.DateRange,
+            CustomStartDate = source.CustomStartDate,
+            CustomEndDate = source.CustomEndDate,
+            MinAmount = source.MinAmount,
+            MaxAmount = source.MaxAmount,
+            SelectedCategories = new List<Guid>(source.SelectedCategories),
+            SelectedAccountId = source.SelectedAccountId
+        };
+    }
+
+    private bool IsDefaultFilterState(FilterState filters)
+    {
+        return filters.AssignmentStatus == "all" &&
+               filters.SuggestionStatus == "all" &&
+               filters.DateRange == "all" &&
+               !filters.CustomStartDate.HasValue &&
+               !filters.CustomEndDate.HasValue &&
+               !filters.MinAmount.HasValue &&
+               !filters.MaxAmount.HasValue &&
+               !filters.SelectedCategories.Any() &&
+               !filters.SelectedAccountId.HasValue;
+    }
+
+    private void ToggleFilters()
+    {
+        isExpanded = !isExpanded;
+    }
+
+    private async Task OnFilterChanged()
+    {
+        await FilterStateService.SaveFiltersAsync(localFilters);
+        await OnFiltersChanged.InvokeAsync(CloneFilterState(localFilters));
+    }
+
+    private void OnFilterChangedDebounced()
+    {
+        lock (debounceTimerLock)
+        {
+            // Cancel any pending debounced operations
+            debounceCts?.Cancel();
+            debounceCts?.Dispose();
+            debounceCts = new CancellationTokenSource();
+
+            // Cancel previous timer
+            debounceTimer?.Dispose();
+
+            // Capture the current CTS to check if it's still valid when callback executes
+            var currentCts = debounceCts;
+
+            // Start new timer (300ms delay)
+            debounceTimer = new System.Threading.Timer(_ =>
+            {
+                // Only execute if this callback hasn't been cancelled
+                if (!currentCts.IsCancellationRequested)
+                {
+                    // Schedule async work on the Blazor synchronization context
+                    _ = InvokeAsync(async () => await HandleDebouncedFilterChangedAsync(currentCts.Token));
+                }
+            }, null, 300, Timeout.Infinite);
+        }
+    }
+
+    private async Task HandleDebouncedFilterChangedAsync(CancellationToken cancellationToken)
+    {
+        // Check if cancelled before performing work
+        if (cancellationToken.IsCancellationRequested)
+            return;
+
+        await OnFilterChanged();
+        
+        // Check again after async operation
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task ClearFilters()
+    {
+        var clearedFilters = new FilterState();
+        await FilterStateService.ClearFiltersAsync();
+        localFilters = CloneFilterState(clearedFilters);
+        await OnFiltersChanged.InvokeAsync(clearedFilters);
+    }
+
+    private int GetActiveFilterCount()
+    {
+        int count = 0;
+        if (localFilters.AssignmentStatus != "all") count++;
+        if (localFilters.SuggestionStatus != "all") count++;
+        if (localFilters.DateRange != "all") count++;
+        if (localFilters.MinAmount.HasValue) count++;
+        if (localFilters.MaxAmount.HasValue) count++;
+        if (localFilters.SelectedCategories.Any()) count++;
+        if (localFilters.SelectedAccountId.HasValue) count++;
+        return count;
+    }
+
+    public void Dispose()
+    {
+        lock (debounceTimerLock)
+        {
+            debounceCts?.Cancel();
+            debounceCts?.Dispose();
+            debounceTimer?.Dispose();
+        }
+    }
+}

@@ -41,8 +41,13 @@ public class SplitEditorPageModel : PageObjectBase
     /// </summary>
     public async Task AddSplitRowAsync()
     {
+        var currentCount = await Page.Locator(SplitRowSelector).CountAsync();
         await Page.ClickAsync(AddSplitButtonSelector);
-        await Task.Delay(200); // Small delay for DOM update
+        // Wait for new split row to appear in DOM
+        await Page.WaitForFunctionAsync(
+            "(expected) => document.querySelectorAll('.split-row').length === expected",
+            currentCount + 1,
+            new() { Timeout = 2000 });
     }
 
     /// <summary>
@@ -64,8 +69,13 @@ public class SplitEditorPageModel : PageObjectBase
             throw new InvalidOperationException($"Remove button not found for split row {index}.");
         }
 
+        var currentCount = await Page.Locator(SplitRowSelector).CountAsync();
         await removeButton.ClickAsync();
-        await Task.Delay(200); // Small delay for DOM update
+        // Wait for split row to be removed from DOM
+        await Page.WaitForFunctionAsync(
+            "(expected) => document.querySelectorAll('.split-row').length === expected",
+            currentCount - 1,
+            new() { Timeout = 2000 });
     }
 
     /// <summary>

@@ -2,6 +2,7 @@
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
 @inject CategoryService CategoryService
+@inject IRecentCategoriesService RecentCategoriesService
 
 <div class="@CssClass">
     @if (categories == null)
@@ -12,19 +13,47 @@
     }
     else
     {
-        <select class="form-select" 
-                value="@SelectedCategoryId" 
-                @onchange="HandleCategorySelected"
-                required="@IsRequired">
-            @if (AllowEmpty)
-            {
-                <option value="">-- Selecteer een categorie --</option>
-            }
-            @foreach (var category in FilteredCategories)
-            {
-                <option value="@category.Id">@category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))</option>
-            }
-        </select>
+        <div class="position-relative">
+            <select class="form-select" 
+                    value="@SelectedCategoryId" 
+                    @onchange="HandleCategorySelected"
+                    required="@IsRequired">
+                @if (AllowEmpty)
+                {
+                    <option value="">-- Selecteer een categorie --</option>
+                }
+                @if (favoriteCategories.Any())
+                {
+                    <optgroup label="⭐ Favorieten">
+                        @foreach (var category in favoriteCategories)
+                        {
+                            <option value="@category.Id">@category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))</option>
+                        }
+                    </optgroup>
+                }
+
+                @if (favoriteCategories.Any() && FilteredCategories.Any())
+                {
+                    <optgroup label="Overige categorieën">
+                        @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
+                        {
+                            <option value="@category.Id">
+                                @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
+                            </option>
+                        }
+                    </optgroup>
+                }
+                else
+                {
+                    @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
+                    {
+                        <option value="@category.Id">
+                            @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
+                        </option>
+                    }
+                }
+            </select>
+        </div>
         @if (!string.IsNullOrEmpty(errorMessage))
         {
             <div class="text-danger small mt-1">@errorMessage</div>
@@ -76,6 +105,7 @@
     public bool IsRequired { get; set; } = false;
 
     private List<CategoryDto>? categories;
+    private List<CategoryDto> favoriteCategories = new();
     private string? errorMessage;
 
     private IEnumerable<CategoryDto> FilteredCategories
@@ -111,11 +141,18 @@
         {
             errorMessage = null;
             categories = await CategoryService.GetByBudgetPlanAsync(BudgetPlanId);
+            
+            // Load favorite categories
+            var favoriteCategoryIds = await RecentCategoriesService.GetFavoriteCategoriesAsync();
+            favoriteCategories = categories
+                .Where(c => favoriteCategoryIds.Contains(c.Id))
+                .ToList();
         }
         catch (Exception ex)
         {
             errorMessage = $"Fout bij laden van categorieën: {ex.Message}";
             categories = new List<CategoryDto>();
+            favoriteCategories = new List<CategoryDto>();
         }
     }
 

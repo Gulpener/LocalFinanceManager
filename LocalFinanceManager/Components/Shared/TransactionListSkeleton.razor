@@ -1,0 +1,66 @@
+@* Loading skeleton for transaction list *@
+<div class="skeleton-loader">
+    @for (int i = 0; i < RowCount; i++)
+    {
+        <div class="skeleton-row mb-2 p-3 border rounded">
+            <div class="row">
+                <div class="col-1">
+                    <div class="skeleton skeleton-badge"></div>
+                </div>
+                <div class="col-2">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+                <div class="col-3">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+                <div class="col-2">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+                <div class="col-2">
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+                <div class="col-2">
+                    <div class="skeleton skeleton-button"></div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s ease-in-out infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-text {
+        height: 16px;
+        width: 100%;
+    }
+
+    .skeleton-badge {
+        height: 20px;
+        width: 40px;
+    }
+
+    .skeleton-button {
+        height: 32px;
+        width: 80px;
+    }
+
+    @@keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public int RowCount { get; set; } = 10;
+}

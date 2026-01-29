@@ -282,8 +282,16 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         await context.Database.ExecuteSqlRawAsync("DELETE FROM Accounts;");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM MLModels;");
 
-        // Reset SQLite sequence counters (not strictly needed for GUID PKs)
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence;");
+        // Reset SQLite sequence counters (wrap in try-catch as table may not exist)
+        // Not strictly needed for GUID PKs but ensures clean state
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence;");
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.SqliteErrorCode == 1)
+        {
+            // Table doesn't exist, ignore
+        }
     }
 
     /// <summary>
