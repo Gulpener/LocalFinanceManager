@@ -232,7 +232,7 @@ public class UXEnhancementsTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-        var transaction = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -254,11 +254,7 @@ public class UXEnhancementsTests : E2ETestBase
     public async Task LoadingSkeleton_ElementExists_And_HiddenAfterLoad()
     {
         // Arrange
-        using var scope = Factory!.CreateDbScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        // No specific data setup needed; skeleton should display during initial load regardless of seed data.        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
 
         // Act - Navigate to transactions page WITHOUT waiting for network idle
         // This allows us to catch the loading skeleton before it disappears
