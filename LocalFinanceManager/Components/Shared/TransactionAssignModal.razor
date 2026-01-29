@@ -5,6 +5,7 @@
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
 @inject IBudgetPlanRepository BudgetPlanRepository
+@inject IRecentCategoriesService RecentCategoriesService
 @inject ILogger<TransactionAssignModal> Logger
 @implements IAsyncDisposable
 
@@ -71,6 +72,27 @@
                                     </li>
                                 }
                             </ul>
+                        </div>
+                    }
+
+                    <!-- Recent Categories Pills -->
+                    @if (recentBudgetLines != null && recentBudgetLines.Any())
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-clock-history"></i> Recent gebruikt
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var budgetLine in recentBudgetLines)
+                                {
+                                    <button type="button" 
+                                            class="btn btn-sm @(selectedBudgetLineId == budgetLine.Id.ToString() ? "btn-primary" : "btn-outline-primary")"
+                                            @onclick="() => SelectBudgetLine(budgetLine.Id.ToString())"
+                                            @onclick:stopPropagation>
+                                        @budgetLine.CategoryName
+                                    </button>
+                                }
+                            </div>
                         </div>
                     }
 
@@ -143,6 +165,7 @@
     public EventCallback OnAssignmentSuccess { get; set; }
 
     private List<BudgetLineDto>? budgetLines;
+    private List<BudgetLineDto>? recentBudgetLines;
     private string? selectedBudgetLineId;
     private string? note;
     private string? errorMessage;
@@ -156,6 +179,7 @@
         if (IsVisible && Transaction != null)
         {
             await LoadBudgetLines();
+            await LoadRecentCategories();
             ResetForm();
         }
     }
@@ -242,6 +266,36 @@
         isSubmitting = false;
     }
 
+    private async Task LoadRecentCategories()
+    {
+        try
+        {
+            if (budgetLines == null || !budgetLines.Any())
+            {
+                recentBudgetLines = new List<BudgetLineDto>();
+                return;
+            }
+
+            var recentCategoryIds = await RecentCategoriesService.GetRecentCategoriesAsync(5);
+            recentBudgetLines = budgetLines
+                .Where(bl => recentCategoryIds.Contains(bl.CategoryId))
+                .OrderBy(bl => recentCategoryIds.IndexOf(bl.CategoryId))
+                .Take(5)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load recent categories");
+            recentBudgetLines = new List<BudgetLineDto>();
+        }
+    }
+
+    private void SelectBudgetLine(string budgetLineId)
+    {
+        selectedBudgetLineId = budgetLineId;
+        StateHasChanged();
+    }
+
     private async Task AssignTransaction()
     {
         if (Transaction == null || string.IsNullOrEmpty(selectedBudgetLineId))
@@ -252,14 +306,22 @@
             isSubmitting = true;
             errorMessage = null;
 
+            var budgetLineGuid = Guid.Parse(selectedBudgetLineId);
             var request = new AssignTransactionRequest
             {
-                BudgetLineId = Guid.Parse(selectedBudgetLineId),
+                BudgetLineId = budgetLineGuid,
                 Note = note,
                 RowVersion = Transaction.RowVersion
             };
 
             await AssignmentService.AssignTransactionAsync(Transaction.Id, request);
+
+            // Track category usage for recent categories
+            var selectedBudgetLine = budgetLines?.FirstOrDefault(bl => bl.Id == budgetLineGuid);
+            if (selectedBudgetLine != null)
+            {
+                await RecentCategoriesService.TrackCategoryUsageAsync(selectedBudgetLine.CategoryId);
+            }
 
             await OnAssignmentSuccess.InvokeAsync();
             await Close();

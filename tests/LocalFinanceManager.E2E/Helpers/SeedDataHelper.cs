@@ -118,6 +118,68 @@ public static class SeedDataHelper
     }
 
     /// <summary>
+    /// Seeds categories with specific names for a budget plan.
+    /// </summary>
+    /// <param name="context">Database context for saving entities.</param>
+    /// <param name="budgetPlanId">ID of the BudgetPlan to associate categories with.</param>
+    /// <param name="categoryNames">Names of categories to create (Expense type by default).</param>
+    /// <returns>List of created Category entities.</returns>
+    public static async Task<List<Category>> SeedCategoriesAsync(
+        AppDbContext context,
+        Guid budgetPlanId,
+        params string[] categoryNames)
+    {
+        var categories = new List<Category>();
+
+        foreach (var name in categoryNames)
+        {
+            var category = new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = name,
+                Type = CategoryType.Expense,
+                BudgetPlanId = budgetPlanId
+            };
+            categories.Add(category);
+            context.Categories.Add(category);
+        }
+
+        await context.SaveChangesAsync();
+        return categories;
+    }
+
+    /// <summary>
+    /// Seeds a single transaction for an account.
+    /// </summary>
+    /// <param name="context">Database context for saving entities.</param>
+    /// <param name="accountId">ID of the Account to associate transaction with.</param>
+    /// <param name="amount">Transaction amount.</param>
+    /// <param name="date">Transaction date.</param>
+    /// <param name="description">Transaction description.</param>
+    /// <returns>Created Transaction entity.</returns>
+    public static async Task<Transaction> SeedTransactionAsync(
+        AppDbContext context,
+        Guid accountId,
+        decimal amount,
+        DateTime date,
+        string description)
+    {
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            AccountId = accountId,
+            Amount = amount,
+            Date = date,
+            Description = description,
+            Counterparty = "Test Counterparty"
+        };
+
+        context.Transactions.Add(transaction);
+        await context.SaveChangesAsync();
+        return transaction;
+    }
+
+    /// <summary>
     /// Seeds transactions for an account with random dates, amounts, and descriptions.
     /// Transactions are created with dates within the last 90 days.
     /// </summary>
@@ -159,6 +221,70 @@ public static class SeedDataHelper
 
         await context.SaveChangesAsync();
         return transactions.OrderByDescending(t => t.Date).ToList();
+    }
+
+    /// <summary>
+    /// Seeds a budget line for a budget plan.
+    /// </summary>
+    /// <param name="context">Database context for saving entities.</param>
+    /// <param name="budgetPlanId">ID of the BudgetPlan to associate budget line with.</param>
+    /// <param name="categoryId">ID of the Category to associate budget line with.</param>
+    /// <param name="yearTotal">Total budget amount for the year.</param>
+    /// <returns>Created BudgetLine entity.</returns>
+    public static async Task<BudgetLine> SeedBudgetLineAsync(
+        AppDbContext context,
+        Guid budgetPlanId,
+        Guid categoryId,
+        decimal yearTotal)
+    {
+        var monthlyAmount = yearTotal / 12;
+        var monthlyAmounts = Enumerable.Repeat(monthlyAmount, 12).ToArray();
+
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlanId,
+            CategoryId = categoryId,
+            MonthlyAmounts = monthlyAmounts
+        };
+
+        context.BudgetLines.Add(budgetLine);
+        await context.SaveChangesAsync();
+        return budgetLine;
+    }
+
+    /// <summary>
+    /// Assigns a transaction to a budget line by creating a TransactionSplit.
+    /// </summary>
+    /// <param name="context">Database context for saving entities.</param>
+    /// <param name="transactionId">ID of the Transaction to assign.</param>
+    /// <param name="budgetLineId">ID of the BudgetLine to assign to.</param>
+    /// <param name="note">Optional note for the assignment.</param>
+    /// <returns>Created TransactionSplit entity.</returns>
+    public static async Task<TransactionSplit> AssignTransactionAsync(
+        AppDbContext context,
+        Guid transactionId,
+        Guid budgetLineId,
+        string? note = null)
+    {
+        var transaction = await context.Transactions.FindAsync(transactionId);
+        if (transaction == null)
+        {
+            throw new InvalidOperationException($"Transaction {transactionId} not found.");
+        }
+
+        var split = new TransactionSplit
+        {
+            Id = Guid.NewGuid(),
+            TransactionId = transactionId,
+            BudgetLineId = budgetLineId,
+            Amount = transaction.Amount,
+            Note = note
+        };
+
+        context.TransactionSplits.Add(split);
+        await context.SaveChangesAsync();
+        return split;
     }
 
     /// <summary>

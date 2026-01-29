@@ -1,6 +1,7 @@
 @page "/transactions"
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Data.Repositories
+@using LocalFinanceManager.Services
 @inject ITransactionRepository TransactionRepository
 @inject IAccountRepository AccountRepository
 @inject NavigationManager NavigationManager
@@ -8,7 +9,14 @@
 
 <PageTitle>Transacties</PageTitle>
 
-<h1>Transacties</h1>
+<h1>Transacties 
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => showShortcutHelp = true" title="Toetsenbord sneltoetsen">
+        <i class="bi bi-question-circle"></i>
+    </button>
+</h1>
+
+<!-- Quick Filters -->
+<QuickFilters CurrentFilters="filterState" OnFiltersChanged="OnFiltersChanged" />
 
 <div class="row mb-3">
     <div class="col-md-6">
@@ -39,7 +47,7 @@
 
 @if (loading)
 {
-    <p><em>Laden...</em></p>
+    <TransactionListSkeleton RowCount="10" />
 }
 else if (filteredTransactions.Count == 0)
 {
@@ -142,6 +150,8 @@ else
 
 <AssignmentAuditTrail TransactionId="@auditTransactionId" IsVisible="@showAuditTrail" OnClose="@CloseAuditTrail" />
 
+<ShortcutHelp IsVisible="@showShortcutHelp" OnClose="@(() => showShortcutHelp = false)" />
+
 @code {
     private List<TransactionDto> transactionDtos = new();
     private List<TransactionDto> filteredTransactions = new();
@@ -152,12 +162,15 @@ else
     private bool loading = true;
     private decimal filteredTotalAmount = 0;
     private int unassignedCount = 0;
+    private FilterState filterState = new();
 
     private bool showAssignModal = false;
     private TransactionDto? selectedTransaction = null;
 
     private bool showAuditTrail = false;
     private Guid? auditTransactionId = null;
+
+    private bool showShortcutHelp = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -214,15 +227,64 @@ else
 
     private void ApplyFilters()
     {
-        filteredTransactions = assignmentFilter switch
+        var query = transactionDtos.AsEnumerable();
+
+        // Apply assignment status filter
+        query = filterState.AssignmentStatus switch
         {
-            "assigned" => transactionDtos.Where(t => t.IsAssigned).ToList(),
-            "unassigned" => transactionDtos.Where(t => !t.IsAssigned).ToList(),
-            _ => transactionDtos.ToList()
+            "assigned" => query.Where(t => t.IsAssigned),
+            "unassigned" => query.Where(t => !t.IsAssigned),
+            "split" => query.Where(t => t.Splits != null && t.Splits.Count > 1),
+            "auto-applied" => query, // TODO: Add auto-applied tracking
+            _ => query
         };
 
+        // Apply date range filter
+        if (filterState.DateRange != "all")
+        {
+            var now = DateTime.Now;
+            var startDate = filterState.DateRange switch
+            {
+                "last7" => now.AddDays(-7),
+                "last30" => now.AddDays(-30),
+                "last90" => now.AddDays(-90),
+                "custom" => filterState.CustomStartDate ?? DateTime.MinValue,
+                _ => DateTime.MinValue
+            };
+
+            var endDate = filterState.DateRange == "custom" 
+                ? filterState.CustomEndDate ?? DateTime.MaxValue 
+                : DateTime.MaxValue;
+
+            query = query.Where(t => t.Date >= startDate && t.Date <= endDate);
+        }
+
+        // Apply amount range filter
+        if (filterState.MinAmount.HasValue)
+        {
+            query = query.Where(t => Math.Abs(t.Amount) >= filterState.MinAmount.Value);
+        }
+        if (filterState.MaxAmount.HasValue)
+        {
+            query = query.Where(t => Math.Abs(t.Amount) <= filterState.MaxAmount.Value);
+        }
+
+        // Apply account filter (if set via QuickFilters)
+        if (filterState.SelectedAccountId.HasValue)
+        {
+            query = query.Where(t => t.AccountId == filterState.SelectedAccountId.Value);
+        }
+
+        filteredTransactions = query.OrderByDescending(t => t.Date).ToList();
         filteredTotalAmount = filteredTransactions.Sum(t => t.Amount);
         unassignedCount = transactionDtos.Count(t => !t.IsAssigned);
+    }
+
+    private void OnFiltersChanged(FilterState newFilters)
+    {
+        filterState = newFilters;
+        ApplyFilters();
+        StateHasChanged();
     }
 
     private async Task OnAccountChanged()
