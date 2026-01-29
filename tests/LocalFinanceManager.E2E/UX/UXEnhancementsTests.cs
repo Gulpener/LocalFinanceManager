@@ -257,13 +257,16 @@ public class UXEnhancementsTests : E2ETestBase
 
         // Try to catch loading skeleton (may be too fast in local dev)
         var skeleton = Page.Locator(".skeleton-loader");
-        await skeleton.IsVisibleAsync().ConfigureAwait(false);
+        var skeletonWasVisible = await skeleton.IsVisibleAsync().ConfigureAwait(false);
 
         await navigationTask;
 
         // Assert - Either skeleton was visible during load, or content loaded so fast it wasn't needed
         // Both are acceptable outcomes
-        Assert.Pass("Loading skeleton check completed (may be too fast to capture in test)");
+        Assert.Pass(
+            skeletonWasVisible
+                ? "Loading skeleton was visible during initial load."
+                : "Content loaded before loading skeleton became visible (acceptable).");
     }
 
     [Test]
