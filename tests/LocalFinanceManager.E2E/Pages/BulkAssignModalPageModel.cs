@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using static Microsoft.Playwright.Assertions;
 
 namespace LocalFinanceManager.E2E.Pages;
 
@@ -107,7 +108,9 @@ public class BulkAssignModalPageModel : PageObjectBase
     public async Task ExpandErrorDetailsAsync()
     {
         await Page.ClickAsync(ErrorAccordionSelector);
-        await Task.Delay(300); // Wait for accordion animation
+        // Wait for accordion content to be visible after animation
+        var errorContent = Page.Locator("[data-testid='error-message']").First;
+        await errorContent.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 2000 });
     }
 
     /// <summary>
@@ -146,20 +149,21 @@ public class BulkAssignModalPageModel : PageObjectBase
     /// <param name="timeoutMs">Timeout in milliseconds (default: 30000ms).</param>
     public async Task WaitForCompletionAsync(int timeoutMs = 30000)
     {
-        var startTime = DateTime.UtcNow;
-
-        while ((DateTime.UtcNow - startTime).TotalMilliseconds < timeoutMs)
-        {
-            var progress = await GetProgressPercentageAsync();
-            if (progress >= 100)
-            {
-                return;
-            }
-
-            await Task.Delay(500);
-        }
-
-        throw new TimeoutException($"Bulk operation did not complete within {timeoutMs}ms.");
+        // Wait for progress bar to reach 100% using Playwright's built-in wait
+        var progressBar = Page.Locator(ProgressBarSelector);
+        await progressBar.WaitForAsync(new() 
+        { 
+            Timeout = timeoutMs,
+            State = WaitForSelectorState.Attached 
+        });
+        
+        // Wait for aria-valuenow attribute to equal 100
+        await Page.WaitForFunctionAsync(
+            @"() => {
+                const progressBar = document.querySelector('.progress-bar');
+                return progressBar && parseInt(progressBar.getAttribute('aria-valuenow')) >= 100;
+            }",
+            new PageWaitForFunctionOptions { Timeout = timeoutMs });
     }
 
     /// <summary>
