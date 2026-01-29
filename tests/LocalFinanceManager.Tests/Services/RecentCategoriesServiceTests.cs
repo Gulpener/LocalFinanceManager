@@ -34,7 +34,7 @@ public class RecentCategoriesServiceTests
 
         // Act - Track the same category twice
         await _service.TrackCategoryUsageAsync(categoryId);
-        
+
         // Update mock to return the saved data for second call
         SetupGetUsageData(capturedUsageData ?? new Dictionary<Guid, int>());
         await _service.TrackCategoryUsageAsync(categoryId);
@@ -51,7 +51,7 @@ public class RecentCategoriesServiceTests
         // Arrange
         var categoryId = Guid.NewGuid();
         SetupGetUsageData(new Dictionary<Guid, int>());
-        
+
         Dictionary<Guid, int>? capturedUsageData = null;
         SetupSaveUsageData(data => capturedUsageData = data);
 
@@ -87,10 +87,10 @@ public class RecentCategoriesServiceTests
         // Assert
         Assert.That(capturedUsageData, Is.Not.Null);
         Assert.That(capturedUsageData!.Count, Is.EqualTo(20), "Should trim to exactly 20 categories");
-        
+
         // The lowest usage count should be 1 (could be from multiple categories)
         Assert.That(capturedUsageData.Values.Min(), Is.EqualTo(1));
-        
+
         // Verify the top 20 categories by usage are kept
         Assert.That(capturedUsageData.Values.Max(), Is.EqualTo(20), "Highest usage category should be kept");
     }
@@ -282,7 +282,7 @@ public class RecentCategoriesServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.TrackCategoryUsageAsync(categoryId));
-        
+
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Warning,
@@ -306,7 +306,7 @@ public class RecentCategoriesServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.TrackCategoryUsageAsync(categoryId));
-        
+
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Warning,
@@ -330,7 +330,7 @@ public class RecentCategoriesServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.TrackCategoryUsageAsync(categoryId));
-        
+
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Error,
@@ -404,7 +404,7 @@ public class RecentCategoriesServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.ToggleFavoriteAsync(categoryId));
-        
+
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Warning,

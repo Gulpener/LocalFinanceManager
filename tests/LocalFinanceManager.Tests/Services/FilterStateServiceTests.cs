@@ -52,9 +52,9 @@ public class FilterStateServiceTests
         // Assert
         _mockJsRuntime.Verify(js => js.InvokeAsync<object>(
             "localStorage.setItem",
-            It.Is<object[]>(args => 
-                args.Length == 2 && 
-                (string)args[0] == "transactionFilters")), 
+            It.Is<object[]>(args =>
+                args.Length == 2 &&
+                (string)args[0] == "transactionFilters")),
             Times.Once);
 
         Assert.That(capturedJson, Is.Not.Null);
@@ -95,9 +95,9 @@ public class FilterStateServiceTests
         // Assert
         _mockJsRuntime.Verify(js => js.InvokeAsync<string>(
             "localStorage.getItem",
-            It.Is<object[]>(args => 
-                args.Length == 1 && 
-                (string)args[0] == "transactionFilters")), 
+            It.Is<object[]>(args =>
+                args.Length == 1 &&
+                (string)args[0] == "transactionFilters")),
             Times.Once);
 
         Assert.That(result, Is.Not.Null);
@@ -127,7 +127,7 @@ public class FilterStateServiceTests
         Assert.That(result, Is.Null);
         _mockJsRuntime.Verify(js => js.InvokeAsync<string>(
             "localStorage.getItem",
-            It.Is<object[]>(args => (string)args[0] == "transactionFilters")), 
+            It.Is<object[]>(args => (string)args[0] == "transactionFilters")),
             Times.Once);
     }
 
@@ -164,9 +164,9 @@ public class FilterStateServiceTests
         // Assert
         _mockJsRuntime.Verify(js => js.InvokeAsync<object>(
             "localStorage.removeItem",
-            It.Is<object[]>(args => 
-                args.Length == 1 && 
-                (string)args[0] == "transactionFilters")), 
+            It.Is<object[]>(args =>
+                args.Length == 1 &&
+                (string)args[0] == "transactionFilters")),
             Times.Once);
     }
 
@@ -183,7 +183,7 @@ public class FilterStateServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.SaveFiltersAsync(filters));
-        
+
         // Verify warning logged
         _mockLogger.Verify(
             x => x.Log(
@@ -208,7 +208,7 @@ public class FilterStateServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.SaveFiltersAsync(filters));
-        
+
         // Verify warning logged
         _mockLogger.Verify(
             x => x.Log(
@@ -233,7 +233,7 @@ public class FilterStateServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.SaveFiltersAsync(filters));
-        
+
         // Verify error logged
         _mockLogger.Verify(
             x => x.Log(
@@ -307,7 +307,7 @@ public class FilterStateServiceTests
 
         // Act & Assert
         Assert.DoesNotThrowAsync(async () => await _service.ClearFiltersAsync());
-        
+
         _mockLogger.Verify(
             x => x.Log(
                 LogLevel.Warning,

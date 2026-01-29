@@ -264,6 +264,7 @@ This story **enhances** existing components and adds new filtering infrastructur
 - [ ] Create `RecentCategoriesService.cs` in `Services/`
 - [ ] Inject `IJSRuntime` for localStorage access
 - [ ] Implement `TrackCategoryUsageAsync(Guid categoryId)` method:
+
   ```csharp
   public async Task TrackCategoryUsageAsync(Guid categoryId)
   {
@@ -286,7 +287,9 @@ This story **enhances** existing components and adds new filtering infrastructur
       await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "categoryUsage", updatedJson);
   }
   ```
+
 - [ ] Implement `GetRecentCategoriesAsync(int count = 5)` method:
+
   ```csharp
   public async Task<List<CategoryUsage>> GetRecentCategoriesAsync(int count = 5)
   {
@@ -300,7 +303,9 @@ This story **enhances** existing components and adds new filtering infrastructur
                   .ToList();
   }
   ```
+
 - [ ] Implement `ToggleFavoriteAsync(Guid categoryId)` method:
+
   ```csharp
   public async Task ToggleFavoriteAsync(Guid categoryId)
   {
@@ -318,6 +323,7 @@ This story **enhances** existing components and adds new filtering infrastructur
       await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "favoriteCategories", updatedJson);
   }
   ```
+
 - [ ] Implement `GetFavoriteCategoriesAsync()` method:
   ```csharp
   public async Task<List<Guid>> GetFavoriteCategoriesAsync()
@@ -606,7 +612,6 @@ This story **enhances** existing components and adds new filtering infrastructur
 ### Quick Filters Test Scenarios
 
 1. **Assignment Status Filter:**
-
    - Select "All" → All transactions shown
    - Select "Assigned" → Only assigned transactions shown
    - Select "Unassigned" → Only unassigned transactions shown
@@ -614,7 +619,6 @@ This story **enhances** existing components and adds new filtering infrastructur
    - Select "Auto-Applied" → Only auto-applied transactions shown
 
 2. **Date Range Filter:**
-
    - Select "All Time" → All transactions shown
    - Select "Last 7 days" → Transactions from last 7 days shown
    - Select "Last 30 days" → Transactions from last 30 days shown
@@ -622,19 +626,16 @@ This story **enhances** existing components and adds new filtering infrastructur
    - Select "Custom range" → Date pickers appear, filtered by range
 
 3. **Amount Range Filter:**
-
    - Enter min: 50 → Transactions >= 50 shown
    - Enter max: 200 → Transactions <= 200 shown
    - Enter min: 50, max: 200 → Transactions between 50-200 shown
 
 4. **Category Multi-Select Filter:**
-
    - Select "Food" → Only "Food" transactions shown
    - Select "Food" + "Transport" → Food or Transport transactions shown
    - Deselect all → All transactions shown
 
 5. **Filter Persistence:**
-
    - Apply multiple filters → Reload page → Filters still active
    - Clear all filters → Reload page → No filters active
 
@@ -645,13 +646,11 @@ This story **enhances** existing components and adds new filtering infrastructur
 ### Recent Categories Test Scenarios
 
 1. **Usage Tracking:**
-
    - Assign transaction to "Food" → Usage count increments
    - Assign 5 transactions to "Food" → Usage count = 5
    - Assign to 10 different categories → Only top 20 tracked
 
 2. **Recent Categories Display:**
-
    - Assign to "Food" 23 times → Shows "Food - Used 23 times"
    - Open modal → Top 5 most used categories displayed
    - No recent categories → Empty state message shown
@@ -663,7 +662,6 @@ This story **enhances** existing components and adds new filtering infrastructur
 ### Favorite Categories Test Scenarios
 
 1. **Favorite Toggle:**
-
    - Click star icon → Category added to favorites
    - Click star icon again → Category removed from favorites
    - Favorites persist across sessions (localStorage)
@@ -676,17 +674,14 @@ This story **enhances** existing components and adds new filtering infrastructur
 ### Performance Test Scenarios
 
 1. **Load Time:**
-
    - Load 1000 transactions → <500ms
    - Load 100 transactions → <100ms
 
 2. **Pagination:**
-
    - Navigate between pages → <200ms per page
    - Change page size → Immediate update
 
 3. **Filter Application:**
-
    - Apply filter to 1000 transactions → <300ms
    - Apply multiple filters → <500ms
 
