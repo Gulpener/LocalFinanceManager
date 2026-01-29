@@ -237,6 +237,7 @@
     {
         var clearedFilters = new FilterState();
         await FilterStateService.ClearFiltersAsync();
+        localFilters = CloneFilterState(clearedFilters);
         await OnFiltersChanged.InvokeAsync(clearedFilters);
     }
 
