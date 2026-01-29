@@ -31,15 +31,26 @@
                         }
                     </optgroup>
                 }
+
                 @if (favoriteCategories.Any() && FilteredCategories.Any())
                 {
-                    <option disabled>──────────</option>
+                    <optgroup label="Overige categorieën">
+                        @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
+                        {
+                            <option value="@category.Id">
+                                @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
+                            </option>
+                        }
+                    </optgroup>
                 }
-                @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
+                else
                 {
-                    <option value="@category.Id">
-                        @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
-                    </option>
+                    @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
+                    {
+                        <option value="@category.Id">
+                            @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
+                        </option>
+                    }
                 }
             </select>
         </div>
