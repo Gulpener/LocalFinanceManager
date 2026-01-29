@@ -49,7 +49,7 @@ The Quick Filters component provides advanced filtering options for transaction 
    - Assigned
    - Unassigned (not yet assigned to any category)
    - Split (assigned to multiple categories)
-   - Auto-Applied (automatically assigned by ML)
+   - Auto-Applied (planned: will show transactions automatically assigned by ML)
 
 2. **Suggestion Status**
    - All
