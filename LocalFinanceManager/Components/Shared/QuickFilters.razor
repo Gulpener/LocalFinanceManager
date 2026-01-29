@@ -122,6 +122,7 @@
 
     private bool isExpanded = true;
     private System.Threading.Timer? debounceTimer;
+    private CancellationTokenSource? debounceCts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -163,21 +164,42 @@
 
     private void OnFilterChangedDebounced()
     {
+        // Cancel any pending debounced operations
+        debounceCts?.Cancel();
+        debounceCts?.Dispose();
+        debounceCts = new CancellationTokenSource();
+
         // Cancel previous timer
         debounceTimer?.Dispose();
+
+        // Capture the current CTS to check if it's still valid when callback executes
+        var currentCts = debounceCts;
 
         // Start new timer (300ms delay)
         debounceTimer = new System.Threading.Timer(_ =>
         {
-            // Schedule async work on the Blazor synchronization context
-            _ = InvokeAsync(HandleDebouncedFilterChangedAsync);
+            // Only execute if this callback hasn't been cancelled
+            if (!currentCts.IsCancellationRequested)
+            {
+                // Schedule async work on the Blazor synchronization context
+                _ = InvokeAsync(async () => await HandleDebouncedFilterChangedAsync(currentCts.Token));
+            }
         }, null, 300, Timeout.Infinite);
     }
 
-    private async Task HandleDebouncedFilterChangedAsync()
+    private async Task HandleDebouncedFilterChangedAsync(CancellationToken cancellationToken)
     {
+        // Check if cancelled before performing work
+        if (cancellationToken.IsCancellationRequested)
+            return;
+
         await OnFilterChanged();
-        StateHasChanged();
+        
+        // Check again after async operation
+        if (!cancellationToken.IsCancellationRequested)
+        {
+            StateHasChanged();
+        }
     }
     private async Task ClearFilters()
     {
@@ -201,6 +223,8 @@
 
     public void Dispose()
     {
+        debounceCts?.Cancel();
+        debounceCts?.Dispose();
         debounceTimer?.Dispose();
     }
 }
