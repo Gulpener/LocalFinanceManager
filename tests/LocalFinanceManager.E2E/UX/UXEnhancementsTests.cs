@@ -204,7 +204,7 @@ public class UXEnhancementsTests : E2ETestBase
         await SeedDataHelper.AssignTransactionAsync(context, transaction1.Id, budgetLine.Id);
 
         // Create new unassigned transaction
-        var transaction2 = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -30m, DateTime.Now, "Transaction 2");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -30m, DateTime.Now, "Transaction 2");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
