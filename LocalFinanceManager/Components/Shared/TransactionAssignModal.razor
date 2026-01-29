@@ -277,9 +277,13 @@
             }
 
             var recentCategoryIds = await RecentCategoriesService.GetRecentCategoriesAsync(5);
+            var indexMap = recentCategoryIds
+                .Select((id, index) => new { id, index })
+                .ToDictionary(x => x.id, x => x.index);
+
             recentBudgetLines = budgetLines
                 .Where(bl => recentCategoryIds.Contains(bl.CategoryId))
-                .OrderBy(bl => recentCategoryIds.IndexOf(bl.CategoryId))
+                .OrderBy(bl => indexMap.TryGetValue(bl.CategoryId, out var idx) ? idx : int.MaxValue)
                 .Take(5)
                 .ToList();
         }
