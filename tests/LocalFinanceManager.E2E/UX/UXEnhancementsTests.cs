@@ -248,26 +248,29 @@ public class UXEnhancementsTests : E2ETestBase
     }
 
     [Test]
-    public async Task LoadingSkeleton_Displays_During_Initial_Load()
+    public async Task LoadingSkeleton_ElementExists_And_HiddenAfterLoad()
     {
         // Arrange
         using var scope = Factory!.CreateDbScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
 
-        // Act - Navigate to transactions page (fast check for skeleton)
-        var navigationTask = Page.GotoAsync($"{BaseUrl}/transactions");
+        // Act - Navigate to transactions page
+        await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        // Try to catch loading skeleton (may be too fast in local dev)
+        // Assert - Verify skeleton loader element exists in the DOM (even if not currently visible)
         var skeleton = Page.Locator(".skeleton-loader");
-        var isVisible = await skeleton.IsVisibleAsync().ConfigureAwait(false);
+        var skeletonCount = await skeleton.CountAsync();
+        Assert.That(skeletonCount, Is.GreaterThan(0), "Skeleton loader element should exist in the DOM");
 
-        await navigationTask;
+        // Verify skeleton is hidden after page load completes
+        await Expect(skeleton.First).Not.ToBeVisibleAsync();
 
-        // Assert - Either skeleton was visible during load, or content loaded so fast it wasn't needed
-        // Both are acceptable outcomes
-        Assert.Pass("Loading skeleton check completed (may be too fast to capture in test)");
+        // Verify actual content is now visible
+        var transactionTable = Page.Locator("table tbody tr");
+        await Expect(transactionTable.First).ToBeVisibleAsync();
     }
 
     [Test]

@@ -141,11 +141,22 @@ else
 
     private async Task ArchivePlan(Guid planId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to archive this budget plan?");
-        if (confirmed)
+        try
         {
-            await BudgetPlanService.ArchiveAsync(planId);
-            await LoadBudgetPlans();
+            bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to archive this budget plan?");
+            if (confirmed)
+            {
+                await BudgetPlanService.ArchiveAsync(planId);
+                await LoadBudgetPlans();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Client disconnected, silently ignore
+        }
+        catch (InvalidOperationException)
+        {
+            // JSInterop not available (prerendering or disconnected), silently ignore
         }
     }
 }

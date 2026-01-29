@@ -53,6 +53,14 @@ public class RecentCategoriesService : IRecentCategoriesService
 
             await SaveUsageDataAsync(usageData);
         }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while tracking category usage for categoryId: {CategoryId}", categoryId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid while tracking category usage for categoryId: {CategoryId}", categoryId);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to track category usage for categoryId: {CategoryId}", categoryId);
@@ -69,6 +77,16 @@ public class RecentCategoriesService : IRecentCategoriesService
                 .Take(count)
                 .Select(kvp => kvp.Key)
                 .ToList();
+        }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while getting recent categories");
+            return new List<Guid>();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid while getting recent categories");
+            return new List<Guid>();
         }
         catch (Exception ex)
         {
@@ -94,6 +112,14 @@ public class RecentCategoriesService : IRecentCategoriesService
 
             await SaveFavoritesAsync(favorites);
         }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while toggling favorite for categoryId: {CategoryId}", categoryId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid while toggling favorite for categoryId: {CategoryId}", categoryId);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to toggle favorite for categoryId: {CategoryId}", categoryId);
@@ -112,6 +138,16 @@ public class RecentCategoriesService : IRecentCategoriesService
             }
 
             return JsonSerializer.Deserialize<List<Guid>>(json) ?? new List<Guid>();
+        }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while getting favorite categories");
+            return new List<Guid>();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid while getting favorite categories");
+            return new List<Guid>();
         }
         catch (Exception ex)
         {
@@ -133,6 +169,16 @@ public class RecentCategoriesService : IRecentCategoriesService
 
             return JsonSerializer.Deserialize<Dictionary<Guid, int>>(json) ?? new Dictionary<Guid, int>();
         }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while getting usage data from localStorage");
+            return new Dictionary<Guid, int>();
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid while getting usage data from localStorage");
+            return new Dictionary<Guid, int>();
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get usage data from localStorage");
@@ -142,13 +188,35 @@ public class RecentCategoriesService : IRecentCategoriesService
 
     private async Task SaveUsageDataAsync(Dictionary<Guid, int> usageData)
     {
-        var json = JsonSerializer.Serialize(usageData);
-        await _jsRuntime.InvokeVoidAsync("localStorage.setItem", UsageStorageKey, json);
+        try
+        {
+            var json = JsonSerializer.Serialize(usageData);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", UsageStorageKey, json);
+        }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while saving usage data");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid while saving usage data");
+        }
     }
 
     private async Task SaveFavoritesAsync(List<Guid> favorites)
     {
-        var json = JsonSerializer.Serialize(favorites);
-        await _jsRuntime.InvokeVoidAsync("localStorage.setItem", FavoritesStorageKey, json);
+        try
+        {
+            var json = JsonSerializer.Serialize(favorites);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", FavoritesStorageKey, json);
+        }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while saving favorites");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid while saving favorites");
+        }
     }
 }

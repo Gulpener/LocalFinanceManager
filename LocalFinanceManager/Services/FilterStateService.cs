@@ -49,6 +49,14 @@ public class FilterStateService : IFilterStateService
             var json = JsonSerializer.Serialize(filters);
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
         }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while saving filter state");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid (likely during prerendering or circuit disconnected)");
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save filter state to localStorage");
@@ -68,6 +76,16 @@ public class FilterStateService : IFilterStateService
 
             return JsonSerializer.Deserialize<FilterState>(json);
         }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while loading filter state");
+            return null;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid (likely during prerendering or circuit disconnected)");
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load filter state from localStorage");
@@ -80,6 +98,14 @@ public class FilterStateService : IFilterStateService
         try
         {
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", StorageKey);
+        }
+        catch (JSDisconnectedException ex)
+        {
+            _logger.LogWarning(ex, "Client disconnected while clearing filter state");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "JSInterop call invalid (likely during prerendering or circuit disconnected)");
         }
         catch (Exception ex)
         {
