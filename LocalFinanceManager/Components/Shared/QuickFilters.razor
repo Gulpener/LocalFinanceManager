@@ -125,6 +125,7 @@
     private System.Threading.Timer? debounceTimer;
     private CancellationTokenSource? debounceCts;
     private FilterState localFilters = new();
+    private readonly object debounceTimerLock = new object();
 
     protected override async Task OnInitializedAsync()
     {
@@ -191,27 +192,30 @@
 
     private void OnFilterChangedDebounced()
     {
-        // Cancel any pending debounced operations
-        debounceCts?.Cancel();
-        debounceCts?.Dispose();
-        debounceCts = new CancellationTokenSource();
-
-        // Cancel previous timer
-        debounceTimer?.Dispose();
-
-        // Capture the current CTS to check if it's still valid when callback executes
-        var currentCts = debounceCts;
-
-        // Start new timer (300ms delay)
-        debounceTimer = new System.Threading.Timer(_ =>
+        lock (debounceTimerLock)
         {
-            // Only execute if this callback hasn't been cancelled
-            if (!currentCts.IsCancellationRequested)
+            // Cancel any pending debounced operations
+            debounceCts?.Cancel();
+            debounceCts?.Dispose();
+            debounceCts = new CancellationTokenSource();
+
+            // Cancel previous timer
+            debounceTimer?.Dispose();
+
+            // Capture the current CTS to check if it's still valid when callback executes
+            var currentCts = debounceCts;
+
+            // Start new timer (300ms delay)
+            debounceTimer = new System.Threading.Timer(_ =>
             {
-                // Schedule async work on the Blazor synchronization context
-                _ = InvokeAsync(async () => await HandleDebouncedFilterChangedAsync(currentCts.Token));
-            }
-        }, null, 300, Timeout.Infinite);
+                // Only execute if this callback hasn't been cancelled
+                if (!currentCts.IsCancellationRequested)
+                {
+                    // Schedule async work on the Blazor synchronization context
+                    _ = InvokeAsync(async () => await HandleDebouncedFilterChangedAsync(currentCts.Token));
+                }
+            }, null, 300, Timeout.Infinite);
+        }
     }
 
     private async Task HandleDebouncedFilterChangedAsync(CancellationToken cancellationToken)
@@ -250,8 +254,11 @@
 
     public void Dispose()
     {
-        debounceCts?.Cancel();
-        debounceCts?.Dispose();
-        debounceTimer?.Dispose();
+        lock (debounceTimerLock)
+        {
+            debounceCts?.Cancel();
+            debounceCts?.Dispose();
+            debounceTimer?.Dispose();
+        }
     }
 }
