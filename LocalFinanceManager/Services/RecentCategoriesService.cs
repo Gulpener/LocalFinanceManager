@@ -216,5 +216,9 @@ public class RecentCategoriesService : IRecentCategoriesService
         {
             _logger.LogWarning(ex, "JSInterop call invalid while saving favorites");
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save favorites to localStorage");
+        }
     }
 }
