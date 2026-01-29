@@ -264,7 +264,7 @@ public class UXEnhancementsTests : E2ETestBase
         // Assert - Verify skeleton loader element appears during loading
         var skeleton = Page.Locator(".skeleton-loader");
         var transactionTable = Page.Locator("table tbody tr");
-        
+
         // Wait for the skeleton to appear (with a short timeout since it should appear quickly)
         try
         {
