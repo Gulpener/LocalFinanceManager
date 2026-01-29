@@ -261,7 +261,7 @@ public class UXEnhancementsTests : E2ETestBase
 
         // Try to catch loading skeleton (may be too fast in local dev)
         var skeleton = Page.Locator(".skeleton-loader");
-        var isVisible = await skeleton.IsVisibleAsync().ConfigureAwait(false);
+        await skeleton.IsVisibleAsync().ConfigureAwait(false);
 
         await navigationTask;
 
