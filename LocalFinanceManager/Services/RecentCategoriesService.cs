@@ -35,15 +35,13 @@ public class RecentCategoriesService : IRecentCategoriesService
         {
             var usageData = await GetUsageDataAsync();
 
-            if (usageData.ContainsKey(categoryId))
+            if (!usageData.TryGetValue(categoryId, out var usageCount))
             {
-                usageData[categoryId]++;
-            }
-            else
-            {
-                usageData[categoryId] = 1;
+                usageCount = 0;
             }
 
+            usageCount++;
+            usageData[categoryId] = usageCount;
             // Trim to top 20 categories if exceeded
             if (usageData.Count > MaxTrackedCategories)
             {
