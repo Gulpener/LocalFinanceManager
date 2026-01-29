@@ -149,7 +149,10 @@ public class UXEnhancementsTests : E2ETestBase
         var dateRangeFilter = Page.Locator("#dateRangeFilter");
         await dateRangeFilter.SelectOptionAsync("last30");
 
-        await Task.Delay(1000);
+        // Wait until the table shows fewer rows than initially (filter applied)
+        await Page.WaitForFunctionAsync(
+            @"expectedCount => document.querySelectorAll('tbody tr').length < expectedCount",
+            allRows);
 
         // Assert - Should show fewer transactions (only from last 30 days, excluding old ones)
         var transactionRows = Page.Locator("tbody tr");
