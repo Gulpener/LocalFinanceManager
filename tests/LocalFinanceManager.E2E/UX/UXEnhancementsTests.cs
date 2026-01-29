@@ -269,7 +269,7 @@ public class UXEnhancementsTests : E2ETestBase
         {
             await Expect(skeleton.First).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 2000 });
         }
-        catch
+        catch (PlaywrightException)
         {
             // If skeleton doesn't appear, it might have loaded too fast - that's acceptable
             // Just verify the content loaded successfully instead
