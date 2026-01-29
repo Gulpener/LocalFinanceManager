@@ -31,10 +31,7 @@ public class UXEnhancementsTests : E2ETestBase
         var helpButton = Page.Locator("button[title='Toetsenbord sneltoetsen']");
         await helpButton.ClickAsync();
 
-        // Wait for modal to appear
-        await Task.Delay(500);
-
-        // Assert - Verify help modal is visible
+        // Assert - Verify help modal is visible (wait built-in)
         var helpModal = Page.Locator(".modal.show");
         await Expect(helpModal).ToBeVisibleAsync();
 
@@ -58,7 +55,6 @@ public class UXEnhancementsTests : E2ETestBase
         // Open help modal
         var helpButton = Page.Locator("button[title='Toetsenbord sneltoetsen']");
         await helpButton.ClickAsync();
-        await Task.Delay(500);
 
         var helpModal = Page.Locator(".modal.show");
         await Expect(helpModal).ToBeVisibleAsync();
@@ -66,9 +62,9 @@ public class UXEnhancementsTests : E2ETestBase
         // Act - Click close button
         var closeButton = helpModal.Locator("button:has-text('Sluiten')");
         await closeButton.ClickAsync();
-        await Task.Delay(500);
 
-        // Assert - Modal should be closed
+        // Assert - Modal should be closed (wait for it to disappear)
+        await Page.WaitForSelectorAsync(".modal.show", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden });
         var modalCount = await Page.Locator(".modal.show").CountAsync();
         Assert.That(modalCount, Is.EqualTo(0), "Modal should be closed");
     }
@@ -176,7 +172,8 @@ public class UXEnhancementsTests : E2ETestBase
         var assignmentFilter = Page.Locator("#assignmentStatusFilter");
         await assignmentFilter.SelectOptionAsync("unassigned");
 
-        await Task.Delay(500);
+        // Wait for filter state to be persisted to localStorage
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Act - Reload page
         await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
@@ -292,9 +289,8 @@ public class UXEnhancementsTests : E2ETestBase
         // Act - Apply assignment status filter
         var assignmentFilter = Page.Locator("#assignmentStatusFilter");
         await assignmentFilter.SelectOptionAsync("unassigned");
-        await Task.Delay(500);
 
-        // Assert - Badge should show 1 active filter
+        // Assert - Badge should show 1 active filter (wait for it to appear)
         await Expect(badge).ToBeVisibleAsync();
         var badgeText = await badge.TextContentAsync();
         Assert.That(badgeText, Does.Contain("1"), "Badge should show 1 active filter");
@@ -302,9 +298,8 @@ public class UXEnhancementsTests : E2ETestBase
         // Apply date range filter
         var dateRangeFilter = Page.Locator("#dateRangeFilter");
         await dateRangeFilter.SelectOptionAsync("last30");
-        await Task.Delay(500);
 
-        // Assert - Badge should show 2 active filters
+        // Assert - Badge should show 2 active filters (wait for update)
         badgeText = await badge.TextContentAsync();
         Assert.That(badgeText, Does.Contain("2"), "Badge should show 2 active filters");
     }
@@ -324,19 +319,20 @@ public class UXEnhancementsTests : E2ETestBase
         // Apply filters
         var assignmentFilter = Page.Locator("#assignmentStatusFilter");
         await assignmentFilter.SelectOptionAsync("unassigned");
-        await Task.Delay(500);
+
+        // Wait for filter to be applied
+        var badge = Page.Locator(".badge:has-text('actief')");
+        await Expect(badge).ToBeVisibleAsync();
 
         // Act - Click "Wis filters" button
         var clearButton = Page.Locator("button:has-text('Wis filters')");
         await clearButton.ClickAsync();
-        await Task.Delay(500);
+
+        // Wait for badge to disappear, confirming filters cleared
+        await Expect(badge).Not.ToBeVisibleAsync();
 
         // Assert - Filter should be reset to "all"
         var selectedValue = await assignmentFilter.InputValueAsync();
         Assert.That(selectedValue, Is.EqualTo("all"), "Filter should be reset to 'all'");
-
-        // Badge should not be visible
-        var badge = Page.Locator(".badge:has-text('actief')");
-        await Expect(badge).Not.ToBeVisibleAsync();
     }
 }
