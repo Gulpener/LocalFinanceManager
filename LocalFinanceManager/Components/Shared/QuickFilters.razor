@@ -167,16 +167,18 @@
         debounceTimer?.Dispose();
 
         // Start new timer (300ms delay)
-        debounceTimer = new System.Threading.Timer(async _ =>
+        debounceTimer = new System.Threading.Timer(_ =>
         {
-            await InvokeAsync(async () =>
-            {
-                await OnFilterChanged();
-                StateHasChanged();
-            });
+            // Schedule async work on the Blazor synchronization context
+            _ = InvokeAsync(HandleDebouncedFilterChangedAsync);
         }, null, 300, Timeout.Infinite);
     }
 
+    private async Task HandleDebouncedFilterChangedAsync()
+    {
+        await OnFilterChanged();
+        StateHasChanged();
+    }
     private async Task ClearFilters()
     {
         var clearedFilters = new FilterState();
