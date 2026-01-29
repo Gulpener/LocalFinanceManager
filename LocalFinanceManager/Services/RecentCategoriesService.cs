@@ -5,12 +5,39 @@ namespace LocalFinanceManager.Services;
 
 /// <summary>
 /// Service for tracking recent category usage and favorites using browser localStorage.
+/// All write operations (TrackCategoryUsageAsync, ToggleFavoriteAsync) are "best effort" 
+/// operations that fail silently - exceptions are logged but do not propagate to calling code.
+/// This is intentional as these are non-critical UX enhancements that should not interrupt user workflows.
 /// </summary>
 public interface IRecentCategoriesService
 {
+    /// <summary>
+    /// Tracks category usage by incrementing its usage count in localStorage.
+    /// This is a "best effort" operation - failures are logged but do not throw exceptions.
+    /// </summary>
+    /// <param name="categoryId">The ID of the category to track.</param>
     Task TrackCategoryUsageAsync(Guid categoryId);
+
+    /// <summary>
+    /// Gets the most recently used categories sorted by usage count.
+    /// Returns an empty list on failure rather than throwing exceptions.
+    /// </summary>
+    /// <param name="count">Maximum number of categories to return (default: 5).</param>
+    /// <returns>List of category IDs ordered by usage frequency.</returns>
     Task<List<Guid>> GetRecentCategoriesAsync(int count = 5);
+
+    /// <summary>
+    /// Toggles whether a category is marked as a favorite in localStorage.
+    /// This is a "best effort" operation - failures are logged but do not throw exceptions.
+    /// </summary>
+    /// <param name="categoryId">The ID of the category to toggle.</param>
     Task ToggleFavoriteAsync(Guid categoryId);
+
+    /// <summary>
+    /// Gets all categories marked as favorites.
+    /// Returns an empty list on failure rather than throwing exceptions.
+    /// </summary>
+    /// <returns>List of favorite category IDs.</returns>
     Task<List<Guid>> GetFavoriteCategoriesAsync();
 }
 
@@ -184,6 +211,11 @@ public class RecentCategoriesService : IRecentCategoriesService
         }
     }
 
+    /// <summary>
+    /// Saves usage data to localStorage.
+    /// This is a "best effort" operation - JSInterop failures (client disconnect, invalid operation)
+    /// are logged but do not throw exceptions to avoid interrupting user workflows.
+    /// </summary>
     private async Task SaveUsageDataAsync(Dictionary<Guid, int> usageData)
     {
         try
@@ -201,6 +233,11 @@ public class RecentCategoriesService : IRecentCategoriesService
         }
     }
 
+    /// <summary>
+    /// Saves favorite categories to localStorage.
+    /// This is a "best effort" operation - JSInterop failures (client disconnect, invalid operation)
+    /// are logged but do not throw exceptions to avoid interrupting user workflows.
+    /// </summary>
     private async Task SaveFavoritesAsync(List<Guid> favorites)
     {
         try
