@@ -125,13 +125,29 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Load saved filters
-        var savedFilters = await FilterStateService.LoadFiltersAsync();
-        if (savedFilters != null)
+        // Only load saved filters if parent hasn't provided non-default values
+        if (IsDefaultFilterState(CurrentFilters))
         {
-            CurrentFilters = savedFilters;
-            await OnFiltersChanged.InvokeAsync(CurrentFilters);
+            var savedFilters = await FilterStateService.LoadFiltersAsync();
+            if (savedFilters != null)
+            {
+                // Don't reassign parameter - emit to parent to update state
+                await OnFiltersChanged.InvokeAsync(savedFilters);
+            }
         }
+    }
+
+    private bool IsDefaultFilterState(FilterState filters)
+    {
+        return filters.AssignmentStatus == "all" &&
+               filters.SuggestionStatus == "all" &&
+               filters.DateRange == "all" &&
+               !filters.CustomStartDate.HasValue &&
+               !filters.CustomEndDate.HasValue &&
+               !filters.MinAmount.HasValue &&
+               !filters.MaxAmount.HasValue &&
+               !filters.SelectedCategories.Any() &&
+               !filters.SelectedAccountId.HasValue;
     }
 
     private void ToggleFilters()
@@ -163,9 +179,9 @@
 
     private async Task ClearFilters()
     {
-        CurrentFilters = new FilterState();
+        var clearedFilters = new FilterState();
         await FilterStateService.ClearFiltersAsync();
-        await OnFiltersChanged.InvokeAsync(CurrentFilters);
+        await OnFiltersChanged.InvokeAsync(clearedFilters);
     }
 
     private int GetActiveFilterCount()
