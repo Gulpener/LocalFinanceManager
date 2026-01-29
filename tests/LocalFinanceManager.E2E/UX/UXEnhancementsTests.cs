@@ -229,7 +229,7 @@ public class UXEnhancementsTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-        var transaction = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
