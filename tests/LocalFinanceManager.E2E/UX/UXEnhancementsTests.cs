@@ -114,8 +114,10 @@ public class UXEnhancementsTests : E2ETestBase
         var assignmentFilter = Page.Locator("#assignmentStatusFilter");
         await assignmentFilter.SelectOptionAsync("unassigned");
 
-        // Wait for filter to apply
-        await Task.Delay(1000);
+        // Wait for filter to apply by waiting for the row count to change
+        await Page.WaitForFunctionAsync(
+            "initialCount => document.querySelectorAll('tbody tr').length !== initialCount",
+            allRows);
 
         // Assert - Should show fewer transactions (only unassigned)
         var transactionRows = Page.Locator("tbody tr");
