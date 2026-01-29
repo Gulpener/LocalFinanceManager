@@ -251,11 +251,7 @@ public class UXEnhancementsTests : E2ETestBase
     public async Task LoadingSkeleton_Displays_During_Initial_Load()
     {
         // Arrange
-        using var scope = Factory!.CreateDbScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-
+        // No specific data setup needed; skeleton should display during initial load regardless of seed data.
         // Act - Navigate to transactions page (fast check for skeleton)
         var navigationTask = Page.GotoAsync($"{BaseUrl}/transactions");
 
