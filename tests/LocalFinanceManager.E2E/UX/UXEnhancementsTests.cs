@@ -3,6 +3,7 @@ using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
+using System.Text.RegularExpressions;
 
 namespace LocalFinanceManager.E2E.UX;
 
@@ -320,6 +321,7 @@ public class UXEnhancementsTests : E2ETestBase
         await dateRangeFilter.SelectOptionAsync("last30");
 
         // Assert - Badge should show 2 active filters (wait for update)
+        await Expect(badge).ToHaveTextAsync(new Regex("2.*actief"), new LocatorAssertionsToHaveTextOptions { Timeout = 5000 });
         badgeText = await badge.TextContentAsync();
         Assert.That(badgeText, Does.Contain("2"), "Badge should show 2 active filters");
     }

@@ -460,44 +460,44 @@ This story **enhances** existing components and adds new filtering infrastructur
 
 ### 14. Testing - Unit Tests (FilterStateService)
 
-- [ ] Create `FilterStateServiceTests.cs` in `LocalFinanceManager.Tests/Services/`
-- [ ] Test: SaveFiltersAsync stores filters in localStorage
+- [x] Create `FilterStateServiceTests.cs` in `LocalFinanceManager.Tests/Services/`
+- [x] Test: SaveFiltersAsync stores filters in localStorage
   - Mock IJSRuntime
   - Call SaveFiltersAsync with test FilterState
   - Verify `localStorage.setItem` called with correct JSON
-- [ ] Test: LoadFiltersAsync retrieves filters from localStorage
+- [x] Test: LoadFiltersAsync retrieves filters from localStorage
   - Mock IJSRuntime to return test JSON
   - Call LoadFiltersAsync
   - Assert returned FilterState matches expected values
-- [ ] Test: LoadFiltersAsync returns null when no filters saved
+- [x] Test: LoadFiltersAsync returns null when no filters saved
   - Mock IJSRuntime to return null
   - Call LoadFiltersAsync
   - Assert returns null
-- [ ] Test: ClearFiltersAsync removes filters from localStorage
+- [x] Test: ClearFiltersAsync removes filters from localStorage
   - Mock IJSRuntime
   - Call ClearFiltersAsync
   - Verify `localStorage.removeItem` called
 
 ### 15. Testing - Unit Tests (RecentCategoriesService)
 
-- [ ] Create `RecentCategoriesServiceTests.cs` in `LocalFinanceManager.Tests/Services/`
-- [ ] Test: TrackCategoryUsageAsync increments usage count
+- [x] Create `RecentCategoriesServiceTests.cs` in `LocalFinanceManager.Tests/Services/`
+- [x] Test: TrackCategoryUsageAsync increments usage count
   - Mock IJSRuntime with empty usage
   - Call TrackCategoryUsageAsync for category A twice
   - Verify usage count is 2
-- [ ] Test: GetRecentCategoriesAsync returns top 5 most used
+- [x] Test: GetRecentCategoriesAsync returns top 5 most used
   - Mock IJSRuntime with 10 categories (varying usage counts)
   - Call GetRecentCategoriesAsync(5)
   - Assert returns 5 categories with highest usage counts
-- [ ] Test: TrackCategoryUsageAsync trims to top 20 categories
+- [x] Test: TrackCategoryUsageAsync trims to top 20 categories
   - Mock IJSRuntime with 21 categories
   - Call TrackCategoryUsageAsync
   - Verify localStorage contains only 20 categories (lowest usage removed)
-- [ ] Test: ToggleFavoriteAsync adds favorite
+- [x] Test: ToggleFavoriteAsync adds favorite
   - Mock IJSRuntime with empty favorites
   - Call ToggleFavoriteAsync for category A
   - Verify category A in favorites list
-- [ ] Test: ToggleFavoriteAsync removes favorite
+- [x] Test: ToggleFavoriteAsync removes favorite
   - Mock IJSRuntime with category A in favorites
   - Call ToggleFavoriteAsync for category A
   - Verify category A removed from favorites list
