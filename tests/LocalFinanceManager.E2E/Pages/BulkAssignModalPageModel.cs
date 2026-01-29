@@ -151,12 +151,12 @@ public class BulkAssignModalPageModel : PageObjectBase
     {
         // Wait for progress bar to reach 100% using Playwright's built-in wait
         var progressBar = Page.Locator(ProgressBarSelector);
-        await progressBar.WaitForAsync(new() 
-        { 
+        await progressBar.WaitForAsync(new()
+        {
             Timeout = timeoutMs,
-            State = WaitForSelectorState.Attached 
+            State = WaitForSelectorState.Attached
         });
-        
+
         // Wait for aria-valuenow attribute to equal 100
         await Page.WaitForFunctionAsync(
             @"() => {
