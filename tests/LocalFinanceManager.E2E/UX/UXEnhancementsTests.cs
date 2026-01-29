@@ -73,7 +73,9 @@ public class UXEnhancementsTests : E2ETestBase
     [Test]
     public async Task QuickFilters_Applied_Successfully()
     {
-        // Arrange
+        // Arrange - Clean database for exact assertions
+        await Factory!.TruncateTablesAsync();
+
         using var scope = Factory!.CreateDbScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -105,7 +107,7 @@ public class UXEnhancementsTests : E2ETestBase
 
         // Verify all transactions are initially visible
         var allRows = await Page.Locator("tbody tr").CountAsync();
-        Assert.That(allRows, Is.GreaterThanOrEqualTo(5), "Should have at least 5 transactions initially");
+        Assert.That(allRows, Is.EqualTo(5), "Should have exactly 5 transactions initially");
 
         // Act - Apply "Unassigned" filter
         var assignmentFilter = Page.Locator("#assignmentStatusFilter");
@@ -116,10 +118,10 @@ public class UXEnhancementsTests : E2ETestBase
             "initialCount => document.querySelectorAll('tbody tr').length !== initialCount",
             allRows);
 
-        // Assert - Should show fewer transactions (only unassigned)
+        // Assert - Should show exactly 2 unassigned transactions (transactions 3 and 4)
         var transactionRows = Page.Locator("tbody tr");
         var count = await transactionRows.CountAsync();
-        Assert.That(count, Is.LessThan(allRows), "Should show fewer transactions after filter");
+        Assert.That(count, Is.EqualTo(2), "Should show exactly 2 unassigned transactions after filter");
     }
 
     [Test]
