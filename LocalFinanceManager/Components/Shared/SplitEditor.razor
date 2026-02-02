@@ -88,7 +88,7 @@
                                         </td>
                                         <td>
                                             <input type="number" step="0.01" min="0" class="form-control" @bind="split.Amount"
-                                                @bind:event="oninput" @bind:after="RecalculateSum" required />
+                                                @bind:event="onchange" @bind:after="RecalculateSum" required />
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-outline-danger"
