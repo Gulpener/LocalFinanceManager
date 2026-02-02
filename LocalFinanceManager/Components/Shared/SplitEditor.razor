@@ -3,6 +3,7 @@
 @using LocalFinanceManager.Data.Repositories
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
+@inject IBudgetPlanRepository BudgetPlanRepository
 @inject ILogger<SplitEditor> Logger
 
 @if (IsVisible && Transaction != null)
@@ -218,7 +219,7 @@
 
     private async Task LoadBudgetLines()
     {
-        if (Transaction?.AccountBudgetPlanId == null)
+        if (Transaction == null)
         {
             budgetLines = new List<BudgetLineDto>();
             return;
@@ -226,7 +227,25 @@
 
         try
         {
-            var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(Transaction.AccountBudgetPlanId.Value);
+            // Get the account ID from the transaction
+            var accountId = Transaction.AccountId;
+            
+            // Get the year from the transaction date
+            var transactionYear = Transaction.Date.Year;
+            
+            // Find the budget plan for this account and year
+            var budgetPlan = await BudgetPlanRepository.GetByAccountAndYearAsync(accountId, transactionYear);
+            
+            if (budgetPlan == null)
+            {
+                budgetLines = new List<BudgetLineDto>();
+                errorMessage = $"Er is geen budgetplan voor {transactionYear}. Maak eerst een budgetplan aan voor dit jaar.";
+                Logger.LogWarning("No budget plan found for account {AccountId} and year {Year}", accountId, transactionYear);
+                return;
+            }
+            
+            // Load budget lines for the correct year's budget plan
+            var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(budgetPlan.Id);
             budgetLines = lines.Select(bl => new BudgetLineDto
             {
                 Id = bl.Id,
@@ -238,6 +257,11 @@
                 Notes = bl.Notes,
                 RowVersion = bl.RowVersion
             }).ToList();
+            
+            if (!budgetLines.Any())
+            {
+                errorMessage = $"Het budgetplan voor {transactionYear} heeft nog geen budgetlijnen. Voeg eerst categorieën toe aan het budgetplan.";
+            }
         }
         catch (Exception ex)
         {
