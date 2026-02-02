@@ -451,13 +451,28 @@ else
 
     private Guid? GetBulkBudgetPlanId()
     {
-        // Get the budget plan ID from the first selected transaction
-        // For simplicity, we assume all selected transactions are from the same account/budget plan
-        if (selectedTransactionIds.Any())
+        // Determine the budget plan ID for the current bulk selection.
+        // Validate that all selected transactions share the same account/budget plan.
+        if (!selectedTransactionIds.Any())
         {
-            var firstTransaction = transactionDtos.FirstOrDefault(t => selectedTransactionIds.Contains(t.Id));
-            return firstTransaction?.AccountBudgetPlanId;
+            return null;
         }
-        return null;
+
+        var selectedTransactions = transactionDtos
+            .Where(t => selectedTransactionIds.Contains(t.Id))
+            .ToList();
+
+        if (!selectedTransactions.Any())
+        {
+            return null;
+        }
+
+        var distinctBudgetPlanIds = selectedTransactions
+            .Select(t => t.AccountBudgetPlanId)
+            .Distinct()
+            .ToList();
+
+        // Only return a budget plan ID if all selected transactions share the same one
+        return distinctBudgetPlanIds.Count == 1 ? distinctBudgetPlanIds[0] : null;
     }
 }

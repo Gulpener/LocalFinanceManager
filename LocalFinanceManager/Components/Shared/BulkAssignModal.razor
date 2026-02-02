@@ -273,6 +273,7 @@
             var progressTask = SimulateProgress();
 
             bulkResult = await AssignmentService.BulkAssignTransactionsAsync(request);
+            await progressTask;
 
             progressPercentage = 100;
             progressMessage = "Voltooid!";
