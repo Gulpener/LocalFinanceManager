@@ -13,7 +13,7 @@ public interface ITransactionAssignmentService
 {
     Task<TransactionDto> AssignTransactionAsync(Guid transactionId, AssignTransactionRequest request);
     Task<TransactionDto> SplitTransactionAsync(Guid transactionId, SplitTransactionRequest request);
-    Task<BulkAssignResultDto> BulkAssignTransactionsAsync(BulkAssignTransactionsRequest request);
+    Task<BulkAssignResultDto> BulkAssignTransactionsAsync(BulkAssignTransactionsRequest request, IProgress<int>? progress = null);
     Task<TransactionDto> UndoAssignmentAsync(UndoAssignmentRequest request);
     Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId);
 }
@@ -131,7 +131,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         return MapToDto(transaction!);
     }
 
-    public async Task<BulkAssignResultDto> BulkAssignTransactionsAsync(BulkAssignTransactionsRequest request)
+    public async Task<BulkAssignResultDto> BulkAssignTransactionsAsync(BulkAssignTransactionsRequest request, IProgress<int>? progress = null)
     {
         _logger.LogInformation("Bulk assigning {Count} transactions to BudgetLineId={BudgetLineId}",
             request.TransactionIds.Count, request.BudgetLineId);
@@ -144,8 +144,9 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         var assignedCount = 0;
         var failedIds = new List<Guid>();
 
-        foreach (var transactionId in request.TransactionIds)
+        for (int i = 0; i < request.TransactionIds.Count; i++)
         {
+            var transactionId = request.TransactionIds[i];
             try
             {
                 var assignRequest = new AssignTransactionRequest
@@ -156,6 +157,9 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
                 await AssignTransactionAsync(transactionId, assignRequest);
                 assignedCount++;
+                
+                // Report progress as percentage (0-100)
+                progress?.Report((int)((i + 1) * 100.0 / request.TransactionIds.Count));
             }
             catch (Exception ex)
             {

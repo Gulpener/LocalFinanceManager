@@ -266,14 +266,17 @@
             };
 
             progressMessage = $"Toewijzen van {TransactionIds.Count} transactie(s)...";
-            progressPercentage = 10;
+            progressPercentage = 0;
             StateHasChanged();
 
-            // Simulate progress updates (the actual API call doesn't provide incremental progress)
-            var progressTask = SimulateProgress();
+            // Report real incremental progress from the service layer
+            var progressReporter = new Progress<int>(percentage =>
+            {
+                progressPercentage = percentage;
+                StateHasChanged();
+            });
 
-            bulkResult = await AssignmentService.BulkAssignTransactionsAsync(request);
-            await progressTask;
+            bulkResult = await AssignmentService.BulkAssignTransactionsAsync(request, progressReporter);
 
             progressPercentage = 100;
             progressMessage = "Voltooid!";
@@ -295,17 +298,4 @@
         }
     }
 
-    private async Task SimulateProgress()
-    {
-        // Simulate progress from 10% to 90% over a few seconds
-        for (int i = 10; i <= 90; i += 10)
-        {
-            await Task.Delay(200);
-            if (progressPercentage < 90)
-            {
-                progressPercentage = i;
-                StateHasChanged();
-            }
-        }
-    }
 }
