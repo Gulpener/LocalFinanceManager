@@ -55,11 +55,9 @@ else
         <thead>
             <tr>
                 <th style="width: 40px;">
-                    <input type="checkbox" 
-                           class="form-check-input" 
-                           @onchange="ToggleSelectAll"
-                           checked="@(selectedTransactionIds.Count == filteredTransactions.Count && filteredTransactions.Any())"
-                           title="Selecteer alles" />
+                    <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll"
+                        checked="@(selectedTransactionIds.Count == filteredTransactions.Count && filteredTransactions.Any())"
+                        title="Selecteer alles" />
                 </th>
                 <th>Status</th>
                 <th>Datum</th>
@@ -75,10 +73,9 @@ else
             {
                 <tr class="@(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")">
                     <td>
-                        <input type="checkbox" 
-                               class="form-check-input" 
-                               checked="@selectedTransactionIds.Contains(transaction.Id)"
-                               @onchange="() => ToggleSelectTransaction(transaction.Id)" />
+                        <input type="checkbox" class="form-check-input"
+                            checked="@selectedTransactionIds.Contains(transaction.Id)"
+                            @onchange="() => ToggleSelectTransaction(transaction.Id)" />
                     </td>
                     <td>
                         @if (!transaction.IsAssigned)
@@ -115,8 +112,8 @@ else
                         {
                             @if (transaction.Splits.Count > 1)
                             {
-                                <span class="badge bg-info text-dark me-1" 
-                                      title="@string.Join(", ", transaction.Splits.Select(s => $"{s.BudgetLineName}: {s.Amount:C2}"))">
+                                <span class="badge bg-info text-dark me-1"
+                                    title="@string.Join(", ", transaction.Splits.Select(s => $"{s.BudgetLineName}: {s.Amount:C2}"))">
                                     @transaction.Splits.Count splits
                                 </span>
                             }
@@ -176,7 +173,7 @@ else
 <TransactionAssignModal Transaction="@selectedTransaction" IsVisible="@showAssignModal" OnClose="@CloseAssignModal"
     OnAssignmentSuccess="@OnAssignmentSuccess" />
 
-<SplitEditor Transaction="@splitTransaction" IsVisible="@showSplitEditor" OnClose="@CloseSplitEditor" 
+<SplitEditor Transaction="@splitTransaction" IsVisible="@showSplitEditor" OnClose="@CloseSplitEditor"
     OnSplitSaved="@OnSplitSaved" />
 
 <BulkAssignModal TransactionIds="@selectedTransactionIds" BudgetPlanId="@GetBulkBudgetPlanId()"

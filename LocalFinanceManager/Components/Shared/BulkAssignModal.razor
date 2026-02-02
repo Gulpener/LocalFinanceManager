@@ -25,7 +25,8 @@
 
                     @if (bulkResult != null)
                     {
-                        <div class="alert @(bulkResult.Success ? "alert-success" : "alert-warning") alert-dismissible fade show" role="alert">
+                        <div class="alert @(bulkResult.Success ? "alert-success" : "alert-warning") alert-dismissible fade show"
+                            role="alert">
                             <i class="bi @(bulkResult.Success ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")"></i>
                             @bulkResult.Message
                             <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
@@ -99,7 +100,7 @@
                         <div class="mb-3">
                             <label for="bulkNoteInput" class="form-label">Notitie (optioneel)</label>
                             <textarea id="bulkNoteInput" class="form-control" rows="2" maxlength="500" @bind="note"
-                            placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
+                                placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
                             <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
                         </div>
 
@@ -110,7 +111,8 @@
                             {
                                 <div class="alert alert-secondary">
                                     <i class="bi bi-arrow-right-circle"></i>
-                                    Alle geselecteerde transacties worden toegewezen aan: <strong>@selectedBudgetLine.CategoryName</strong>
+                                    Alle geselecteerde transacties worden toegewezen aan:
+                                    <strong>@selectedBudgetLine.CategoryName</strong>
                                 </div>
                             }
                         }
@@ -121,12 +123,9 @@
                         <div class="mb-3">
                             <label class="form-label">Voortgang</label>
                             <div class="progress" style="height: 30px;">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" 
-                                     style="width: @progressPercentage%"
-                                     aria-valuenow="@progressPercentage" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                    style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
+                                    aria-valuemax="100">
                                     @progressPercentage%
                                 </div>
                             </div>
@@ -142,8 +141,8 @@
                         <button type="button" class="btn btn-secondary" @onclick="OnClose" disabled="@isProcessing">
                             Annuleren
                         </button>
-                        <button type="button" class="btn btn-primary" @onclick="BulkAssign" 
-                                disabled="@(!CanAssign || isProcessing)">
+                        <button type="button" class="btn btn-primary" @onclick="BulkAssign"
+                            disabled="@(!CanAssign || isProcessing)">
                             @if (isProcessing)
                             {
                                 <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>

@@ -1,4 +1,4 @@
-# UserStory-10: Multi-User Authentication with Email Verification
+# UserStory-11: Multi-User Authentication with Email Verification
 
 ## Objective
 
@@ -43,8 +43,8 @@ Integrate Supabase Auth with JWT-based authentication, enforce email verificatio
 ## Dependencies
 
 This user story **blocks** the following stories:
-- **UserStory-11: Supabase PostgreSQL Migration** (requires `UserId` on entities)
-- **UserStory-12: Sharing System** (requires multi-user foundation)
+- **UserStory-12: Supabase PostgreSQL Migration** (requires `UserId` on entities)
+- **UserStory-13: Sharing System** (requires multi-user foundation)
 
 ## ⚠️ Breaking Change Warning
 
@@ -484,7 +484,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
 - [ ] JWT stored in **sessionStorage only** (no localStorage, no refresh tokens, no "Remember Me")
 - [ ] E2E tests pass using test Supabase environment (verification disabled)
 - [ ] GitHub Actions workflow passes with test environment secrets injected
-- [ ] User story immediately archived to `docs/Userstories/Archive/UserStory-10-Multi-User-Authentication.md`
+- [ ] User story immediately archived to `docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md`
 
 ## CLI Commands Reference
 
@@ -543,4 +543,4 @@ dotnet test tests/LocalFinanceManager.E2E/
 
 ---
 
-**Upon completion:** Immediately archive this user story to `docs/Userstories/Archive/UserStory-10-Multi-User-Authentication.md` after successful implementation, verification, and all DoD items checked.
+**Upon completion:** Immediately archive this user story to `docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md` after successful implementation, verification, and all DoD items checked.

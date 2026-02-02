@@ -1,4 +1,4 @@
-# UserStory-8.1: Keyboard Shortcuts & Accessibility
+# UserStory-9.1: Keyboard Shortcuts & Accessibility
 
 ## Objective
 
@@ -389,7 +389,7 @@ This story **enhances** existing assignment components without modifying their c
 
 - **UserStory-5 (Basic Assignment UI):** REQUIRED - Enhances CategorySelector, TransactionAssignModal, Transactions.razor components.
 - **UserStory-6 (Split/Bulk Assignment):** REQUIRED - Adds keyboard shortcuts to SplitEditor, BulkAssignModal components.
-- **UserStory-7 (ML Suggestions):** REQUIRED - Keyboard shortcuts work with ML suggestion badges and filters.
+- **UserStory-8 (ML Suggestions):** REQUIRED - Keyboard shortcuts work with ML suggestion badges and filters.
 - **UserStory-5.1 (E2E Infrastructure):** REQUIRED for E2E tests - Must complete US-5.1 before running E2E tests in this story. Uses PlaywrightFixture and PageObjectModels.
 
 ## Estimated Effort

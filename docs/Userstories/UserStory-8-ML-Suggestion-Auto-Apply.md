@@ -1,4 +1,4 @@
-# UserStory-7: ML-Powered Suggestion & Auto-Apply
+# UserStory-8: ML-Powered Suggestion & Auto-Apply
 
 ## Objective
 
