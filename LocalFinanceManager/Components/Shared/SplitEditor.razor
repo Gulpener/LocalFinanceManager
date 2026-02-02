@@ -229,13 +229,13 @@
         {
             // Get the account ID from the transaction
             var accountId = Transaction.AccountId;
-            
+
             // Get the year from the transaction date
             var transactionYear = Transaction.Date.Year;
-            
+
             // Find the budget plan for this account and year
             var budgetPlan = await BudgetPlanRepository.GetByAccountAndYearAsync(accountId, transactionYear);
-            
+
             if (budgetPlan == null)
             {
                 budgetLines = new List<BudgetLineDto>();
@@ -243,7 +243,7 @@
                 Logger.LogWarning("No budget plan found for account {AccountId} and year {Year}", accountId, transactionYear);
                 return;
             }
-            
+
             // Load budget lines for the correct year's budget plan
             var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(budgetPlan.Id);
             budgetLines = lines.Select(bl => new BudgetLineDto
@@ -257,7 +257,7 @@
                 Notes = bl.Notes,
                 RowVersion = bl.RowVersion
             }).ToList();
-            
+
             if (!budgetLines.Any())
             {
                 errorMessage = $"Het budgetplan voor {transactionYear} heeft nog geen budgetlijnen. Voeg eerst categorieën toe aan het budgetplan.";
