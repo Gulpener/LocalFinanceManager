@@ -15,11 +15,13 @@ Enhance GitHub Copilot's context awareness and suggestion quality by implementin
 GitHub Copilot's custom agent feature (released January 2026) enables workspace-specific instructions and domain-specialized agents. While the multi-agent system with `.github/agents/` YAML files is newly released, we can immediately benefit from enhanced workspace instructions and prepare for future agent capabilities.
 
 **Current State:**
+
 - Single `.github/copilot-instructions.md` with general project rules
 - No domain-specific context sections
 - No agent documentation or templates
 
 **Desired State:**
+
 - Domain-specific sections in copilot-instructions.md (ML, Backend, Frontend, Testing, Database)
 - Virtual agent documentation in `docs/agents/` for developer reference
 - Template `.github/agents/*.yml.template` files ready for activation
@@ -93,7 +95,7 @@ GitHub Copilot's custom agent feature (released January 2026) enables workspace-
 - [ ] Create `docs/agents/ml-development.md` documenting:
   - Trigger keywords and file patterns
   - Primary responsibilities (model training, feature extraction, inference, MLController integration)
-  - Key files and context (LocalFinanceManager.ML/*, MLOptions.cs)
+  - Key files and context (LocalFinanceManager.ML/\*, MLOptions.cs)
   - Implementation patterns (SDCA trainer, database storage, F1 threshold)
   - Handoff protocols (→ testing-agent for validation tests, → backend-agent for API integration)
 - [ ] Create `docs/agents/backend-development.md` documenting:
@@ -204,6 +206,7 @@ Each domain section in copilot-instructions.md follows this pattern:
 ### [Domain] Development Context
 
 When working on [domain-specific files] (`pattern/**`):
+
 - Use [key interface/pattern]
 - Store [data] in [location] (constraints)
 - Follow [specific standard/threshold]
@@ -251,10 +254,12 @@ constraints:
 
 **When:** [Completion criteria]
 **Context to provide:**
+
 - [Item 1]
 - [Item 2]
 
 **What target agent needs:**
+
 - [Action 1]
 - [Action 2]
 ```
@@ -322,5 +327,6 @@ git commit -m "Add UserStory-7: GitHub Copilot custom agents and domain-specific
 **Related Stories:** None (foundational story for improving all future development)
 
 **Handoff Requirements:**
+
 - After implementation → Developers can use enhanced context for all future stories
 - No specific handoffs required (documentation-only story)

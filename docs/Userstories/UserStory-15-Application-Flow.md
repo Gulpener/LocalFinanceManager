@@ -16,12 +16,14 @@ Enhance user experience with authentication guards, dashboard improvements, brea
 ## Implementation Tasks
 
 ### Authentication Guards
+
 - [ ] Create `AuthGuard` component or service
 - [ ] Add authentication state check to all protected pages
 - [ ] Redirect unauthenticated users to login page
 - [ ] Store and restore intended destination after login
 
 ### User Dashboard
+
 - [ ] Create `Dashboard.razor` as home page:
   - Section: My Accounts (owned)
   - Section: Shared with Me (accounts and budget plans)
@@ -39,6 +41,7 @@ Enhance user experience with authentication guards, dashboard improvements, brea
   - Recent activity timeline
 
 ### Breadcrumb Navigation
+
 - [ ] Create `Breadcrumb.razor` component
 - [ ] Add to layout header
 - [ ] Auto-generate breadcrumbs based on route hierarchy:
@@ -47,6 +50,7 @@ Enhance user experience with authentication guards, dashboard improvements, brea
 - [ ] Add navigation helpers for complex paths
 
 ### Onboarding Wizard
+
 - [ ] Create `Onboarding.razor` wizard page
 - [ ] Show wizard on first login (check user's account count)
 - [ ] Step 1: Welcome message and app overview
@@ -60,6 +64,7 @@ Enhance user experience with authentication guards, dashboard improvements, brea
 - [ ] Add "Skip" option to complete later
 
 ### Multi-Tenant UX Refactoring
+
 - [ ] Update all list pages to show owner info for shared items
 - [ ] Add permission badges (Owner, Editor, Viewer) to shared resources
 - [ ] Add filter dropdown: All / Owned by Me / Shared with Me
@@ -67,6 +72,7 @@ Enhance user experience with authentication guards, dashboard improvements, brea
 - [ ] Show "Shared by [username]" label on shared resource cards
 
 ### Uncategorized Transaction Warnings
+
 - [ ] Add warning icon to uncategorized transactions in list view
 - [ ] Add tooltip: "This transaction is not assigned to any category"
 - [ ] Add dashboard widget: "You have X uncategorized transactions"

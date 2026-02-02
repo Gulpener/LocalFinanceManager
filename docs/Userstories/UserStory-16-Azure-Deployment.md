@@ -16,6 +16,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
 ## Implementation Tasks
 
 ### Azure Setup
+
 - [ ] Create Azure account (if not exists)
 - [ ] Create Azure App Service:
   - Tier: Free (F1)
@@ -26,6 +27,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
 - [ ] Create deployment credentials (publish profile or service principal)
 
 ### GitHub Secrets Configuration
+
 - [ ] Add GitHub repository secrets:
   - `AZURE_WEBAPP_PUBLISH_PROFILE` (from Azure portal)
   - `SUPABASE_CONNECTION_STRING` (PostgreSQL connection string)
@@ -34,6 +36,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
   - `SUPABASE_ANON_KEY`
 
 ### Health Check Endpoint
+
 - [ ] Create `HealthController.cs`:
   ```csharp
   [HttpGet("/health")]
@@ -53,6 +56,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
   ```
 
 ### Production Logging Configuration
+
 - [ ] Update `appsettings.Production.json`:
   ```json
   {
@@ -71,6 +75,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
   - Add instrumentation key to secrets
 
 ### CD Pipeline
+
 - [ ] Create `.github/workflows/deploy.yml`:
   ```yaml
   name: Deploy to Azure
@@ -88,7 +93,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
         - name: Setup .NET
           uses: actions/setup-dotnet@v4
           with:
-            dotnet-version: '10.0.x'
+            dotnet-version: "10.0.x"
         - name: Publish
           run: dotnet publish LocalFinanceManager/LocalFinanceManager.csproj -c Release -o ./publish
         - name: Deploy to Azure
@@ -102,6 +107,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
 - [ ] Add deployment status notifications (optional)
 
 ### Azure App Service Configuration
+
 - [ ] Set environment variables in Azure portal:
   - `ASPNETCORE_ENVIRONMENT=Production`
   - `ConnectionStrings__Default` (from secrets)
@@ -113,6 +119,7 @@ Automate deployment to Azure App Service using GitHub Actions CD pipeline, with 
 - [ ] Set up automatic SSL certificate (Let's Encrypt)
 
 ### Post-Deployment Verification
+
 - [ ] Create deployment verification script or manual checklist:
   - Health check endpoint returns 200 OK
   - Database migrations applied successfully

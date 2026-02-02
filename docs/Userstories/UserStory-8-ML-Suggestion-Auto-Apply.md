@@ -345,14 +345,12 @@ This story **MUST** follow patterns established in UserStory-5 and UserStory-6:
 ### Unit Test Scenarios
 
 1. **ML Suggestions:**
-
    - Suggestion fetched with confidence score and feature importance
    - Suggestion acceptance creates assignment with correct category
    - UserStory-4 validation rejects category from different budget plan
    - Feedback recorded as LabeledExample
 
 2. **Auto-Apply Job:**
-
    - Job processes only unassigned transactions for enabled accounts
    - Job applies suggestions meeting confidence threshold
    - Job skips suggestions below threshold
@@ -361,7 +359,6 @@ This story **MUST** follow patterns established in UserStory-5 and UserStory-6:
    - Job handles validation errors gracefully
 
 3. **Monitoring & Undo:**
-
    - Stats calculated correctly (undo rate = undo count / total auto-applied)
    - Undo succeeds for auto-applied assignments
    - Undo fails for manually assigned transactions
@@ -375,18 +372,15 @@ This story **MUST** follow patterns established in UserStory-5 and UserStory-6:
 ### Integration Test Scenarios
 
 1. **Suggestions API:**
-
    - GET /api/suggestions/{transactionId} returns suggestion with confidence >60% (HTTP 200)
    - POST /api/suggestions/{transactionId}/feedback records feedback
 
 2. **Auto-Apply Job:**
-
    - Job auto-assigns transactions meeting confidence threshold
    - Job records audit trail with `IsAutoApplied=true`
    - Job skips transactions below threshold
 
 3. **Monitoring API:**
-
    - GET /api/automation/stats returns correct statistics
    - POST /api/automation/undo/{transactionId} undoes auto-applied assignment
    - GET /api/automation/can-undo/{transactionId} validates undo eligibility
