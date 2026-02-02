@@ -864,11 +864,11 @@ public class TransactionAssignmentIntegrationTests
         // Verify progress was reported (Progress<T> may batch updates, so check for at least some reports)
         Assert.That(progressUpdates.Count, Is.GreaterThan(0), "Should report progress at least once");
         Assert.That(progressUpdates.Last(), Is.EqualTo(100), "Final progress should be 100%");
-        
+
         // Verify progress is monotonically increasing
         for (int i = 1; i < progressUpdates.Count; i++)
         {
-            Assert.That(progressUpdates[i], Is.GreaterThanOrEqualTo(progressUpdates[i - 1]), 
+            Assert.That(progressUpdates[i], Is.GreaterThanOrEqualTo(progressUpdates[i - 1]),
                 $"Progress should be monotonically increasing at index {i}");
         }
     }

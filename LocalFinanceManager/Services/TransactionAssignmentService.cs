@@ -157,7 +157,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
                 await AssignTransactionAsync(transactionId, assignRequest);
                 assignedCount++;
-                
+
                 // Report progress as percentage (0-100)
                 progress?.Report((int)((i + 1) * 100.0 / request.TransactionIds.Count));
             }
