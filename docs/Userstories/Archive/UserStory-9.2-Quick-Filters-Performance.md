@@ -1,4 +1,4 @@
-# UserStory-8.2: Quick Filters & Performance Optimization
+# UserStory-9.2: Quick Filters & Performance Optimization
 
 ## Objective
 
@@ -733,7 +733,7 @@ This story **enhances** existing components and adds new filtering infrastructur
 
 - **UserStory-5 (Basic Assignment UI):** REQUIRED - Enhances `CategorySelector`, `TransactionAssignModal`, `Transactions.razor` components.
 - **UserStory-5.1 (E2E Infrastructure):** REQUIRED for E2E tests - Uses `PlaywrightFixture` and `SeedDataHelper`.
-- **UserStory-7 (ML Suggestions):** OPTIONAL - "Suggestion Status" filter works better with US-7, but filter UI can be implemented without backend.
+- **UserStory-8 (ML Suggestions):** OPTIONAL - "Suggestion Status" filter works better with US-8, but filter UI can be implemented without backend.
 
 ## Estimated Effort
 

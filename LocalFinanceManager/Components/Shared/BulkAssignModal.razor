@@ -1,0 +1,301 @@
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.Data.Repositories
+@inject ITransactionAssignmentService AssignmentService
+@inject IBudgetLineRepository BudgetLineRepository
+@inject ILogger<BulkAssignModal> Logger
+
+@if (IsVisible && TransactionIds != null && TransactionIds.Any())
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk toewijzing</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose" aria-label="Sluiten"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+                            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+                        </div>
+                    }
+
+                    @if (bulkResult != null)
+                    {
+                        <div class="alert @(bulkResult.Success ? "alert-success" : "alert-warning") alert-dismissible fade show"
+                            role="alert">
+                            <i class="bi @(bulkResult.Success ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")"></i>
+                            @bulkResult.Message
+                            <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
+                        </div>
+
+                        @if (!bulkResult.Success && bulkResult.FailedTransactionIds.Any())
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">
+                                        Fouten details
+                                        <button class="btn btn-sm btn-link" @onclick="ToggleErrorDetails">
+                                            @(showErrorDetails ? "Verbergen" : "Tonen")
+                                        </button>
+                                    </h6>
+                                    @if (showErrorDetails)
+                                    {
+                                        <ul class="list-group">
+                                            @foreach (var failedId in bulkResult.FailedTransactionIds)
+                                            {
+                                                <li class="list-group-item">
+                                                    Transactie ID: @failedId
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    @if (!isProcessing)
+                    {
+                        <!-- Selection Summary -->
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>@TransactionIds.Count transactie(s)</strong> geselecteerd voor toewijzing.
+                        </div>
+
+                        <!-- Budget Line Selection -->
+                        <div class="mb-3">
+                            <label for="bulkBudgetLineSelect" class="form-label">
+                                Budgetlijn <span class="text-danger">*</span>
+                            </label>
+                            @if (budgetLines == null)
+                            {
+                                <select id="bulkBudgetLineSelect" class="form-select" disabled>
+                                    <option>Laden...</option>
+                                </select>
+                            }
+                            else if (budgetLines.Count == 0)
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Geen budgetlijnen gevonden. Maak eerst budgetlijnen aan.
+                                </div>
+                            }
+                            else
+                            {
+                                <select id="bulkBudgetLineSelect" class="form-select" @bind="selectedBudgetLineId" required>
+                                    <option value="">-- Selecteer een budgetlijn --</option>
+                                    @foreach (var budgetLine in budgetLines)
+                                    {
+                                        <option value="@budgetLine.Id">@budgetLine.CategoryName</option>
+                                    }
+                                </select>
+                            }
+                        </div>
+
+                        <!-- Optional Note -->
+                        <div class="mb-3">
+                            <label for="bulkNoteInput" class="form-label">Notitie (optioneel)</label>
+                            <textarea id="bulkNoteInput" class="form-control" rows="2" maxlength="500" @bind="note"
+                        placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
+                            <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(selectedBudgetLineId))
+                        {
+                            var selectedBudgetLine = budgetLines?.FirstOrDefault(bl => bl.Id.ToString() == selectedBudgetLineId);
+                            @if (selectedBudgetLine != null)
+                            {
+                                <div class="alert alert-secondary">
+                                    <i class="bi bi-arrow-right-circle"></i>
+                                    Alle geselecteerde transacties worden toegewezen aan:
+                                    <strong>@selectedBudgetLine.CategoryName</strong>
+                                </div>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <!-- Progress Bar -->
+                        <div class="mb-3">
+                            <label class="form-label">Voortgang</label>
+                            <div class="progress" style="height: 30px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                    style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
+                                    aria-valuemax="100">
+                                    @progressPercentage%
+                                </div>
+                            </div>
+                            <div class="text-muted small mt-1">
+                                @progressMessage
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    @if (bulkResult == null)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="OnClose" disabled="@isProcessing">
+                            Annuleren
+                        </button>
+                        <button type="button" class="btn btn-primary" @onclick="BulkAssign"
+                            disabled="@(!CanAssign || isProcessing)">
+                            @if (isProcessing)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            }
+                            Alles toewijzen
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="OnClose">
+                            Sluiten
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public List<Guid>? TransactionIds { get; set; }
+    [Parameter] public Guid? BudgetPlanId { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnBulkAssigned { get; set; }
+
+    private List<BudgetLineDto>? budgetLines;
+    private string? selectedBudgetLineId;
+    private string? note;
+    private string? errorMessage;
+    private bool isProcessing = false;
+    private int progressPercentage = 0;
+    private string? progressMessage;
+    private BulkAssignResultDto? bulkResult;
+    private bool showErrorDetails = false;
+
+    private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && BudgetPlanId.HasValue)
+        {
+            if (budgetLines == null)
+            {
+                await LoadBudgetLines();
+            }
+        }
+        else if (!IsVisible)
+        {
+            // Reset state when modal closes
+            selectedBudgetLineId = null;
+            note = null;
+            errorMessage = null;
+            isProcessing = false;
+            progressPercentage = 0;
+            progressMessage = null;
+            bulkResult = null;
+            showErrorDetails = false;
+        }
+    }
+
+    private async Task LoadBudgetLines()
+    {
+        if (!BudgetPlanId.HasValue)
+        {
+            budgetLines = new List<BudgetLineDto>();
+            return;
+        }
+
+        try
+        {
+            var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(BudgetPlanId.Value);
+            budgetLines = lines.Select(bl => new BudgetLineDto
+            {
+                Id = bl.Id,
+                BudgetPlanId = bl.BudgetPlanId,
+                CategoryId = bl.CategoryId,
+                CategoryName = bl.Category?.Name ?? "Onbekend",
+                MonthlyAmounts = bl.MonthlyAmounts,
+                YearTotal = bl.MonthlyAmounts.Sum(),
+                Notes = bl.Notes,
+                RowVersion = bl.RowVersion
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading budget lines for bulk assign");
+            budgetLines = new List<BudgetLineDto>();
+            errorMessage = "Fout bij laden van budgetlijnen.";
+        }
+    }
+
+    private void ToggleErrorDetails()
+    {
+        showErrorDetails = !showErrorDetails;
+    }
+
+    private async Task BulkAssign()
+    {
+        if (!CanAssign || TransactionIds == null || !TransactionIds.Any() || string.IsNullOrEmpty(selectedBudgetLineId))
+        {
+            return;
+        }
+
+        try
+        {
+            isProcessing = true;
+            progressPercentage = 0;
+            errorMessage = null;
+            bulkResult = null;
+
+            progressMessage = "Voorbereiden...";
+            StateHasChanged();
+
+            var request = new BulkAssignTransactionsRequest
+            {
+                TransactionIds = TransactionIds,
+                BudgetLineId = Guid.Parse(selectedBudgetLineId),
+                Note = note
+            };
+
+            progressMessage = $"Toewijzen van {TransactionIds.Count} transactie(s)...";
+            progressPercentage = 0;
+            StateHasChanged();
+
+            // Report real incremental progress from the service layer
+            var progressReporter = new Progress<int>(percentage =>
+            {
+                progressPercentage = percentage;
+                StateHasChanged();
+            });
+
+            bulkResult = await AssignmentService.BulkAssignTransactionsAsync(request, progressReporter);
+
+            progressPercentage = 100;
+            progressMessage = "Voltooid!";
+            StateHasChanged();
+
+            // Wait a moment to show completion
+            await Task.Delay(500);
+
+            await OnBulkAssigned.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Er is een fout opgetreden bij de bulk toewijzing.";
+            Logger.LogError(ex, "Error during bulk assignment");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+}

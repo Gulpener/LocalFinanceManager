@@ -1,8 +1,8 @@
-# UserStory-9: E2E Tests - Phase 1 Foundation
+# UserStory-10: E2E Tests - Phase 1 Foundation
 
 ## Objective
 
-Implement foundational E2E tests (20 tests) covering transaction import, basic assignment, and multi-account validation. Addresses technical debt from archived US-5 and deferred MVP-3 import tests. Establishes foundation for Phase 2 (US-9.1) and Phase 3 (US-9.2).
+Implement foundational E2E tests (20 tests) covering transaction import, basic assignment, and multi-account validation. Addresses technical debt from archived US-5 and deferred MVP-3 import tests. Establishes foundation for Phase 2 (US-10.1) and Phase 3 (US-10.2).
 
 ## Requirements
 
@@ -299,8 +299,8 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 
 ## Notes
 
-- **Phase 2 Continuation:** UserStory-9.1 implements advanced assignment tests (split, bulk, integration workflows - 19 tests)
-- **Phase 3 Deferred:** UserStory-9.2 implements ML tests pending US-7 completion (25 tests estimated)
+- **Phase 2 Continuation:** UserStory-10.1 implements advanced assignment tests (split, bulk, integration workflows - 19 tests)
+- **Phase 3 Deferred:** UserStory-10.2 implements ML tests pending US-8 completion (25 tests estimated)
 - **Per-Test Cleanup:** Each test creates fresh database state; no test interdependencies
 - **CI Execution Mode:** Phase 1 tests currently run sequentially in CI due to SQLite file access conflicts; target execution time remains <5 minutes, with parallel groups (import+basic, multi-account) to be revisited once database concurrency issues are resolved
 - **Screenshot Artifacts:** Invaluable for debugging CI failures; captured automatically on test failure

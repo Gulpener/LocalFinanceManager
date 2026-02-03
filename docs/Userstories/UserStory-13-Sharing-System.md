@@ -1,4 +1,4 @@
-# Post-MVP-7: Implement Sharing System
+# Post-MVP-8: Implement Sharing System
 
 ## Objective
 

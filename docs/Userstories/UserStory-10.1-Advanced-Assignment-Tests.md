@@ -1,8 +1,8 @@
-# UserStory-9.1: E2E Tests - Phase 2 Advanced Assignment
+# UserStory-10.1: E2E Tests - Phase 2 Advanced Assignment
 
 ## Objective
 
-Implement advanced E2E tests (19 tests) covering split assignment, bulk assignment, and integration workflows. Builds on US-9 foundation to achieve 80% critical path coverage (39 tests total across US-9 + US-9.1).
+Implement advanced E2E tests (19 tests) covering split assignment, bulk assignment, and integration workflows. Builds on US-10 foundation to achieve 80% critical path coverage (39 tests total across US-10 + US-10.1).
 
 ## Requirements
 
@@ -232,7 +232,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 ## Dependencies
 
-- **UserStory-9 REQUIRED (blocking):** Must complete Phase 1 before starting Phase 2. US-9 provides:
+- **UserStory-10 REQUIRED (blocking):** Must complete Phase 1 before starting Phase 2. US-10 provides:
   - Tests/ directory structure
   - Enhanced TransactionListPage with bulk operation methods
   - ImportModalPageModel for transaction creation
@@ -270,7 +270,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 - 1 integration workflow test (cross-feature validation)
 - CI parallel execution configuration
 
-## Pattern Adherence from UserStory-9
+## Pattern Adherence from UserStory-10
 
 **Reuses US-9 Patterns:**
 

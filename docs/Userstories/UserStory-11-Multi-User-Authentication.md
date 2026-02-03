@@ -1,4 +1,4 @@
-# UserStory-10: Multi-User Authentication with Email Verification
+# UserStory-11: Multi-User Authentication with Email Verification
 
 ## Objective
 
@@ -43,12 +43,14 @@ Integrate Supabase Auth with JWT-based authentication, enforce email verificatio
 ## Dependencies
 
 This user story **blocks** the following stories:
-- **UserStory-11: Supabase PostgreSQL Migration** (requires `UserId` on entities)
-- **UserStory-12: Sharing System** (requires multi-user foundation)
+
+- **UserStory-12: Supabase PostgreSQL Migration** (requires `UserId` on entities)
+- **UserStory-13: Sharing System** (requires multi-user foundation)
 
 ## ⚠️ Breaking Change Warning
 
 **This is a BREAKING CHANGE that requires database recreation:**
+
 - Existing `localfinancemanager.db` will be incompatible after adding `UserId` to `BaseEntity`
 - **Action Required:** Delete existing database file and run fresh migrations
 - **Data Loss:** All existing accounts, transactions, budgets, and categories will be lost (acceptable for pre-production development phase)
@@ -61,6 +63,7 @@ This user story **blocks** the following stories:
 ## Technical Decisions
 
 This user story follows technical patterns documented in `docs/Implementation-Guidelines.md`:
+
 - **.NET Version:** `net10.0` target framework
 - **Configuration:** `IOptions<T>` pattern for `SupabaseOptions` configuration class
 - **Async Patterns:** All I/O operations use `async/await`
@@ -117,16 +120,17 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
 ### 3. JWT Authentication Middleware (Agent)
 
 - [ ] **(Agent)** Configure JWT bearer authentication in `LocalFinanceManager/Program.cs`:
+
   ```csharp
   using Microsoft.AspNetCore.Authentication.JwtBearer;
   using Microsoft.IdentityModel.Tokens;
   using System.Text;
-  
+
   // Add before builder.Build()
   builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection("Supabase"));
-  
+
   var supabaseOptions = builder.Configuration.GetSection("Supabase").Get<SupabaseOptions>();
-  
+
   builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
       .AddJwtBearer(options =>
       {
@@ -142,9 +146,9 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
                   Encoding.UTF8.GetBytes(supabaseOptions.JwtSecret))
           };
       });
-  
+
   builder.Services.AddAuthorization();
-  
+
   // Add after app.UseRouting() but before app.MapControllers()
   app.UseAuthentication();
   app.UseAuthorization();
@@ -160,7 +164,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
       public string Email { get; set; } = string.Empty;
       public string DisplayName { get; set; } = string.Empty;
       public bool EmailConfirmed { get; set; } = false;
-      
+
       // Navigation properties
       public ICollection<Account> Accounts { get; set; } = new List<Account>();
       public ICollection<BudgetPlan> BudgetPlans { get; set; } = new List<BudgetPlan>();
@@ -173,7 +177,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
       base.OnModelCreating(modelBuilder);
-      
+
       modelBuilder.Entity<User>(entity =>
       {
           entity.HasIndex(e => e.SupabaseUserId).IsUnique();
@@ -181,7 +185,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
           entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(100);
           entity.Property(e => e.SupabaseUserId).IsRequired().HasMaxLength(36);
       });
-      
+
       // ...existing entity configurations...
   }
   ```
@@ -197,7 +201,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
       public DateTime CreatedAt { get; set; }
       public DateTime UpdatedAt { get; set; }
       public bool IsArchived { get; set; }
-      
+
       // NEW: User ownership for multi-user support
       public Guid UserId { get; set; }
       public User User { get; set; } = null!;
@@ -229,12 +233,12 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
   public class UserContext : IUserContext
   {
       private readonly IHttpContextAccessor _httpContextAccessor;
-      
+
       public UserContext(IHttpContextAccessor httpContextAccessor)
       {
           _httpContextAccessor = httpContextAccessor;
       }
-      
+
       public Guid GetCurrentUserId()
       {
           var user = _httpContextAccessor.HttpContext?.User;
@@ -242,22 +246,22 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
           {
               throw new UnauthorizedAccessException("User is not authenticated");
           }
-          
+
           var subClaim = user.FindFirst("sub")?.Value;
           if (string.IsNullOrEmpty(subClaim) || !Guid.TryParse(subClaim, out var userId))
           {
               throw new UnauthorizedAccessException("Invalid user ID in token");
           }
-          
+
           return userId;
       }
-      
+
       public string GetCurrentUserEmail()
       {
           var user = _httpContextAccessor.HttpContext?.User;
           return user?.FindFirst("email")?.Value ?? string.Empty;
       }
-      
+
       public bool IsAuthenticated()
       {
           return _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
@@ -279,13 +283,13 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
   {
       private readonly AppDbContext _context;
       private readonly IUserContext _userContext;
-      
+
       public AccountRepository(AppDbContext context, IUserContext userContext)
       {
           _context = context;
           _userContext = userContext;
       }
-      
+
       public async Task<List<Account>> GetActiveAsync()
       {
           var currentUserId = _userContext.GetCurrentUserId();
@@ -293,14 +297,14 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
               .Where(a => a.UserId == currentUserId && !a.IsArchived)
               .ToListAsync();
       }
-      
+
       public async Task<Account?> GetByIdAsync(Guid id)
       {
           var currentUserId = _userContext.GetCurrentUserId();
           return await _context.Accounts
               .FirstOrDefaultAsync(a => a.Id == id && a.UserId == currentUserId && !a.IsArchived);
       }
-      
+
       // Apply same pattern to all repository methods
   }
   ```
@@ -309,6 +313,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
 ### 8. Blazor Authentication UI (Agent)
 
 - [ ] **(Agent)** Create `LocalFinanceManager/Services/IAuthService.cs` interface:
+
   ```csharp
   public interface IAuthService
   {
@@ -318,7 +323,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
       Task SendPasswordResetEmailAsync(string email);
       Task ResendVerificationEmailAsync(string email);
   }
-  
+
   public class AuthResponse
   {
       public bool Success { get; set; }
@@ -327,6 +332,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
       public bool EmailVerified { get; set; }
   }
   ```
+
 - [ ] **(Agent)** Implement `LocalFinanceManager/Services/AuthService.cs` using Supabase.Gotrue client
 - [ ] **(Agent)** Create custom `AuthenticationStateProvider` in `LocalFinanceManager/Services/CustomAuthenticationStateProvider.cs`:
   - Store JWT in **sessionStorage** (not localStorage)
@@ -484,7 +490,7 @@ This user story follows technical patterns documented in `docs/Implementation-Gu
 - [ ] JWT stored in **sessionStorage only** (no localStorage, no refresh tokens, no "Remember Me")
 - [ ] E2E tests pass using test Supabase environment (verification disabled)
 - [ ] GitHub Actions workflow passes with test environment secrets injected
-- [ ] User story immediately archived to `docs/Userstories/Archive/UserStory-10-Multi-User-Authentication.md`
+- [ ] User story immediately archived to `docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md`
 
 ## CLI Commands Reference
 
@@ -543,4 +549,4 @@ dotnet test tests/LocalFinanceManager.E2E/
 
 ---
 
-**Upon completion:** Immediately archive this user story to `docs/Userstories/Archive/UserStory-10-Multi-User-Authentication.md` after successful implementation, verification, and all DoD items checked.
+**Upon completion:** Immediately archive this user story to `docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md` after successful implementation, verification, and all DoD items checked.

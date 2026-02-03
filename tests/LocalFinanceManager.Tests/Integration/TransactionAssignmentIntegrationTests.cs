@@ -779,4 +779,97 @@ public class TransactionAssignmentIntegrationTests
 
         Assert.That(exception!.Message, Does.Contain("Cannot assign 2026 transaction to 2025 budget plan"));
     }
+
+    [Test]
+    public async Task BulkAssignTransactions_WithProgressReporting_ShouldReportAccurateProgress()
+    {
+        // Arrange
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            Type = AccountType.Checking,
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            StartingBalance = 1000m
+        };
+        await _context.Accounts.AddAsync(account);
+
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = budgetPlan.Id
+        };
+        await _context.Categories.AddAsync(category);
+
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = "[500,500,500,500,500,500,500,500,500,500,500,500]"
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+
+        // Create 5 transactions to track progress
+        var transactionIds = new List<Guid>();
+        for (int i = 0; i < 5; i++)
+        {
+            var transaction = new Transaction
+            {
+                Id = Guid.NewGuid(),
+                AccountId = account.Id,
+                Amount = -50m,
+                Date = DateTime.UtcNow,
+                Description = $"Test Transaction {i + 1}"
+            };
+            await _context.Transactions.AddAsync(transaction);
+            transactionIds.Add(transaction.Id);
+        }
+        await _context.SaveChangesAsync();
+
+        var request = new BulkAssignTransactionsRequest
+        {
+            TransactionIds = transactionIds,
+            BudgetLineId = budgetLine.Id,
+            Note = "Bulk assignment with progress"
+        };
+
+        var progressUpdates = new List<int>();
+        var progressReporter = new Progress<int>(percentage =>
+        {
+            progressUpdates.Add(percentage);
+        });
+
+        // Act
+        var result = await _assignmentService.BulkAssignTransactionsAsync(request, progressReporter);
+
+        // Assert
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.AssignedCount, Is.EqualTo(5));
+        Assert.That(result.FailedCount, Is.EqualTo(0));
+
+        // Verify progress was reported (Progress<T> may batch updates, so check for at least some reports)
+        Assert.That(progressUpdates.Count, Is.GreaterThan(0), "Should report progress at least once");
+        Assert.That(progressUpdates.Last(), Is.EqualTo(100), "Final progress should be 100%");
+
+        // Verify progress is monotonically increasing
+        for (int i = 1; i < progressUpdates.Count; i++)
+        {
+            Assert.That(progressUpdates[i], Is.GreaterThanOrEqualTo(progressUpdates[i - 1]),
+                $"Progress should be monotonically increasing at index {i}");
+        }
+    }
 }

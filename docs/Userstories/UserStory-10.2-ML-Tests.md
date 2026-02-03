@@ -1,13 +1,13 @@
-# UserStory-9.2: E2E Tests - Phase 3 ML & Auto-Apply
+# UserStory-10.2: E2E Tests - Phase 3 ML & Auto-Apply
 
 ## Objective
 
-Implement ML-related E2E tests (estimated 25 tests) covering ML suggestions, auto-apply configuration, and monitoring dashboard. Completes comprehensive E2E test coverage (64 tests total: US-9: 20 + US-9.1: 19 + US-9.2: 25).
+Implement ML-related E2E tests (estimated 25 tests) covering ML suggestions, auto-apply configuration, and monitoring dashboard. Completes comprehensive E2E test coverage (64 tests total: US-10: 20 + US-10.1: 19 + US-10.2: 25).
 
 ## Requirements
 
-- Tests deferred until UserStory-7 (ML Suggestion & Auto-Apply) features fully implemented and stable
-- Test count estimate (25) to be validated against actual US-7 implementation before story refinement
+- Tests deferred until UserStory-8 (ML Suggestion & Auto-Apply) features fully implemented and stable
+- Test count estimate (25) to be validated against actual US-8 implementation before story refinement
 - Estimated test suites: MLSuggestionsTests (~8 tests), AutoApplyConfigTests (~8 tests), MonitoringDashboardTests (~9 tests)
 - Leverage PageObjectModels from US-9/US-9.1 for transaction interactions
 - Per-test cleanup strategy (same pattern as US-9/US-9.1)
@@ -15,7 +15,7 @@ Implement ML-related E2E tests (estimated 25 tests) covering ML suggestions, aut
 
 ## Status
 
-**Deferred - Pending UserStory-7 Completion**
+**Deferred - Pending UserStory-8 Completion**
 
 This user story serves as a placeholder for Phase 3 E2E tests. Detailed implementation tasks, test scenarios, and acceptance criteria will be added during story refinement after US-7 ML features are production-ready.
 
@@ -137,14 +137,14 @@ Detailed test scenarios will be added during story refinement after US-7 feature
 
 ## Dependencies
 
-- **UserStory-7 (ML Suggestion & Auto-Apply) REQUIRED (blocking):** ML features must be production-ready before implementing E2E tests. US-7 provides:
+- **UserStory-8 (ML Suggestion & Auto-Apply) REQUIRED (blocking):** ML features must be production-ready before implementing E2E tests. US-8 provides:
   - MLSuggestionBadge component
   - AutoApplySettings page
   - MonitoringDashboard page
   - ML model training and inference infrastructure
   - Auto-apply background service
-- **UserStory-9 (Phase 1 Foundation):** Provides Tests/ directory, TransactionListPage, ImportModalPageModel, E2E_TEST_GUIDE.md
-- **UserStory-9.1 (Phase 2 Advanced):** Provides integration test patterns, CI parallel execution configuration
+- **UserStory-10 (Phase 1 Foundation):** Provides Tests/ directory, TransactionListPage, ImportModalPageModel, E2E_TEST_GUIDE.md
+- **UserStory-10.1 (Phase 2 Advanced):** Provides integration test patterns, CI parallel execution configuration
 
 ## Estimated Effort
 
@@ -162,7 +162,7 @@ To be refined during story refinement after US-7 implementation review.
 
 ## Implementation Status
 
-> **Deferred - Pending US-7:** This story is a placeholder for Phase 3 ML E2E tests. Detailed refinement will occur after UserStory-7 (ML Suggestion & Auto-Apply) features are fully implemented and stable in production.
+> **Deferred - Pending US-8:** This story is a placeholder for Phase 3 ML E2E tests. Detailed refinement will occur after UserStory-8 (ML Suggestion & Auto-Apply) features are fully implemented and stable in production.
 
 **Refinement Required:**
 
@@ -180,7 +180,7 @@ To be refined during story refinement after US-7 implementation review.
 - Auto-apply background service operational
 - Monitoring dashboard UI finalized
 
-## Pattern Adherence from UserStory-9 and UserStory-9.1
+## Pattern Adherence from UserStory-10 and UserStory-10.1
 
 **Reuses Established Patterns:**
 

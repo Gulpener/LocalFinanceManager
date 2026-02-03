@@ -1,4 +1,4 @@
-# UserStory-8.1: Keyboard Shortcuts & Accessibility
+# UserStory-9.1: Keyboard Shortcuts & Accessibility
 
 ## Objective
 
@@ -305,20 +305,17 @@ This story **enhances** existing assignment components without modifying their c
 ### Keyboard Shortcut Test Scenarios
 
 1. **Global Shortcuts:**
-
    - Press `?` → Help modal opens
    - Press `/` → Search input focused (if on Transactions page)
    - Press `Esc` in help modal → Help modal closes
 
 2. **Assignment Modal Shortcuts:**
-
    - Press `Tab` → Focus cycles through category → budget line → note → save → cancel
    - Press `Enter` when save button focused → Assignment saved, modal closed
    - Press `Esc` → Modal closes without saving
    - Open modal → Focus starts on category selector
 
 3. **Split Editor Shortcuts:**
-
    - Press `Tab` → Focus cycles through split row fields
    - Press `Ctrl+Plus` → New split row added
    - Press `Ctrl+Minus` → Focused split row removed
@@ -326,14 +323,12 @@ This story **enhances** existing assignment components without modifying their c
    - Press `Esc` → Editor closes without saving
 
 4. **Bulk Assign Modal Shortcuts:**
-
    - Press `Tab` → Focus cycles through category → assign button → cancel
    - Press `Enter` when assign button focused → Bulk assignment starts
    - Press `Esc` during assignment → Bulk operation cancelled
    - Press `Esc` after completion → Modal closes
 
 5. **Transaction List Shortcuts:**
-
    - Press `Space` on focused row → Checkbox toggles
    - Press `Ctrl+A` → All visible transactions selected
    - Press `Ctrl+D` → All transactions deselected
@@ -344,7 +339,6 @@ This story **enhances** existing assignment components without modifying their c
    - Press `End` → Focus moves to last row
 
 6. **Focus Management:**
-
    - Open modal → Focus trapped inside modal (Tab doesn't escape)
    - Close modal → Focus returns to trigger element
    - Navigate between pages → Focus persists correctly
@@ -389,7 +383,7 @@ This story **enhances** existing assignment components without modifying their c
 
 - **UserStory-5 (Basic Assignment UI):** REQUIRED - Enhances CategorySelector, TransactionAssignModal, Transactions.razor components.
 - **UserStory-6 (Split/Bulk Assignment):** REQUIRED - Adds keyboard shortcuts to SplitEditor, BulkAssignModal components.
-- **UserStory-7 (ML Suggestions):** REQUIRED - Keyboard shortcuts work with ML suggestion badges and filters.
+- **UserStory-8 (ML Suggestions):** REQUIRED - Keyboard shortcuts work with ML suggestion badges and filters.
 - **UserStory-5.1 (E2E Infrastructure):** REQUIRED for E2E tests - Must complete US-5.1 before running E2E tests in this story. Uses PlaywrightFixture and PageObjectModels.
 
 ## Estimated Effort

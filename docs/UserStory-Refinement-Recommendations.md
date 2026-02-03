@@ -9,14 +9,14 @@
 
 **Status Overview:**
 
-- ✅ **12 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-8, US-8-refinements) - Archived
-- ✅ **6 stories ready** for immediate implementation (US-6, US-7, US-8.1, US-8.2, US-9, US-9.1, US-10)
-- 🔶 **1 story deferred** (US-9.2) - Pending UserStory-7 completion
-- 🔴 **5 stories need refinement** (US-11, US-12, US-13, US-14, US-15) - Post-MVP features
+- ✅ **14 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-8, US-8-refinements, US-9.2) - Archived
+- ✅ **5 stories ready** for immediate implementation (US-7, US-8, US-9.1, US-10, US-10.1, US-11)
+- 🔶 **1 story deferred** (US-10.2) - Pending UserStory-8 completion
+- 🔴 **5 stories need refinement** (US-12, US-13, US-14, US-15, US-16) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
-**E2E Testing Technical Debt Resolution:** US-9 series (Phase 1, Phase 2, Phase 3) addresses accumulated E2E testing technical debt from archived user stories and deferred MVP-3 import tests. Originally scoped as 2 integration tests (0.5-1 day), expanded to 64 tests across three stories (12-13 days total) for comprehensive coverage.
+**E2E Testing Technical Debt Resolution:** US-10 series (Phase 1, Phase 2, Phase 3) addresses accumulated E2E testing technical debt from archived user stories and deferred MVP-3 import tests. Originally scoped as 2 integration tests (0.5-1 day), expanded to 64 tests across three stories (12-13 days total) for comprehensive coverage.
 
 **Completed & Archived Stories:**
 
@@ -30,8 +30,10 @@
 - UserStory-5 (Basic Assignment UI) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-5.1 (E2E Infrastructure) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-5.3 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-6 (Split & Bulk Assignment) - ✅ **COMPLETED & ARCHIVED** - Transaction splitting and bulk assignment functionality
 - UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-9.2 (Quick Filters & Performance) - ✅ **COMPLETED & ARCHIVED** - Performance optimizations and quick filter UI
 
 ---
 
@@ -39,26 +41,25 @@
 
 ### ✅ Ready for Implementation (No Refinement Needed)
 
-#### UserStory-6: Split & Bulk Assignment
+#### UserStory-7: GitHub Copilot Custom Agents
 
-**File:** [docs/Userstories/UserStory-6-Split-Bulk-Assignment.md](docs/Userstories/UserStory-6-Split-Bulk-Assignment.md)
+**File:** [docs/Userstories/UserStory-7-Copilot-Agents.md](docs/Userstories/UserStory-7-Copilot-Agents.md)
 
-**Status:** ✅ **Ready** - Comprehensive split editor UI and bulk assignment features with validation.
+**Status:** ✅ **Ready** - Custom GitHub Copilot agents for enhanced development workflow.
 
 **Key Features:**
 
-- Dynamic split editor with add/remove rows
-- Real-time sum validation (±0.01 tolerance)
-- Bulk assignment with multi-select
-- Progress bar and error handling
+- Custom agents for task-specific assistance
+- Integration with existing codebase patterns
+- Enhanced code generation and refactoring
 
-**Estimated Effort:** 3-4 days
+**Estimated Effort:** 1-2 days
 
 ---
 
-#### UserStory-7: ML Suggestion & Auto-Apply
+#### UserStory-8: ML Suggestion & Auto-Apply
 
-**File:** [docs/Userstories/UserStory-7-ML-Suggestion-Auto-Apply.md](docs/Userstories/UserStory-7-ML-Suggestion-Auto-Apply.md)
+**File:** [docs/Userstories/UserStory-8-ML-Suggestion-Auto-Apply.md](docs/Userstories/UserStory-8-ML-Suggestion-Auto-Apply.md)
 
 **Status:** ✅ **Ready** - AI-powered suggestions with auto-apply configuration and monitoring dashboard.
 
@@ -73,9 +74,9 @@
 
 ---
 
-#### UserStory-8.1: Keyboard Shortcuts
+#### UserStory-9.1: Keyboard Shortcuts
 
-**File:** [docs/Userstories/UserStory-8.1-Keyboard-Shortcuts.md](docs/Userstories/UserStory-8.1-Keyboard-Shortcuts.md)
+**File:** [docs/Userstories/UserStory-9.1-Keyboard-Shortcuts.md](docs/Userstories/UserStory-9.1-Keyboard-Shortcuts.md)
 
 **Status:** ✅ **Ready** - Keyboard navigation for power users.
 
@@ -83,23 +84,13 @@
 
 ---
 
-#### UserStory-8.2: Quick Filters & Performance
-
-**File:** [docs/Userstories/UserStory-8.2-Quick-Filters-Performance.md](docs/Userstories/UserStory-8.2-Quick-Filters-Performance.md)
-
-**Status:** ✅ **Ready** - Performance optimizations and quick filter UI.
-
-**Estimated Effort:** 2-3 days
-
----
-
-#### UserStory-9.x Series (E2E Testing - Technical Debt Resolution)
+#### UserStory-10.x Series (E2E Testing - Technical Debt Resolution)
 
 **Context:** Originally scoped as 2 integration tests (0.5-1 day), expanded to 64 tests across three stories (12-13 days total estimated) to address accumulated E2E testing technical debt from archived user stories and deferred MVP-3 import tests.
 
-**UserStory-9: E2E Tests - Phase 1 Foundation**
+**UserStory-10: E2E Tests - Phase 1 Foundation**
 
-**File:** [docs/Userstories/UserStory-9-Integration-Workflow-Tests.md](docs/Userstories/UserStory-9-Integration-Workflow-Tests.md)
+**File:** [docs/Userstories/UserStory-10-Integration-Workflow-Tests.md](docs/Userstories/UserStory-10-Integration-Workflow-Tests.md)
 
 **Status:** ✅ **Ready** - Phase 1 Foundation tests (20 tests, 4 days)
 
@@ -121,11 +112,11 @@
 
 ---
 
-**UserStory-9.1: E2E Tests - Phase 2 Advanced**
+**UserStory-10.1: E2E Tests - Phase 2 Advanced**
 
-**File:** [docs/Userstories/UserStory-9.1-Advanced-Assignment-Tests.md](docs/Userstories/UserStory-9.1-Advanced-Assignment-Tests.md)
+**File:** [docs/Userstories/UserStory-10.1-Advanced-Assignment-Tests.md](docs/Userstories/UserStory-10.1-Advanced-Assignment-Tests.md)
 
-**Status:** ✅ **Ready** - Phase 2 Advanced tests (19 tests, 4 days). **Requires US-9 completion.**
+**Status:** ✅ **Ready** - Phase 2 Advanced tests (19 tests, 4 days). **Requires US-10 completion.**
 
 **Key Features:**
 
@@ -138,17 +129,17 @@
 
 - US-6 active: 18 split/bulk tests not yet implemented
 
-**Combined Coverage:** US-9 + US-9.1 = 39 tests achieving 80% critical path coverage
+**Combined Coverage:** US-10 + US-10.1 = 39 tests achieving 80% critical path coverage
 
 **Estimated Effort:** 4 days
 
-**Dependencies:** UserStory-9 REQUIRED (blocking)
+**Dependencies:** UserStory-10 REQUIRED (blocking)
 
 ---
 
-#### UserStory-10: Multi-User Authentication
+#### UserStory-11: Multi-User Authentication
 
-**File:** [docs/Userstories/UserStory-10-Multi-User-Authentication.md](docs/Userstories/UserStory-10-Multi-User-Authentication.md)
+**File:** [docs/Userstories/UserStory-11-Multi-User-Authentication.md](docs/Userstories/UserStory-11-Multi-User-Authentication.md)
 
 **Status:** ✅ **Ready** - Supabase authentication with JWT tokens and multi-tenant data isolation.
 
@@ -165,11 +156,11 @@
 
 ### � Stories Deferred (Pending Dependencies)
 
-#### UserStory-9.2: E2E Tests - Phase 3 ML
+#### UserStory-10.2: E2E Tests - Phase 3 ML
 
-**File:** [docs/Userstories/UserStory-9.2-ML-Tests.md](docs/Userstories/UserStory-9.2-ML-Tests.md)
+**File:** [docs/Userstories/UserStory-10.2-ML-Tests.md](docs/Userstories/UserStory-10.2-ML-Tests.md)
 
-**Status:** 🔴 **Deferred** - Pending UserStory-7 (ML Suggestion & Auto-Apply) completion
+**Status:** 🔴 **Deferred** - Pending UserStory-8 (ML Suggestion & Auto-Apply) completion
 
 **Planned Scope:**
 
@@ -177,35 +168,35 @@
 - Auto-apply configuration tests (~8): Settings UI, threshold validation, account/category selection
 - Monitoring dashboard tests (~9): Stats display, undo actions, alert banners, auto-refresh
 
-**Total:** ~25 tests estimated (to be validated against actual US-7 implementation)
+**Total:** ~25 tests estimated (to be validated against actual US-8 implementation)
 
-**Combined Coverage:** US-9 (20) + US-9.1 (19) + US-9.2 (25) = 64 tests achieving >90% feature coverage
+**Combined Coverage:** US-10 (20) + US-10.1 (19) + US-10.2 (25) = 64 tests achieving >90% feature coverage
 
 **Why Deferred:**
 
-- UserStory-7 ML features not yet implemented
-- Test count estimate requires validation against actual US-7 scope
+- UserStory-8 ML features not yet implemented
+- Test count estimate requires validation against actual US-8 scope
 - ML-specific PageObjectModels (MLSuggestionBadgePage, MonitoringDashboardPage) cannot be created until UI finalized
-- ML test data seeding strategy (labeled examples, fixture models) depends on US-7 architecture
+- ML test data seeding strategy (labeled examples, fixture models) depends on US-8 architecture
 
 **Refinement Required:**
 
-- Validate 25-test estimate after US-7 implementation
-- Add detailed test task checklists (similar to US-9/US-9.1 specificity)
+- Validate 25-test estimate after US-8 implementation
+- Add detailed test task checklists (similar to US-10/US-10.1 specificity)
 - Define ML-specific PageObjectModel requirements
 - Document confidence threshold edge cases and undo rate alert testing approach
 
-**Estimated Effort:** TBD (~4-5 days estimated, to be refined after US-7)
+**Estimated Effort:** TBD (~4-5 days estimated, to be refined after US-8)
 
-**Dependencies:** UserStory-7 REQUIRED (blocking), UserStory-9 (foundation), UserStory-9.1 (patterns)
+**Dependencies:** UserStory-8 REQUIRED (blocking), UserStory-10 (foundation), UserStory-10.1 (patterns)
 
 ---
 
 ### �🔴 Needs Major Refinement
 
-#### UserStory-11: Supabase PostgreSQL Migration
+#### UserStory-12: Supabase PostgreSQL Migration
 
-**File:** [docs/Userstories/UserStory-11-Supabase-PostgreSQL.md](docs/Userstories/UserStory-11-Supabase-PostgreSQL.md)
+**File:** [docs/Userstories/UserStory-12-Supabase-PostgreSQL.md](docs/Userstories/UserStory-12-Supabase-PostgreSQL.md)
 
 **Issues:**
 
@@ -352,9 +343,9 @@ public async Task<IActionResult> Health()
 
 ---
 
-#### UserStory-12: Sharing System
+#### UserStory-13: Sharing System
 
-**File:** [docs/Userstories/UserStory-12-Sharing-System.md](docs/Userstories/UserStory-12-Sharing-System.md)
+**File:** [docs/Userstories/UserStory-13-Sharing-System.md](docs/Userstories/UserStory-13-Sharing-System.md)
 
 **Issues:**
 
@@ -542,9 +533,9 @@ builder.Services.AddHostedService<ShareExpirationService>();
 
 ---
 
-#### UserStory-13: Backup & Restore
+#### UserStory-14: Backup & Restore
 
-**File:** [docs/Userstories/UserStory-13-Backup-Restore.md](docs/Userstories/UserStory-13-Backup-Restore.md)
+**File:** [docs/Userstories/UserStory-14-Backup-Restore.md](docs/Userstories/UserStory-14-Backup-Restore.md)
 
 **Issues:**
 
@@ -722,9 +713,9 @@ public async Task<byte[]> CreateEncryptedBackupAsync(string userId, string passw
 
 ---
 
-#### UserStory-14: Application Flow & Onboarding
+#### UserStory-15: Application Flow & Onboarding
 
-**File:** [docs/Userstories/UserStory-14-Application-Flow.md](docs/Userstories/UserStory-14-Application-Flow.md)
+**File:** [docs/Userstories/UserStory-15-Application-Flow.md](docs/Userstories/UserStory-15-Application-Flow.md)
 
 **Issues:**
 
@@ -905,9 +896,9 @@ public class User
 
 ---
 
-#### UserStory-15: Azure Deployment
+#### UserStory-16: Azure Deployment
 
-**File:** [docs/Userstories/UserStory-15-Azure-Deployment.md](docs/Userstories/UserStory-15-Azure-Deployment.md)
+**File:** [docs/Userstories/UserStory-16-Azure-Deployment.md](docs/Userstories/UserStory-16-Azure-Deployment.md)
 
 **Issues:**
 
@@ -1066,29 +1057,30 @@ public async Task RunWeeklyBackup(TimerInfo timer)
 ### Phase 2: Core Features (Weeks 3-5)
 
 4. ✅ **UserStory-4** (Account-Budget Matching) - **COMPLETED & ARCHIVED**
-5. ✅ **UserStory-5** (Basic Assignment UI) - Ready (2-3 days)
-   - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - Ready (1-2 days)
-6. ✅ **UserStory-6** (Split & Bulk Assignment) - Ready after US-5 (3-4 days)
+5. ✅ **UserStory-5** (Basic Assignment UI) - **COMPLETED & ARCHIVED**
+   - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - **COMPLETED & ARCHIVED**
+6. ✅ **UserStory-6** (Split & Bulk Assignment) - **COMPLETED & ARCHIVED**
 
 ### Phase 3: Advanced Features (Weeks 6-8)
 
-7. ✅ **UserStory-7** (ML Suggestion & Auto-Apply) - Ready after US-6 (4-5 days)
-8. ✅ **UserStory-9** (Integration Workflow Tests) - Ready, incremental with US-7 (2-3 days)
+7. **UserStory-7** (Copilot Agents) - **NEXT: Ready for implementation** (1-2 days)
+8. **UserStory-8** (ML Suggestion & Auto-Apply) - Ready after US-7 (4-5 days)
+9. **UserStory-10** (Integration Workflow Tests) - Ready, incremental with US-8 (2-3 days)
 
 ### Phase 4: UX Improvements (Weeks 9-10)
 
-9. ✅ **UserStory-5.3** (UX Enhancements) - **COMPLETED & ARCHIVED**
-10. ✅ **UserStory-8.1** (Keyboard Shortcuts) - Ready (1-2 days)
-11. ✅ **UserStory-8.2** (Quick Filters & Performance) - Ready (2-3 days)
+10. ✅ **UserStory-5.3** (UX Enhancements) - **COMPLETED & ARCHIVED**
+11. ✅ **UserStory-9.2** (Quick Filters & Performance) - **COMPLETED & ARCHIVED**
+12. **UserStory-9.1** (Keyboard Shortcuts) - Ready (1-2 days)
 
 ### Phase 5: Multi-User & Post-MVP (Weeks 11+)
 
-12. ✅ **UserStory-10** (Multi-User Auth) - Ready (5-7 days)
-13. 🔴 **UserStory-11** (Supabase PostgreSQL) - After US-10 + refinement (3-4 days)
-14. 🔴 **UserStory-12** (Sharing System) - After US-11 + refinement (5-7 days)
-15. 🔴 **UserStory-13** (Backup & Restore) - After refinement (3-4 days)
-16. 🔴 **UserStory-14** (Application Flow) - After refinement (4-5 days)
-17. 🔴 **UserStory-15** (Azure Deployment) - After refinement (3-4 days)
+13. **UserStory-11** (Multi-User Auth) - Ready (5-7 days)
+14. 🔴 **UserStory-12** (Supabase PostgreSQL) - After US-11 + refinement (3-4 days)
+15. 🔴 **UserStory-13** (Sharing System) - After US-12 + refinement (5-7 days)
+16. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
+17. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
+18. 🔴 **UserStory-16** (Azure Deployment) - After refinement (3-4 days)
 
 ---
 
@@ -1180,8 +1172,9 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Start implementing UserStory-4 (Account-Budget Matching), UserStory-5 (Basic Assignment UI), and UserStory-5.1 (E2E Infrastructure in parallel) - all production-ready
-2. **This Week:** Expand UserStory-11, 12, 13, 14, 15 with implementation tasks (10-12 hours total)
+1. **Immediate:** Start implementing UserStory-7 (Copilot Agents) - production-ready
+2. **This Week:** Continue with UserStory-8 (ML Suggestion & Auto-Apply) and UserStory-9.1 (Keyboard Shortcuts)
+3. **Future:** Expand UserStory-12, 13, 14, 15, 16 with implementation tasks (10-12 hours total)
 
 **Total Refinement Effort Remaining:** ~10-12 hours across 5 remaining stories
 
@@ -1198,14 +1191,17 @@ Use this structure for all new stories:
 9. ✅ ~~UserStory-5 (Basic Assignment UI)~~ - **COMPLETED & ARCHIVED**
 10. ✅ ~~UserStory-5.1 (E2E Infrastructure)~~ - **COMPLETED & ARCHIVED**
 11. ✅ ~~UserStory-5.3 (UX Enhancements)~~ - **COMPLETED & ARCHIVED**
-12. **UserStory-6** (Split & Bulk Assignment) - **NEXT: Start implementation**
-13. **UserStory-7** (ML Suggestion & Auto-Apply) - After US-6
-14. **UserStory-8.1** (Keyboard Shortcuts) - After US-7
-15. **UserStory-8.2** (Quick Filters & Performance) - After US-8.1
-16. **UserStory-9** (Integration Workflow Tests) - Incremental with US-7
-17. **UserStory-10** (Multi-User Auth) - Ready for implementation
-18. UserStory-11 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
-19. UserStory-12 (Sharing System) - Needs refinement (authorization middleware, permissions)
-20. UserStory-13 (Backup & Restore) - Needs refinement (security/encryption, versioning)
-21. UserStory-14 (Application Flow) - Needs refinement (onboarding tracking)
-22. UserStory-15 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)
+12. ✅ ~~UserStory-6 (Split & Bulk Assignment)~~ - **COMPLETED & ARCHIVED**
+13. ✅ ~~UserStory-9.2 (Quick Filters & Performance)~~ - **COMPLETED & ARCHIVED**
+14. **UserStory-7** (Copilot Agents) - **NEXT: Start implementation**
+15. **UserStory-8** (ML Suggestion & Auto-Apply) - After US-7
+16. **UserStory-9.1** (Keyboard Shortcuts) - After US-8
+17. **UserStory-10** (Integration Workflow Tests) - Incremental with US-8
+18. **UserStory-10.1** (Advanced Assignment Tests) - After US-10
+19. **UserStory-10.2** (ML Tests) - After US-8 completion
+20. **UserStory-11** (Multi-User Auth) - Ready for implementation
+21. UserStory-12 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
+22. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)
+23. UserStory-14 (Backup & Restore) - Needs refinement (security/encryption, versioning)
+24. UserStory-15 (Application Flow) - Needs refinement (onboarding tracking)
+25. UserStory-16 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)

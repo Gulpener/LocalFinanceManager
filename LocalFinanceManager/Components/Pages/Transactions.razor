@@ -54,6 +54,11 @@ else
     <table class="table table-striped">
         <thead>
             <tr>
+                <th style="width: 40px;">
+                    <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll"
+                        checked="@(selectedTransactionIds.Count == filteredTransactions.Count && filteredTransactions.Any())"
+                        title="Selecteer alles" />
+                </th>
                 <th>Status</th>
                 <th>Datum</th>
                 <th>Beschrijving</th>
@@ -66,7 +71,12 @@ else
         <tbody>
             @foreach (var transaction in filteredTransactions)
             {
-                <tr>
+                <tr class="@(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")">
+                    <td>
+                        <input type="checkbox" class="form-check-input"
+                            checked="@selectedTransactionIds.Contains(transaction.Id)"
+                            @onchange="() => ToggleSelectTransaction(transaction.Id)" />
+                    </td>
                     <td>
                         @if (!transaction.IsAssigned)
                         {
@@ -74,6 +84,13 @@ else
                                 aria-label="Niet toegewezen">
                                 <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
                                 <span class="visually-hidden">Niet toegewezen</span>
+                            </span>
+                        }
+                        else if (transaction.Splits != null && transaction.Splits.Count > 1)
+                        {
+                            <span class="badge bg-info" title="Gesplitste transactie" aria-label="Gesplitst">
+                                <i class="bi bi-distribute-vertical" aria-hidden="true"></i>
+                                <span class="visually-hidden">Gesplitst</span>
                             </span>
                         }
                         else
@@ -93,9 +110,19 @@ else
                     <td>
                         @if (transaction.IsAssigned && transaction.Splits != null)
                         {
-                            @foreach (var split in transaction.Splits)
+                            @if (transaction.Splits.Count > 1)
                             {
-                                <span class="badge bg-info text-dark me-1">@split.BudgetLineName</span>
+                                <span class="badge bg-info text-dark me-1"
+                                    title="@string.Join(", ", transaction.Splits.Select(s => $"{s.BudgetLineName}: {s.Amount:C2}"))">
+                                    @transaction.Splits.Count splits
+                                </span>
+                            }
+                            else
+                            {
+                                @foreach (var split in transaction.Splits)
+                                {
+                                    <span class="badge bg-info text-dark me-1">@split.BudgetLineName</span>
+                                }
                             }
                         }
                         else
@@ -107,6 +134,10 @@ else
                         <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenAssignModal(transaction)"
                             title="@(transaction.IsAssigned ? "Wijzig toewijzing" : "Wijs toe")">
                             <i class="bi bi-pencil"></i> @(transaction.IsAssigned ? "Wijzig" : "Toewijzen")
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => OpenSplitEditor(transaction)"
+                            title="Splits transactie">
+                            <i class="bi bi-distribute-vertical"></i> Split
                         </button>
                         @if (transaction.IsAssigned)
                         {
@@ -121,6 +152,7 @@ else
         </tbody>
         <tfoot>
             <tr>
+                <th></th>
                 <th colspan="4" class="text-end">Totaal (gefilterd):</th>
                 <th class="@(filteredTotalAmount >= 0 ? "text-success" : "text-danger")">@filteredTotalAmount.ToString("C2")
                 </th>
@@ -141,9 +173,34 @@ else
 <TransactionAssignModal Transaction="@selectedTransaction" IsVisible="@showAssignModal" OnClose="@CloseAssignModal"
     OnAssignmentSuccess="@OnAssignmentSuccess" />
 
+<SplitEditor Transaction="@splitTransaction" IsVisible="@showSplitEditor" OnClose="@CloseSplitEditor"
+    OnSplitSaved="@OnSplitSaved" />
+
+<BulkAssignModal TransactionIds="@selectedTransactionIds" BudgetPlanId="@GetBulkBudgetPlanId()"
+    IsVisible="@showBulkAssignModal" OnClose="@CloseBulkAssignModal" OnBulkAssigned="@OnBulkAssigned" />
+
 <AssignmentAuditTrail TransactionId="@auditTransactionId" IsVisible="@showAuditTrail" OnClose="@CloseAuditTrail" />
 
 <ShortcutHelp IsVisible="@showShortcutHelp" OnClose="@(() => showShortcutHelp = false)" />
+
+@if (selectedTransactionIds.Any())
+{
+    <div class="position-fixed bottom-0 start-50 translate-middle-x mb-3" style="z-index: 1050;">
+        <div class="card shadow-lg">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-primary fs-6">@selectedTransactionIds.Count geselecteerd</span>
+                    <button class="btn btn-sm btn-primary" @onclick="OpenBulkAssignModal">
+                        <i class="bi bi-check-all"></i> Bulk toewijzen
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="ClearSelection">
+                        <i class="bi bi-x-circle"></i> Deselecteer alles
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private List<TransactionDto> transactionDtos = new();
@@ -158,6 +215,12 @@ else
 
     private bool showAssignModal = false;
     private TransactionDto? selectedTransaction = null;
+
+    private bool showSplitEditor = false;
+    private TransactionDto? splitTransaction = null;
+
+    private bool showBulkAssignModal = false;
+    private List<Guid> selectedTransactionIds = new();
 
     private bool showAuditTrail = false;
     private Guid? auditTransactionId = null;
@@ -317,5 +380,99 @@ else
     {
         showAuditTrail = false;
         auditTransactionId = null;
+    }
+
+    private void OpenSplitEditor(TransactionDto transaction)
+    {
+        splitTransaction = transaction;
+        showSplitEditor = true;
+    }
+
+    private void CloseSplitEditor()
+    {
+        showSplitEditor = false;
+        splitTransaction = null;
+    }
+
+    private async Task OnSplitSaved()
+    {
+        await LoadTransactionsAsync();
+        StateHasChanged();
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked && isChecked)
+        {
+            selectedTransactionIds = filteredTransactions.Select(t => t.Id).ToList();
+        }
+        else
+        {
+            selectedTransactionIds.Clear();
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleSelectTransaction(Guid transactionId)
+    {
+        if (selectedTransactionIds.Contains(transactionId))
+        {
+            selectedTransactionIds.Remove(transactionId);
+        }
+        else
+        {
+            selectedTransactionIds.Add(transactionId);
+        }
+        StateHasChanged();
+    }
+
+    private void ClearSelection()
+    {
+        selectedTransactionIds.Clear();
+        StateHasChanged();
+    }
+
+    private void OpenBulkAssignModal()
+    {
+        showBulkAssignModal = true;
+    }
+
+    private void CloseBulkAssignModal()
+    {
+        showBulkAssignModal = false;
+    }
+
+    private async Task OnBulkAssigned()
+    {
+        await LoadTransactionsAsync();
+        selectedTransactionIds.Clear();
+        StateHasChanged();
+    }
+
+    private Guid? GetBulkBudgetPlanId()
+    {
+        // Determine the budget plan ID for the current bulk selection.
+        // Validate that all selected transactions share the same account/budget plan.
+        if (!selectedTransactionIds.Any())
+        {
+            return null;
+        }
+
+        var selectedTransactions = transactionDtos
+            .Where(t => selectedTransactionIds.Contains(t.Id))
+            .ToList();
+
+        if (!selectedTransactions.Any())
+        {
+            return null;
+        }
+
+        var distinctBudgetPlanIds = selectedTransactions
+            .Select(t => t.AccountBudgetPlanId)
+            .Distinct()
+            .ToList();
+
+        // Only return a budget plan ID if all selected transactions share the same one
+        return distinctBudgetPlanIds.Count == 1 ? distinctBudgetPlanIds[0] : null;
     }
 }

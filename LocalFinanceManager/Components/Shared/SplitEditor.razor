@@ -1,0 +1,366 @@
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.Data.Repositories
+@inject ITransactionAssignmentService AssignmentService
+@inject IBudgetLineRepository BudgetLineRepository
+@inject IBudgetPlanRepository BudgetPlanRepository
+@inject ILogger<SplitEditor> Logger
+
+@if (IsVisible && Transaction != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Transactie splitsen</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose" aria-label="Sluiten"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i> @errorMessage
+                            <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill"></i> @successMessage
+                            <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+                        </div>
+                    }
+
+                    <!-- Transaction Summary -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Transactie details</h6>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <strong>Beschrijving:</strong> @Transaction.Description<br />
+                                    <strong>Tegenpartij:</strong> @(Transaction.Counterparty ?? "-")<br />
+                                    <strong>Datum:</strong> @Transaction.Date.ToString("dd-MM-yyyy")
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <strong>Totaal bedrag:</strong><br />
+                                    <span class="fs-4 @(Transaction.Amount >= 0 ? "text-success" : "text-danger")">
+                                        @TransactionAbsAmount.ToString("C2")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Split Rows -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Categorie</th>
+                                    <th style="width: 30%;">Bedrag</th>
+                                    <th style="width: 20%;">Actie</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < splits.Count; i++)
+                                {
+                                    var index = i; // Capture for lambda
+                                    var split = splits[index];
+                                    <tr>
+                                        <td>
+                                            @if (budgetLines == null)
+                                            {
+                                                <select class="form-select" disabled>
+                                                    <option>Laden...</option>
+                                                </select>
+                                            }
+                                            else
+                                            {
+                                                <select class="form-select" @bind="split.BudgetLineId" required>
+                                                    <option value="">-- Selecteer budgetlijn --</option>
+                                                    @foreach (var bl in budgetLines)
+                                                    {
+                                                        <option value="@bl.Id">@bl.CategoryName</option>
+                                                    }
+                                                </select>
+                                            }
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0" class="form-control" @bind="split.Amount"
+                                                @bind:event="onchange" @bind:after="RecalculateSum" required />
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => RemoveSplit(index)" disabled="@(splits.Count <= 2)"
+                                                title="@(splits.Count <= 2 ? "Minimaal 2 splits vereist" : "Verwijder split")">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddSplit">
+                                            <i class="bi bi-plus-circle"></i> Voeg split toe
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Sum Validation Display -->
+                    <div class="card @(IsValidSum ? "border-success" : "border-danger")">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <strong>Som van splits:</strong>
+                                    <span class="fs-5 @(IsValidSum ? "text-success" : "text-danger")">
+                                        @TotalSplitAmount.ToString("C2")
+                                    </span>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    @if (IsValidSum)
+                                    {
+                                        <i class="bi bi-check-circle-fill text-success fs-3" title="Som klopt"></i>
+                                        <div class="text-success small">Som komt overeen ✓</div>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-exclamation-triangle-fill text-danger fs-3" title="Som klopt niet"></i>
+                                        <div class="text-danger small">Som moet @TransactionAbsAmount.ToString("C2") zijn</div>
+                                    }
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <strong>Restant:</strong>
+                                    <span class="fs-5 @(Difference >= 0 ? "text-warning" : "text-danger")">
+                                        @Difference.ToString("C2")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!IsValidSum)
+                    {
+                        <div class="alert alert-warning mt-2">
+                            <i class="bi bi-info-circle"></i>
+                            De som van de splits moet gelijk zijn aan het transactiebedrag (±€0,01 tolerantie).
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnClose">Annuleren</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveSplit" disabled="@(!CanSave || isSaving)">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        }
+                        Opslaan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public TransactionDto? Transaction { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSplitSaved { get; set; }
+
+    private List<SplitRow> splits = new();
+    private List<BudgetLineDto>? budgetLines;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private const decimal RoundingTolerance = 0.01m;
+
+    private class SplitRow
+    {
+        public Guid? BudgetLineId { get; set; }
+        public decimal Amount { get; set; }
+    }
+
+    private decimal TransactionAbsAmount => Transaction != null ? Math.Abs(Transaction.Amount) : 0;
+    private decimal TotalSplitAmount => splits.Sum(s => s.Amount);
+    private decimal Difference => TransactionAbsAmount - TotalSplitAmount;
+    private bool IsValidSum => Math.Abs(Difference) <= RoundingTolerance;
+    private bool CanSave => IsValidSum && splits.All(s => s.BudgetLineId.HasValue) && splits.Count >= 2;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && Transaction != null)
+        {
+            if (budgetLines == null)
+            {
+                await LoadBudgetLines();
+            }
+
+            if (splits.Count == 0)
+            {
+                InitializeSplits();
+            }
+        }
+        else if (!IsVisible)
+        {
+            // Reset state when modal closes
+            splits.Clear();
+            errorMessage = null;
+            successMessage = null;
+            isSaving = false;
+        }
+    }
+
+    private async Task LoadBudgetLines()
+    {
+        if (Transaction == null)
+        {
+            budgetLines = new List<BudgetLineDto>();
+            return;
+        }
+
+        try
+        {
+            // Get the account ID from the transaction
+            var accountId = Transaction.AccountId;
+
+            // Get the year from the transaction date
+            var transactionYear = Transaction.Date.Year;
+
+            // Find the budget plan for this account and year
+            var budgetPlan = await BudgetPlanRepository.GetByAccountAndYearAsync(accountId, transactionYear);
+
+            if (budgetPlan == null)
+            {
+                budgetLines = new List<BudgetLineDto>();
+                errorMessage = $"Er is geen budgetplan voor {transactionYear}. Maak eerst een budgetplan aan voor dit jaar.";
+                Logger.LogWarning("No budget plan found for account {AccountId} and year {Year}", accountId, transactionYear);
+                return;
+            }
+
+            // Load budget lines for the correct year's budget plan
+            var lines = await BudgetLineRepository.GetByBudgetPlanIdAsync(budgetPlan.Id);
+            budgetLines = lines.Select(bl => new BudgetLineDto
+            {
+                Id = bl.Id,
+                BudgetPlanId = bl.BudgetPlanId,
+                CategoryId = bl.CategoryId,
+                CategoryName = bl.Category?.Name ?? "Onbekend",
+                MonthlyAmounts = bl.MonthlyAmounts,
+                YearTotal = bl.MonthlyAmounts.Sum(),
+                Notes = bl.Notes,
+                RowVersion = bl.RowVersion
+            }).ToList();
+
+            if (!budgetLines.Any())
+            {
+                errorMessage = $"Het budgetplan voor {transactionYear} heeft nog geen budgetlijnen. Voeg eerst categorieën toe aan het budgetplan.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading budget lines for split editor");
+            budgetLines = new List<BudgetLineDto>();
+            errorMessage = "Fout bij laden van budgetlijnen.";
+        }
+    }
+
+    private void InitializeSplits()
+    {
+        splits.Clear();
+
+        if (Transaction?.Splits != null && Transaction.Splits.Any())
+        {
+            // Load existing splits
+            foreach (var existingSplit in Transaction.Splits)
+            {
+                splits.Add(new SplitRow
+                {
+                    BudgetLineId = existingSplit.BudgetLineId,
+                    Amount = existingSplit.Amount
+                });
+            }
+        }
+        else
+        {
+            // Start with 2 empty splits
+            splits.Add(new SplitRow { Amount = 0 });
+            splits.Add(new SplitRow { Amount = 0 });
+        }
+    }
+
+    private void AddSplit()
+    {
+        splits.Add(new SplitRow { Amount = 0 });
+    }
+
+    private void RemoveSplit(int index)
+    {
+        if (splits.Count > 2)
+        {
+            splits.RemoveAt(index);
+            RecalculateSum();
+        }
+    }
+
+    private void RecalculateSum()
+    {
+        StateHasChanged();
+    }
+
+    private async Task SaveSplit()
+    {
+        if (!CanSave || Transaction == null)
+        {
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+            successMessage = null;
+
+            var request = new SplitTransactionRequest
+            {
+                Splits = splits.Select(s => new SplitAllocationDto
+                {
+                    BudgetLineId = s.BudgetLineId!.Value,
+                    Amount = s.Amount,
+                    Note = null
+                }).ToList(),
+                RowVersion = Transaction.RowVersion
+            };
+
+            var result = await AssignmentService.SplitTransactionAsync(Transaction.Id, request);
+
+            successMessage = "Transactie succesvol gesplitst!";
+
+            // Wait a moment to show success message
+            await Task.Delay(1000);
+
+            await OnSplitSaved.InvokeAsync();
+            await OnClose.InvokeAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+            Logger.LogWarning(ex, "Validation error tijdens split: {Message}", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Er is een fout opgetreden bij het splitsen van de transactie.";
+            Logger.LogError(ex, "Error tijdens split van transactie {TransactionId}", Transaction?.Id);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

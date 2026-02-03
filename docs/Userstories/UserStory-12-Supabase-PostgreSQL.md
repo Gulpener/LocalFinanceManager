@@ -1,4 +1,4 @@
-# Post-MVP-6: Migrate to Supabase PostgreSQL
+# Post-MVP-7: Migrate to Supabase PostgreSQL
 
 ## Objective
 
