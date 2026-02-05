@@ -395,25 +395,44 @@ public static class SeedDataHelper
             var transaction = transactions[i];
             var isUndone = i < undoCount;
 
-            var auditEntry = new TransactionAudit
+            // Create auto-assign audit entry for all transactions
+            var autoAssignEntry = new TransactionAudit
             {
                 Id = Guid.NewGuid(),
                 TransactionId = transaction.Id,
-                ActionType = isUndone ? "Undo" : "AutoAssign",
+                ActionType = "AutoAssign",
                 ChangedBy = "AutoApplyService",
-                ChangedAt = DateTime.UtcNow.AddMinutes(-i),
+                ChangedAt = DateTime.UtcNow.AddMinutes(-(totalCount - i)),
                 IsAutoApplied = true,
                 AutoAppliedBy = "AutoApplyService",
-                AutoAppliedAt = DateTime.UtcNow.AddMinutes(-i),
+                AutoAppliedAt = DateTime.UtcNow.AddMinutes(-(totalCount - i)),
                 Confidence = (float)(_random.NextDouble() * 0.3 + 0.7), // 0.7-1.0 for auto-apply
                 ModelVersion = 1,
-                BeforeState = isUndone ? "{\"assigned\":true}" : "{\"assigned\":false}",
-                AfterState = isUndone ? "{\"assigned\":false}" : "{\"assigned\":true}",
-                Reason = isUndone ? "User requested undo" : "Auto-applied by ML model"
+                BeforeState = "{\"assigned\":false}",
+                AfterState = "{\"assigned\":true}",
+                Reason = "Auto-applied by ML model"
             };
+            auditEntries.Add(autoAssignEntry);
+            context.TransactionAudits.Add(autoAssignEntry);
 
-            auditEntries.Add(auditEntry);
-            context.TransactionAudits.Add(auditEntry);
+            // If this is an undone transaction, create undo audit entry
+            if (isUndone)
+            {
+                var undoEntry = new TransactionAudit
+                {
+                    Id = Guid.NewGuid(),
+                    TransactionId = transaction.Id,
+                    ActionType = "Undo",
+                    ChangedBy = "UndoService",
+                    ChangedAt = DateTime.UtcNow.AddMinutes(-(totalCount - i - 1)),
+                    IsAutoApplied = false,
+                    BeforeState = "{\"assigned\":true}",
+                    AfterState = "{\"assigned\":false}",
+                    Reason = $"Reverted auto-applied assignment (model v{autoAssignEntry.ModelVersion}, confidence: {autoAssignEntry.Confidence:F4})"
+                };
+                auditEntries.Add(undoEntry);
+                context.TransactionAudits.Add(undoEntry);
+            }
         }
 
         await context.SaveChangesAsync();

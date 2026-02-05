@@ -9,9 +9,8 @@
 
 **Status Overview:**
 
-- ✅ **15 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-9.2) - Archived
-- ✅ **4 stories ready** for immediate implementation (US-8, US-9.1, US-10, US-10.1, US-11)
-- 🔶 **1 story deferred** (US-10.2) - Pending UserStory-8 completion
+- ✅ **16 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, US-9.2) - Archived
+- ✅ **5 stories ready** for immediate implementation (US-9.1, US-10, US-10.1, US-10.2, US-11, US-17)
 - 🔴 **5 stories need refinement** (US-12, US-13, US-14, US-15, US-16) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
@@ -32,6 +31,7 @@
 - UserStory-5.3 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-6 (Split & Bulk Assignment) - ✅ **COMPLETED & ARCHIVED** - Transaction splitting and bulk assignment functionality
 - UserStory-7 (Copilot Agents) - ✅ **ARCHIVED (NOT IMPLEMENTED)** - Decided not to pursue custom agent development
+- UserStory-8 (ML Suggestion & Auto-Apply) - ✅ **COMPLETED & ARCHIVED** - ML model training, auto-apply with monitoring dashboard
 - UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-9.2 (Quick Filters & Performance) - ✅ **COMPLETED & ARCHIVED** - Performance optimizations and quick filter UI
@@ -42,23 +42,6 @@
 
 ### ✅ Ready for Implementation (No Refinement Needed)
 
-#### UserStory-8: ML Suggestion & Auto-Apply
-
-**File:** [docs/Userstories/UserStory-8-ML-Suggestion-Auto-Apply.md](docs/Userstories/UserStory-8-ML-Suggestion-Auto-Apply.md)
-
-**Status:** ✅ **Ready** - AI-powered suggestions with auto-apply configuration and monitoring dashboard.
-
-**Key Features:**
-
-- ML category suggestions with confidence scores
-- One-click accept/reject
-- Auto-apply configuration (threshold, account selection)
-- Monitoring dashboard with statistics
-
-**Estimated Effort:** 4-5 days
-
----
-
 #### UserStory-9.1: Keyboard Shortcuts
 
 **File:** [docs/Userstories/UserStory-9.1-Keyboard-Shortcuts.md](docs/Userstories/UserStory-9.1-Keyboard-Shortcuts.md)
@@ -66,6 +49,24 @@
 **Status:** ✅ **Ready** - Keyboard navigation for power users.
 
 **Estimated Effort:** 1-2 days
+
+---
+
+#### UserStory-17: Transaction Audit Trail UI
+
+**File:** [docs/Userstories/UserStory-17-Transaction-Audit-Trail-UI.md](docs/Userstories/UserStory-17-Transaction-Audit-Trail-UI.md)
+
+**Status:** ✅ **Ready** - Timeline-based UI to view transaction change history with auto-applied indicators.
+
+**Key Features:**
+
+- Transaction audit trail page (`/transactions/{id}/audit`)
+- Timeline layout showing change history
+- Auto-applied badges with confidence scores
+- Before/After state diff viewer
+- Link from transaction list to audit page
+
+**Estimated Effort:** 2-3 days
 
 ---
 
@@ -145,7 +146,7 @@
 
 **File:** [docs/Userstories/UserStory-10.2-ML-Tests.md](docs/Userstories/UserStory-10.2-ML-Tests.md)
 
-**Status:** 🔴 **Deferred** - Pending UserStory-8 (ML Suggestion & Auto-Apply) completion
+**Status:** ✅ **Ready** - UserStory-8 completed, ready for implementation
 
 **Planned Scope:**
 
@@ -153,27 +154,20 @@
 - Auto-apply configuration tests (~8): Settings UI, threshold validation, account/category selection
 - Monitoring dashboard tests (~9): Stats display, undo actions, alert banners, auto-refresh
 
-**Total:** ~25 tests estimated (to be validated against actual US-8 implementation)
+**Total:** ~25 tests (6/9 monitoring dashboard tests passing, 3 ignored due to UI timing complexity)
 
 **Combined Coverage:** US-10 (20) + US-10.1 (19) + US-10.2 (25) = 64 tests achieving >90% feature coverage
 
-**Why Deferred:**
+**Note:** UserStory-8 E2E tests partially implemented:
 
-- UserStory-8 ML features not yet implemented
-- Test count estimate requires validation against actual US-8 scope
-- ML-specific PageObjectModels (MLSuggestionBadgePage, MonitoringDashboardPage) cannot be created until UI finalized
-- ML test data seeding strategy (labeled examples, fixture models) depends on US-8 architecture
+- ✅ 6/9 monitoring dashboard tests passing
+- ⏭️ 3 complex integration tests ignored (alert timing, browser dialog handling)
+- ⏱️ 8 ML suggestion tests not yet run
+- ⏱️ 8 auto-apply settings tests not yet run (1 audit trail test requires UserStory-17)
 
-**Refinement Required:**
+**Estimated Effort:** 2-3 days to complete remaining tests
 
-- Validate 25-test estimate after US-8 implementation
-- Add detailed test task checklists (similar to US-10/US-10.1 specificity)
-- Define ML-specific PageObjectModel requirements
-- Document confidence threshold edge cases and undo rate alert testing approach
-
-**Estimated Effort:** TBD (~4-5 days estimated, to be refined after US-8)
-
-**Dependencies:** UserStory-8 REQUIRED (blocking), UserStory-10 (foundation), UserStory-10.1 (patterns)
+**Dependencies:** ~~UserStory-8~~ ✅ **COMPLETED**, UserStory-10 (foundation), UserStory-10.1 (patterns), UserStory-17 (audit trail UI for 1 test)
 
 ---
 
@@ -1178,15 +1172,16 @@ Use this structure for all new stories:
 11. ✅ ~~UserStory-5.3 (UX Enhancements)~~ - **COMPLETED & ARCHIVED**
 12. ✅ ~~UserStory-6 (Split & Bulk Assignment)~~ - **COMPLETED & ARCHIVED**
 13. ✅ ~~UserStory-9.2 (Quick Filters & Performance)~~ - **COMPLETED & ARCHIVED**
-14. **UserStory-7** (Copilot Agents) - **NEXT: Start implementation**
-15. **UserStory-8** (ML Suggestion & Auto-Apply) - After US-7
-16. **UserStory-9.1** (Keyboard Shortcuts) - After US-8
-17. **UserStory-10** (Integration Workflow Tests) - Incremental with US-8
-18. **UserStory-10.1** (Advanced Assignment Tests) - After US-10
-19. **UserStory-10.2** (ML Tests) - After US-8 completion
-20. **UserStory-11** (Multi-User Auth) - Ready for implementation
-21. UserStory-12 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
-22. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)
-23. UserStory-14 (Backup & Restore) - Needs refinement (security/encryption, versioning)
-24. UserStory-15 (Application Flow) - Needs refinement (onboarding tracking)
-25. UserStory-16 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)
+14. ~~UserStory-7~~ (Copilot Agents) - ✅ **ARCHIVED (NOT IMPLEMENTED)**
+15. ~~UserStory-8~~ (ML Suggestion & Auto-Apply) - ✅ **COMPLETED & ARCHIVED**
+16. **UserStory-9.1** (Keyboard Shortcuts) - Ready for implementation
+17. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation
+18. **UserStory-10** (Integration Workflow Tests) - Ready for implementation
+19. **UserStory-10.1** (Advanced Assignment Tests) - Ready for implementation
+20. **UserStory-10.2** (ML Tests) - Ready for implementation (US-8 completed)
+21. **UserStory-11** (Multi-User Auth) - Ready for implementation
+22. UserStory-12 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
+23. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)
+24. UserStory-14 (Backup & Restore) - Needs refinement (security/encryption, versioning)
+25. UserStory-15 (Application Flow) - Needs refinement (onboarding tracking)
+26. UserStory-16 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)

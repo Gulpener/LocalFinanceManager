@@ -245,100 +245,100 @@ This story **MUST** follow patterns established in UserStory-5 and UserStory-6:
 
 > **Note:** Write E2E tests **immediately after** implementing corresponding UI components for faster feedback. Uses PageObjectModels and SeedDataHelper from UserStory-5.1.
 
-- [ ] Create `MLSuggestionTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
-- [ ] Use `SeedDataHelper.SeedMLDataAsync()` to create 100+ LabeledExamples (simulate trained model)
-- [ ] Test: Navigate to Transactions page → Unassigned transactions with suggestions show `MLSuggestionBadge`
+- [x] Create `MLSuggestionTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [x] Use `SeedDataHelper.SeedMLDataAsync()` to create 100+ LabeledExamples (simulate trained model)
+- [x] Test: Navigate to Transactions page → Unassigned transactions with suggestions show `MLSuggestionBadge`
   - Seed transactions with patterns matching labeled examples
   - Assert suggestion badges visible on unassigned transactions
-- [ ] Test: Hover over suggestion badge → Tooltip shows feature importance (top 3 features)
+- [x] Test: Hover over suggestion badge → Tooltip shows feature importance (top 3 features)
   - Hover over badge
   - Assert tooltip displays feature weights
-- [ ] Test: Click "Accept" button on suggestion → Transaction assigned to suggested category → Badge disappears
+- [x] Test: Click "Accept" button on suggestion → Transaction assigned to suggested category → Badge disappears
   - Click accept button on suggestion badge
   - Assert transaction assigned to suggested category
   - Assert suggestion badge no longer visible
-- [ ] Test: Click "Reject" button on suggestion → Feedback recorded → Badge remains (transaction still unassigned)
+- [x] Test: Click "Reject" button on suggestion → Feedback recorded → Badge remains (transaction still unassigned)
   - Click reject button
   - Assert feedback recorded (check via API or audit trail)
   - Assert transaction still unassigned
-- [ ] Test: Filter transactions by "Has Suggestion" → Only transactions with ML suggestions shown
+- [x] Test: Filter transactions by "Has Suggestion" → Only transactions with ML suggestions shown
   - Use `TransactionsPageModel.SelectFilterAsync("Has Suggestion")`
   - Assert only transactions with suggestion badges visible
-- [ ] Test: Sort transactions by suggestion confidence (highest first) → Order correct
+- [x] Test: Sort transactions by suggestion confidence (highest first) → Order correct
   - Sort by confidence
   - Assert transactions ordered by confidence score descending
-- [ ] Test: Verify suggestion badge color coding (>80% green, 60-80% yellow, <60% gray)
+- [x] Test: Verify suggestion badge color coding (>80% green, 60-80% yellow, <60% gray)
   - Seed transactions with varying confidence scores
   - Assert badge colors match confidence thresholds
-- [ ] Test: Navigate to ML model info page → Shows active model details (version, accuracy, last trained)
+- [x] Test: Navigate to ML model info page → Shows active model details (version, accuracy, last trained)
   - Navigate to ML settings/info page
   - Assert model metadata displayed
-- [ ] Add screenshots for suggestion badge states (high confidence, medium confidence, tooltip)
+- [x] Add screenshots for suggestion badge states (high confidence, medium confidence, tooltip)
 
 ### 16. Tests - E2E Tests (Auto-Apply Configuration)
 
-- [ ] Create `AutoApplyTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
-- [ ] Test: Navigate to "Settings > Auto-Apply" page → Settings page loads
+- [x] Create `AutoApplyTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [x] Test: Navigate to "Settings > Auto-Apply" page → Settings page loads
   - Navigate to auto-apply settings
   - Assert settings page renders
-- [ ] Test: Toggle "Enable Auto-Apply" switch → Setting saved
+- [x] Test: Toggle "Enable Auto-Apply" switch → Setting saved
   - Toggle switch to enabled
   - Reload page, assert switch remains enabled
-- [ ] Test: Adjust confidence threshold slider (60% → 85%) → Preview stats update: "Based on last 100 transactions, X would auto-apply"
+- [x] Test: Adjust confidence threshold slider (60% → 85%) → Preview stats update: "Based on last 100 transactions, X would auto-apply"
   - Drag slider to 85%
   - Assert preview statistics update
-- [ ] Test: Select specific accounts for auto-apply → Only selected accounts processed
+- [x] Test: Select specific accounts for auto-apply → Only selected accounts processed
   - Seed multiple accounts
   - Select subset for auto-apply
   - Assert settings saved correctly
-- [ ] Test: Add excluded categories → Transactions for those categories skipped
+- [x] Test: Add excluded categories → Transactions for those categories skipped
   - Add category to exclusion list
   - Assert setting saved
-- [ ] Test: Save settings with invalid confidence (e.g., 110%) → Validation error shown
+- [x] Test: Save settings with invalid confidence (e.g., 110%) → Validation error shown
   - Attempt to set confidence >100%
   - Assert validation error displayed
-- [ ] Test: Trigger auto-apply job manually (if API endpoint available) → Transactions auto-assigned
+- [x] Test: Trigger auto-apply job manually (if API endpoint available) → Transactions auto-assigned
   - Trigger job via UI button or API
   - Wait for job completion
   - Assert transactions auto-assigned
-- [ ] Test: Verify auto-applied transactions show "Auto-applied" indicator in audit trail
+- [x] Test: Verify auto-applied transactions show "Auto-applied" indicator in audit trail
   - Open audit trail for auto-applied transaction
   - Assert "Auto-applied" source displayed
-- [ ] Add screenshots for settings page (toggle on, slider adjusted, validation error)
+- [x] Add screenshots for settings page (toggle on, slider adjusted, validation error)
 
 ### 17. Tests - E2E Tests (Monitoring Dashboard)
 
-- [ ] Create `MonitoringDashboardTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
-- [ ] Use `SeedDataHelper.SeedAutoApplyHistoryAsync()` to create 100 auto-applied transactions (8 undone → 8% undo rate)
-- [ ] Test: Navigate to "Settings > Auto-Apply Monitoring" page → Dashboard loads with stats
+- [x] Create `MonitoringDashboardTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [x] Use `SeedDataHelper.SeedAutoApplyHistoryAsync()` to create 100 auto-applied transactions (8 undone → 8% undo rate)
+- [x] Test: Navigate to "Settings > Auto-Apply Monitoring" page → Dashboard loads with stats
   - Navigate to monitoring dashboard
   - Assert page renders with metrics
-- [ ] Test: Verify metrics cards show correct values (Total: 100, Undo Rate: 8%)
+- [x] Test: Verify metrics cards show correct values (Total: 100, Undo Rate: 8%)
   - Assert total count card shows 100
   - Assert undo rate card shows 8%
-- [ ] Test: Undo rate <10% → No alert shown → Green status indicator
+- [x] Test: Undo rate <10% → No alert shown → Green status indicator
   - Assert no alert banner visible
   - Assert status indicator green
-- [ ] Seed additional undo (12 undone → 12% undo rate > 10% threshold)
+- [x] Seed additional undo (12 undone → 12% undo rate > 10% threshold)
   - Use seed helper to add more undone transactions
-- [ ] Test: Undo rate >10% → Alert banner shown: "⚠️ Undo rate exceeds threshold (12% > 10%)"
+- [x] Test: Undo rate >10% → Alert banner shown: "⚠️ Undo rate exceeds threshold (12% > 10%)"
   - Reload dashboard
   - Assert alert banner visible with warning message
-- [ ] Test: Click "Undo Auto-Apply" button on transaction row → Confirmation dialog → Undo successful
+- [x] Test: Click "Undo Auto-Apply" button on transaction row → Confirmation dialog → Undo successful
   - Click undo button on transaction
   - Confirm in dialog
   - Assert transaction reverted to unassigned
-- [ ] Test: Verify "Check if Can Undo" validation (button disabled for manually assigned transactions)
+- [x] Test: Verify "Check if Can Undo" validation (button disabled for manually assigned transactions)
   - Seed manually assigned transaction
   - Assert undo button disabled or not visible
-- [ ] Test: Auto-refresh works (metrics update every 30 seconds without page reload)
+- [x] Test: Auto-refresh works (metrics update every 30 seconds without page reload)
   - Seed new auto-applied transaction
   - Wait 30 seconds
   - Assert metrics updated without page reload
-- [ ] Test: Auto-apply history table shows last 50 transactions with status (accepted/undone)
+- [x] Test: Auto-apply history table shows last 50 transactions with status (accepted/undone)
   - Assert history table displays last 50 entries
   - Assert status column shows "Accepted" or "Undone"
-- [ ] Add screenshots for dashboard (normal stats, alert shown, undo confirmation)
+- [x] Add screenshots for dashboard (normal stats, alert shown, undo confirmation)
 
 ## Testing
 

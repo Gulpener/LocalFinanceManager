@@ -1,91 +1,247 @@
 @page "/admin/monitoring"
+@page "/settings/monitoring"
 @using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs.ML
 @using System.Net.Http.Json
 @inject HttpClient Http
 @inject ILogger<Monitoring> Logger
+@inject IJSRuntime JS
 
-<PageTitle>Automation Monitoring</PageTitle>
+<PageTitle>Auto-Apply Monitoring</PageTitle>
 
-<h1>Automation Monitoring Dashboard</h1>
+<Breadcrumb
+    Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Monitoring") })" />
+
+<h1>Auto-Apply Monitoring Dashboard</h1>
+
+<p class="lead">Monitor de prestaties en betrouwbaarheid van automatische toewijzingen.</p>
+
+<!-- Alert Banner -->
+@if (stats != null && stats.IsUndoRateAboveThreshold)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert" data-testid="alert-banner">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Waarschuwing:</strong> Ongedaan maken percentage overschrijdt drempel
+        (@(stats.UndoRate.ToString("P1")) > 10%). Dit kan wijzen op problemen met modelkwaliteit.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
 
 <div class="row mt-4">
     <div class="col-md-12">
-        <h3>Auto-Apply Statistics (Last @windowDays Days)</h3>
-        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3>Statistieken (Laatste @windowDays dagen)</h3>
+            <div>
+                <select class="form-select d-inline-block" style="width: 200px;" @onchange="OnWindowDaysChanged">
+                    <option value="7" selected="@(windowDays == 7)">Laatste 7 dagen</option>
+                    <option value="14" selected="@(windowDays == 14)">Laatste 14 dagen</option>
+                    <option value="30" selected="@(windowDays == 30)">Laatste 30 dagen</option>
+                    <option value="90" selected="@(windowDays == 90)">Laatste 90 dagen</option>
+                </select>
+                <button class="btn btn-primary ms-2" @onclick="LoadStats">
+                    <i class="bi bi-arrow-clockwise"></i> Vernieuwen
+                </button>
+            </div>
+        </div>
+
         @if (isLoading)
         {
-            <p><em>Loading statistics...</em></p>
+            <div class="text-center my-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Laden...</span>
+                </div>
+            </div>
         }
         else if (stats != null)
         {
-            <div class="card">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <h5>Total Auto-Applied</h5>
-                            <p class="display-4">@stats.TotalAutoApplied</p>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h6 class="card-subtitle mb-2 text-muted">Totaal auto-toegewezen</h6>
+                            <p class="display-4 mb-0" data-testid="total-auto-applied">@stats.TotalAutoApplied</p>
                         </div>
-                        <div class="col-md-3">
-                            <h5>Total Undone</h5>
-                            <p class="display-4">@stats.TotalUndone</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h6 class="card-subtitle mb-2 text-muted">Geaccepteerd</h6>
+                            <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied - stats.UndoCount)</p>
                         </div>
-                        <div class="col-md-3">
-                            <h5>Undo Rate</h5>
-                            <p class="display-4 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "text-success")">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h6 class="card-subtitle mb-2 text-muted">Ongedaan gemaakt</h6>
+                            <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "")">
+                                @stats.UndoCount
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 @(stats.IsUndoRateAboveThreshold ? "border-danger" : "border-success")">
+                        <div class="card-body text-center">
+                            <h6 class="card-subtitle mb-2 text-muted">Ongedaan maken %</h6>
+                            <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "text-success")" data-testid="undo-rate">
                                 @(stats.UndoRate.ToString("P1"))
                             </p>
                             @if (stats.IsUndoRateAboveThreshold)
                             {
-                                <span class="badge bg-danger">Above Threshold</span>
+                                <span class="badge bg-danger">Boven drempel</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success" data-testid="status-indicator">OK</span>
                             }
                         </div>
-                        <div class="col-md-3">
-                            <h5>Avg Confidence</h5>
-                            <p class="display-4">@(stats.AverageConfidence.ToString("P1"))</p>
-                        </div>
                     </div>
-                    
-                    @if (stats.IsUndoRateAboveThreshold)
-                    {
-                        <div class="alert alert-warning mt-3" role="alert">
-                            <strong>Warning:</strong> Undo rate exceeds configured threshold. 
-                            This may indicate model quality issues. Consider reviewing recent model training or disabling auto-apply.
-                        </div>
-                    }
                 </div>
             </div>
+
+            @if (stats.AverageConfidence > 0)
+            {
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Gemiddelde betrouwbaarheid</h6>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar @GetConfidenceClass(stats.AverageConfidence)" role="progressbar"
+                                style="width: @((stats.AverageConfidence * 100).ToString("F0"))%"
+                                aria-valuenow="@((stats.AverageConfidence * 100).ToString("F0"))" aria-valuemin="0"
+                                aria-valuemax="100">
+                                @(stats.AverageConfidence.ToString("P1"))
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (stats.LastRunTimestamp.HasValue)
+            {
+                <div class="alert alert-info mt-3" data-testid="last-run">
+                    <i class="bi bi-clock"></i>
+                    Laatste auto-apply: <strong>@stats.LastRunTimestamp.Value.ToString("dd-MM-yyyy HH:mm")</strong>
+                </div>
+            }
         }
         else if (errorMessage != null)
         {
             <div class="alert alert-danger" role="alert">
-                @errorMessage
+                <i class="bi bi-exclamation-triangle"></i> @errorMessage
             </div>
         }
-        
-        <div class="mt-3">
-            <label for="windowDays">Time Window (days):</label>
-            <select id="windowDays" class="form-select" style="width: 200px; display: inline-block;" @onchange="OnWindowDaysChanged">
-                <option value="7" selected>Last 7 days</option>
-                <option value="14">Last 14 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
-            </select>
-            <button class="btn btn-primary ms-2" @onclick="LoadStats">Refresh</button>
-        </div>
     </div>
 </div>
 
-<div class="row mt-4">
+<!-- Auto-Apply History Table -->
+<div class="row mt-5">
     <div class="col-md-12">
-        <h3>Configuration</h3>
+        <h3>Auto-Apply geschiedenis (Laatste 50)</h3>
+
+        @if (loadingHistory)
+        {
+            <div class="text-center my-3">
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">Laden...</span>
+                </div>
+            </div>
+        }
+        else if (history != null && history.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" data-testid="auto-apply-history">
+                    <thead>
+                        <tr>
+                            <th>Datum</th>
+                            <th>Beschrijving</th>
+                            <th>Bedrag</th>
+                            <th>Categorie</th>
+                            <th>Betrouwbaarheid</th>
+                            <th>Status</th>
+                            <th>Acties</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in history)
+                        {
+                            <tr data-testid="history-row">
+                                <td>@item.AutoAppliedAt.ToString("dd-MM-yyyy HH:mm")</td>
+                                <td>
+                                    <span title="@item.Description">
+                                        @(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." :
+                                                                        item.Description)
+                                    </span>
+                                </td>
+                                <td class="@(item.Amount >= 0 ? "text-success" : "text-danger")">
+                                    @item.Amount.ToString("C2")
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@item.CategoryName</span>
+                                </td>
+                                <td>
+                                    <span class="badge @GetConfidenceBadgeClass(item.ConfidenceScore)">
+                                        @((item.ConfidenceScore * 100).ToString("F0"))%
+                                    </span>
+                                </td>
+                                <td data-testid="status-cell">
+                                    @if (item.Status == "Undone")
+                                    {
+                                        <span class="badge bg-danger">Ongedaan gemaakt</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Geaccepteerd</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.CanUndo && item.Status != "Undone")
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" data-action="undo"
+                                            @onclick="@(() => UndoAutoApply(item.TransactionId))" disabled="@_undoingTransaction">
+                                            <i class="bi bi-arrow-counterclockwise"></i> Ongedaan maken
+                                        </button>
+                                    }
+                                    else if (item.Status == "Undone")
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" title="Kan niet ongedaan worden gemaakt">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                Geen auto-apply geschiedenis gevonden.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Configuration Info -->
+<div class="row mt-5">
+    <div class="col-md-12">
+        <h3>Configuratie</h3>
         <div class="card">
             <div class="card-body">
-                <p><strong>Auto-Apply Status:</strong> Check appsettings.json AutomationOptions.AutoApplyEnabled</p>
-                <p><strong>Confidence Threshold:</strong> 0.85 (85%)</p>
-                <p><strong>Retraining Schedule:</strong> Sunday 2 AM UTC (weekly)</p>
-                <p><strong>Auto-Apply Schedule:</strong> Daily 6 AM UTC</p>
-                <p><strong>Undo Retention:</strong> 30 days</p>
-                <p><strong>Undo Rate Alert Threshold:</strong> 20%</p>
+                <p><strong>Auto-Apply Status:</strong> Bekijk <a href="/settings/auto-apply">instellingen</a> voor
+                    configuratie</p>
+                <p><strong>Ongedaan maken retentie:</strong> 30 dagen</p>
+                <p><strong>Ongedaan maken drempel:</strong> 10%</p>
+                <p class="mb-0">
+                    <a href="/settings/auto-apply" class="btn btn-primary">
+                        <i class="bi bi-gear"></i> Wijzig instellingen
+                    </a>
+                </p>
             </div>
         </div>
     </div>
@@ -93,20 +249,24 @@
 
 @code {
     private AutoApplyStats? stats;
+    private List<AutoApplyHistoryDto>? history;
     private int windowDays = 7;
     private bool isLoading = true;
+    private bool loadingHistory = true;
+    private bool _undoingTransaction = false;
     private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadStats();
+        await LoadHistory();
     }
 
     private async Task LoadStats()
     {
         isLoading = true;
         errorMessage = null;
-        
+
         try
         {
             stats = await Http.GetFromJsonAsync<AutoApplyStats>($"/api/automation/stats?windowDays={windowDays}");
@@ -114,11 +274,29 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load auto-apply statistics");
-            errorMessage = "Failed to load statistics. Please try again.";
+            errorMessage = "Fout bij laden van statistieken. Probeer het opnieuw.";
         }
         finally
         {
             isLoading = false;
+        }
+    }
+
+    private async Task LoadHistory()
+    {
+        loadingHistory = true;
+
+        try
+        {
+            history = await Http.GetFromJsonAsync<List<AutoApplyHistoryDto>>($"/api/automation/history?limit=50");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load auto-apply history");
+        }
+        finally
+        {
+            loadingHistory = false;
         }
     }
 
@@ -131,13 +309,77 @@
         }
     }
 
+    private async Task UndoAutoApply(Guid transactionId)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+        "Weet u zeker dat u deze automatische toewijzing ongedaan wilt maken?");
+
+        if (!confirmed) return;
+
+        try
+        {
+            _undoingTransaction = true;
+
+            var response = await Http.PostAsync($"/api/automation/undo/{transactionId}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JS.InvokeVoidAsync("eval", @"
+if (typeof window.showToast === 'function') {
+window.showToast('Toewijzing ongedaan gemaakt', 'success');
+}
+");
+
+                // Reload stats and history
+                await LoadStats();
+                await LoadHistory();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Fout bij ongedaan maken: {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to undo auto-apply for transaction {TransactionId}", transactionId);
+            await JS.InvokeVoidAsync("alert", $"Fout: {ex.Message}");
+        }
+        finally
+        {
+            _undoingTransaction = false;
+        }
+    }
+
+    private string GetConfidenceClass(decimal confidence)
+    {
+        return confidence switch
+        {
+            >= 0.8m => "bg-success",
+            >= 0.6m => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetConfidenceBadgeClass(float confidence)
+    {
+        return confidence switch
+        {
+            >= 0.8f => "bg-success",
+            >= 0.6f => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
     public class AutoApplyStats
     {
         public int WindowDays { get; set; }
         public int TotalAutoApplied { get; set; }
         public int TotalUndone { get; set; }
+        public int UndoCount { get; set; }
         public decimal UndoRate { get; set; }
         public decimal AverageConfidence { get; set; }
         public bool IsUndoRateAboveThreshold { get; set; }
+        public DateTime? LastRunTimestamp { get; set; }
     }
 }

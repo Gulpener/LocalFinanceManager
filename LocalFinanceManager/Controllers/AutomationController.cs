@@ -1,5 +1,12 @@
 using LocalFinanceManager.Services;
+using LocalFinanceManager.DTOs.ML;
+using LocalFinanceManager.Configuration;
+using LocalFinanceManager.Data;
+using LocalFinanceManager.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace LocalFinanceManager.Controllers;
 
@@ -12,15 +19,21 @@ public class AutomationController : ControllerBase
 {
     private readonly IUndoService _undoService;
     private readonly IMonitoringService _monitoringService;
+    private readonly AppDbContext _dbContext;
+    private readonly AutomationOptions _automationOptions;
     private readonly ILogger<AutomationController> _logger;
 
     public AutomationController(
         IUndoService undoService,
         IMonitoringService monitoringService,
+        AppDbContext dbContext,
+        IOptions<AutomationOptions> automationOptions,
         ILogger<AutomationController> logger)
     {
         _undoService = undoService;
         _monitoringService = monitoringService;
+        _dbContext = dbContext;
+        _automationOptions = automationOptions.Value;
         _logger = logger;
     }
 
@@ -117,5 +130,160 @@ public class AutomationController : ControllerBase
 
         var isAboveThreshold = await _monitoringService.IsUndoRateAboveThresholdAsync(windowDays);
         return Ok(new { windowDays, isAboveThreshold });
+    }
+
+    /// <summary>
+    /// Gets auto-apply configuration settings.
+    /// </summary>
+    /// <returns>Auto-apply settings</returns>
+    [HttpGet("settings")]
+    public async Task<IActionResult> GetSettings()
+    {
+        // Try to load from database first, fallback to appsettings.json
+        var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+
+        if (dbSettings != null)
+        {
+            var accountIds = string.IsNullOrEmpty(dbSettings.AccountIdsJson)
+                ? new List<Guid>()
+                : JsonSerializer.Deserialize<List<Guid>>(dbSettings.AccountIdsJson) ?? new List<Guid>();
+
+            var excludedCategoryIds = string.IsNullOrEmpty(dbSettings.ExcludedCategoryIdsJson)
+                ? new List<Guid>()
+                : JsonSerializer.Deserialize<List<Guid>>(dbSettings.ExcludedCategoryIdsJson) ?? new List<Guid>();
+
+            var settings = new AutoApplySettingsDto
+            {
+                Enabled = dbSettings.AutoApplyEnabled,
+                MinimumConfidence = dbSettings.MinimumConfidence,
+                IntervalMinutes = dbSettings.IntervalMinutes,
+                AccountIds = accountIds,
+                ExcludedCategoryIds = excludedCategoryIds
+            };
+
+            return Ok(settings);
+        }
+
+        // Fallback to appsettings.json defaults
+        var defaultSettings = new AutoApplySettingsDto
+        {
+            Enabled = _automationOptions.AutoApplyEnabled,
+            MinimumConfidence = (float)_automationOptions.ConfidenceThreshold,
+            IntervalMinutes = 15,
+            AccountIds = new List<Guid>(),
+            ExcludedCategoryIds = new List<Guid>()
+        };
+
+        return Ok(defaultSettings);
+    }
+
+    /// <summary>
+    /// Updates auto-apply configuration settings.
+    /// </summary>
+    /// <param name="settings">New settings</param>
+    /// <returns>Success result</returns>
+    [HttpPost("settings")]
+    public async Task<IActionResult> UpdateSettings([FromBody] AutoApplySettingsDto settings)
+    {
+        if (settings == null)
+        {
+            return BadRequest("Settings cannot be null");
+        }
+
+        if (!TryValidateModel(settings))
+        {
+            return ValidationProblem(ModelState);
+        }
+        try
+        {
+            // Load or create settings record
+            var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+            if (dbSettings == null)
+            {
+                dbSettings = new AppSettings { Id = 1 };
+                _dbContext.AppSettings.Add(dbSettings);
+            }
+
+            // Update settings
+            dbSettings.AutoApplyEnabled = settings.Enabled;
+            dbSettings.MinimumConfidence = settings.MinimumConfidence;
+            dbSettings.IntervalMinutes = settings.IntervalMinutes;
+            dbSettings.AccountIdsJson = settings.AccountIds.Any()
+                ? JsonSerializer.Serialize(settings.AccountIds)
+                : null;
+            dbSettings.ExcludedCategoryIdsJson = settings.ExcludedCategoryIds.Any()
+                ? JsonSerializer.Serialize(settings.ExcludedCategoryIds)
+                : null;
+            dbSettings.UpdatedAt = DateTime.UtcNow;
+            dbSettings.UpdatedBy = "System"; // TODO: Replace with actual user when auth is implemented
+
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Auto-apply settings saved: Enabled={Enabled}, Confidence={Confidence}, Accounts={Accounts}, ExcludedCategories={ExcludedCategories}",
+                settings.Enabled,
+                settings.MinimumConfidence,
+                settings.AccountIds.Count,
+                settings.ExcludedCategoryIds.Count);
+
+            return Ok(new { success = true, message = "Settings updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save auto-apply settings");
+            return StatusCode(500, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                title = "Internal Server Error",
+                status = 500,
+                detail = "Failed to save settings. Please try again."
+            });
+        }
+    }
+
+    /// <summary>
+    /// Gets auto-apply history (last N transactions).
+    /// </summary>
+    /// <param name="limit">Number of history items to return (default: 50)</param>
+    /// <returns>Auto-apply history</returns>
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory([FromQuery] int limit = 50)
+    {
+        if (limit < 1 || limit > 500)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                title = "Bad Request",
+                status = 400,
+                detail = "Limit must be between 1 and 500"
+            });
+        }
+
+        var history = await _monitoringService.GetAutoApplyHistoryAsync(limit);
+        return Ok(history);
+    }
+
+    /// <summary>
+    /// Gets estimated number of auto-applies based on confidence threshold.
+    /// </summary>
+    /// <param name="confidence">Confidence threshold</param>
+    /// <returns>Preview statistics</returns>
+    [HttpGet("preview")]
+    public async Task<IActionResult> GetPreviewStats([FromQuery] decimal confidence = 0.8m)
+    {
+        if (confidence < 0.0m || confidence > 1.0m)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                title = "Bad Request",
+                status = 400,
+                detail = "Confidence must be between 0.0 and 1.0"
+            });
+        }
+
+        var estimate = await _monitoringService.EstimateAutoApplyCountAsync((float)confidence);
+        return Ok(new { estimatedAutoApplyCount = estimate });
     }
 }
