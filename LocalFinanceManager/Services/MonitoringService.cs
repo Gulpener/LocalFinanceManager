@@ -184,12 +184,13 @@ public class MonitoringService : IMonitoringService
         // Estimate based on last 100 unassigned transactions
         // This is a simplified estimation - in production, would use ML service to get actual predictions
 
-        var recentUnassignedCount = await _dbContext.Transactions
+        var totalUnassignedCount = await _dbContext.Transactions
             .Where(t => !t.IsArchived)
             .Where(t => t.AssignedParts == null || !t.AssignedParts.Any())
-            .Take(100)
             .CountAsync();
 
+        // Cap the sample size at 100 to preserve original semantics
+        var recentUnassignedCount = Math.Min(totalUnassignedCount, 100);
         // Rough estimation: assume 60% of unassigned have suggestions above threshold
         var estimationFactor = confidenceThreshold switch
         {
