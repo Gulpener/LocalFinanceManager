@@ -127,8 +127,8 @@ else
                         }
                         else if (!transaction.IsAssigned)
                         {
-                            <MLSuggestionBadge TransactionId="@transaction.Id" 
-                                               OnSuggestionAccepted="@(async () => await OnSuggestionAccepted(transaction.Id))" />
+                            <MLSuggestionBadge TransactionId="@transaction.Id"
+                                OnSuggestionAccepted="@(async () => await OnSuggestionAccepted(transaction.Id))" />
                         }
                         else
                         {
@@ -464,8 +464,8 @@ else
         }
 
         var selectedTransactions = transactionDtos
-            .Where(t => selectedTransactionIds.Contains(t.Id))
-            .ToList();
+        .Where(t => selectedTransactionIds.Contains(t.Id))
+        .ToList();
 
         if (!selectedTransactions.Any())
         {
@@ -473,9 +473,9 @@ else
         }
 
         var distinctBudgetPlanIds = selectedTransactions
-            .Select(t => t.AccountBudgetPlanId)
-            .Distinct()
-            .ToList();
+        .Select(t => t.AccountBudgetPlanId)
+        .Distinct()
+        .ToList();
 
         // Only return a budget plan ID if all selected transactions share the same one
         return distinctBudgetPlanIds.Count == 1 ? distinctBudgetPlanIds[0] : null;

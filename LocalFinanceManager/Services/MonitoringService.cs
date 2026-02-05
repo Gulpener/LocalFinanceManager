@@ -84,8 +84,8 @@ public class MonitoringService : IMonitoringService
             UndoRate = undoRate,
             AverageConfidence = (decimal)avgConfidence,
             IsUndoRateAboveThreshold = undoRate > _options.UndoRateAlertThreshold,
-            LastRunTimestamp = autoAppliedAudits.Any() 
-                ? autoAppliedAudits.Max(a => a.AutoAppliedAt ?? a.ChangedAt) 
+            LastRunTimestamp = autoAppliedAudits.Any()
+                ? autoAppliedAudits.Max(a => a.AutoAppliedAt ?? a.ChangedAt)
                 : null
         };
 
@@ -162,7 +162,7 @@ public class MonitoringService : IMonitoringService
     {
         // Estimate based on last 100 unassigned transactions
         // This is a simplified estimation - in production, would use ML service to get actual predictions
-        
+
         var recentUnassignedCount = await _dbContext.Transactions
             .Where(t => !t.IsArchived)
             .Where(t => t.AssignedParts == null || !t.AssignedParts.Any())

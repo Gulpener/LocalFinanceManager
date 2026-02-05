@@ -10,7 +10,8 @@
 
 <PageTitle>Auto-Apply instellingen</PageTitle>
 
-<Breadcrumb Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Auto-Apply") })" />
+<Breadcrumb
+    Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Auto-Apply") })" />
 
 <h1>Auto-Apply instellingen</h1>
 
@@ -35,14 +36,14 @@ else
                 <div class="card-body">
                     <div class="mb-3">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" 
-                                   id="enableAutoApply" @bind="_settings.Enabled">
+                            <input class="form-check-input" type="checkbox" role="switch" id="enableAutoApply"
+                                @bind="_settings.Enabled">
                             <label class="form-check-label" for="enableAutoApply">
                                 <strong>Automatische toewijzing inschakelen</strong>
                             </label>
                         </div>
                         <small class="text-muted">
-                            Wanneer ingeschakeld worden transacties automatisch toegewezen op basis van ML-suggesties 
+                            Wanneer ingeschakeld worden transacties automatisch toegewezen op basis van ML-suggesties
                             met hoge betrouwbaarheid.
                         </small>
                     </div>
@@ -51,18 +52,17 @@ else
                         <label for="confidenceThreshold" class="form-label">
                             Betrouwbaarheidsdrempel: <strong>@((_settings.MinimumConfidence * 100).ToString("F0"))%</strong>
                         </label>
-                        <input type="range" class="form-range" id="confidenceThreshold" 
-                               min="0.6" max="0.95" step="0.05" 
-                               @bind="_settings.MinimumConfidence" @bind:event="oninput">
+                        <input type="range" class="form-range" id="confidenceThreshold" min="0.6" max="0.95" step="0.05"
+                            @bind="_settings.MinimumConfidence" @bind:event="oninput">
                         <small class="text-muted d-block">
-                            Hoger = nauwkeuriger maar minder automatische toewijzingen. 
+                            Hoger = nauwkeuriger maar minder automatische toewijzingen.
                             Aanbevolen: 75-85%
                         </small>
                         @if (_previewStats != null)
                         {
                             <div class="alert alert-info mt-2">
                                 <i class="bi bi-info-circle"></i>
-                                Op basis van de laatste 100 transacties zouden er <strong>@_previewStats</strong> 
+                                Op basis van de laatste 100 transacties zouden er <strong>@_previewStats</strong>
                                 automatisch worden toegewezen met deze drempel.
                             </div>
                         }
@@ -72,8 +72,8 @@ else
                         <label for="intervalMinutes" class="form-label">
                             Uitvoerinterval (minuten)
                         </label>
-                        <input type="number" class="form-control" id="intervalMinutes" 
-                               @bind="_settings.IntervalMinutes" min="5" max="1440">
+                        <input type="number" class="form-control" id="intervalMinutes" @bind="_settings.IntervalMinutes"
+                            min="5" max="1440">
                         <small class="text-muted">
                             Hoe vaak de auto-apply job moet worden uitgevoerd (standaard: 15 minuten)
                         </small>
@@ -86,15 +86,14 @@ else
                     <h5 class="mb-0">Account selectie</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Selecteer welke rekeningen moeten worden gebruikt voor automatische toewijzing (laat leeg voor alle rekeningen).</p>
-                    
+                    <p class="text-muted">Selecteer welke rekeningen moeten worden gebruikt voor automatische toewijzing
+                        (laat leeg voor alle rekeningen).</p>
+
                     @foreach (var account in _accounts)
                     {
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" 
-                                   id="account_@account.Id" 
-                                   checked="@IsAccountSelected(account.Id)"
-                                   @onchange="@(() => ToggleAccount(account.Id))">
+                            <input class="form-check-input" type="checkbox" id="account_@account.Id"
+                                checked="@IsAccountSelected(account.Id)" @onchange="@(() => ToggleAccount(account.Id))">
                             <label class="form-check-label" for="account_@account.Id">
                                 @account.Label
                             </label>
@@ -108,8 +107,9 @@ else
                     <h5 class="mb-0">Uitgesloten categorieën</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Selecteer categorieën die moeten worden uitgesloten van automatische toewijzing (bijv. gevoelige categorieën zoals "Belastingen").</p>
-                    
+                    <p class="text-muted">Selecteer categorieën die moeten worden uitgesloten van automatische toewijzing
+                        (bijv. gevoelige categorieën zoals "Belastingen").</p>
+
                     @if (_categories.Any())
                     {
                         <div class="row">
@@ -117,10 +117,9 @@ else
                             {
                                 <div class="col-md-6">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" 
-                                               id="category_@category.Id" 
-                                               checked="@IsCategoryExcluded(category.Id)"
-                                               @onchange="@(() => ToggleExcludedCategory(category.Id))">
+                                        <input class="form-check-input" type="checkbox" id="category_@category.Id"
+                                            checked="@IsCategoryExcluded(category.Id)"
+                                            @onchange="@(() => ToggleExcludedCategory(category.Id))">
                                         <label class="form-check-label" for="category_@category.Id">
                                             @category.Name
                                         </label>
@@ -172,11 +171,11 @@ else
                 <div class="card-body">
                     <h6>Hoe werkt auto-apply?</h6>
                     <p class="small">
-                        De auto-apply functie gebruikt machine learning om transacties automatisch 
-                        toe te wijzen aan categorieën. Alleen suggesties met een betrouwbaarheid 
+                        De auto-apply functie gebruikt machine learning om transacties automatisch
+                        toe te wijzen aan categorieën. Alleen suggesties met een betrouwbaarheid
                         boven de ingestelde drempel worden toegepast.
                     </p>
-                    
+
                     <h6 class="mt-3">Betrouwbaarheidsdrempel</h6>
                     <ul class="small">
                         <li><strong>60-70%:</strong> Meer auto-toewijzingen, maar mogelijk minder nauwkeurig</li>
@@ -186,7 +185,7 @@ else
 
                     <h6 class="mt-3">Monitoring</h6>
                     <p class="small">
-                        Bekijk de <a href="/settings/monitoring">monitoring dashboard</a> om de 
+                        Bekijk de <a href="/settings/monitoring">monitoring dashboard</a> om de
                         prestaties van auto-apply te volgen en ongedaan gemaakte toewijzingen te bekijken.
                     </p>
                 </div>
@@ -229,7 +228,7 @@ else
         {
             // Load settings from backend (or use defaults)
             var response = await Http.GetAsync("/api/automation/settings");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var settings = await response.Content.ReadFromJsonAsync<AutoApplySettingsDto>();
@@ -290,10 +289,10 @@ else
             {
                 _successMessage = "Instellingen succesvol opgeslagen!";
                 await JS.InvokeVoidAsync("eval", @"
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('Instellingen opgeslagen', 'success');
-                    }
-                ");
+if (typeof window.showToast === 'function') {
+window.showToast('Instellingen opgeslagen', 'success');
+}
+");
             }
             else
             {

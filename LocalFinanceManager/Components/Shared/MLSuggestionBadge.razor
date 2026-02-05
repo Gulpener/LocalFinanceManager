@@ -12,32 +12,23 @@
 }
 else if (_suggestion != null && !_isHidden)
 {
-    <span class="badge @GetBadgeClass() position-relative" 
-          data-bs-toggle="tooltip" 
-          data-bs-html="true"
-          title="@GetTooltipContent()"
-          @ref="_badgeElement">
+    <span class="badge @GetBadgeClass() position-relative" data-bs-toggle="tooltip" data-bs-html="true"
+        title="@GetTooltipContent()" @ref="_badgeElement">
         @_suggestion.CategoryName @(_suggestion.Confidence * 100)% 🤖
-        
+
         @if (_isAutoApplied)
         {
             <span class="ms-1" title="Auto-applied">✓</span>
         }
-        
+
         @if (!_isProcessing)
         {
-            <button type="button" 
-                    class="btn btn-sm btn-link text-white p-0 ms-2 border-0" 
-                    style="font-size: 0.8rem;"
-                    @onclick="AcceptSuggestion"
-                    title="Accept suggestion">
+            <button type="button" class="btn btn-sm btn-link text-white p-0 ms-2 border-0" style="font-size: 0.8rem;"
+                @onclick="AcceptSuggestion" title="Accept suggestion">
                 ✓
             </button>
-            <button type="button" 
-                    class="btn btn-sm btn-link text-white p-0 ms-1 border-0" 
-                    style="font-size: 0.8rem;"
-                    @onclick="RejectSuggestion"
-                    title="Reject suggestion">
+            <button type="button" class="btn btn-sm btn-link text-white p-0 ms-1 border-0" style="font-size: 0.8rem;"
+                @onclick="RejectSuggestion" title="Reject suggestion">
                 ✗
             </button>
         }
@@ -76,11 +67,11 @@ else if (_suggestion != null && !_isHidden)
         if (firstRender && _suggestion != null)
         {
             await JS.InvokeVoidAsync("eval", @"
-                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle=""tooltip""]'));
-                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl, { html: true });
-                });
-            ");
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle=""tooltip""]'));
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+return new bootstrap.Tooltip(tooltipTriggerEl, { html: true });
+});
+");
         }
     }
 
@@ -90,7 +81,7 @@ else if (_suggestion != null && !_isHidden)
         {
             _isLoading = true;
             var response = await Http.GetAsync($"/api/suggestions?transactionId={TransactionId}");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 _suggestion = await response.Content.ReadFromJsonAsync<SuggestionDto>();
@@ -113,7 +104,7 @@ else if (_suggestion != null && !_isHidden)
         try
         {
             _isProcessing = true;
-            
+
             var feedback = new SuggestionFeedbackDto
             {
                 TransactionId = TransactionId,
@@ -125,15 +116,15 @@ else if (_suggestion != null && !_isHidden)
             };
 
             var response = await Http.PostAsJsonAsync("/api/suggestions/feedback", feedback);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 // Show success toast
                 await JS.InvokeVoidAsync("eval", @"
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('Suggestion accepted', 'success');
-                    }
-                ");
+if (typeof window.showToast === 'function') {
+window.showToast('Suggestion accepted', 'success');
+}
+");
 
                 // Hide the badge
                 _isHidden = true;
@@ -164,7 +155,7 @@ else if (_suggestion != null && !_isHidden)
         try
         {
             _isProcessing = true;
-            
+
             var feedback = new SuggestionFeedbackDto
             {
                 TransactionId = TransactionId,
@@ -176,17 +167,17 @@ else if (_suggestion != null && !_isHidden)
             };
 
             var response = await Http.PostAsJsonAsync("/api/suggestions/feedback", feedback);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 // Hide the badge
                 _isHidden = true;
 
                 await JS.InvokeVoidAsync("eval", @"
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('Feedback recorded', 'info');
-                    }
-                ");
+if (typeof window.showToast === 'function') {
+window.showToast('Feedback recorded', 'info');
+}
+");
             }
         }
         catch (Exception ex)
@@ -217,12 +208,12 @@ else if (_suggestion != null && !_isHidden)
             return "ML-based suggestion";
 
         var top3Features = _suggestion.Explanation
-            .OrderByDescending(f => f.Importance)
-            .Take(3)
-            .ToList();
+        .OrderByDescending(f => f.Importance)
+        .Take(3)
+        .ToList();
 
-        var featureText = string.Join("<br/>", 
-            top3Features.Select(f => $"{FormatFeatureName(f.FeatureName)}: {f.FeatureValue} ({f.Importance * 100:F0}%)"));
+        var featureText = string.Join("<br/>",
+        top3Features.Select(f => $"{FormatFeatureName(f.FeatureName)}: {f.FeatureValue} ({f.Importance * 100:F0}%)"));
 
         return $"<strong>Based on:</strong><br/>{featureText}";
     }

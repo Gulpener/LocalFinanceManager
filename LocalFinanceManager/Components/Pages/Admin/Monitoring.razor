@@ -9,7 +9,8 @@
 
 <PageTitle>Auto-Apply Monitoring</PageTitle>
 
-<Breadcrumb Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Monitoring") })" />
+<Breadcrumb
+    Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Monitoring") })" />
 
 <h1>Auto-Apply Monitoring Dashboard</h1>
 
@@ -20,7 +21,7 @@
 {
     <div class="alert alert-warning alert-dismissible fade show" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
-        <strong>Waarschuwing:</strong> Ongedaan maken percentage overschrijdt drempel 
+        <strong>Waarschuwing:</strong> Ongedaan maken percentage overschrijdt drempel
         (@(stats.UndoRate.ToString("P1")) > 10%). Dit kan wijzen op problemen met modelkwaliteit.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
@@ -42,7 +43,7 @@
                 </button>
             </div>
         </div>
-        
+
         @if (isLoading)
         {
             <div class="text-center my-5">
@@ -106,12 +107,10 @@
                     <div class="card-body">
                         <h6>Gemiddelde betrouwbaarheid</h6>
                         <div class="progress" style="height: 30px;">
-                            <div class="progress-bar @GetConfidenceClass(stats.AverageConfidence)" 
-                                 role="progressbar" 
-                                 style="width: @((stats.AverageConfidence * 100).ToString("F0"))%"
-                                 aria-valuenow="@((stats.AverageConfidence * 100).ToString("F0"))" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
+                            <div class="progress-bar @GetConfidenceClass(stats.AverageConfidence)" role="progressbar"
+                                style="width: @((stats.AverageConfidence * 100).ToString("F0"))%"
+                                aria-valuenow="@((stats.AverageConfidence * 100).ToString("F0"))" aria-valuemin="0"
+                                aria-valuemax="100">
                                 @(stats.AverageConfidence.ToString("P1"))
                             </div>
                         </div>
@@ -140,7 +139,7 @@
 <div class="row mt-5">
     <div class="col-md-12">
         <h3>Auto-Apply geschiedenis (Laatste 50)</h3>
-        
+
         @if (loadingHistory)
         {
             <div class="text-center my-3">
@@ -171,7 +170,8 @@
                                 <td>@item.AutoAppliedAt.ToString("dd-MM-yyyy HH:mm")</td>
                                 <td>
                                     <span title="@item.Description">
-                                        @(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)
+                                        @(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." :
+                                                                        item.Description)
                                     </span>
                                 </td>
                                 <td class="@(item.Amount >= 0 ? "text-success" : "text-danger")">
@@ -198,9 +198,8 @@
                                 <td>
                                     @if (item.CanUndo && item.Status != "Undone")
                                     {
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                @onclick="@(() => UndoAutoApply(item.TransactionId))"
-                                                disabled="@_undoingTransaction">
+                                        <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="@(() => UndoAutoApply(item.TransactionId))" disabled="@_undoingTransaction">
                                             <i class="bi bi-arrow-counterclockwise"></i> Ongedaan maken
                                         </button>
                                     }
@@ -234,7 +233,8 @@
         <h3>Configuratie</h3>
         <div class="card">
             <div class="card-body">
-                <p><strong>Auto-Apply Status:</strong> Bekijk <a href="/settings/auto-apply">instellingen</a> voor configuratie</p>
+                <p><strong>Auto-Apply Status:</strong> Bekijk <a href="/settings/auto-apply">instellingen</a> voor
+                    configuratie</p>
                 <p><strong>Ongedaan maken retentie:</strong> 30 dagen</p>
                 <p><strong>Ongedaan maken drempel:</strong> 10%</p>
                 <p class="mb-0">
@@ -266,7 +266,7 @@
     {
         isLoading = true;
         errorMessage = null;
-        
+
         try
         {
             stats = await Http.GetFromJsonAsync<AutoApplyStats>($"/api/automation/stats?windowDays={windowDays}");
@@ -285,7 +285,7 @@
     private async Task LoadHistory()
     {
         loadingHistory = true;
-        
+
         try
         {
             history = await Http.GetFromJsonAsync<List<AutoApplyHistoryDto>>($"/api/automation/history?limit=50");
@@ -311,25 +311,25 @@
 
     private async Task UndoAutoApply(Guid transactionId)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", 
-            "Weet u zeker dat u deze automatische toewijzing ongedaan wilt maken?");
-        
+        var confirmed = await JS.InvokeAsync<bool>("confirm",
+        "Weet u zeker dat u deze automatische toewijzing ongedaan wilt maken?");
+
         if (!confirmed) return;
 
         try
         {
             _undoingTransaction = true;
-            
+
             var response = await Http.PostAsync($"/api/automation/undo/{transactionId}", null);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 await JS.InvokeVoidAsync("eval", @"
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('Toewijzing ongedaan gemaakt', 'success');
-                    }
-                ");
-                
+if (typeof window.showToast === 'function') {
+window.showToast('Toewijzing ongedaan gemaakt', 'success');
+}
+");
+
                 // Reload stats and history
                 await LoadStats();
                 await LoadHistory();
