@@ -114,7 +114,6 @@ public class MLSuggestionTests : E2ETestBase
 
         // Check if ML suggestion badges are present (only if model is trained)
         // Note: Badge visibility depends on API returning suggestions
-        var firstRow = rows[0];
         var badgeSelector = "[data-testid='ml-suggestion-badge']";
         var hasBadge = await Page.QuerySelectorAsync($"{badgeSelector}") != null;
 
