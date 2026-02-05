@@ -185,32 +185,10 @@ public class AutomationController : ControllerBase
     [HttpPost("settings")]
     public async Task<IActionResult> UpdateSettings([FromBody] AutoApplySettingsDto settings)
     {
-        if (settings == null)
+        if (!TryValidateModel(settings))
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                title = "Bad Request",
-                status = 400,
-                detail = "Settings are required"
-            });
+            return ValidationProblem(ModelState);
         }
-
-        if (settings.MinimumConfidence < 0.0f || settings.MinimumConfidence > 1.0f)
-        {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
-                title = "Bad Request",
-                status = 400,
-                detail = "Minimum confidence must be between 0.0 and 1.0",
-                errors = new Dictionary<string, string[]>
-                {
-                    ["MinimumConfidence"] = new[] { "Must be between 0.0 and 1.0" }
-                }
-            });
-        }
-
         try
         {
             // Load or create settings record
