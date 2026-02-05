@@ -73,12 +73,8 @@ else if (_suggestion != null && !_isHidden)
     {
         if (firstRender && _suggestion != null)
         {
-            await JS.InvokeVoidAsync("eval", @"
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle=""tooltip""]'));
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-return new bootstrap.Tooltip(tooltipTriggerEl, { html: true });
-});
-");
+            // Initialize Bootstrap tooltips via a dedicated JS function instead of eval
+            await JS.InvokeVoidAsync("initializeBootstrapTooltips");
         }
     }
 
