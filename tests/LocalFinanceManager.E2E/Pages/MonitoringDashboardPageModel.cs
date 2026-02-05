@@ -197,6 +197,35 @@ public class MonitoringDashboardPageModel : PageObjectBase
     /// <param name="timeoutMs">Timeout in milliseconds.</param>
     public async Task WaitForMetricsUpdateAsync(int timeoutMs = 30000)
     {
-        await Task.Delay(timeoutMs);
+        // Capture initial metric values
+        var totalCountInitial = await Page.InnerTextAsync(TotalCountCardSelector);
+        var undoRateInitial = await Page.InnerTextAsync(UndoRateCardSelector);
+        var acceptanceRateInitial = await Page.InnerTextAsync(AcceptanceRateCardSelector);
+        var lastRunInitial = await Page.InnerTextAsync(LastRunCardSelector);
+
+        const int pollIntervalMs = 500;
+        var elapsed = 0;
+
+        while (elapsed < timeoutMs)
+        {
+            var totalCountCurrent = await Page.InnerTextAsync(TotalCountCardSelector);
+            var undoRateCurrent = await Page.InnerTextAsync(UndoRateCardSelector);
+            var acceptanceRateCurrent = await Page.InnerTextAsync(AcceptanceRateCardSelector);
+            var lastRunCurrent = await Page.InnerTextAsync(LastRunCardSelector);
+
+            var hasChanged =
+                !string.Equals(totalCountInitial, totalCountCurrent, StringComparison.Ordinal) ||
+                !string.Equals(undoRateInitial, undoRateCurrent, StringComparison.Ordinal) ||
+                !string.Equals(acceptanceRateInitial, acceptanceRateCurrent, StringComparison.Ordinal) ||
+                !string.Equals(lastRunInitial, lastRunCurrent, StringComparison.Ordinal);
+
+            if (hasChanged)
+            {
+                return;
+            }
+
+            await Page.WaitForTimeoutAsync(pollIntervalMs);
+            elapsed += pollIntervalMs;
+        }
     }
 }
