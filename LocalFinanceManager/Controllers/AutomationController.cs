@@ -185,6 +185,11 @@ public class AutomationController : ControllerBase
     [HttpPost("settings")]
     public async Task<IActionResult> UpdateSettings([FromBody] AutoApplySettingsDto settings)
     {
+        if (settings == null)
+        {
+            return BadRequest("Settings cannot be null");
+        }
+
         if (!TryValidateModel(settings))
         {
             return ValidationProblem(ModelState);
