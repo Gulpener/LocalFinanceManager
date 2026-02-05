@@ -120,18 +120,39 @@ public class MonitoringService : IMonitoringService
             .Take(limit)
             .ToListAsync();
 
+        // Collect transaction IDs for all auto-applied audits
+        var transactionIds = autoAppliedAudits
+            .Select(a => a.TransactionId)
+            .Distinct()
+            .ToList();
+
+        // Fetch all undo audits for these transactions in a single query
+        var undoAudits = await _dbContext.TransactionAudits
+            .Where(a => !a.IsArchived)
+            .Where(a => a.ActionType == "Undo")
+            .Where(a => transactionIds.Contains(a.TransactionId))
+            .Select(a => new { a.TransactionId, a.ChangedAt })
+            .ToListAsync();
+
+        // Group undo audits by transaction for efficient in-memory lookup
+        var undoLookup = undoAudits
+            .GroupBy(a => a.TransactionId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         var history = new List<AutoApplyHistoryDto>();
 
         foreach (var audit in autoAppliedAudits)
         {
             if (audit.Transaction == null) continue;
 
-            // Check if this auto-apply was undone
-            var wasUndone = await _dbContext.TransactionAudits
-                .AnyAsync(a => !a.IsArchived
-                    && a.TransactionId == audit.TransactionId
-                    && a.ActionType == "Undo"
-                    && a.ChangedAt > audit.AutoAppliedAt);
+            // Check if this auto-apply was undone (any undo after AutoAppliedAt)
+            var wasUndone = false;
+            if (audit.AutoAppliedAt.HasValue &&
+                undoLookup.TryGetValue(audit.TransactionId, out var undosForTransaction))
+            {
+                var autoAppliedAt = audit.AutoAppliedAt.Value;
+                wasUndone = undosForTransaction.Any(u => u.ChangedAt > autoAppliedAt);
+            }
 
             // Check if can undo (within retention window and not already undone)
             var retentionCutoff = DateTime.UtcNow.AddDays(-_options.UndoRetentionDays);
