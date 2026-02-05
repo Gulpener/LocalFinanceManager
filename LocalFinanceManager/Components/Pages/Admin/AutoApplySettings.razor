@@ -290,11 +290,7 @@ else
             if (response.IsSuccessStatusCode)
             {
                 _successMessage = "Instellingen succesvol opgeslagen!";
-                await JS.InvokeVoidAsync("eval", @"
-if (typeof window.showToast === 'function') {
-window.showToast('Instellingen opgeslagen', 'success');
-}
-");
+                await JS.InvokeVoidAsync("showToast", "Instellingen opgeslagen", "success");
             }
             else
             {
