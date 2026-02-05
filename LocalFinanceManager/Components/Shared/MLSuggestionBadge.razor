@@ -10,11 +10,17 @@
         Loading...
     </span>
 }
+else if (_noModelAvailable && !_isHidden)
+{
+    <span class="badge bg-warning text-dark" title="No ML model trained yet. Train a model to get suggestions.">
+        <i class="bi bi-info-circle"></i> No ML model
+    </span>
+}
 else if (_suggestion != null && !_isHidden)
 {
     <span class="badge @GetBadgeClass() position-relative" data-bs-toggle="tooltip" data-bs-html="true"
         title="@GetTooltipContent()" @ref="_badgeElement">
-        @_suggestion.CategoryName @(_suggestion.Confidence * 100)% 🤖
+        @_suggestion.CategoryName @((_suggestion.Confidence * 100).ToString("F0"))% 🤖
 
         @if (_isAutoApplied)
         {
@@ -54,6 +60,7 @@ else if (_suggestion != null && !_isHidden)
     private bool _isProcessing = false;
     private bool _isHidden = false;
     private bool _isAutoApplied = false;
+    private bool _noModelAvailable = false;
     private ElementReference _badgeElement;
 
     protected override async Task OnInitializedAsync()
@@ -85,11 +92,19 @@ return new bootstrap.Tooltip(tooltipTriggerEl, { html: true });
             if (response.IsSuccessStatusCode)
             {
                 _suggestion = await response.Content.ReadFromJsonAsync<SuggestionDto>();
+                _noModelAvailable = false;
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                // 404 means no ML model is available
+                _noModelAvailable = true;
+                _suggestion = null;
             }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading suggestion: {ex.Message}");
+            _noModelAvailable = true;
         }
         finally
         {
