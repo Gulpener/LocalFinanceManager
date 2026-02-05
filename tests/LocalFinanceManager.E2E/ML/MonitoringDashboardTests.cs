@@ -82,37 +82,9 @@ public class MonitoringDashboardTests : E2ETestBase
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, 100, undoCount: 8);
 
-            // DEBUG: Verify data was actually created
-            var autoApplyCount = await context.TransactionAudits.CountAsync(a => a.IsAutoApplied);
-            var undoCount = await context.TransactionAudits.CountAsync(a => a.ActionType == "Undo");
-            var undoWithReasonCount = await context.TransactionAudits
-                .CountAsync(a => a.ActionType == "Undo" && a.Reason != null && a.Reason.Contains("auto-applied"));
-
-            var startDate = DateTime.UtcNow.AddDays(-7);
-            var undoInWindow = await context.TransactionAudits
-                .CountAsync(a => a.ActionType == "Undo" && a.ChangedAt >= startDate);
-            var undoInWindowWithReason = await context.TransactionAudits
-                .CountAsync(a => a.ActionType == "Undo" && a.ChangedAt >= startDate && a.Reason != null && a.Reason.Contains("auto-applied"));
-
-            TestContext.Out.WriteLine($"DEBUG: AutoApply audits: {autoApplyCount}");
-            TestContext.Out.WriteLine($"DEBUG: Undo audits: {undoCount}");
-            TestContext.Out.WriteLine($"DEBUG: Undo audits with 'auto-applied' in Reason: {undoWithReasonCount}");
-            TestContext.Out.WriteLine($"DEBUG: Undo audits in 7-day window: {undoInWindow}");
-            TestContext.Out.WriteLine($"DEBUG: Undo audits in 7-day window with reason: {undoInWindowWithReason}");
-            TestContext.Out.WriteLine($"DEBUG: Window start: {startDate}, Now: {DateTime.UtcNow}");
-
-            // Force WAL checkpoint to ensure data is visible to other connections
+            // Ensure data is visible to other connections when using SQLite WAL
             await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         } // Ensure scope is disposed and data is committed
-
-        // Longer delay to ensure WAL checkpoint completes
-        await Task.Delay(500);
-
-        // DEBUG: Call API directly using HTTP client to see what it returns
-        using var httpClient = Factory!.CreateClient();
-        var apiResponse = await httpClient.GetStringAsync("/api/automation/stats?windowDays=7");
-        TestContext.Out.WriteLine($"DEBUG: API response: {apiResponse}");
-
         // Act
         await _dashboardPage.NavigateAsync();
 
