@@ -1,0 +1,243 @@
+@using LocalFinanceManager.DTOs.ML
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+@if (_isLoading && !_isHidden)
+{
+    <span class="badge bg-secondary">
+        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+        Loading...
+    </span>
+}
+else if (_suggestion != null && !_isHidden)
+{
+    <span class="badge @GetBadgeClass() position-relative" 
+          data-bs-toggle="tooltip" 
+          data-bs-html="true"
+          title="@GetTooltipContent()"
+          @ref="_badgeElement">
+        @_suggestion.CategoryName @(_suggestion.Confidence * 100)% 🤖
+        
+        @if (_isAutoApplied)
+        {
+            <span class="ms-1" title="Auto-applied">✓</span>
+        }
+        
+        @if (!_isProcessing)
+        {
+            <button type="button" 
+                    class="btn btn-sm btn-link text-white p-0 ms-2 border-0" 
+                    style="font-size: 0.8rem;"
+                    @onclick="AcceptSuggestion"
+                    title="Accept suggestion">
+                ✓
+            </button>
+            <button type="button" 
+                    class="btn btn-sm btn-link text-white p-0 ms-1 border-0" 
+                    style="font-size: 0.8rem;"
+                    @onclick="RejectSuggestion"
+                    title="Reject suggestion">
+                ✗
+            </button>
+        }
+        else
+        {
+            <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+        }
+    </span>
+}
+
+@code {
+    [Parameter]
+    public Guid TransactionId { get; set; }
+
+    [Parameter]
+    public EventCallback OnSuggestionAccepted { get; set; }
+
+    [Parameter]
+    public bool IsAutoApplied { get; set; }
+
+    private SuggestionDto? _suggestion;
+    private bool _isLoading = true;
+    private bool _isProcessing = false;
+    private bool _isHidden = false;
+    private bool _isAutoApplied = false;
+    private ElementReference _badgeElement;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAutoApplied = IsAutoApplied;
+        await LoadSuggestion();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _suggestion != null)
+        {
+            await JS.InvokeVoidAsync("eval", @"
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle=""tooltip""]'));
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl, { html: true });
+                });
+            ");
+        }
+    }
+
+    private async Task LoadSuggestion()
+    {
+        try
+        {
+            _isLoading = true;
+            var response = await Http.GetAsync($"/api/suggestions?transactionId={TransactionId}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                _suggestion = await response.Content.ReadFromJsonAsync<SuggestionDto>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading suggestion: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task AcceptSuggestion()
+    {
+        if (_suggestion == null || _isProcessing) return;
+
+        try
+        {
+            _isProcessing = true;
+            
+            var feedback = new SuggestionFeedbackDto
+            {
+                TransactionId = TransactionId,
+                Accepted = true,
+                FinalCategoryId = _suggestion.CategoryId,
+                SuggestedCategoryId = _suggestion.CategoryId,
+                SuggestionConfidence = _suggestion.Confidence,
+                ModelVersion = _suggestion.ModelVersion
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/suggestions/feedback", feedback);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // Show success toast
+                await JS.InvokeVoidAsync("eval", @"
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Suggestion accepted', 'success');
+                    }
+                ");
+
+                // Hide the badge
+                _isHidden = true;
+
+                // Notify parent component
+                await OnSuggestionAccepted.InvokeAsync();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await JS.InvokeVoidAsync("alert", $"Failed to accept suggestion: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error accepting suggestion: {ex.Message}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task RejectSuggestion()
+    {
+        if (_suggestion == null || _isProcessing) return;
+
+        try
+        {
+            _isProcessing = true;
+            
+            var feedback = new SuggestionFeedbackDto
+            {
+                TransactionId = TransactionId,
+                Accepted = false,
+                FinalCategoryId = Guid.Empty, // Will be set when user manually assigns
+                SuggestedCategoryId = _suggestion.CategoryId,
+                SuggestionConfidence = _suggestion.Confidence,
+                ModelVersion = _suggestion.ModelVersion
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/suggestions/feedback", feedback);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // Hide the badge
+                _isHidden = true;
+
+                await JS.InvokeVoidAsync("eval", @"
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Feedback recorded', 'info');
+                    }
+                ");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error recording feedback: {ex.Message}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private string GetBadgeClass()
+    {
+        if (_suggestion == null) return "bg-secondary";
+
+        return _suggestion.Confidence switch
+        {
+            >= 0.8f => "bg-success",
+            >= 0.6f => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetTooltipContent()
+    {
+        if (_suggestion == null || _suggestion.Explanation.Count == 0)
+            return "ML-based suggestion";
+
+        var top3Features = _suggestion.Explanation
+            .OrderByDescending(f => f.Importance)
+            .Take(3)
+            .ToList();
+
+        var featureText = string.Join("<br/>", 
+            top3Features.Select(f => $"{FormatFeatureName(f.FeatureName)}: {f.FeatureValue} ({f.Importance * 100:F0}%)"));
+
+        return $"<strong>Based on:</strong><br/>{featureText}";
+    }
+
+    private string FormatFeatureName(string featureName)
+    {
+        // Convert technical feature names to user-friendly labels
+        return featureName switch
+        {
+            "description_token" => "Description",
+            "counterparty" => "Counterparty",
+            "amount_bin" => "Amount",
+            "day_of_week" => "Day of Week",
+            "month" => "Month",
+            _ => featureName
+        };
+    }
+}

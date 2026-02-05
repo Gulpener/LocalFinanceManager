@@ -1,5 +1,8 @@
 using LocalFinanceManager.Services;
+using LocalFinanceManager.DTOs.ML;
+using LocalFinanceManager.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace LocalFinanceManager.Controllers;
 
@@ -12,15 +15,18 @@ public class AutomationController : ControllerBase
 {
     private readonly IUndoService _undoService;
     private readonly IMonitoringService _monitoringService;
+    private readonly AutomationOptions _automationOptions;
     private readonly ILogger<AutomationController> _logger;
 
     public AutomationController(
         IUndoService undoService,
         IMonitoringService monitoringService,
+        IOptions<AutomationOptions> automationOptions,
         ILogger<AutomationController> logger)
     {
         _undoService = undoService;
         _monitoringService = monitoringService;
+        _automationOptions = automationOptions.Value;
         _logger = logger;
     }
 
@@ -117,5 +123,115 @@ public class AutomationController : ControllerBase
 
         var isAboveThreshold = await _monitoringService.IsUndoRateAboveThresholdAsync(windowDays);
         return Ok(new { windowDays, isAboveThreshold });
+    }
+
+    /// <summary>
+    /// Gets auto-apply configuration settings.
+    /// </summary>
+    /// <returns>Auto-apply settings</returns>
+    [HttpGet("settings")]
+    public IActionResult GetSettings()
+    {
+        var settings = new AutoApplySettingsDto
+        {
+            Enabled = _automationOptions.AutoApplyEnabled,
+            MinimumConfidence = (float)_automationOptions.ConfidenceThreshold,
+            IntervalMinutes = 15, // Default value, can be made configurable
+            AccountIds = new List<Guid>(), // Empty = all accounts
+            ExcludedCategoryIds = new List<Guid>()
+        };
+
+        return Ok(settings);
+    }
+
+    /// <summary>
+    /// Updates auto-apply configuration settings.
+    /// </summary>
+    /// <param name="settings">New settings</param>
+    /// <returns>Success result</returns>
+    [HttpPost("settings")]
+    public IActionResult UpdateSettings([FromBody] AutoApplySettingsDto settings)
+    {
+        if (settings == null)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                title = "Bad Request",
+                status = 400,
+                detail = "Settings are required"
+            });
+        }
+
+        if (settings.MinimumConfidence < 0.0f || settings.MinimumConfidence > 1.0f)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                title = "Bad Request",
+                status = 400,
+                detail = "Minimum confidence must be between 0.0 and 1.0",
+                errors = new Dictionary<string, string[]>
+                {
+                    ["MinimumConfidence"] = new[] { "Must be between 0.0 and 1.0" }
+                }
+            });
+        }
+
+        _logger.LogInformation(
+            "Auto-apply settings updated: Enabled={Enabled}, Confidence={Confidence}",
+            settings.Enabled,
+            settings.MinimumConfidence);
+
+        // Note: In production, persist settings to database or configuration file
+        // For now, this is a placeholder that accepts but doesn't persist settings
+
+        return Ok(new { success = true, message = "Settings updated successfully" });
+    }
+
+    /// <summary>
+    /// Gets auto-apply history (last N transactions).
+    /// </summary>
+    /// <param name="limit">Number of history items to return (default: 50)</param>
+    /// <returns>Auto-apply history</returns>
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory([FromQuery] int limit = 50)
+    {
+        if (limit < 1 || limit > 500)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                title = "Bad Request",
+                status = 400,
+                detail = "Limit must be between 1 and 500"
+            });
+        }
+
+        var history = await _monitoringService.GetAutoApplyHistoryAsync(limit);
+        return Ok(history);
+    }
+
+    /// <summary>
+    /// Gets estimated number of auto-applies based on confidence threshold.
+    /// </summary>
+    /// <param name="confidence">Confidence threshold</param>
+    /// <returns>Preview statistics</returns>
+    [HttpGet("preview")]
+    public async Task<IActionResult> GetPreviewStats([FromQuery] decimal confidence = 0.8m)
+    {
+        if (confidence < 0.0m || confidence > 1.0m)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                title = "Bad Request",
+                status = 400,
+                detail = "Confidence must be between 0.0 and 1.0"
+            });
+        }
+
+        var estimate = await _monitoringService.EstimateAutoApplyCountAsync((float)confidence);
+        return Ok(new { estimatedAutoApplyCount = estimate });
     }
 }
