@@ -1,8 +1,12 @@
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.Configuration;
+using LocalFinanceManager.Data;
+using LocalFinanceManager.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace LocalFinanceManager.Controllers;
 
@@ -15,17 +19,20 @@ public class AutomationController : ControllerBase
 {
     private readonly IUndoService _undoService;
     private readonly IMonitoringService _monitoringService;
+    private readonly AppDbContext _dbContext;
     private readonly AutomationOptions _automationOptions;
     private readonly ILogger<AutomationController> _logger;
 
     public AutomationController(
         IUndoService undoService,
         IMonitoringService monitoringService,
+        AppDbContext dbContext,
         IOptions<AutomationOptions> automationOptions,
         ILogger<AutomationController> logger)
     {
         _undoService = undoService;
         _monitoringService = monitoringService;
+        _dbContext = dbContext;
         _automationOptions = automationOptions.Value;
         _logger = logger;
     }
@@ -130,18 +137,44 @@ public class AutomationController : ControllerBase
     /// </summary>
     /// <returns>Auto-apply settings</returns>
     [HttpGet("settings")]
-    public IActionResult GetSettings()
+    public async Task<IActionResult> GetSettings()
     {
-        var settings = new AutoApplySettingsDto
+        // Try to load from database first, fallback to appsettings.json
+        var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+
+        if (dbSettings != null)
+        {
+            var accountIds = string.IsNullOrEmpty(dbSettings.AccountIdsJson)
+                ? new List<Guid>()
+                : JsonSerializer.Deserialize<List<Guid>>(dbSettings.AccountIdsJson) ?? new List<Guid>();
+
+            var excludedCategoryIds = string.IsNullOrEmpty(dbSettings.ExcludedCategoryIdsJson)
+                ? new List<Guid>()
+                : JsonSerializer.Deserialize<List<Guid>>(dbSettings.ExcludedCategoryIdsJson) ?? new List<Guid>();
+
+            var settings = new AutoApplySettingsDto
+            {
+                Enabled = dbSettings.AutoApplyEnabled,
+                MinimumConfidence = dbSettings.MinimumConfidence,
+                IntervalMinutes = dbSettings.IntervalMinutes,
+                AccountIds = accountIds,
+                ExcludedCategoryIds = excludedCategoryIds
+            };
+
+            return Ok(settings);
+        }
+
+        // Fallback to appsettings.json defaults
+        var defaultSettings = new AutoApplySettingsDto
         {
             Enabled = _automationOptions.AutoApplyEnabled,
             MinimumConfidence = (float)_automationOptions.ConfidenceThreshold,
-            IntervalMinutes = 15, // Default value, can be made configurable
-            AccountIds = new List<Guid>(), // Empty = all accounts
+            IntervalMinutes = 15,
+            AccountIds = new List<Guid>(),
             ExcludedCategoryIds = new List<Guid>()
         };
 
-        return Ok(settings);
+        return Ok(defaultSettings);
     }
 
     /// <summary>
@@ -150,7 +183,7 @@ public class AutomationController : ControllerBase
     /// <param name="settings">New settings</param>
     /// <returns>Success result</returns>
     [HttpPost("settings")]
-    public IActionResult UpdateSettings([FromBody] AutoApplySettingsDto settings)
+    public async Task<IActionResult> UpdateSettings([FromBody] AutoApplySettingsDto settings)
     {
         if (settings == null)
         {
@@ -178,15 +211,51 @@ public class AutomationController : ControllerBase
             });
         }
 
-        _logger.LogInformation(
-            "Auto-apply settings updated: Enabled={Enabled}, Confidence={Confidence}",
-            settings.Enabled,
-            settings.MinimumConfidence);
+        try
+        {
+            // Load or create settings record
+            var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+            if (dbSettings == null)
+            {
+                dbSettings = new AppSettings { Id = 1 };
+                _dbContext.AppSettings.Add(dbSettings);
+            }
 
-        // Note: In production, persist settings to database or configuration file
-        // For now, this is a placeholder that accepts but doesn't persist settings
+            // Update settings
+            dbSettings.AutoApplyEnabled = settings.Enabled;
+            dbSettings.MinimumConfidence = settings.MinimumConfidence;
+            dbSettings.IntervalMinutes = settings.IntervalMinutes;
+            dbSettings.AccountIdsJson = settings.AccountIds.Any()
+                ? JsonSerializer.Serialize(settings.AccountIds)
+                : null;
+            dbSettings.ExcludedCategoryIdsJson = settings.ExcludedCategoryIds.Any()
+                ? JsonSerializer.Serialize(settings.ExcludedCategoryIds)
+                : null;
+            dbSettings.UpdatedAt = DateTime.UtcNow;
+            dbSettings.UpdatedBy = "System"; // TODO: Replace with actual user when auth is implemented
 
-        return Ok(new { success = true, message = "Settings updated successfully" });
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Auto-apply settings saved: Enabled={Enabled}, Confidence={Confidence}, Accounts={Accounts}, ExcludedCategories={ExcludedCategories}",
+                settings.Enabled,
+                settings.MinimumConfidence,
+                settings.AccountIds.Count,
+                settings.ExcludedCategoryIds.Count);
+
+            return Ok(new { success = true, message = "Settings updated successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save auto-apply settings");
+            return StatusCode(500, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                title = "Internal Server Error",
+                status = 500,
+                detail = "Failed to save settings. Please try again."
+            });
+        }
     }
 
     /// <summary>

@@ -262,7 +262,9 @@ else
     {
         try
         {
-            var response = await Http.GetAsync($"/api/automation/preview?confidence={_settings.MinimumConfidence}");
+            // Use InvariantCulture to ensure decimal point (not comma) in URL
+            var confidenceStr = _settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var response = await Http.GetAsync($"/api/automation/preview?confidence={confidenceStr}");
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<Dictionary<string, int>>();

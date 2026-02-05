@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<TransactionSplit> TransactionSplits => Set<TransactionSplit>();
     public DbSet<TransactionAudit> TransactionAudits => Set<TransactionAudit>();
+    public DbSet<AppSettings> AppSettings => Set<AppSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -239,6 +240,30 @@ public class AppDbContext : DbContext
             entity.HasIndex(ta => ta.TransactionId);
             entity.HasIndex(ta => ta.ChangedAt);
             entity.HasIndex(ta => ta.ActionType);
+        });
+
+        // Configure AppSettings entity (singleton)
+        modelBuilder.Entity<AppSettings>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+
+            entity.Property(s => s.MinimumConfidence)
+                .IsRequired();
+
+            entity.Property(s => s.IntervalMinutes)
+                .IsRequired();
+
+            entity.Property(s => s.UpdatedAt)
+                .IsRequired();
+
+            entity.Property(s => s.UpdatedBy)
+                .HasMaxLength(100);
+
+            entity.Property(s => s.AccountIdsJson)
+                .HasColumnType("TEXT");
+
+            entity.Property(s => s.ExcludedCategoryIdsJson)
+                .HasColumnType("TEXT");
         });
 
         // Configure LabeledExample entity
