@@ -73,7 +73,7 @@ public class AutoApplyTests : E2ETestBase
             "Page title should indicate Auto-Apply settings");
 
         // Settings should be loaded (default or saved values)
-        var isEnabled = await _settingsPage.IsEnabledAsync();
+        await _settingsPage.IsEnabledAsync();
         // IsEnabledAsync returns bool, just verify page loaded correctly
     }
 
