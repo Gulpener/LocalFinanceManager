@@ -16,7 +16,7 @@ public class AutoApplySettingsPageModel : PageObjectBase
     private const string PreviewStatsSelector = "[data-testid='preview-stats']";
     private const string AccountMultiSelectSelector = "select[id='account-ids']";
     private const string ExcludedCategoriesSelector = "select[id='excluded-categories']";
-    private const string SaveButtonSelector = "button[type='submit']";
+    private const string SaveButtonSelector = "button[data-testid='save-settings']";
     private const string ValidationErrorSelector = ".validation-message";
     private const string SuccessToastSelector = "[data-testid='success-toast']";
 
