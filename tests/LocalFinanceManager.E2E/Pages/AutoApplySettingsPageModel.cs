@@ -19,6 +19,7 @@ public class AutoApplySettingsPageModel : PageObjectBase
     private const string SaveButtonSelector = "button[data-testid='save-settings']";
     private const string ValidationErrorSelector = ".validation-message";
     private const string SuccessToastSelector = "[data-testid='success-toast']";
+    private IResponse? _lastSaveResponse;
 
     /// <summary>
     /// Initializes a new instance of the AutoApplySettingsPageModel class.
@@ -115,7 +116,12 @@ public class AutoApplySettingsPageModel : PageObjectBase
     /// </summary>
     public async Task ClickSaveButtonAsync()
     {
+        var responseTask = Page.WaitForResponseAsync(r =>
+            r.Request.Method == "POST" &&
+            r.Url.Contains("/api/automation/settings", StringComparison.OrdinalIgnoreCase));
+
         await Page.ClickAsync(SaveButtonSelector);
+        _lastSaveResponse = await responseTask;
     }
 
     /// <summary>
@@ -141,7 +147,7 @@ public class AutoApplySettingsPageModel : PageObjectBase
         }
         catch
         {
-            return false;
+            return _lastSaveResponse?.Ok ?? false;
         }
     }
 
