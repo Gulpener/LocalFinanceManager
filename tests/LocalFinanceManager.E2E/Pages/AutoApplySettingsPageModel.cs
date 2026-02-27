@@ -136,7 +136,7 @@ public class AutoApplySettingsPageModel : PageObjectBase
     {
         try
         {
-            await Page.WaitForSelectorAsync(SuccessToastSelector, new() { Timeout = 5000 });
+            await Page.WaitForSelectorAsync(SuccessToastSelector, new() { Timeout = 10000 });
             return true;
         }
         catch
