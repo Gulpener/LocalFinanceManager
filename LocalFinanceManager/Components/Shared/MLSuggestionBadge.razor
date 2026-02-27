@@ -131,11 +131,7 @@ else if (_suggestion != null && !_isHidden)
             if (response.IsSuccessStatusCode)
             {
                 // Show success toast
-                await JS.InvokeVoidAsync("eval", @"
-if (typeof window.showToast === 'function') {
-window.showToast('Suggestion accepted', 'success');
-}
-");
+                await JS.InvokeVoidAsync("showToast", "Suggestion accepted", "success");
 
                 // Hide the badge
                 _isHidden = true;
@@ -184,11 +180,7 @@ window.showToast('Suggestion accepted', 'success');
                 // Hide the badge
                 _isHidden = true;
 
-                await JS.InvokeVoidAsync("eval", @"
-if (typeof window.showToast === 'function') {
-window.showToast('Feedback recorded', 'info');
-}
-");
+                await JS.InvokeVoidAsync("showToast", "Feedback recorded", "info");
             }
         }
         catch (Exception ex)

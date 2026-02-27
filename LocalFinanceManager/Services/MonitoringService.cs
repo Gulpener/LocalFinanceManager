@@ -145,23 +145,23 @@ public class MonitoringService : IMonitoringService
         {
             if (audit.Transaction == null) continue;
 
-            // Check if this auto-apply was undone (any undo after AutoAppliedAt)
+            // Use AutoAppliedAt if available; fall back to ChangedAt for older/seeded audits
+            var autoApplyTimestamp = audit.AutoAppliedAt ?? audit.ChangedAt;
+
+            // Check if this auto-apply was undone (any undo after the auto-apply timestamp)
             var wasUndone = false;
-            if (audit.AutoAppliedAt.HasValue &&
-                undoLookup.TryGetValue(audit.TransactionId, out var undosForTransaction))
+            if (undoLookup.TryGetValue(audit.TransactionId, out var undosForTransaction))
             {
-                var autoAppliedAt = audit.AutoAppliedAt.Value;
-                wasUndone = undosForTransaction.Any(u => u.ChangedAt > autoAppliedAt);
+                wasUndone = undosForTransaction.Any(u => u.ChangedAt > autoApplyTimestamp);
             }
 
             // Check if can undo (within retention window and not already undone)
             var retentionCutoff = DateTime.UtcNow.AddDays(-_options.UndoRetentionDays);
             var canUndo = !wasUndone
-                && audit.AutoAppliedAt.HasValue
-                && audit.AutoAppliedAt.Value >= retentionCutoff;
+                && autoApplyTimestamp >= retentionCutoff;
 
-            // Get category name - would need to be stored in a separate field or retrieved from transaction
-            var categoryName = "Category"; // Placeholder - in production, would get from related category
+            // Get category name from the related category, falling back if not available
+            var categoryName = audit.Transaction.Category?.Name ?? "Uncategorized";
 
             history.Add(new AutoApplyHistoryDto
             {
@@ -186,7 +186,7 @@ public class MonitoringService : IMonitoringService
 
         var totalUnassignedCount = await _dbContext.Transactions
             .Where(t => !t.IsArchived)
-            .Where(t => t.AssignedParts == null || !t.AssignedParts.Any())
+            .Where(t => !t.AssignedParts.Any())
             .CountAsync();
 
         // Cap the sample size at 100 to preserve original semantics

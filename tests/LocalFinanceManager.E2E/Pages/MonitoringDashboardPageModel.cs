@@ -60,9 +60,10 @@ public class MonitoringDashboardPageModel : PageObjectBase
     public async Task<string> GetUndoRateAsync()
     {
         var text = await Page.InnerTextAsync(UndoRateCardSelector);
-        // Extract percentage from text like "Undo Rate: 8,0%" (Dutch formatting with comma)
-        var match = System.Text.RegularExpressions.Regex.Match(text, @"\d+[,.]?\d*\s?%");
-        return match.Success ? match.Value.Trim() : "0%";
+        // Extract numeric part from text like "Undo Rate: 8,0%" or "Undo Rate: 8,0 %"
+        // and normalize to a consistent format without whitespace before '%', e.g., "8,0%".
+        var match = System.Text.RegularExpressions.Regex.Match(text, @"(\d+[,.]?\d*)\s*%");
+        return match.Success ? $"{match.Groups[1].Value}%" : "0%";
     }
 
     /// <summary>
