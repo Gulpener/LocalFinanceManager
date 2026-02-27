@@ -428,7 +428,7 @@ public static class SeedDataHelper
                     IsAutoApplied = false,
                     BeforeState = "{\"assigned\":true}",
                     AfterState = "{\"assigned\":false}",
-                    Reason = $"Reverted auto-applied assignment (model v{autoAssignEntry.ModelVersion}, confidence: {autoAssignEntry.Confidence:F4})"
+                    Reason = $"Reverted auto-applied assignment (model v{autoAssignEntry.ModelVersion}, confidence: {autoAssignEntry.Confidence:F2})"
                 };
                 auditEntries.Add(undoEntry);
                 context.TransactionAudits.Add(undoEntry);

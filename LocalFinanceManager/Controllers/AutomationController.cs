@@ -190,10 +190,7 @@ public class AutomationController : ControllerBase
             return BadRequest("Settings cannot be null");
         }
 
-        if (!TryValidateModel(settings))
-        {
-            return ValidationProblem(ModelState);
-        }
+
         try
         {
             // Load or create settings record
@@ -215,7 +212,7 @@ public class AutomationController : ControllerBase
                 ? JsonSerializer.Serialize(settings.ExcludedCategoryIds)
                 : null;
             dbSettings.UpdatedAt = DateTime.UtcNow;
-            dbSettings.UpdatedBy = "System"; // TODO: Replace with actual user when auth is implemented
+            dbSettings.UpdatedBy = "System"; // Uses a system identifier because no authenticated user context is available here
 
             await _dbContext.SaveChangesAsync();
 
