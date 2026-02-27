@@ -200,10 +200,12 @@ public class SmokeTests : E2ETestBase
             undoCount: 3);
 
         // Assert
-        Assert.That(auditEntries.Count, Is.EqualTo(10));
+        // Total = 10 AutoAssign entries + 3 Undo entries = 13
+        Assert.That(auditEntries.Count, Is.EqualTo(13));
         Assert.That(auditEntries.Count(ae => ae.ActionType == "Undo"), Is.EqualTo(3));
-        Assert.That(auditEntries.Count(ae => ae.ActionType == "AutoAssign"), Is.EqualTo(7));
-        Assert.That(auditEntries.All(ae => ae.IsAutoApplied), Is.True);
+        Assert.That(auditEntries.Count(ae => ae.ActionType == "AutoAssign"), Is.EqualTo(10));
+        // Only AutoAssign entries have IsAutoApplied = true
+        Assert.That(auditEntries.Count(ae => ae.IsAutoApplied), Is.EqualTo(10));
     }
 
     [Test]

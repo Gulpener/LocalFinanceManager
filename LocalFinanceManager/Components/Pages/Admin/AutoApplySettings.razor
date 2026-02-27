@@ -1,4 +1,4 @@
-@page "/settings/auto-apply"
+@page "/admin/autoapply"
 @using LocalFinanceManager.DTOs.ML
 @using LocalFinanceManager.Data.Repositories
 @using System.Net.Http.Json
@@ -36,9 +36,9 @@ else
                 <div class="card-body">
                     <div class="mb-3">
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" id="enableAutoApply"
+                            <input class="form-check-input" type="checkbox" role="switch" id="enable-auto-apply"
                                 @bind="_settings.Enabled">
-                            <label class="form-check-label" for="enableAutoApply">
+                            <label class="form-check-label" for="enable-auto-apply">
                                 <strong>Automatische toewijzing inschakelen</strong>
                             </label>
                         </div>
@@ -49,10 +49,10 @@ else
                     </div>
 
                     <div class="mb-3">
-                        <label for="confidenceThreshold" class="form-label">
-                            Betrouwbaarheidsdrempel: <strong>@((_settings.MinimumConfidence * 100).ToString("F0"))%</strong>
+                        <label for="confidence-threshold" class="form-label">
+                            Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence * 100).ToString("F0"))%</strong>
                         </label>
-                        <input type="range" class="form-range" id="confidenceThreshold" min="0.6" max="0.95" step="0.05"
+                        <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
                             @bind="_settings.MinimumConfidence" @bind:event="oninput">
                         <small class="text-muted d-block">
                             Hoger = nauwkeuriger maar minder automatische toewijzingen.
@@ -60,7 +60,7 @@ else
                         </small>
                         @if (_previewStats != null)
                         {
-                            <div class="alert alert-info mt-2">
+                            <div class="alert alert-info mt-2" data-testid="preview-stats">
                                 <i class="bi bi-info-circle"></i>
                                 Op basis van de laatste 100 transacties zouden er <strong>@_previewStats</strong>
                                 automatisch worden toegewezen met deze drempel.
@@ -89,16 +89,14 @@ else
                     <p class="text-muted">Selecteer welke rekeningen moeten worden gebruikt voor automatische toewijzing
                         (laat leeg voor alle rekeningen).</p>
 
-                    @foreach (var account in _accounts)
-                    {
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="account_@account.Id"
-                                checked="@IsAccountSelected(account.Id)" @onchange="@(() => ToggleAccount(account.Id))">
-                            <label class="form-check-label" for="account_@account.Id">
+                    <select class="form-select" id="account-ids" multiple size="5" @onchange="HandleAccountSelectionChanged">
+                        @foreach (var account in _accounts)
+                        {
+                            <option value="@account.Id" selected="@IsAccountSelected(account.Id)">
                                 @account.Label
-                            </label>
-                        </div>
-                    }
+                            </option>
+                        }
+                    </select>
                 </div>
             </div>
 
@@ -112,21 +110,14 @@ else
 
                     @if (_categories.Any())
                     {
-                        <div class="row">
+                        <select class="form-select" id="excluded-categories" multiple size="5" @onchange="HandleCategorySelectionChanged">
                             @foreach (var category in _categories.OrderBy(c => c.Name))
                             {
-                                <div class="col-md-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="category_@category.Id"
-                                            checked="@IsCategoryExcluded(category.Id)"
-                                            @onchange="@(() => ToggleExcludedCategory(category.Id))">
-                                        <label class="form-check-label" for="category_@category.Id">
-                                            @category.Name
-                                        </label>
-                                    </div>
-                                </div>
+                                <option value="@category.Id" selected="@IsCategoryExcluded(category.Id)">
+                                    @category.Name
+                                </option>
                             }
-                        </div>
+                        </select>
                     }
                     else
                     {
@@ -144,13 +135,13 @@ else
 
             @if (!string.IsNullOrEmpty(_successMessage))
             {
-                <div class="alert alert-success" role="alert">
+                <div class="alert alert-success" role="alert" data-testid="success-toast">
                     <i class="bi bi-check-circle"></i> @_successMessage
                 </div>
             }
 
             <div class="d-flex gap-2">
-                <button type="button" class="btn btn-primary" @onclick="SaveSettings" disabled="@_saving">
+                <button type="submit" class="btn btn-primary" @onclick="SaveSettings" disabled="@_saving">
                     @if (_saving)
                     {
                         <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
@@ -317,6 +308,14 @@ else
         return _settings.AccountIds.Contains(accountId);
     }
 
+    private void HandleAccountSelectionChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string[] selected)
+        {
+            _settings.AccountIds = selected.Select(Guid.Parse).ToList();
+        }
+    }
+
     private void ToggleAccount(Guid accountId)
     {
         if (_settings.AccountIds.Contains(accountId))
@@ -334,6 +333,14 @@ else
     private bool IsCategoryExcluded(Guid categoryId)
     {
         return _settings.ExcludedCategoryIds.Contains(categoryId);
+    }
+
+    private void HandleCategorySelectionChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string[] selected)
+        {
+            _settings.ExcludedCategoryIds = selected.Select(Guid.Parse).ToList();
+        }
     }
 
     private void ToggleExcludedCategory(Guid categoryId)
