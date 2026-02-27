@@ -1,7 +1,34 @@
 @using LocalFinanceManager.DTOs.ML
 @using System.Net.Http.Json
+@using System.Globalization
 @inject HttpClient Http
 @inject IJSRuntime JS
+
+<style>
+    .ml-suggestion-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .ml-suggestion-tooltip {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        background: #212529;
+        color: #ffffff;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        z-index: 1060;
+    }
+
+    .ml-suggestion-wrapper:hover .ml-suggestion-tooltip {
+        display: block;
+    }
+</style>
 
 @if (_isLoading && !_isHidden)
 {
@@ -12,36 +39,43 @@
 }
 else if (_noModelAvailable && !_isHidden)
 {
-    <span class="badge bg-warning text-dark" title="No ML model trained yet. Train a model to get suggestions.">
+    <span class="badge bg-warning text-dark" title="No ML model trained yet. Train a model to get suggestions."
+        data-testid="no-model-badge">
         <i class="bi bi-info-circle"></i> No ML model
     </span>
 }
 else if (_suggestion != null && !_isHidden)
 {
-    <span class="badge @GetBadgeClass() position-relative" data-bs-toggle="tooltip" data-bs-html="true"
-        title="@GetTooltipContent()" @ref="_badgeElement">
-        @_suggestion.CategoryName @((_suggestion.Confidence * 100).ToString("F0"))% 🤖
+    <span class="ml-suggestion-wrapper">
+        <span class="badge @GetBadgeClass() position-relative" data-bs-toggle="tooltip" data-bs-html="true"
+            title="@GetTooltipContent()" data-testid="ml-suggestion-badge"
+            data-confidence="@_suggestion.Confidence.ToString("0.00", CultureInfo.InvariantCulture)" @ref="_badgeElement">
+            @_suggestion.CategoryName @((_suggestion.Confidence * 100).ToString("F0"))% 🤖
 
-        @if (_isAutoApplied)
-        {
-            <span class="ms-1" title="Auto-applied">✓</span>
-        }
+            @if (_isAutoApplied)
+            {
+                <span class="ms-1" title="Auto-applied">✓</span>
+            }
 
-        @if (!_isProcessing)
-        {
-            <button type="button" class="btn btn-sm btn-link text-white p-0 ms-2 border-0" style="font-size: 0.8rem;"
-                @onclick="AcceptSuggestion" title="Accept suggestion">
-                ✓
-            </button>
-            <button type="button" class="btn btn-sm btn-link text-white p-0 ms-1 border-0" style="font-size: 0.8rem;"
-                @onclick="RejectSuggestion" title="Reject suggestion">
-                ✗
-            </button>
-        }
-        else
-        {
-            <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
-        }
+            @if (!_isProcessing)
+            {
+                <button type="button" class="btn btn-sm btn-link text-white p-0 ms-2 border-0" style="font-size: 0.8rem;"
+                    @onclick="AcceptSuggestion" title="Accept suggestion" data-testid="accept-suggestion">
+                    ✓
+                </button>
+                <button type="button" class="btn btn-sm btn-link text-white p-0 ms-1 border-0" style="font-size: 0.8rem;"
+                    @onclick="RejectSuggestion" title="Reject suggestion" data-testid="reject-suggestion">
+                    ✗
+                </button>
+            }
+            else
+            {
+                <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+            }
+        </span>
+        <span class="ml-suggestion-tooltip" data-testid="suggestion-tooltip">
+            @GetTooltipText()
+        </span>
     </span>
 }
 
@@ -227,6 +261,24 @@ window.showToast('Feedback recorded', 'info');
         top3Features.Select(f => $"{FormatFeatureName(f.FeatureName)}: {f.FeatureValue} ({f.Importance * 100:F0}%)"));
 
         return $"<strong>Based on:</strong><br/>{featureText}";
+    }
+
+    private string GetTooltipText()
+    {
+        if (_suggestion == null || _suggestion.Explanation.Count == 0)
+        {
+            return "Based on: ML model";
+        }
+
+        var top3Features = _suggestion.Explanation
+            .OrderByDescending(f => f.Importance)
+            .Take(3)
+            .ToList();
+
+        var featureText = string.Join(", ",
+            top3Features.Select(f => $"{FormatFeatureName(f.FeatureName)}: {f.FeatureValue}"));
+
+        return $"Based on: {featureText}";
     }
 
     private string FormatFeatureName(string featureName)

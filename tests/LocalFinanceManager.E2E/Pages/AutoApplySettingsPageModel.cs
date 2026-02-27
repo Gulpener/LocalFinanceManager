@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using System.Globalization;
 
 namespace LocalFinanceManager.E2E.Pages;
 
@@ -64,7 +65,11 @@ public class AutoApplySettingsPageModel : PageObjectBase
     /// <param name="confidence">Confidence value (0.0 to 1.0).</param>
     public async Task SetConfidenceThresholdAsync(double confidence)
     {
-        await Page.FillAsync(ConfidenceSliderSelector, confidence.ToString("0.00"));
+        var value = confidence.ToString("0.00", CultureInfo.InvariantCulture);
+        await Page.EvaluateAsync(
+            "(selector, val) => { const el = document.querySelector(selector); if (!el) return; el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }",
+            ConfidenceSliderSelector,
+            value);
     }
 
     /// <summary>
