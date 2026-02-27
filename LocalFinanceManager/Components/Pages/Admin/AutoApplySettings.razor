@@ -286,12 +286,21 @@ else
             if (response.IsSuccessStatusCode)
             {
                 _successMessage = "Instellingen succesvol opgeslagen!";
-                await JS.InvokeVoidAsync("showToast", "Instellingen opgeslagen", "success");
+                await InvokeAsync(StateHasChanged);
+                try
+                {
+                    await JS.InvokeVoidAsync("showToast", "Instellingen opgeslagen", "success");
+                }
+                catch
+                {
+                    // Ignore toast rendering failures; the in-page success message is the primary signal.
+                }
             }
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 _errorMessage = $"Fout bij opslaan: {errorContent}";
+                await InvokeAsync(StateHasChanged);
             }
         }
         catch (Exception ex)
