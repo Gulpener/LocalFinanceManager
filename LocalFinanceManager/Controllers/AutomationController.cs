@@ -190,6 +190,12 @@ public class AutomationController : ControllerBase
             return BadRequest("Settings cannot be null");
         }
 
+        if (settings.MinimumConfidence < 0.0f || settings.MinimumConfidence > 1.0f)
+        {
+            ModelState.AddModelError(nameof(settings.MinimumConfidence), "MinimumConfidence must be between 0.0 and 1.0");
+            return ValidationProblem(ModelState);
+        }
+
 
         try
         {

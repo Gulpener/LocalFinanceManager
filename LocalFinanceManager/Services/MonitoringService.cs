@@ -116,7 +116,7 @@ public class MonitoringService : IMonitoringService
             .Where(a => !a.IsArchived)
             .Where(a => a.IsAutoApplied)
             .Include(a => a.Transaction)
-                .ThenInclude(t => t.AssignedParts)
+                .ThenInclude(t => t.AssignedParts!)
                     .ThenInclude(p => p.BudgetLine)
                         .ThenInclude(bl => bl.Category)
             .OrderByDescending(a => a.AutoAppliedAt)
