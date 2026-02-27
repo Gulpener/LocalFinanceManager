@@ -116,6 +116,9 @@ public class MonitoringService : IMonitoringService
             .Where(a => !a.IsArchived)
             .Where(a => a.IsAutoApplied)
             .Include(a => a.Transaction)
+                .ThenInclude(t => t.AssignedParts)
+                    .ThenInclude(p => p.BudgetLine)
+                        .ThenInclude(bl => bl.Category)
             .OrderByDescending(a => a.AutoAppliedAt)
             .Take(limit)
             .ToListAsync();
@@ -161,7 +164,10 @@ public class MonitoringService : IMonitoringService
                 && autoApplyTimestamp >= retentionCutoff;
 
             // Get category name from the related category, falling back if not available
-            var categoryName = audit.Transaction.Category?.Name ?? "Uncategorized";
+            var categoryName = audit.Transaction.AssignedParts
+                ?.Select(p => p.BudgetLine.Category.Name)
+                .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))
+                ?? "Uncategorized";
 
             history.Add(new AutoApplyHistoryDto
             {
@@ -186,7 +192,7 @@ public class MonitoringService : IMonitoringService
 
         var totalUnassignedCount = await _dbContext.Transactions
             .Where(t => !t.IsArchived)
-            .Where(t => !t.AssignedParts.Any())
+            .Where(t => !t.AssignedParts!.Any())
             .CountAsync();
 
         // Cap the sample size at 100 to preserve original semantics
