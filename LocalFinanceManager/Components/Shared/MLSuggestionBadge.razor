@@ -40,7 +40,7 @@
 else if (_noModelAvailable && !_isHidden)
 {
     <span class="badge bg-warning text-dark" title="No ML model trained yet. Train a model to get suggestions."
-        data-testid="no-model-badge">
+          data-testid="no-model-badge">
         <i class="bi bi-info-circle"></i> No ML model
     </span>
 }
@@ -48,7 +48,7 @@ else if (_suggestion != null && !_isHidden)
 {
     <span class="ml-suggestion-wrapper">
         <span class="badge @GetBadgeClass() position-relative" data-testid="ml-suggestion-badge"
-            data-confidence="@_suggestion.Confidence.ToString("0.00", CultureInfo.InvariantCulture)">
+              data-confidence="@_suggestion.Confidence.ToString("0.00", CultureInfo.InvariantCulture)">
             @_suggestion.CategoryName @((_suggestion.Confidence * 100).ToString("F0"))% 🤖
 
             @if (_isAutoApplied)
@@ -59,11 +59,11 @@ else if (_suggestion != null && !_isHidden)
             @if (!_isProcessing)
             {
                 <button type="button" class="btn btn-sm btn-link text-white p-0 ms-2 border-0" style="font-size: 0.8rem;"
-                    @onclick="AcceptSuggestion" title="Accept suggestion" data-testid="accept-suggestion">
+                        @onclick="AcceptSuggestion" title="Accept suggestion" data-testid="accept-suggestion">
                     ✓
                 </button>
                 <button type="button" class="btn btn-sm btn-link text-white p-0 ms-1 border-0" style="font-size: 0.8rem;"
-                    @onclick="RejectSuggestion" title="Reject suggestion" data-testid="reject-suggestion">
+                        @onclick="RejectSuggestion" title="Reject suggestion" data-testid="reject-suggestion">
                     ✗
                 </button>
             }
