@@ -240,6 +240,10 @@ else
     private int? _previewStats;
     private CancellationTokenSource? _previewDebounceCts;
     private const int PreviewDebounceDelayMs = 350;
+    private const string SettingsLoadErrorMessage = "Kon instellingen niet laden.";
+    private const string SettingsLoadFallbackMessage = "Instellingen konden niet volledig geladen worden. Standaardwaarden worden gebruikt.";
+    private const string SettingsSaveErrorMessage = "Kon instellingen niet opslaan.";
+    private const string PreviewLoadErrorMessage = "Voorbeeldstatistieken konden niet worden bijgewerkt.";
     private string[] _selectedAccountIds = Array.Empty<string>();
     private string[] _selectedExcludedCategoryIds = Array.Empty<string>();
 
@@ -291,6 +295,8 @@ else
     {
         try
         {
+            _errorMessage = null;
+
             // Load settings from backend (or use defaults)
             var response = await Http.GetAsync("/api/automation/settings");
 
@@ -304,6 +310,10 @@ else
             }
             else
             {
+                var errorContent = await ReadResponseBodyForLoggingAsync(response);
+                Logger.LogWarning("Loading auto-apply settings failed with status code {StatusCode}. Response: {ErrorContent}",
+                    response.StatusCode, errorContent);
+
                 // Use default settings
                 _settings = new AutoApplySettingsDto
                 {
@@ -313,6 +323,8 @@ else
                     AccountIds = new List<Guid>(),
                     ExcludedCategoryIds = new List<Guid>()
                 };
+
+                _errorMessage = SettingsLoadFallbackMessage;
             }
 
             await LoadPreviewStats();
@@ -321,7 +333,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load auto-apply settings.");
-            _errorMessage = "Kon instellingen niet laden.";
+            _errorMessage = SettingsLoadErrorMessage;
         }
     }
 
@@ -335,12 +347,23 @@ else
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<Dictionary<string, int>>();
-                _previewStats = result?["estimatedAutoApplyCount"];
+                if (result != null && result.TryGetValue("estimatedAutoApplyCount", out var estimatedCount))
+                {
+                    _previewStats = estimatedCount;
+                }
+            }
+            else
+            {
+                var errorContent = await ReadResponseBodyForLoggingAsync(response);
+                Logger.LogWarning("Loading auto-apply preview stats failed with status code {StatusCode}. Response: {ErrorContent}",
+                    response.StatusCode, errorContent);
+                _errorMessage ??= PreviewLoadErrorMessage;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Preview stats are optional, don't show error
+            Logger.LogWarning(ex, "Failed to load auto-apply preview stats.");
+            _errorMessage ??= PreviewLoadErrorMessage;
         }
     }
 
@@ -417,14 +440,14 @@ else
                 var errorContent = await response.Content.ReadAsStringAsync();
                 Logger.LogWarning("Saving auto-apply settings failed with status code {StatusCode}. Response: {ErrorContent}",
 response.StatusCode, errorContent);
-                _errorMessage = "Kon instellingen niet opslaan.";
+                _errorMessage = SettingsSaveErrorMessage;
                 await InvokeAsync(StateHasChanged);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to save auto-apply settings.");
-            _errorMessage = "Kon instellingen niet opslaan.";
+            _errorMessage = SettingsSaveErrorMessage;
         }
         finally
         {
@@ -473,6 +496,18 @@ response.StatusCode, errorContent);
         public int IntervalMinutes { get; set; }
         public string[]? AccountIds { get; set; }
         public string[]? ExcludedCategoryIds { get; set; }
+    }
+
+    private static async Task<string> ReadResponseBodyForLoggingAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            return await response.Content.ReadAsStringAsync();
+        }
+        catch
+        {
+            return "<response body unavailable>";
+        }
     }
 
     private ValueTask ShowToastAsync(string message, string type)
