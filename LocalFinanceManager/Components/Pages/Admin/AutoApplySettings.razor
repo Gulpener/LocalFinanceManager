@@ -94,8 +94,8 @@ else
                                                                                                                                                                                             100).ToString("F0"))%</strong>
                             </label>
                             <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
-                                   @bind="_settings.MinimumConfidence" @bind:event="oninput"
-                                   @bind:after="OnMinimumConfidenceChangedAsync">
+                                value="@_settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                @oninput="OnConfidenceInputAsync">
                                 <small class="text-muted d-block">
                                     Hoger = nauwkeuriger maar minder automatische toewijzingen.
                                     Aanbevolen: 75-85%
@@ -105,7 +105,7 @@ else
                                     <div class="alert alert-info mt-2" data-testid="preview-stats">
                                         <i class="bi bi-info-circle"></i>
                                         Op basis van de laatste 100 transacties zouden er
-                                        <strong>@_previewStats</strong> transacties automatisch worden toegewezen met deze drempel.
+                                        <strong>@_previewStats</strong> automatisch worden toegewezen met deze drempel.
                                     </div>
                                 }
                             </div>
@@ -362,6 +362,29 @@ else
         {
             // Ignore canceled debounce calls.
         }
+    }
+
+    private async Task OnConfidenceInputAsync(ChangeEventArgs e)
+    {
+        var rawValue = Convert.ToString(e.Value, System.Globalization.CultureInfo.InvariantCulture);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return;
+        }
+
+        if (!float.TryParse(rawValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedConfidence) &&
+            !float.TryParse(rawValue, out parsedConfidence))
+        {
+            return;
+        }
+
+        if (Math.Abs(_settings.MinimumConfidence - parsedConfidence) < 0.0001f)
+        {
+            return;
+        }
+
+        _settings.MinimumConfidence = parsedConfidence;
+        await OnMinimumConfidenceChangedAsync();
     }
 
     private async Task SaveSettings()
