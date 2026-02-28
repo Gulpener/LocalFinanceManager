@@ -11,9 +11,10 @@
 
 <PageTitle>Transacties</PageTitle>
 
-<h1>Transacties
+<h1 @onkeydown:window="HandleGlobalKeyDown">Transacties
     <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => showShortcutHelp = true"
-            title="Press ? to view keyboard shortcuts"  aria-label="Press ? to view keyboard shortcuts">
+            id="shortcutHelpButton" data-testid="shortcut-help-button"
+            title="Toetsenbord sneltoetsen" aria-label="Toetsenbord sneltoetsen">
         <i class="bi bi-question-circle"></i>
     </button>
 </h1>
@@ -468,6 +469,27 @@ else
         if (key == "Enter")
         {
             OpenAssignModal(filteredTransactions[focusedRowIndex]);
+        }
+    }
+
+    private void HandleGlobalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key != "Escape")
+        {
+            return;
+        }
+
+        if (showAssignModal)
+        {
+            CloseAssignModal();
+            StateHasChanged();
+            return;
+        }
+
+        if (showShortcutHelp)
+        {
+            showShortcutHelp = false;
+            StateHasChanged();
         }
     }
 

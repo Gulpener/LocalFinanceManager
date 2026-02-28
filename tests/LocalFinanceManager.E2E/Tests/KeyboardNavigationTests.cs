@@ -165,7 +165,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var modal = Page.Locator("#shortcutHelpModal");
         if (!await modal.IsVisibleAsync())
         {
-            await Page.Locator("button[title='Press ? to view keyboard shortcuts']").ClickAsync();
+            await Page.Locator("#shortcutHelpButton").ClickAsync();
         }
 
         await Expect(modal).ToBeVisibleAsync();

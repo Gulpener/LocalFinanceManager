@@ -29,7 +29,7 @@ public class UXEnhancementsTests : E2ETestBase
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
         // Act - Click help button
-        var helpButton = Page.Locator("button[title='Toetsenbord sneltoetsen']");
+        var helpButton = Page.Locator("#shortcutHelpButton");
         await helpButton.ClickAsync();
 
         // Assert - Verify help modal is visible (wait built-in)
@@ -54,7 +54,7 @@ public class UXEnhancementsTests : E2ETestBase
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
         // Open help modal
-        var helpButton = Page.Locator("button[title='Toetsenbord sneltoetsen']");
+        var helpButton = Page.Locator("#shortcutHelpButton");
         await helpButton.ClickAsync();
 
         var helpModal = Page.Locator(".modal.show");

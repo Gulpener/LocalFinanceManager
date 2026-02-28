@@ -52,7 +52,7 @@ public class AccessibilityTests : E2ETestBase
     public async Task ShortcutHelpModal_HasNoCriticalOrSeriousAxeViolations()
     {
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await Page.Locator("button[title='Press ? to view keyboard shortcuts']").ClickAsync();
+        await Page.Locator("#shortcutHelpButton").ClickAsync();
         await Expect(Page.Locator("#shortcutHelpModal")).ToBeVisibleAsync();
 
         var axeResult = await Page.RunAxe();
