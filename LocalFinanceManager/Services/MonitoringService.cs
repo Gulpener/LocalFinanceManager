@@ -177,12 +177,7 @@ public class MonitoringService : IMonitoringService
             var wasUndone = false;
             if (undoLookup.TryGetValue(audit.TransactionId, out var undosForTransaction))
             {
-                // Only treat undos created by the auto-apply undo flow as undoing this auto-apply
-                wasUndone = undosForTransaction.Any(u =>
-                    u.ChangedAt > autoApplyTimestamp &&
-                    u.ActionType == "Undo" &&
-                    u.ChangedBy == "AutoApplyUndo" &&
-                    u.Reason == "Auto-apply undo");
+                wasUndone = undosForTransaction.Any(u => u.ChangedAt > autoApplyTimestamp);
             }
 
             // Check if can undo (within retention window and not already undone)
