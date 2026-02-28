@@ -216,7 +216,72 @@ public class AutomationControllerTests
         var result = await _controller.UpdateSettings(null!);
 
         // Assert
-        Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var objectResult = (ObjectResult)result;
+        Assert.That(objectResult.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(objectResult.Value, Is.InstanceOf<ValidationProblemDetails>());
+
+        var problemDetails = (ValidationProblemDetails)objectResult.Value!;
+        Assert.That(problemDetails.Errors.ContainsKey("settings"), Is.True);
+        Assert.That(problemDetails.Errors["settings"], Contains.Item("Settings payload is required."));
+    }
+
+    [Test]
+    public async Task UpdateSettings_IntervalMinutesTooLow_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidSettings = new AutoApplySettingsDto
+        {
+            Enabled = true,
+            MinimumConfidence = 0.8f,
+            IntervalMinutes = 0,
+            AccountIds = new List<Guid>(),
+            ExcludedCategoryIds = new List<Guid>()
+        };
+
+        // Act
+        var result = await _controller.UpdateSettings(invalidSettings);
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var objectResult = (ObjectResult)result;
+        Assert.That(objectResult.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(objectResult.Value, Is.InstanceOf<ValidationProblemDetails>());
+
+        var problemDetails = (ValidationProblemDetails)objectResult.Value!;
+        Assert.That(problemDetails.Errors.ContainsKey(nameof(AutoApplySettingsDto.IntervalMinutes)), Is.True);
+        Assert.That(
+            problemDetails.Errors[nameof(AutoApplySettingsDto.IntervalMinutes)],
+            Contains.Item("Interval must be greater than 0 minutes"));
+    }
+
+    [Test]
+    public async Task UpdateSettings_IntervalMinutesTooHigh_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidSettings = new AutoApplySettingsDto
+        {
+            Enabled = true,
+            MinimumConfidence = 0.8f,
+            IntervalMinutes = 1441,
+            AccountIds = new List<Guid>(),
+            ExcludedCategoryIds = new List<Guid>()
+        };
+
+        // Act
+        var result = await _controller.UpdateSettings(invalidSettings);
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var objectResult = (ObjectResult)result;
+        Assert.That(objectResult.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(objectResult.Value, Is.InstanceOf<ValidationProblemDetails>());
+
+        var problemDetails = (ValidationProblemDetails)objectResult.Value!;
+        Assert.That(problemDetails.Errors.ContainsKey(nameof(AutoApplySettingsDto.IntervalMinutes)), Is.True);
+        Assert.That(
+            problemDetails.Errors[nameof(AutoApplySettingsDto.IntervalMinutes)],
+            Contains.Item("Interval cannot exceed 1440 minutes (24 hours)"));
     }
 
     [Test]

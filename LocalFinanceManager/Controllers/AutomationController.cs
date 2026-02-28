@@ -205,11 +205,19 @@ public class AutomationController : ControllerBase
     /// <param name="settings">New settings</param>
     /// <returns>Success result</returns>
     [HttpPost("settings")]
-    public async Task<IActionResult> UpdateSettings([FromBody] AutoApplySettingsDto settings)
+    public async Task<IActionResult> UpdateSettings([FromBody] AutoApplySettingsDto? settings)
     {
         if (settings == null)
         {
-            return BadRequest("Settings cannot be null");
+            return ValidationProblem(new ValidationProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "One or more validation errors occurred.",
+                Errors = new Dictionary<string, string[]>
+                {
+                    ["settings"] = new[] { "Settings payload is required." }
+                }
+            });
         }
 
         var validationResult = await _settingsValidator.ValidateAsync(settings);
