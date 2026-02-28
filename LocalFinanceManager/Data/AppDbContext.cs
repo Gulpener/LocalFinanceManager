@@ -245,15 +245,10 @@ public class AppDbContext : DbContext
         // Configure AppSettings entity (singleton)
         modelBuilder.Entity<AppSettings>(entity =>
         {
-            entity.HasKey(s => s.Id);
-
             entity.Property(s => s.MinimumConfidence)
                 .IsRequired();
 
             entity.Property(s => s.IntervalMinutes)
-                .IsRequired();
-
-            entity.Property(s => s.UpdatedAt)
                 .IsRequired();
 
             entity.Property(s => s.UpdatedBy)

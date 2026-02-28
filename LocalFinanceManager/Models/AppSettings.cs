@@ -5,11 +5,20 @@ namespace LocalFinanceManager.Models;
 /// Singleton entity - only one record should exist.
 /// </summary>
 public class AppSettings
+    : BaseEntity
 {
     /// <summary>
-    /// Single instance ID (always 1).
+    /// Deterministic singleton ID for the single persisted settings record.
     /// </summary>
-    public int Id { get; set; } = 1;
+    public static readonly Guid SingletonId = Guid.Parse("6FBA7D31-3D45-4E1F-BCBA-6EB433BE34DF");
+
+    /// <summary>
+    /// Creates app settings with deterministic singleton ID.
+    /// </summary>
+    public AppSettings()
+    {
+        Id = SingletonId;
+    }
 
     /// <summary>
     /// Auto-apply enabled flag.
@@ -35,11 +44,6 @@ public class AppSettings
     /// JSON serialized list of excluded category IDs.
     /// </summary>
     public string? ExcludedCategoryIdsJson { get; set; }
-
-    /// <summary>
-    /// Last updated timestamp.
-    /// </summary>
-    public DateTime UpdatedAt { get; set; }
 
     /// <summary>
     /// Updated by user identifier (for audit trail).

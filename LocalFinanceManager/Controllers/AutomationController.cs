@@ -140,7 +140,9 @@ public class AutomationController : ControllerBase
     public async Task<IActionResult> GetSettings()
     {
         // Try to load from database first, fallback to appsettings.json
-        var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+        var dbSettings = await _dbContext.AppSettings
+            .Where(s => !s.IsArchived)
+            .FirstOrDefaultAsync();
 
         if (dbSettings != null)
         {
@@ -200,10 +202,17 @@ public class AutomationController : ControllerBase
         try
         {
             // Load or create settings record
-            var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+            var dbSettings = await _dbContext.AppSettings
+                .Where(s => !s.IsArchived)
+                .FirstOrDefaultAsync();
+
             if (dbSettings == null)
             {
-                dbSettings = new AppSettings { Id = 1 };
+                dbSettings = new AppSettings
+                {
+                    Id = AppSettings.SingletonId,
+                    IsArchived = false
+                };
                 _dbContext.AppSettings.Add(dbSettings);
             }
 
@@ -217,7 +226,6 @@ public class AutomationController : ControllerBase
             dbSettings.ExcludedCategoryIdsJson = settings.ExcludedCategoryIds.Any()
                 ? JsonSerializer.Serialize(settings.ExcludedCategoryIds)
                 : null;
-            dbSettings.UpdatedAt = DateTime.UtcNow;
             dbSettings.UpdatedBy = "System"; // Uses a system identifier because no authenticated user context is available here
 
             await _dbContext.SaveChangesAsync();
@@ -230,6 +238,35 @@ public class AutomationController : ControllerBase
                 settings.ExcludedCategoryIds.Count);
 
             return Ok(new { success = true, message = "Settings updated successfully" });
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            var currentSettings = await _dbContext.AppSettings
+                .AsNoTracking()
+                .Where(s => !s.IsArchived)
+                .FirstOrDefaultAsync();
+
+            return Conflict(new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+                title = "Conflict",
+                status = 409,
+                detail = "Settings were updated by another process. Please reload and try again.",
+                current = currentSettings == null
+                    ? null
+                    : new AutoApplySettingsDto
+                    {
+                        Enabled = currentSettings.AutoApplyEnabled,
+                        MinimumConfidence = currentSettings.MinimumConfidence,
+                        IntervalMinutes = currentSettings.IntervalMinutes,
+                        AccountIds = string.IsNullOrEmpty(currentSettings.AccountIdsJson)
+                            ? new List<Guid>()
+                            : JsonSerializer.Deserialize<List<Guid>>(currentSettings.AccountIdsJson) ?? new List<Guid>(),
+                        ExcludedCategoryIds = string.IsNullOrEmpty(currentSettings.ExcludedCategoryIdsJson)
+                            ? new List<Guid>()
+                            : JsonSerializer.Deserialize<List<Guid>>(currentSettings.ExcludedCategoryIdsJson) ?? new List<Guid>()
+                    }
+            });
         }
         catch (Exception ex)
         {

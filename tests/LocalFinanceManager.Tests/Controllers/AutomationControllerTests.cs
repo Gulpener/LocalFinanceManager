@@ -131,7 +131,8 @@ public class AutomationControllerTests
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
 
         // Verify database persistence
-        var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+        var dbSettings = await _dbContext.AppSettings
+            .FirstOrDefaultAsync(s => !s.IsArchived);
         Assert.That(dbSettings, Is.Not.Null);
         Assert.That(dbSettings!.AutoApplyEnabled, Is.True);
         Assert.That(dbSettings.MinimumConfidence, Is.EqualTo(0.75f));
@@ -229,7 +230,8 @@ public class AutomationControllerTests
         await _controller.UpdateSettings(newSettings);
 
         // Assert
-        var dbSettings = await _dbContext.AppSettings.FindAsync(1);
+        var dbSettings = await _dbContext.AppSettings
+            .FirstOrDefaultAsync(s => !s.IsArchived);
         Assert.That(dbSettings, Is.Not.Null);
         Assert.That(dbSettings!.AccountIdsJson, Is.Null);
         Assert.That(dbSettings.ExcludedCategoryIdsJson, Is.Null);
