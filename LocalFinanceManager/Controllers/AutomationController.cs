@@ -146,13 +146,29 @@ public class AutomationController : ControllerBase
 
         if (dbSettings != null)
         {
-            var accountIds = string.IsNullOrEmpty(dbSettings.AccountIdsJson)
-                ? new List<Guid>()
-                : JsonSerializer.Deserialize<List<Guid>>(dbSettings.AccountIdsJson) ?? new List<Guid>();
+            List<Guid> accountIds;
+            try
+            {
+                accountIds = string.IsNullOrEmpty(dbSettings.AccountIdsJson)
+                    ? new List<Guid>()
+                    : JsonSerializer.Deserialize<List<Guid>>(dbSettings.AccountIdsJson) ?? new List<Guid>();
+            }
+            catch (JsonException)
+            {
+                accountIds = new List<Guid>();
+            }
 
-            var excludedCategoryIds = string.IsNullOrEmpty(dbSettings.ExcludedCategoryIdsJson)
-                ? new List<Guid>()
-                : JsonSerializer.Deserialize<List<Guid>>(dbSettings.ExcludedCategoryIdsJson) ?? new List<Guid>();
+            List<Guid> excludedCategoryIds;
+            try
+            {
+                excludedCategoryIds = string.IsNullOrEmpty(dbSettings.ExcludedCategoryIdsJson)
+                    ? new List<Guid>()
+                    : JsonSerializer.Deserialize<List<Guid>>(dbSettings.ExcludedCategoryIdsJson) ?? new List<Guid>();
+            }
+            catch (JsonException)
+            {
+                excludedCategoryIds = new List<Guid>();
+            }
 
             var settings = new AutoApplySettingsDto
             {

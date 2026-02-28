@@ -119,7 +119,7 @@ public class MonitoringService : IMonitoringService
                 .ThenInclude(t => t.AssignedParts!)
                     .ThenInclude(p => p.BudgetLine)
                         .ThenInclude(bl => bl.Category)
-            .OrderByDescending(a => a.AutoAppliedAt)
+            .OrderByDescending(a => a.AutoAppliedAt ?? a.ChangedAt)
             .Take(limit)
             .ToListAsync();
 
@@ -190,13 +190,12 @@ public class MonitoringService : IMonitoringService
         // Estimate based on last 100 unassigned transactions
         // This is a simplified estimation - in production, would use ML service to get actual predictions
 
-        var totalUnassignedCount = await _dbContext.Transactions
+        var recentUnassignedCount = await _dbContext.Transactions
             .Where(t => !t.IsArchived)
             .Where(t => !t.AssignedParts!.Any())
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(100)
             .CountAsync();
-
-        // Cap the sample size at 100 to preserve original semantics
-        var recentUnassignedCount = Math.Min(totalUnassignedCount, 100);
         // Rough estimation: assume 60% of unassigned have suggestions above threshold
         var estimationFactor = confidenceThreshold switch
         {

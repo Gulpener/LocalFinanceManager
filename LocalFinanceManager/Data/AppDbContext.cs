@@ -245,6 +245,12 @@ public class AppDbContext : DbContext
         // Configure AppSettings entity (singleton)
         modelBuilder.Entity<AppSettings>(entity =>
         {
+            // Prevent database-generated values for the singleton key.
+            entity.Property(s => s.Id)
+                .ValueGeneratedNever();
+
+            // Enforce singleton semantics at database level.
+            entity.HasCheckConstraint("CK_AppSettings_Singleton", "Id = 1");
             entity.Property(s => s.MinimumConfidence)
                 .IsRequired();
 

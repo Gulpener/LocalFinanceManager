@@ -139,12 +139,12 @@ public class AutoApplySettingsPageModel : PageObjectBase
             await Page.WaitForSelectorAsync($"{SuccessToastSelector}, .alert-success", new() { Timeout = 10000 });
             return true;
         }
-        catch
+        catch (TimeoutException)
         {
-            await Task.Delay(300);
-            return true;
+            return false;
         }
     }
+}
 
     /// <summary>
     /// Saves settings and waits for confirmation.

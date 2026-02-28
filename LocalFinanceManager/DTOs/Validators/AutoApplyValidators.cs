@@ -51,7 +51,8 @@ public class SuggestionFeedbackValidator : AbstractValidator<SuggestionFeedbackD
 
         RuleFor(x => x.FinalCategoryId)
             .NotEmpty()
-            .WithMessage("Final category ID is required");
+            .When(x => x.Accepted)
+            .WithMessage("Final category ID is required when accepting a suggestion");
 
         RuleFor(x => x.SuggestionConfidence)
             .InclusiveBetween(0.0f, 1.0f)

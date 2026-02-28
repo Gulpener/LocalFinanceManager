@@ -153,14 +153,8 @@ else if (_suggestion != null && !_isHidden)
 
             if (response.IsSuccessStatusCode)
             {
-                // Show success toast
+                // Show success toast (feedback recorded)
                 await JS.InvokeVoidAsync("showToast", "Suggestion accepted", "success");
-
-                // Hide the badge
-                _isHidden = true;
-
-                // Notify parent component
-                await OnSuggestionAccepted.InvokeAsync();
             }
             else
             {
@@ -186,29 +180,16 @@ else if (_suggestion != null && !_isHidden)
         {
             _isProcessing = true;
 
-            var feedback = new SuggestionFeedbackDto
-            {
-                TransactionId = TransactionId,
-                Accepted = false,
-                FinalCategoryId = Guid.Empty, // Will be set when user manually assigns
-                SuggestedCategoryId = _suggestion.CategoryId,
-                SuggestionConfidence = _suggestion.Confidence,
-                ModelVersion = _suggestion.ModelVersion
-            };
+            // For now, do not send feedback with an empty FinalCategoryId, as the backend
+            // expects a valid CategoryId FK. Simply hide the badge locally to indicate
+            // that the suggestion was dismissed.
+            _isHidden = true;
 
-            var response = await Http.PostAsJsonAsync("/api/suggestions/feedback", feedback);
-
-            if (response.IsSuccessStatusCode)
-            {
-                // Hide the badge
-                _isHidden = true;
-
-                await JS.InvokeVoidAsync("showToast", "Feedback recorded", "info");
-            }
+            await JS.InvokeVoidAsync("showToast", "Suggestion dismissed", "info");
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Error recording feedback: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", $"Error handling suggestion rejection: {ex.Message}");
         }
         finally
         {
