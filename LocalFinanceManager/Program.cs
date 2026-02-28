@@ -60,6 +60,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var skipDatabaseMigrations = app.Configuration.GetValue<bool>("SkipDatabaseMigrations");
 
     // Recreate database if environment variable is set (Development only)
     var recreateDb = app.Configuration.GetValue<bool>("RecreateDatabase");
@@ -76,10 +77,13 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    await context.Database.MigrateAsync();
+    if (!skipDatabaseMigrations)
+    {
+        await context.Database.MigrateAsync();
+    }
 
     // Seed only in Development
-    if (app.Environment.IsDevelopment())
+    if (app.Environment.IsDevelopment() && !skipDatabaseMigrations)
     {
         await context.SeedAsync();
     }

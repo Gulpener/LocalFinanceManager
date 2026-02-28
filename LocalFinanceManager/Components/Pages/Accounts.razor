@@ -3,11 +3,17 @@
 @using LocalFinanceManager.DTOs
 @inject AccountService AccountService
 @inject NavigationManager Navigation
+@inject ILogger<Accounts> Logger
 @rendermode InteractiveServer
 
 <PageTitle>Accounts</PageTitle>
 
 <h1>Accounts</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
 
 <div class="mb-3">
     <a href="/accounts/new" class="btn btn-primary">
@@ -99,10 +105,12 @@ else
         try
         {
             accounts = await AccountService.GetAllActiveAsync();
+            errorMessage = null;
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading accounts: {ex.Message}";
+            Logger.LogError(ex, "Failed to load accounts.");
+            errorMessage = "Could not load accounts.";
         }
     }
 
@@ -120,15 +128,19 @@ else
     {
         if (accountToArchive == null) return;
 
+        var accountId = accountToArchive.Id;
+
         try
         {
-            await AccountService.ArchiveAsync(accountToArchive.Id);
+            await AccountService.ArchiveAsync(accountId);
             accountToArchive = null;
             await LoadAccounts(); // Reload the list
+            errorMessage = null;
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error archiving account: {ex.Message}";
+            Logger.LogError(ex, "Failed to archive account {AccountId}.", accountId);
+            errorMessage = "Could not archive account.";
         }
     }
 

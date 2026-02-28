@@ -155,8 +155,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Default"] = GetConnectionString(),
-                ["RecreateDatabase"] = "true", // Let the app recreate the database on startup for E2E tests
+                ["RecreateDatabase"] = "false", // Database cleanup is handled by InitializeDatabaseAsync()
+                ["SkipDatabaseMigrations"] = "true", // Migrations are applied in InitializeDatabaseAsync() before host startup
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
+                ["AutomationOptions:MonitoringRefreshIntervalSeconds"] = "2", // Speed up monitoring auto-refresh tests
                 ["ML:EnableAutoSuggestions"] = "false" // Disable ML during tests unless explicitly enabled
             });
         });
@@ -248,6 +250,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         // Final cleanup
         SqliteConnection.ClearAllPools();
+
+        // Apply migrations before the web host starts.
+        // This avoids duplicate/concurrent migration execution paths during WebApplicationFactory host setup.
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(GetConnectionString(), sqliteOptions => sqliteOptions.CommandTimeout(60))
+            .Options;
+
+        await using var context = new AppDbContext(options);
+        await context.Database.MigrateAsync();
     }
 
     /// <summary>

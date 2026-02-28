@@ -3,6 +3,7 @@ using System;
 using LocalFinanceManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalFinanceManager.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260205211852_AddAppSettings")]
+    partial class AddAppSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
@@ -79,8 +82,9 @@ namespace LocalFinanceManager.Migrations
 
             modelBuilder.Entity("LocalFinanceManager.Models.AppSettings", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("AccountIdsJson")
                         .HasColumnType("TEXT");
@@ -88,32 +92,17 @@ namespace LocalFinanceManager.Migrations
                     b.Property<bool>("AutoApplyEnabled")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
-
                     b.Property<string>("ExcludedCategoryIdsJson")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("IntervalMinutes")
                         .HasColumnType("INTEGER");
 
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("INTEGER");
-
                     b.Property<float>("MinimumConfidence")
                         .HasColumnType("REAL");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("BLOB");
-
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(100)
@@ -121,12 +110,7 @@ namespace LocalFinanceManager.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsArchived");
-
-                    b.ToTable("AppSettings", t =>
-                        {
-                            t.HasCheckConstraint("CK_AppSettings_SingletonId", "lower(Id) = '6fba7d31-3d45-4e1f-bcba-6eb433be34df'");
-                        });
+                    b.ToTable("AppSettings");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.BudgetLine", b =>

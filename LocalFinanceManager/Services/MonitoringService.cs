@@ -1,5 +1,6 @@
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
+using LocalFinanceManager.DTOs.ML;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -20,6 +21,16 @@ public interface IMonitoringService
     /// Checks if undo rate exceeds alert threshold.
     /// </summary>
     Task<bool> IsUndoRateAboveThresholdAsync(int windowDays = 7);
+
+    /// <summary>
+    /// Gets auto-apply history.
+    /// </summary>
+    Task<List<AutoApplyHistoryDto>> GetAutoApplyHistoryAsync(int limit = 50);
+
+    /// <summary>
+    /// Estimates number of auto-applies based on confidence threshold.
+    /// </summary>
+    Task<int> EstimateAutoApplyCountAsync(float confidenceThreshold);
 }
 
 public class MonitoringService : IMonitoringService
@@ -49,16 +60,38 @@ public class MonitoringService : IMonitoringService
             .Where(a => a.ChangedAt >= startDate)
             .ToListAsync();
 
-        // Get undo operations for auto-applied assignments
-        var undoAudits = await _dbContext.TransactionAudits
-            .Where(a => !a.IsArchived)
-            .Where(a => a.ActionType == "Undo")
-            .Where(a => a.ChangedAt >= startDate)
-            .Where(a => a.Reason != null && a.Reason.Contains("auto-applied"))
-            .ToListAsync();
-
         var totalAutoApplied = autoAppliedAudits.Count;
-        var totalUndone = undoAudits.Count;
+
+        // Derive undos from in-window auto-applies to avoid skew from unrelated undo events.
+        // This mirrors history logic: an auto-apply is considered undone when a later undo exists
+        // for the same transaction.
+        var totalUndone = 0;
+        if (totalAutoApplied > 0)
+        {
+            var transactionIds = autoAppliedAudits
+                .Select(a => a.TransactionId)
+                .Distinct()
+                .ToList();
+
+            var undoAudits = await _dbContext.TransactionAudits
+                .Where(a => !a.IsArchived)
+                .Where(a => a.ActionType == "Undo")
+                .Where(a => transactionIds.Contains(a.TransactionId))
+                .Select(a => new { a.TransactionId, a.ChangedAt })
+                .ToListAsync();
+
+            var undoLookup = undoAudits
+                .GroupBy(a => a.TransactionId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.ChangedAt).ToList());
+
+            totalUndone = autoAppliedAudits.Count(a =>
+            {
+                var autoApplyTimestamp = a.AutoAppliedAt ?? a.ChangedAt;
+                return undoLookup.TryGetValue(a.TransactionId, out var undoTimestamps)
+                    && undoTimestamps.Any(undoAt => undoAt > autoApplyTimestamp);
+            });
+        }
+
         var undoRate = totalAutoApplied > 0 ? (decimal)totalUndone / totalAutoApplied : 0;
         var avgConfidence = autoAppliedAudits.Any() && autoAppliedAudits.Any(a => a.Confidence.HasValue)
             ? autoAppliedAudits.Where(a => a.Confidence.HasValue).Average(a => a.Confidence!.Value)
@@ -69,9 +102,13 @@ public class MonitoringService : IMonitoringService
             WindowDays = windowDays,
             TotalAutoApplied = totalAutoApplied,
             TotalUndone = totalUndone,
+            UndoCount = totalUndone,
             UndoRate = undoRate,
             AverageConfidence = (decimal)avgConfidence,
-            IsUndoRateAboveThreshold = undoRate > _options.UndoRateAlertThreshold
+            IsUndoRateAboveThreshold = undoRate > _options.UndoRateAlertThreshold,
+            LastRunTimestamp = autoAppliedAudits.Any()
+                ? autoAppliedAudits.Max(a => a.AutoAppliedAt ?? a.ChangedAt)
+                : null
         };
 
         if (stats.IsUndoRateAboveThreshold)
@@ -94,6 +131,105 @@ public class MonitoringService : IMonitoringService
         var stats = await GetAutoApplyStatsAsync(windowDays);
         return stats.IsUndoRateAboveThreshold;
     }
+
+    public async Task<List<AutoApplyHistoryDto>> GetAutoApplyHistoryAsync(int limit = 50)
+    {
+        var autoAppliedAudits = await _dbContext.TransactionAudits
+            .Where(a => !a.IsArchived)
+            .Where(a => a.IsAutoApplied)
+            .Include(a => a.Transaction)
+                .ThenInclude(t => t.AssignedParts!)
+                    .ThenInclude(p => p.BudgetLine)
+                        .ThenInclude(bl => bl.Category)
+            .OrderByDescending(a => a.AutoAppliedAt ?? a.ChangedAt)
+            .Take(limit)
+            .ToListAsync();
+
+        // Collect transaction IDs for all auto-applied audits
+        var transactionIds = autoAppliedAudits
+            .Select(a => a.TransactionId)
+            .Distinct()
+            .ToList();
+
+        // Fetch all undo audits for these transactions in a single query
+        var undoAudits = await _dbContext.TransactionAudits
+            .Where(a => !a.IsArchived)
+            .Where(a => a.ActionType == "Undo")
+            .Where(a => transactionIds.Contains(a.TransactionId))
+            .Select(a => new { a.TransactionId, a.ChangedAt })
+            .ToListAsync();
+
+        // Group undo audits by transaction for efficient in-memory lookup
+        var undoLookup = undoAudits
+            .GroupBy(a => a.TransactionId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var history = new List<AutoApplyHistoryDto>();
+
+        foreach (var audit in autoAppliedAudits)
+        {
+            if (audit.Transaction == null) continue;
+
+            // Use AutoAppliedAt if available; fall back to ChangedAt for older/seeded audits
+            var autoApplyTimestamp = audit.AutoAppliedAt ?? audit.ChangedAt;
+
+            // Check if this auto-apply was undone by the dedicated auto-apply undo path
+            var wasUndone = false;
+            if (undoLookup.TryGetValue(audit.TransactionId, out var undosForTransaction))
+            {
+                wasUndone = undosForTransaction.Any(u => u.ChangedAt > autoApplyTimestamp);
+            }
+
+            // Check if can undo (within retention window and not already undone)
+            var retentionCutoff = DateTime.UtcNow.AddDays(-_options.UndoRetentionDays);
+            var canUndo = !wasUndone
+                && autoApplyTimestamp >= retentionCutoff;
+
+            // Get category name from the related category, falling back if not available
+            var categoryName = audit.Transaction.AssignedParts
+                ?.Select(p => p.BudgetLine.Category.Name)
+                .FirstOrDefault(name => !string.IsNullOrWhiteSpace(name))
+                ?? "Uncategorized";
+
+            history.Add(new AutoApplyHistoryDto
+            {
+                TransactionId = audit.TransactionId,
+                Description = audit.Transaction.Description,
+                Amount = audit.Transaction.Amount,
+                CategoryName = categoryName,
+                ConfidenceScore = audit.Confidence ?? 0.0f,
+                AutoAppliedAt = audit.AutoAppliedAt ?? audit.ChangedAt,
+                Status = wasUndone ? "Undone" : "Accepted",
+                CanUndo = canUndo
+            });
+        }
+
+        return history;
+    }
+
+    public async Task<int> EstimateAutoApplyCountAsync(float confidenceThreshold)
+    {
+        // Estimate based on last 100 unassigned transactions
+        // This is a simplified estimation - in production, would use ML service to get actual predictions
+
+        var recentUnassignedCount = await _dbContext.Transactions
+            .Where(t => !t.IsArchived)
+            .Where(t => !t.AssignedParts!.Any())
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(100)
+            .CountAsync();
+        // Rough estimation: assume 60% of unassigned have suggestions above threshold
+        var estimationFactor = confidenceThreshold switch
+        {
+            >= 0.9f => 0.3m,
+            >= 0.8f => 0.5m,
+            >= 0.7f => 0.65m,
+            >= 0.6f => 0.75m,
+            _ => 0.8m
+        };
+
+        return (int)(recentUnassignedCount * estimationFactor);
+    }
 }
 
 /// <summary>
@@ -104,7 +240,9 @@ public class AutoApplyStats
     public int WindowDays { get; set; }
     public int TotalAutoApplied { get; set; }
     public int TotalUndone { get; set; }
+    public int UndoCount { get; set; }
     public decimal UndoRate { get; set; }
     public decimal AverageConfidence { get; set; }
     public bool IsUndoRateAboveThreshold { get; set; }
+    public DateTime? LastRunTimestamp { get; set; }
 }

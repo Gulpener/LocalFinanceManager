@@ -79,7 +79,7 @@ public class TransactionsController : ControllerBase
         try
         {
             // Validate file format
-            if (string.IsNullOrEmpty(request.FileFormat) || 
+            if (string.IsNullOrEmpty(request.FileFormat) ||
                 !new[] { "csv", "json" }.Contains(request.FileFormat.ToLowerInvariant()))
             {
                 return BadRequest(new
@@ -121,7 +121,7 @@ public class TransactionsController : ControllerBase
                 type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
                 title = "Internal Server Error",
                 status = 500,
-                detail = ex.Message
+                detail = "An unexpected error occurred while previewing the import file."
             });
         }
     }
@@ -147,7 +147,7 @@ public class TransactionsController : ControllerBase
                 });
             }
 
-            if (string.IsNullOrEmpty(request.FileFormat) || 
+            if (string.IsNullOrEmpty(request.FileFormat) ||
                 !new[] { "csv", "json" }.Contains(request.FileFormat.ToLowerInvariant()))
             {
                 return BadRequest(new
@@ -171,7 +171,7 @@ public class TransactionsController : ControllerBase
             }
 
             // Validate column mapping
-            if (request.ColumnMapping == null || 
+            if (request.ColumnMapping == null ||
                 string.IsNullOrEmpty(request.ColumnMapping.DateColumn) ||
                 string.IsNullOrEmpty(request.ColumnMapping.AmountColumn))
             {
@@ -210,7 +210,7 @@ public class TransactionsController : ControllerBase
                 type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",
                 title = "Internal Server Error",
                 status = 500,
-                detail = ex.Message
+                detail = "An unexpected error occurred while importing transactions."
             });
         }
     }
@@ -239,12 +239,13 @@ public class TransactionsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(ex, "Assign transaction failed due to invalid operation for transaction {TransactionId}", id);
             return NotFound(new
             {
                 type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
                 title = "Not Found",
                 status = 404,
-                detail = ex.Message
+                detail = "The transaction assignment request could not be processed."
             });
         }
         catch (Exception ex)
@@ -283,12 +284,13 @@ public class TransactionsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(ex, "Split transaction failed due to invalid operation for transaction {TransactionId}", id);
             return BadRequest(new
             {
                 type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
                 title = "Validation error",
                 status = 400,
-                detail = ex.Message
+                detail = "The transaction split request could not be processed."
             });
         }
         catch (Exception ex)
@@ -341,12 +343,13 @@ public class TransactionsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(ex, "Undo assignment failed due to invalid operation.");
             return NotFound(new
             {
                 type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
                 title = "Not Found",
                 status = 404,
-                detail = ex.Message
+                detail = "The undo request could not be processed."
             });
         }
         catch (Exception ex)

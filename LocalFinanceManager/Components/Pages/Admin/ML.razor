@@ -1,0 +1,84 @@
+@page "/admin/ml"
+@using LocalFinanceManager.DTOs.ML
+@using System.Globalization
+@using System.Net
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILogger<ML> Logger
+
+<PageTitle>ML Model Info</PageTitle>
+
+<h1>ML modelinformatie</h1>
+<p class="lead">Bekijk details van het actieve ML-model en de laatste trainingsresultaten.</p>
+
+<div class="card" data-testid="model-info">
+    <div class="card-body">
+        @if (_loading)
+        {
+            <div class="text-center my-3">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Laden...</span>
+                </div>
+            </div>
+        }
+        else if (_model != null)
+        {
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Modelversie</dt>
+                <dd class="col-sm-8" data-testid="model-version">v@_model.Version</dd>
+
+                <dt class="col-sm-4">Nauwkeurigheid (F1)</dt>
+                <dd class="col-sm-8" data-testid="model-accuracy">@FormatPercent(_model.F1Score)</dd>
+
+                <dt class="col-sm-4">Laatst getraind</dt>
+                <dd class="col-sm-8" data-testid="last-trained">@_model.TrainedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+            </dl>
+        }
+        else if (_notFound)
+        {
+            <div class="alert alert-warning mb-0">Geen actief ML-model beschikbaar.</div>
+        }
+        else if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger mb-0">@_errorMessage</div>
+        }
+    </div>
+</div>
+
+@code {
+    private ModelMetricsDto? _model;
+    private bool _loading = true;
+    private bool _notFound;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync("/api/suggestions/active-model");
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                _notFound = true;
+                return;
+            }
+
+            response.EnsureSuccessStatusCode();
+            _model = await response.Content.ReadFromJsonAsync<ModelMetricsDto>();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load active ML model info for admin page.");
+            _errorMessage = "Kon modelinformatie niet laden.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static string FormatPercent(double value)
+    {
+        return (value * 100).ToString("0.0", CultureInfo.InvariantCulture) + "%";
+    }
+}

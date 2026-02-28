@@ -1,0 +1,524 @@
+@page "/admin/autoapply"
+@page "/settings/auto-apply"
+@using LocalFinanceManager.DTOs.ML
+@using LocalFinanceManager.Data.Repositories
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ILogger<AutoApplySettings> Logger
+@inject IAccountRepository AccountRepository
+@inject ICategoryRepository CategoryRepository
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+@implements IDisposable
+
+<script>
+    window.localFinanceAutoApply = window.localFinanceAutoApply || {};
+
+    window.localFinanceAutoApply.getSettingsSnapshot = () => {
+        const getSelectedValues = (id) => {
+            const select = document.getElementById(id);
+            if (!select) {
+                return [];
+            }
+
+            return Array.from(select.selectedOptions)
+                .map(option => option.value)
+                .filter(value => typeof value === "string" && value.length > 0);
+        };
+
+        const enableToggle = document.getElementById("enable-auto-apply");
+        const confidenceSlider = document.getElementById("confidence-threshold");
+        const intervalInput = document.getElementById("intervalMinutes");
+
+        const minimumConfidence = confidenceSlider
+            ? Number.parseFloat(confidenceSlider.value)
+            : 0.8;
+
+        const intervalMinutes = intervalInput
+            ? Number.parseInt(intervalInput.value, 10)
+            : 15;
+
+        return {
+            Enabled: Boolean(enableToggle?.checked),
+            MinimumConfidence: Number.isFinite(minimumConfidence) ? minimumConfidence : 0.8,
+            IntervalMinutes: Number.isFinite(intervalMinutes) ? intervalMinutes : 15,
+            AccountIds: getSelectedValues("account-ids"),
+            ExcludedCategoryIds: getSelectedValues("excluded-categories")
+        };
+    };
+</script>
+
+<PageTitle>Auto-Apply instellingen</PageTitle>
+
+<Breadcrumb
+Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Auto-Apply") })" />
+
+<h1>Auto-Apply instellingen</h1>
+
+<p class="lead">Configureer automatische toewijzing van transacties op basis van ML-suggesties.</p>
+
+@if (_loading)
+{
+    <div class="text-center my-5">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Algemene instellingen</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="enable-auto-apply"
+                                   @bind="_settings.Enabled">
+                                <label class="form-check-label" for="enable-auto-apply">
+                                    <strong>Automatische toewijzing inschakelen</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted">
+                                Wanneer ingeschakeld worden transacties automatisch toegewezen op basis van ML-suggesties
+                                met hoge betrouwbaarheid.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confidence-threshold" class="form-label">
+                                Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence *
+                                                                                                                                                                                            100).ToString("F0"))%</strong>
+                            </label>
+                            <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
+                                value="@_settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                @oninput="OnConfidenceInputAsync">
+                                <small class="text-muted d-block">
+                                    Hoger = nauwkeuriger maar minder automatische toewijzingen.
+                                    Aanbevolen: 75-85%
+                                </small>
+                                @if (_previewStats != null)
+                                {
+                                    <div class="alert alert-info mt-2" data-testid="preview-stats">
+                                        <i class="bi bi-info-circle"></i>
+                                        Op basis van de laatste 100 transacties zouden er
+                                        <strong>@_previewStats</strong> automatisch worden toegewezen met deze drempel.
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="intervalMinutes" class="form-label">
+                                    Uitvoerinterval (minuten)
+                                </label>
+                                <input type="number" class="form-control" id="intervalMinutes" @bind="_settings.IntervalMinutes"
+                                       min="5" max="1440">
+                                    <small class="text-muted">
+                                        Hoe vaak de auto-apply job moet worden uitgevoerd (standaard: 15 minuten)
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Account selectie</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Selecteer welke rekeningen moeten worden gebruikt voor automatische toewijzing
+                                    (laat leeg voor alle rekeningen).</p>
+
+                                    <select class="form-select" id="account-ids" multiple size="5"                                       @bind="SelectedAccountIds">
+                                        @foreach (var account in _accounts)
+                                        {
+                                            <option value="@account.Id">
+                                                @account.Label
+                                            </option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Uitgesloten categorieën</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Selecteer categorieën die moeten worden uitgesloten van automatische toewijzing
+                                        (bijv. gevoelige categorieën zoals "Belastingen").</p>
+
+                                        @if (_categories.Any())
+                                        {
+                                            <select class="form-select" id="excluded-categories" multiple size="5"
+                                                    @bind="SelectedExcludedCategoryIds">
+                                                @foreach (var category in _categories.OrderBy(c => c.Name))
+                                                {
+                                                    <option value="@category.Id">
+                                                        @category.Name
+                                                    </option>
+                                                }
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            <p class="text-muted">Geen categorieën beschikbaar.</p>
+                                        }
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(_errorMessage))
+                                {
+                                    <div class="alert alert-danger" role="alert">
+                                        <i class="bi bi-exclamation-triangle"></i> @_errorMessage
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(_successMessage))
+                                {
+                                    <div class="alert alert-success" role="alert" data-testid="success-toast">
+                                        <i class="bi bi-check-circle"></i> @_successMessage
+                                    </div>
+                                }
+
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-primary" @onclick="SaveSettings" disabled="@_saving"
+                                            data-testid="save-settings">
+                                        @if (_saving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        }
+                                        Instellingen opslaan
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" @onclick="LoadSettings">
+                                        Annuleren
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">ℹ️ Informatie</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <h6>Hoe werkt auto-apply?</h6>
+                                        <p class="small">
+                                            De auto-apply functie gebruikt machine learning om transacties automatisch
+                                            toe te wijzen aan categorieën. Alleen suggesties met een betrouwbaarheid
+                                            boven de ingestelde drempel worden toegepast.
+                                        </p>
+
+                                        <h6 class="mt-3">Betrouwbaarheidsdrempel</h6>
+                                        <ul class="small">
+                                            <li><strong>60-70%:</strong> Meer auto-toewijzingen, maar mogelijk minder nauwkeurig</li>
+                                            <li><strong>75-85%:</strong> Aanbevolen balans tussen volume en nauwkeurigheid</li>
+                                            <li><strong>90-95%:</strong> Zeer nauwkeurig, maar minder auto-toewijzingen</li>
+                                        </ul>
+
+                                        <h6 class="mt-3">Monitoring</h6>
+                                        <p class="small">
+                                            Bekijk de <a href="/settings/monitoring">monitoring dashboard</a> om de
+                                            prestaties van auto-apply te volgen en ongedaan gemaakte toewijzingen te bekijken.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+@code {
+    private AutoApplySettingsDto _settings = new();
+    private List<LocalFinanceManager.Models.Account> _accounts = new();
+    private List<LocalFinanceManager.Models.Category> _categories = new();
+    private bool _loading = true;
+    private bool _saving = false;
+    private string? _errorMessage;
+    private string? _successMessage;
+    private int? _previewStats;
+    private CancellationTokenSource? _previewDebounceCts;
+    private const int PreviewDebounceDelayMs = 350;
+    private const string SettingsLoadErrorMessage = "Kon instellingen niet laden.";
+    private const string SettingsLoadFallbackMessage = "Instellingen konden niet volledig geladen worden. Standaardwaarden worden gebruikt.";
+    private const string SettingsSaveErrorMessage = "Kon instellingen niet opslaan.";
+    private const string PreviewLoadErrorMessage = "Voorbeeldstatistieken konden niet worden bijgewerkt.";
+    private string[] _selectedAccountIds = Array.Empty<string>();
+    private string[] _selectedExcludedCategoryIds = Array.Empty<string>();
+
+    private string[] SelectedAccountIds
+    {
+        get => _selectedAccountIds;
+        set
+        {
+            _selectedAccountIds = value ?? Array.Empty<string>();
+            _settings.AccountIds = _selectedAccountIds
+                .Where(id => Guid.TryParse(id, out _))
+                .Select(Guid.Parse)
+                .ToList();
+        }
+    }
+
+    private string[] SelectedExcludedCategoryIds
+    {
+        get => _selectedExcludedCategoryIds;
+        set
+        {
+            _selectedExcludedCategoryIds = value ?? Array.Empty<string>();
+            _settings.ExcludedCategoryIds = _selectedExcludedCategoryIds
+                .Where(id => Guid.TryParse(id, out _))
+                .Select(Guid.Parse)
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAccounts();
+        await LoadCategories();
+        await LoadSettings();
+        _loading = false;
+    }
+
+    private async Task LoadAccounts()
+    {
+        _accounts = await AccountRepository.GetActiveAsync();
+    }
+
+    private async Task LoadCategories()
+    {
+        _categories = await CategoryRepository.GetActiveAsync();
+    }
+
+    private async Task LoadSettings()
+    {
+        try
+        {
+            _errorMessage = null;
+
+            // Load settings from backend (or use defaults)
+            var response = await Http.GetAsync("/api/automation/settings");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var settings = await response.Content.ReadFromJsonAsync<AutoApplySettingsDto>();
+                if (settings != null)
+                {
+                    _settings = settings;
+                }
+            }
+            else
+            {
+                var errorContent = await ReadResponseBodyForLoggingAsync(response);
+                Logger.LogWarning("Loading auto-apply settings failed with status code {StatusCode}. Response: {ErrorContent}",
+                    response.StatusCode, errorContent);
+
+                // Use default settings
+                _settings = new AutoApplySettingsDto
+                {
+                    Enabled = false,
+                    MinimumConfidence = 0.8f,
+                    IntervalMinutes = 15,
+                    AccountIds = new List<Guid>(),
+                    ExcludedCategoryIds = new List<Guid>()
+                };
+
+                _errorMessage = SettingsLoadFallbackMessage;
+            }
+
+            await LoadPreviewStats();
+            SyncSelectionBindingsFromSettings();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load auto-apply settings.");
+            _errorMessage = SettingsLoadErrorMessage;
+        }
+    }
+
+    private async Task LoadPreviewStats()
+    {
+        try
+        {
+            // Use InvariantCulture to ensure decimal point (not comma) in URL
+            var confidenceStr = _settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var response = await Http.GetAsync($"/api/automation/preview?confidence={confidenceStr}");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, int>>();
+                if (result != null && result.TryGetValue("estimatedAutoApplyCount", out var estimatedCount))
+                {
+                    _previewStats = estimatedCount;
+                }
+            }
+            else
+            {
+                var errorContent = await ReadResponseBodyForLoggingAsync(response);
+                Logger.LogWarning("Loading auto-apply preview stats failed with status code {StatusCode}. Response: {ErrorContent}",
+                    response.StatusCode, errorContent);
+                _errorMessage ??= PreviewLoadErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to load auto-apply preview stats.");
+            _errorMessage ??= PreviewLoadErrorMessage;
+        }
+    }
+
+    private async Task OnMinimumConfidenceChangedAsync()
+    {
+        _previewDebounceCts?.Cancel();
+        _previewDebounceCts?.Dispose();
+
+        _previewDebounceCts = new CancellationTokenSource();
+        var cancellationToken = _previewDebounceCts.Token;
+
+        try
+        {
+            await Task.Delay(PreviewDebounceDelayMs, cancellationToken);
+            await LoadPreviewStats();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore canceled debounce calls.
+        }
+    }
+
+    private async Task OnConfidenceInputAsync(ChangeEventArgs e)
+    {
+        var rawValue = Convert.ToString(e.Value, System.Globalization.CultureInfo.InvariantCulture);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return;
+        }
+
+        if (!float.TryParse(rawValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedConfidence) &&
+            !float.TryParse(rawValue, out parsedConfidence))
+        {
+            return;
+        }
+
+        if (Math.Abs(_settings.MinimumConfidence - parsedConfidence) < 0.0001f)
+        {
+            return;
+        }
+
+        _settings.MinimumConfidence = parsedConfidence;
+        await OnMinimumConfidenceChangedAsync();
+    }
+
+    private async Task SaveSettings()
+    {
+        try
+        {
+            _saving = true;
+            _errorMessage = null;
+            _successMessage = null;
+
+            await SyncSettingsFromDomAsync();
+
+            var response = await Http.PostAsJsonAsync("/api/automation/settings", _settings);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _successMessage = "Instellingen succesvol opgeslagen!";
+                await InvokeAsync(StateHasChanged);
+                try
+                {
+                    await ShowToastAsync("Instellingen opgeslagen", "success");
+                }
+                catch
+                {
+                    // Ignore toast rendering failures; the in-page success message is the primary signal.
+                }
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Logger.LogWarning("Saving auto-apply settings failed with status code {StatusCode}. Response: {ErrorContent}",
+response.StatusCode, errorContent);
+                _errorMessage = SettingsSaveErrorMessage;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save auto-apply settings.");
+            _errorMessage = SettingsSaveErrorMessage;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void SyncSelectionBindingsFromSettings()
+    {
+        _selectedAccountIds = (_settings.AccountIds ?? new List<Guid>())
+            .Select(id => id.ToString())
+            .ToArray();
+
+        _selectedExcludedCategoryIds = (_settings.ExcludedCategoryIds ?? new List<Guid>())
+            .Select(id => id.ToString())
+            .ToArray();
+    }
+
+    private async Task SyncSettingsFromDomAsync()
+    {
+        try
+        {
+            var snapshot = await JS.InvokeAsync<AutoApplyDomSnapshot?>("localFinanceAutoApply.getSettingsSnapshot");
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            _settings.Enabled = snapshot.Enabled;
+            _settings.MinimumConfidence = snapshot.MinimumConfidence;
+            _settings.IntervalMinutes = snapshot.IntervalMinutes;
+
+            SelectedAccountIds = snapshot.AccountIds ?? Array.Empty<string>();
+            SelectedExcludedCategoryIds = snapshot.ExcludedCategoryIds ?? Array.Empty<string>();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "DOM snapshot sync for auto-apply settings was unavailable; using bound values.");
+        }
+    }
+
+    private sealed class AutoApplyDomSnapshot
+    {
+        public bool Enabled { get; set; }
+        public float MinimumConfidence { get; set; }
+        public int IntervalMinutes { get; set; }
+        public string[]? AccountIds { get; set; }
+        public string[]? ExcludedCategoryIds { get; set; }
+    }
+
+    private static async Task<string> ReadResponseBodyForLoggingAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            return await response.Content.ReadAsStringAsync();
+        }
+        catch
+        {
+            return "<response body unavailable>";
+        }
+    }
+
+    private ValueTask ShowToastAsync(string message, string type)
+    {
+        return JS.InvokeVoidAsync("showToast", message, type);
+    }
+
+    public void Dispose()
+    {
+        _previewDebounceCts?.Cancel();
+        _previewDebounceCts?.Dispose();
+    }
+
+}

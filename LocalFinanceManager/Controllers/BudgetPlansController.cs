@@ -103,7 +103,8 @@ public class BudgetPlansController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { title = ex.Message, status = 400 });
+            _logger.LogWarning(ex, "Invalid operation while creating budget plan.");
+            return BadRequest(new { title = "Invalid operation", status = 400, detail = "The budget plan request could not be processed." });
         }
     }
 
@@ -178,7 +179,8 @@ public class BudgetPlansController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { title = ex.Message, status = 400 });
+            _logger.LogWarning(ex, "Invalid operation while creating budget line.");
+            return BadRequest(new { title = "Invalid operation", status = 400, detail = "The budget line request could not be processed." });
         }
     }
 
@@ -215,7 +217,8 @@ public class BudgetPlansController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(new { title = ex.Message, status = 400 });
+            _logger.LogWarning(ex, "Invalid operation while updating budget line {Id}", id);
+            return BadRequest(new { title = "Invalid operation", status = 400, detail = "The budget line request could not be processed." });
         }
     }
 

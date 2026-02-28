@@ -3,6 +3,7 @@
 @using LocalFinanceManager.Models
 @inject CategoryService CategoryService
 @inject IRecentCategoriesService RecentCategoriesService
+@inject ILogger<CategorySelector> Logger
 
 <div class="@CssClass">
     @if (categories == null)
@@ -14,9 +15,7 @@
     else
     {
         <div class="position-relative">
-            <select class="form-select" 
-                    value="@SelectedCategoryId" 
-                    @onchange="HandleCategorySelected"
+            <select class="form-select" value="@SelectedCategoryId" @onchange="HandleCategorySelected"
                     required="@IsRequired">
                 @if (AllowEmpty)
                 {
@@ -27,39 +26,40 @@
                     <optgroup label="⭐ Favorieten">
                         @foreach (var category in favoriteCategories)
                         {
-                            <option value="@category.Id">@category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))</option>
-                        }
-                    </optgroup>
-                }
+                            <option value="@category.Id">@category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" :
+                                                    "Uitgaven"))</option>
+                            }
+                        </optgroup>
+                    }
 
-                @if (favoriteCategories.Any() && FilteredCategories.Any())
-                {
-                    <optgroup label="Overige categorieën">
+                    @if (favoriteCategories.Any() && FilteredCategories.Any())
+                    {
+                        <optgroup label="Overige categorieën">
+                            @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
+                            {
+                                <option value="@category.Id">
+                                    @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
+                                </option>
+                            }
+                        </optgroup>
+                    }
+                    else
+                    {
                         @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
                         {
                             <option value="@category.Id">
                                 @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
                             </option>
                         }
-                    </optgroup>
-                }
-                else
-                {
-                    @foreach (var category in FilteredCategories.Where(c => !favoriteCategories.Any(f => f.Id == c.Id)))
-                    {
-                        <option value="@category.Id">
-                            @category.Name (@(category.Type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
-                        </option>
                     }
-                }
-            </select>
-        </div>
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="text-danger small mt-1">@errorMessage</div>
+                </select>
+            </div>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="text-danger small mt-1">@errorMessage</div>
+            }
         }
-    }
-</div>
+    </div>
 
 @code {
     /// <summary>
@@ -141,7 +141,7 @@
         {
             errorMessage = null;
             categories = await CategoryService.GetByBudgetPlanAsync(BudgetPlanId);
-            
+
             // Load favorite categories
             var favoriteCategoryIds = await RecentCategoriesService.GetFavoriteCategoriesAsync();
             favoriteCategories = categories
@@ -150,7 +150,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fout bij laden van categorieën: {ex.Message}";
+            Logger.LogError(ex, "Failed to load categories for budget plan {BudgetPlanId}.", BudgetPlanId);
+            errorMessage = "Fout bij laden van categorieën.";
             categories = new List<CategoryDto>();
             favoriteCategories = new List<CategoryDto>();
         }

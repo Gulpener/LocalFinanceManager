@@ -81,7 +81,7 @@ public class ImportService
             {
                 LineNumber = 0,
                 FieldName = "File",
-                ErrorMessage = ex.Message
+                ErrorMessage = "Could not preview the import file."
             });
         }
 
@@ -185,7 +185,7 @@ public class ImportService
                         {
                             LineNumber = parsed.LineNumber,
                             FieldName = "Transaction",
-                            ErrorMessage = ex.Message
+                            ErrorMessage = "Could not process this transaction row."
                         };
                         result.Errors.Add(error);
                         result.SkippedCount++;
@@ -193,7 +193,7 @@ public class ImportService
                         if (!request.SkipErrors)
                         {
                             // All-or-nothing mode: fail entire import
-                            throw new InvalidOperationException($"Import failed at line {parsed.LineNumber}: {ex.Message}", ex);
+                            throw new InvalidOperationException($"Import failed at line {parsed.LineNumber}.", ex);
                         }
                     }
                 }
@@ -223,7 +223,7 @@ public class ImportService
         {
             _logger.LogError(ex, "Import batch {ImportBatchId} failed", importBatchId);
             result.Success = false;
-            result.Message = $"Import failed: {ex.Message}";
+            result.Message = "Import failed due to an unexpected error.";
 
             if (!result.Errors.Any())
             {
@@ -231,7 +231,7 @@ public class ImportService
                 {
                     LineNumber = 0,
                     FieldName = "Import",
-                    ErrorMessage = ex.Message
+                    ErrorMessage = "An unexpected import error occurred."
                 });
             }
         }

@@ -22,6 +22,10 @@ A personal finance management application built with Blazor Server and .NET 10, 
 - **Playwright** for end-to-end testing
 - **NUnit/xUnit** for unit and integration testing
 
+## Security
+
+- Use the secure coding checklist during development and review: [docs/Security-Checklist.md](docs/Security-Checklist.md)
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
@@ -124,6 +128,13 @@ dotnet run
 $env:ASPNETCORE_ENVIRONMENT="Production"; dotnet run
 ```
 
+#### Auto-Apply Runtime Settings
+
+- `POST /api/automation/settings` persists auto-apply settings to the `AppSettings` table.
+- The auto-apply background worker reads these persisted values at runtime (enabled flag, confidence threshold, interval, account filter, excluded categories).
+- Settings are cached in memory using `Caching` options (`AbsoluteExpirationMinutes` / `SlidingExpirationMinutes`) and cache is invalidated when settings are saved.
+- If no `AppSettings` record exists, the worker falls back to `AutomationOptions` defaults from configuration.
+
 **⚠️ Important:** Database files (`.db`, `.db-shm`, `.db-wal`) are excluded from version control. Never commit database files containing real data.
 
 ### Recreating the Database
@@ -172,6 +183,8 @@ dotnet test --collect:"XPlat Code Coverage"
 ### End-to-End Tests
 
 E2E tests use NUnit + Playwright and test against a running instance:
+
+- For E2E database initialization and migration behavior, see [tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md](tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md#database-migration-strategy-e2e).
 
 ```bash
 # First time: Install Playwright browsers
@@ -325,14 +338,12 @@ If you're seeing unexpected data or an empty database:
    ```
 
 2. Navigate to `/admin/settings` to verify:
-
    - Current environment (Development/Production)
    - Database file path in use
    - Database file existence and size
    - Seed data status
 
 3. Verify database file in use:
-
    - Development: `localfinancemanager.dev.db`
    - Production: `localfinancemanager.db`
 

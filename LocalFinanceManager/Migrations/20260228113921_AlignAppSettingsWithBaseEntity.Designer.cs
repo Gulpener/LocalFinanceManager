@@ -3,6 +3,7 @@ using System;
 using LocalFinanceManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocalFinanceManager.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260228113921_AlignAppSettingsWithBaseEntity")]
+    partial class AlignAppSettingsWithBaseEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
@@ -80,6 +83,7 @@ namespace LocalFinanceManager.Migrations
             modelBuilder.Entity("LocalFinanceManager.Models.AppSettings", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("AccountIdsJson")
@@ -123,10 +127,7 @@ namespace LocalFinanceManager.Migrations
 
                     b.HasIndex("IsArchived");
 
-                    b.ToTable("AppSettings", t =>
-                        {
-                            t.HasCheckConstraint("CK_AppSettings_SingletonId", "lower(Id) = '6fba7d31-3d45-4e1f-bcba-6eb433be34df'");
-                        });
+                    b.ToTable("AppSettings");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.BudgetLine", b =>

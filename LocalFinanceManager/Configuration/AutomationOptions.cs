@@ -54,4 +54,11 @@ public class AutomationOptions
     /// Default: 100 transactions per batch.
     /// </summary>
     public int BatchSize { get; set; } = 100;
+
+    /// <summary>
+    /// Auto-refresh interval in seconds for the monitoring dashboard.
+    /// Default: 30 seconds.
+    /// Set to 0 to disable auto-refresh.
+    /// </summary>
+    public int MonitoringRefreshIntervalSeconds { get; set; } = 30;
 }

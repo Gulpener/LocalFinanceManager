@@ -140,11 +140,12 @@ public class AccountsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(ex, "Invalid operation while updating account {AccountId}", id);
             return BadRequest(new ProblemDetails
             {
                 Status = StatusCodes.Status400BadRequest,
                 Title = "Invalid operation",
-                Detail = ex.Message
+                Detail = "The account update request could not be processed."
             });
         }
     }

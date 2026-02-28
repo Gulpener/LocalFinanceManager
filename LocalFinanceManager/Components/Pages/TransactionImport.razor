@@ -9,6 +9,7 @@
 @inject ImportService ImportService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject ILogger<TransactionImport> Logger
 
 <PageTitle>Importeer transacties</PageTitle>
 
@@ -26,7 +27,7 @@
                     <div class="mb-3">
                         <label for="accountSelect" class="form-label">Rekening *</label>
                         <select id="accountSelect" class="form-select" value="@selectedAccountId"
-                            @onchange="OnAccountChanged">
+                                @onchange="OnAccountChanged">
                             <option value="">Selecteer een rekening...</option>
                             @foreach (var account in accounts)
                             {
@@ -56,249 +57,249 @@
 
                                 <span>@selectedFile.Name
                                     (@(selectedFile.Size.ToString("N0")) bytes)</span>
+                                }
+                            </div>
+                        </div>
+
+                        @if (errorMessage != null)
+                        {
+                            <div class="alert alert-danger">@errorMessage</div>
+                        }
+
+                        <button class="btn btn-primary" @onclick="PreviewImport"
+                                disabled="@(selectedFile == null || string.IsNullOrEmpty(selectedAccountId) || loading)">
+                            @if (loading)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span> Laden...</span>
                             }
+                            else
+                            {
+                                <span>Volgende: Preview</span>
+                            }
+                        </button>
+                        <a href="/transactions" class="btn btn-secondary">Annuleren</a>
+                    </div>
+                </div>
+            }
+        else if (currentStep == ImportStep.Preview)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Stap 2: Controleer kolom-mapping</h5>
+                    </div>
+                    <div class="card-body">
+                        @if (preview != null)
+                        {
+                            <div class="mb-3">
+                                <h6>Gevonden kolommen in bestand:</h6>
+                                @foreach (var col in preview.AvailableColumns)
+                                {
+                                    <span class="badge bg-secondary me-2" style="margin: 3px;">@col</span>
+                                }
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Datum kolom *</label>
+                                <select class="form-select" @bind="preview.SuggestedMapping.DateColumn">
+                                    @foreach (var col in preview.AvailableColumns)
+                                    {
+                                        <option value="@col">@col</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Bedrag kolom *</label>
+                                <select class="form-select" @bind="preview.SuggestedMapping.AmountColumn">
+                                    @foreach (var col in preview.AvailableColumns)
+                                    {
+                                        <option value="@col">@col</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Beschrijving kolom</label>
+                                <select class="form-select" @bind="preview.SuggestedMapping.DescriptionColumn">
+                                    <option value="">Geen</option>
+                                    @foreach (var col in preview.AvailableColumns)
+                                    {
+                                        <option value="@col">@col</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tegenpartij kolom</label>
+                                <select class="form-select" @bind="preview.SuggestedMapping.CounterpartyColumn">
+                                    <option value="">Geen</option>
+                                    @foreach (var col in preview.AvailableColumns)
+                                    {
+                                        <option value="@col">@col</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Externe ID kolom</label>
+                                <select class="form-select" @bind="preview.SuggestedMapping.ExternalIdColumn">
+                                    <option value="">Geen</option>
+                                    @foreach (var col in preview.AvailableColumns)
+                                    {
+                                        <option value="@col">@col</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <h6>Voorbeeld transacties (eerste @preview.SampleTransactions.Count van @preview.TotalRows):</h6>
+                                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                    <table class="table table-sm table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Datum</th>
+                                                <th>Bedrag</th>
+                                                <th>Beschrijving</th>
+                                                <th>Tegenpartij</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var tx in preview.SampleTransactions)
+                                            {
+                                                <tr>
+                                                    <td>@tx.Date.ToString("dd-MM-yyyy")</td>
+                                                    <td class="@(tx.Amount >= 0 ? "text-success" : "text-danger")">
+                                                        @tx.Amount.ToString("C2")</td>
+                                                        <td>@tx.Description</td>
+                                                        <td>@tx.Counterparty</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Deduplicatie strategie</label>
+                                    <select class="form-select" @bind="deduplicationStrategy">
+                                        <option value="exact">Exact (Datum + Bedrag + Externe ID)</option>
+                                        <option value="fuzzy">Fuzzy (Beschrijving similariteit + Bedrag)</option>
+                                        <option value="none">Geen (importeer alles)</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="skipErrors" @bind="skipErrors" />
+                                    <label class="form-check-label" for="skipErrors">
+                                        Sla rijen met fouten over (partial import)
+                                    </label>
+                                </div>
+                            }
+
+                            <button class="btn btn-success" @onclick="ExecuteImport" disabled="@loading">
+                                @if (loading)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span> Importeren...</span>
+                                }
+                                else
+                                {
+                                    <span>Importeer @preview?.TotalRows transacties</span>
+                                }
+                            </button>
+                            <button class="btn btn-secondary" @onclick="GoBackToUpload" disabled="@loading">Terug</button>
                         </div>
                     </div>
-
-                    @if (errorMessage != null)
-                    {
-                        <div class="alert alert-danger">@errorMessage</div>
-                    }
-
-                    <button class="btn btn-primary" @onclick="PreviewImport"
-                        disabled="@(selectedFile == null || string.IsNullOrEmpty(selectedAccountId) || loading)">
-                        @if (loading)
-                        {
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            <span> Laden...</span>
-                        }
-                        else
-                        {
-                            <span>Volgende: Preview</span>
-                        }
-                    </button>
-                    <a href="/transactions" class="btn btn-secondary">Annuleren</a>
-                </div>
-            </div>
-        }
-        else if (currentStep == ImportStep.Preview)
-        {
-            <div class="card">
-                <div class="card-header">
-                    <h5>Stap 2: Controleer kolom-mapping</h5>
-                </div>
-                <div class="card-body">
-                    @if (preview != null)
-                    {
-                        <div class="mb-3">
-                            <h6>Gevonden kolommen in bestand:</h6>
-                            @foreach (var col in preview.AvailableColumns)
-                            {
-                                <span class="badge bg-secondary me-2" style="margin: 3px;">@col</span>
-                            }
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Datum kolom *</label>
-                            <select class="form-select" @bind="preview.SuggestedMapping.DateColumn">
-                                @foreach (var col in preview.AvailableColumns)
-                                {
-                                    <option value="@col">@col</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Bedrag kolom *</label>
-                            <select class="form-select" @bind="preview.SuggestedMapping.AmountColumn">
-                                @foreach (var col in preview.AvailableColumns)
-                                {
-                                    <option value="@col">@col</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Beschrijving kolom</label>
-                            <select class="form-select" @bind="preview.SuggestedMapping.DescriptionColumn">
-                                <option value="">Geen</option>
-                                @foreach (var col in preview.AvailableColumns)
-                                {
-                                    <option value="@col">@col</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Tegenpartij kolom</label>
-                            <select class="form-select" @bind="preview.SuggestedMapping.CounterpartyColumn">
-                                <option value="">Geen</option>
-                                @foreach (var col in preview.AvailableColumns)
-                                {
-                                    <option value="@col">@col</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Externe ID kolom</label>
-                            <select class="form-select" @bind="preview.SuggestedMapping.ExternalIdColumn">
-                                <option value="">Geen</option>
-                                @foreach (var col in preview.AvailableColumns)
-                                {
-                                    <option value="@col">@col</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <h6>Voorbeeld transacties (eerste @preview.SampleTransactions.Count van @preview.TotalRows):</h6>
-                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                <table class="table table-sm table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Datum</th>
-                                            <th>Bedrag</th>
-                                            <th>Beschrijving</th>
-                                            <th>Tegenpartij</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var tx in preview.SampleTransactions)
-                                        {
-                                            <tr>
-                                                <td>@tx.Date.ToString("dd-MM-yyyy")</td>
-                                                <td class="@(tx.Amount >= 0 ? "text-success" : "text-danger")">
-                                                    @tx.Amount.ToString("C2")</td>
-                                                <td>@tx.Description</td>
-                                                <td>@tx.Counterparty</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Deduplicatie strategie</label>
-                            <select class="form-select" @bind="deduplicationStrategy">
-                                <option value="exact">Exact (Datum + Bedrag + Externe ID)</option>
-                                <option value="fuzzy">Fuzzy (Beschrijving similariteit + Bedrag)</option>
-                                <option value="none">Geen (importeer alles)</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="skipErrors" @bind="skipErrors" />
-                            <label class="form-check-label" for="skipErrors">
-                                Sla rijen met fouten over (partial import)
-                            </label>
-                        </div>
-                    }
-
-                    <button class="btn btn-success" @onclick="ExecuteImport" disabled="@loading">
-                        @if (loading)
-                        {
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            <span> Importeren...</span>
-                        }
-                        else
-                        {
-                            <span>Importeer @preview?.TotalRows transacties</span>
-                        }
-                    </button>
-                    <button class="btn btn-secondary" @onclick="GoBackToUpload" disabled="@loading">Terug</button>
-                </div>
-            </div>
-        }
+                }
         else if (currentStep == ImportStep.Result)
-        {
-            <div class="card">
-                <div class="card-header">
-                    <h5>Import resultaat</h5>
-                </div>
-                <div class="card-body">
-                    @if (importResult != null)
-                    {
-                        @if (importResult.Success)
-                        {
-                            <div class="alert alert-success">
-                                <h6>✓ Import succesvol!</h6>
-                                <ul>
-                                    <li>@importResult.ImportedCount transactie(s) geïmporteerd</li>
-                                    <li>@importResult.DuplicateCount duplicaten overgeslagen</li>
-                                    @if (importResult.SkippedCount > 0)
-                                    {
-                                        <li>@importResult.SkippedCount rij(en) overgeslagen vanwege fouten</li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-danger">
-                                <h6>✗ Import mislukt</h6>
-                                <p>@importResult.Message</p>
-                            </div>
-                        }
+                {
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Import resultaat</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (importResult != null)
+                            {
+                                @if (importResult.Success)
+                                {
+                                    <div class="alert alert-success">
+                                        <h6>✓ Import succesvol!</h6>
+                                        <ul>
+                                            <li>@importResult.ImportedCount transactie(s) geïmporteerd</li>
+                                            <li>@importResult.DuplicateCount duplicaten overgeslagen</li>
+                                            @if (importResult.SkippedCount > 0)
+                                            {
+                                                <li>@importResult.SkippedCount rij(en) overgeslagen vanwege fouten</li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-danger">
+                                        <h6>✗ Import mislukt</h6>
+                                        <p>@importResult.Message</p>
+                                    </div>
+                                }
 
-                        @if (importResult.Errors.Any())
-                        {
-                            <div class="alert alert-warning">
-                                <h6>Fouten (@importResult.Errors.Count):</h6>
-                                <ul style="max-height: 200px; overflow-y: auto;">
-                                    @foreach (var error in importResult.Errors.Take(20))
-                                    {
-                                        <li>Regel @error.LineNumber (@error.FieldName): @error.ErrorMessage</li>
-                                    }
-                                    @if (importResult.Errors.Count > 20)
-                                    {
-                                        <li><em>... en @(importResult.Errors.Count - 20) meer</em></li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                    }
+                                @if (importResult.Errors.Any())
+                                {
+                                    <div class="alert alert-warning">
+                                        <h6>Fouten (@importResult.Errors.Count):</h6>
+                                        <ul style="max-height: 200px; overflow-y: auto;">
+                                            @foreach (var error in importResult.Errors.Take(20))
+                                            {
+                                                <li>Regel @error.LineNumber (@error.FieldName): @error.ErrorMessage</li>
+                                            }
+                                            @if (importResult.Errors.Count > 20)
+                                            {
+                                                <li><em>... en @(importResult.Errors.Count - 20) meer</em></li>
+                                            }
+                                        </ul>
+                                    </div>
+                                }
+                            }
 
-                    <a href="/transactions" class="btn btn-primary">Ga naar transacties</a>
-                    <button class="btn btn-secondary" @onclick="StartNewImport">Nieuwe import</button>
-                </div>
+                            <a href="/transactions" class="btn btn-primary">Ga naar transacties</a>
+                            <button class="btn btn-secondary" @onclick="StartNewImport">Nieuwe import</button>
+                        </div>
+                    </div>
+                }
             </div>
-        }
-    </div>
 
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6>Import stappen</h6>
-            </div>
-            <div class="card-body">
-                <ol class="list-group list-group-numbered">
-                    <li class="list-group-item @(currentStep == ImportStep.Upload ? "active" : "")">Upload bestand</li>
-                    <li class="list-group-item @(currentStep == ImportStep.Preview ? "active" : "")">Controleer mapping
-                    </li>
-                    <li class="list-group-item @(currentStep == ImportStep.Result ? "active" : "")">Bekijk resultaat
-                    </li>
-                </ol>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6>Import stappen</h6>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item @(currentStep == ImportStep.Upload ? "active" : "")">Upload bestand</li>
+                            <li class="list-group-item @(currentStep == ImportStep.Preview ? "active" : "")">Controleer mapping
+                            </li>
+                            <li class="list-group-item @(currentStep == ImportStep.Result ? "active" : "")">Bekijk resultaat
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6>Tips</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="small">
+                            <li>CSV bestand moet headers bevatten</li>
+                            <li>Datum formaten: yyyy-MM-dd, dd-MM-yyyy, dd/MM/yyyy</li>
+                            <li>Bedragen kunnen positief (inkomsten) of negatief (uitgaven) zijn</li>
+                            <li>Externe ID helpt bij deduplicatie</li>
+                            <li>Fuzzy matching gebruikt tekst similariteit (Jaccard)</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6>Tips</h6>
-            </div>
-            <div class="card-body">
-                <ul class="small">
-                    <li>CSV bestand moet headers bevatten</li>
-                    <li>Datum formaten: yyyy-MM-dd, dd-MM-yyyy, dd/MM/yyyy</li>
-                    <li>Bedragen kunnen positief (inkomsten) of negatief (uitgaven) zijn</li>
-                    <li>Externe ID helpt bij deduplicatie</li>
-                    <li>Fuzzy matching gebruikt tekst similariteit (Jaccard)</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
 
 @code {
     private enum ImportStep
@@ -370,7 +371,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fout bij preview: {ex.Message}";
+            Logger.LogError(ex, "Failed to preview transaction import for account {AccountId}.", selectedAccountId);
+            errorMessage = "Fout bij preview van importbestand.";
         }
         finally
         {
@@ -409,10 +411,11 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to execute transaction import for account {AccountId}.", selectedAccountId);
             importResult = new ImportResultDto
             {
                 Success = false,
-                Message = $"Fout bij import: {ex.Message}"
+                Message = "Fout bij importeren van transacties."
             };
             currentStep = ImportStep.Result;
         }
