@@ -236,6 +236,9 @@ public class AutomationController : ControllerBase
 
         try
         {
+            var accountIds = settings.AccountIds ?? new List<Guid>();
+            var excludedCategoryIds = settings.ExcludedCategoryIds ?? new List<Guid>();
+
             // Load or create settings record
             var dbSettings = await _dbContext.AppSettings
                 .Where(s => !s.IsArchived)
@@ -255,11 +258,11 @@ public class AutomationController : ControllerBase
             dbSettings.AutoApplyEnabled = settings.Enabled;
             dbSettings.MinimumConfidence = settings.MinimumConfidence;
             dbSettings.IntervalMinutes = settings.IntervalMinutes;
-            dbSettings.AccountIdsJson = settings.AccountIds.Any()
-                ? JsonSerializer.Serialize(settings.AccountIds)
+            dbSettings.AccountIdsJson = accountIds.Any()
+                ? JsonSerializer.Serialize(accountIds)
                 : null;
-            dbSettings.ExcludedCategoryIdsJson = settings.ExcludedCategoryIds.Any()
-                ? JsonSerializer.Serialize(settings.ExcludedCategoryIds)
+            dbSettings.ExcludedCategoryIdsJson = excludedCategoryIds.Any()
+                ? JsonSerializer.Serialize(excludedCategoryIds)
                 : null;
             dbSettings.UpdatedBy = "System"; // Uses a system identifier because no authenticated user context is available here
 
@@ -269,8 +272,8 @@ public class AutomationController : ControllerBase
                 "Auto-apply settings saved: Enabled={Enabled}, Confidence={Confidence}, Accounts={Accounts}, ExcludedCategories={ExcludedCategories}",
                 settings.Enabled,
                 settings.MinimumConfidence,
-                settings.AccountIds.Count,
-                settings.ExcludedCategoryIds.Count);
+                accountIds.Count,
+                excludedCategoryIds.Count);
 
             return Ok(new { success = true, message = "Settings updated successfully" });
         }
