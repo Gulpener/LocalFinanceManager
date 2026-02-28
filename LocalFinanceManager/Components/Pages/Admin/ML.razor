@@ -4,6 +4,7 @@
 @using System.Net
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject ILogger<ML> Logger
 
 <PageTitle>ML Model Info</PageTitle>
 
@@ -67,7 +68,8 @@
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Kon modelinformatie niet laden: {ex.Message}";
+            Logger.LogError(ex, "Failed to load active ML model info for admin page.");
+            _errorMessage = "Kon modelinformatie niet laden.";
         }
         finally
         {
