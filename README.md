@@ -128,6 +128,13 @@ dotnet run
 $env:ASPNETCORE_ENVIRONMENT="Production"; dotnet run
 ```
 
+#### Auto-Apply Runtime Settings
+
+- `POST /api/automation/settings` persists auto-apply settings to the `AppSettings` table.
+- The auto-apply background worker reads these persisted values at runtime (enabled flag, confidence threshold, interval, account filter, excluded categories).
+- Settings are cached in memory using `Caching` options (`AbsoluteExpirationMinutes` / `SlidingExpirationMinutes`) and cache is invalidated when settings are saved.
+- If no `AppSettings` record exists, the worker falls back to `AutomationOptions` defaults from configuration.
+
 **⚠️ Important:** Database files (`.db`, `.db-shm`, `.db-wal`) are excluded from version control. Never commit database files containing real data.
 
 ### Recreating the Database

@@ -2,6 +2,7 @@ using LocalFinanceManager.Controllers;
 using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.DTOs.Validators;
 using LocalFinanceManager.Services;
+using LocalFinanceManager.Services.Background;
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
@@ -25,6 +26,7 @@ public class AutomationControllerTests
     private IUndoService _undoService = null!;
     private IMonitoringService _monitoringService = null!;
     private IOptions<AutomationOptions> _automationOptions = null!;
+    private Mock<IAutoApplySettingsProvider> _settingsProviderMock = null!;
     private ILogger<AutomationController> _logger = null!;
 
     [SetUp]
@@ -47,6 +49,7 @@ public class AutomationControllerTests
             AutoApplyEnabled = false,
             ConfidenceThreshold = 0.85m
         });
+        _settingsProviderMock = new Mock<IAutoApplySettingsProvider>();
         _logger = new Mock<ILogger<AutomationController>>().Object;
         var settingsValidator = new AutoApplySettingsValidator();
 
@@ -56,6 +59,7 @@ public class AutomationControllerTests
             _dbContext,
             _automationOptions,
             settingsValidator,
+            _settingsProviderMock.Object,
             _logger)
         {
             ControllerContext = new ControllerContext
@@ -140,6 +144,7 @@ public class AutomationControllerTests
         Assert.That(dbSettings.IntervalMinutes, Is.EqualTo(30));
         Assert.That(dbSettings.AccountIdsJson, Is.Not.Null);
         Assert.That(dbSettings.ExcludedCategoryIdsJson, Is.Not.Null);
+        _settingsProviderMock.Verify(provider => provider.Invalidate(), Times.Once);
     }
 
     [Test]

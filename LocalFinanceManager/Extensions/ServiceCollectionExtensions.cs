@@ -103,6 +103,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IMonitoringService, MonitoringService>();
         services.AddScoped<IUndoService, UndoService>();
+        services.AddSingleton<IAutoApplySettingsProvider, AutoApplySettingsProvider>();
 
         if (includeBackgroundServices)
         {

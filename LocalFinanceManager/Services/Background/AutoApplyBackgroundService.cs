@@ -12,40 +12,46 @@ namespace LocalFinanceManager.Services.Background;
 /// <summary>
 /// Background service for automatically applying ML category suggestions to transactions
 /// when confidence exceeds the configured threshold.
-/// Runs daily (default: 6 AM UTC) to process unassigned transactions.
+/// Runs on a configurable interval sourced from persisted AppSettings.
 /// </summary>
 public class AutoApplyBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AutoApplyBackgroundService> _logger;
     private readonly AutomationOptions _options;
+    private readonly IAutoApplySettingsProvider _settingsProvider;
 
     public AutoApplyBackgroundService(
         IServiceProvider serviceProvider,
         ILogger<AutoApplyBackgroundService> logger,
-        IOptions<AutomationOptions> options)
+        IOptions<AutomationOptions> options,
+        IAutoApplySettingsProvider settingsProvider)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _options = options.Value;
+        _settingsProvider = settingsProvider;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Auto-Apply Background Service started with schedule: {Schedule} (Enabled: {Enabled})",
-            _options.AutoApplyScheduleCron,
-            _options.AutoApplyEnabled);
+        _logger.LogInformation("Auto-Apply Background Service started (runtime settings source: AppSettings with cache)");
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                var now = DateTime.UtcNow;
-                var nextRun = CronParser.GetNextOccurrence(_options.AutoApplyScheduleCron, now);
-                var delay = nextRun - now;
+                var runtimeSettings = await _settingsProvider.GetSettingsAsync(stoppingToken);
 
-                _logger.LogInformation("Next auto-apply job scheduled at {NextRun} UTC (in {Delay})",
-                    nextRun, delay);
+                var now = DateTime.UtcNow;
+                var delay = TimeSpan.FromMinutes(Math.Max(1, runtimeSettings.IntervalMinutes));
+                var nextRun = now.Add(delay);
+
+                _logger.LogInformation("Next auto-apply job scheduled at {NextRun} UTC (in {Delay}, enabled={Enabled}, threshold={Threshold:F2})",
+                    nextRun,
+                    delay,
+                    runtimeSettings.Enabled,
+                    runtimeSettings.MinimumConfidence);
 
                 await Task.Delay(delay, stoppingToken);
 
@@ -54,9 +60,11 @@ public class AutoApplyBackgroundService : BackgroundService
                     break;
                 }
 
-                if (_options.AutoApplyEnabled)
+                runtimeSettings = await _settingsProvider.GetSettingsAsync(stoppingToken);
+
+                if (runtimeSettings.Enabled)
                 {
-                    await ExecuteAutoApplyJobAsync(stoppingToken);
+                    await ExecuteAutoApplyJobAsync(runtimeSettings, stoppingToken);
                 }
                 else
                 {
@@ -78,9 +86,9 @@ public class AutoApplyBackgroundService : BackgroundService
         _logger.LogInformation("Auto-Apply Background Service stopped");
     }
 
-    private async Task ExecuteAutoApplyJobAsync(CancellationToken cancellationToken)
+    private async Task ExecuteAutoApplyJobAsync(AutoApplyRuntimeSettings runtimeSettings, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting auto-apply job (confidence threshold: {Threshold})", _options.ConfidenceThreshold);
+        _logger.LogInformation("Starting auto-apply job (confidence threshold: {Threshold})", runtimeSettings.MinimumConfidence);
 
         try
         {
@@ -98,9 +106,16 @@ public class AutoApplyBackgroundService : BackgroundService
             }
 
             // Get unassigned transactions (no splits and not archived)
-            var unassignedTransactions = await dbContext.Transactions
+            var query = dbContext.Transactions
                 .Where(t => !t.IsArchived)
-                .Where(t => t.AssignedParts == null || !t.AssignedParts.Any())
+                .Where(t => t.AssignedParts == null || !t.AssignedParts.Any());
+
+            if (runtimeSettings.AccountIds.Any())
+            {
+                query = query.Where(t => runtimeSettings.AccountIds.Contains(t.AccountId));
+            }
+
+            var unassignedTransactions = await query
                 .OrderBy(t => t.Date)
                 .Take(_options.BatchSize)
                 .ToListAsync(cancellationToken);
@@ -127,6 +142,7 @@ public class AutoApplyBackgroundService : BackgroundService
                 var applied = await TryAutoApplyWithRetryAsync(
                     transaction,
                     activeModel.Version,
+                    runtimeSettings,
                     mlService,
                     dbContext,
                     transactionAuditRepo,
@@ -160,6 +176,7 @@ public class AutoApplyBackgroundService : BackgroundService
     private async Task<float?> TryAutoApplyWithRetryAsync(
         Transaction transaction,
         int modelVersion,
+        AutoApplyRuntimeSettings runtimeSettings,
         IMLService mlService,
         AppDbContext dbContext,
         ITransactionAuditRepository auditRepo,
@@ -180,13 +197,22 @@ public class AutoApplyBackgroundService : BackgroundService
                     return null;
                 }
 
-                if (prediction.Confidence < (float)_options.ConfidenceThreshold)
+                if (prediction.Confidence < runtimeSettings.MinimumConfidence)
                 {
                     _logger.LogDebug(
                         "Transaction {TransactionId}: Confidence {Confidence:F4} below threshold {Threshold}",
                         transaction.Id,
                         prediction.Confidence,
-                        _options.ConfidenceThreshold);
+                        runtimeSettings.MinimumConfidence);
+                    return null;
+                }
+
+                if (runtimeSettings.ExcludedCategoryIds.Contains(prediction.CategoryId))
+                {
+                    _logger.LogDebug(
+                        "Transaction {TransactionId}: Predicted category {CategoryId} is excluded by settings",
+                        transaction.Id,
+                        prediction.CategoryId);
                     return null;
                 }
 

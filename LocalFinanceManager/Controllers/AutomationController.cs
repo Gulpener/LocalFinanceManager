@@ -3,6 +3,7 @@ using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services.Background;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public class AutomationController : ControllerBase
     private readonly AppDbContext _dbContext;
     private readonly AutomationOptions _automationOptions;
     private readonly IValidator<AutoApplySettingsDto> _settingsValidator;
+    private readonly IAutoApplySettingsProvider _settingsProvider;
     private readonly ILogger<AutomationController> _logger;
 
     public AutomationController(
@@ -31,6 +33,7 @@ public class AutomationController : ControllerBase
         AppDbContext dbContext,
         IOptions<AutomationOptions> automationOptions,
         IValidator<AutoApplySettingsDto> settingsValidator,
+        IAutoApplySettingsProvider settingsProvider,
         ILogger<AutomationController> logger)
     {
         _undoService = undoService;
@@ -38,6 +41,7 @@ public class AutomationController : ControllerBase
         _dbContext = dbContext;
         _automationOptions = automationOptions.Value;
         _settingsValidator = settingsValidator;
+        _settingsProvider = settingsProvider;
         _logger = logger;
     }
 
@@ -267,6 +271,7 @@ public class AutomationController : ControllerBase
             dbSettings.UpdatedBy = "System"; // Uses a system identifier because no authenticated user context is available here
 
             await _dbContext.SaveChangesAsync();
+            _settingsProvider.Invalidate();
 
             _logger.LogInformation(
                 "Auto-apply settings saved: Enabled={Enabled}, Confidence={Confidence}, Accounts={Accounts}, ExcludedCategories={ExcludedCategories}",
