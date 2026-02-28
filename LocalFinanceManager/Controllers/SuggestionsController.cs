@@ -3,6 +3,7 @@ using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
 
 namespace LocalFinanceManager.Controllers;
 
@@ -15,15 +16,18 @@ public class SuggestionsController : ControllerBase
 {
     private readonly IMLService _mlService;
     private readonly ILabeledExampleRepository _labeledExampleRepo;
+    private readonly IValidator<SuggestionFeedbackDto> _feedbackValidator;
     private readonly ILogger<SuggestionsController> _logger;
 
     public SuggestionsController(
         IMLService mlService,
         ILabeledExampleRepository labeledExampleRepo,
+        IValidator<SuggestionFeedbackDto> feedbackValidator,
         ILogger<SuggestionsController> logger)
     {
         _mlService = mlService;
         _labeledExampleRepo = labeledExampleRepo;
+        _feedbackValidator = feedbackValidator;
         _logger = logger;
     }
 
@@ -104,6 +108,24 @@ public class SuggestionsController : ControllerBase
     [HttpPost("feedback")]
     public async Task<IActionResult> RecordFeedback([FromBody] SuggestionFeedbackDto feedback)
     {
+        if (feedback == null)
+        {
+            return BadRequest("Feedback cannot be null");
+        }
+
+        var validationResult = await _feedbackValidator.ValidateAsync(feedback);
+        if (!validationResult.IsValid)
+        {
+            return ValidationProblem(new ValidationProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "One or more validation errors occurred.",
+                Errors = validationResult.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
+            });
+        }
+
         try
         {
             var labeledExample = new LabeledExample

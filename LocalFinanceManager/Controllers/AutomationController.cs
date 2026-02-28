@@ -6,6 +6,7 @@ using LocalFinanceManager.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
 using System.Text.Json;
 
 namespace LocalFinanceManager.Controllers;
@@ -21,6 +22,7 @@ public class AutomationController : ControllerBase
     private readonly IMonitoringService _monitoringService;
     private readonly AppDbContext _dbContext;
     private readonly AutomationOptions _automationOptions;
+    private readonly IValidator<AutoApplySettingsDto> _settingsValidator;
     private readonly ILogger<AutomationController> _logger;
 
     public AutomationController(
@@ -28,12 +30,14 @@ public class AutomationController : ControllerBase
         IMonitoringService monitoringService,
         AppDbContext dbContext,
         IOptions<AutomationOptions> automationOptions,
+        IValidator<AutoApplySettingsDto> settingsValidator,
         ILogger<AutomationController> logger)
     {
         _undoService = undoService;
         _monitoringService = monitoringService;
         _dbContext = dbContext;
         _automationOptions = automationOptions.Value;
+        _settingsValidator = settingsValidator;
         _logger = logger;
     }
 
@@ -208,10 +212,17 @@ public class AutomationController : ControllerBase
             return BadRequest("Settings cannot be null");
         }
 
-        if (settings.MinimumConfidence < 0.0f || settings.MinimumConfidence > 1.0f)
+        var validationResult = await _settingsValidator.ValidateAsync(settings);
+        if (!validationResult.IsValid)
         {
-            ModelState.AddModelError(nameof(settings.MinimumConfidence), "MinimumConfidence must be between 0.0 and 1.0");
-            return ValidationProblem(ModelState);
+            return ValidationProblem(new ValidationProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "One or more validation errors occurred.",
+                Errors = validationResult.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray())
+            });
         }
 
 

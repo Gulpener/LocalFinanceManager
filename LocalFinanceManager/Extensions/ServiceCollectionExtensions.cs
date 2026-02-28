@@ -1,6 +1,7 @@
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.DTOs;
+using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.DTOs.Validators;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
@@ -148,6 +149,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidator<SplitTransactionRequest>, SplitTransactionRequestValidator>();
         services.AddScoped<IValidator<BulkAssignTransactionsRequest>, BulkAssignTransactionsRequestValidator>();
         services.AddScoped<IValidator<UndoAssignmentRequest>, UndoAssignmentRequestValidator>();
+        services.AddScoped<IValidator<AutoApplySettingsDto>, AutoApplySettingsValidator>();
+        services.AddScoped<IValidator<SuggestionFeedbackDto>, SuggestionFeedbackValidator>();
 
         // IbanNet validator
         services.AddSingleton<IIbanValidator, IbanValidator>();
