@@ -15,6 +15,7 @@ using NUnit.Framework;
 using Moq;
 using Microsoft.AspNetCore.Http;
 using FluentValidation;
+using System.Text.Json;
 
 namespace LocalFinanceManager.Tests.Controllers;
 
@@ -114,6 +115,38 @@ public class AutomationControllerTests
         Assert.That(settings!.Enabled, Is.False);
         Assert.That(settings.MinimumConfidence, Is.EqualTo(0.85f));
         Assert.That(settings.IntervalMinutes, Is.EqualTo(15));
+    }
+
+    [Test]
+    public async Task GetSettings_CorruptedStoredJson_ReturnsOkWithEmptyLists()
+    {
+        // Arrange
+        _dbContext.AppSettings.Add(new AppSettings
+        {
+            AutoApplyEnabled = true,
+            MinimumConfidence = 0.77f,
+            IntervalMinutes = 25,
+            AccountIdsJson = "{broken-json",
+            ExcludedCategoryIdsJson = "invalid-json",
+            UpdatedBy = "seed",
+            IsArchived = false
+        });
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var result = await _controller.GetSettings();
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<OkObjectResult>());
+        var okResult = (OkObjectResult)result;
+        var settings = okResult.Value as AutoApplySettingsDto;
+
+        Assert.That(settings, Is.Not.Null);
+        Assert.That(settings!.Enabled, Is.True);
+        Assert.That(settings.MinimumConfidence, Is.EqualTo(0.77f));
+        Assert.That(settings.IntervalMinutes, Is.EqualTo(25));
+        Assert.That(settings.AccountIds, Is.Empty);
+        Assert.That(settings.ExcludedCategoryIds, Is.Empty);
     }
 
     [Test]
@@ -398,5 +431,91 @@ public class AutomationControllerTests
         Assert.That(dbSettings, Is.Not.Null);
         Assert.That(dbSettings!.AccountIdsJson, Is.Null);
         Assert.That(dbSettings.ExcludedCategoryIdsJson, Is.Null);
+    }
+
+    [Test]
+    public async Task UpdateSettings_ConcurrencyConflict_WithCorruptedStoredJson_Returns409WithFallbackCurrentState()
+    {
+        // Arrange
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite("DataSource=:memory:")
+            .Options;
+
+        using var conflictDbContext = new ConcurrencyThrowingAppDbContext(options);
+        conflictDbContext.Database.OpenConnection();
+        conflictDbContext.Database.EnsureCreated();
+
+        conflictDbContext.AppSettings.Add(new AppSettings
+        {
+            AutoApplyEnabled = true,
+            MinimumConfidence = 0.91f,
+            IntervalMinutes = 33,
+            AccountIdsJson = "{corrupted-json",
+            ExcludedCategoryIdsJson = "not-json",
+            UpdatedBy = "seed",
+            IsArchived = false
+        });
+        conflictDbContext.SaveChanges();
+
+        var settingsProviderMock = new Mock<IAutoApplySettingsProvider>();
+        var controller = new AutomationController(
+            _undoService,
+            _monitoringService,
+            conflictDbContext,
+            _automationOptions,
+            new AutoApplySettingsValidator(),
+            settingsProviderMock.Object,
+            _logger)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var updateRequest = new AutoApplySettingsDto
+        {
+            Enabled = false,
+            MinimumConfidence = 0.75f,
+            IntervalMinutes = 15,
+            AccountIds = new List<Guid>(),
+            ExcludedCategoryIds = new List<Guid>()
+        };
+
+        // Act
+        var result = await controller.UpdateSettings(updateRequest);
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<ConflictObjectResult>());
+        var conflictResult = (ConflictObjectResult)result;
+        Assert.That(conflictResult.StatusCode, Is.EqualTo(StatusCodes.Status409Conflict));
+
+        var payloadJson = JsonSerializer.Serialize(conflictResult.Value);
+        using var payload = JsonDocument.Parse(payloadJson);
+        var root = payload.RootElement;
+
+        Assert.That(root.GetProperty("status").GetInt32(), Is.EqualTo(StatusCodes.Status409Conflict));
+        var currentState = root.GetProperty("currentState");
+
+        Assert.That(currentState.GetProperty("Enabled").GetBoolean(), Is.True);
+        Assert.That(currentState.GetProperty("MinimumConfidence").GetSingle(), Is.EqualTo(0.91f));
+        Assert.That(currentState.GetProperty("IntervalMinutes").GetInt32(), Is.EqualTo(33));
+        Assert.That(currentState.GetProperty("AccountIds").GetArrayLength(), Is.EqualTo(0));
+        Assert.That(currentState.GetProperty("ExcludedCategoryIds").GetArrayLength(), Is.EqualTo(0));
+
+        settingsProviderMock.Verify(provider => provider.Invalidate(), Times.Never);
+    }
+
+    private sealed class ConcurrencyThrowingAppDbContext : AppDbContext
+    {
+        public ConcurrencyThrowingAppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options)
+        {
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            throw new DbUpdateConcurrencyException("Forced concurrency failure for test");
+        }
     }
 }

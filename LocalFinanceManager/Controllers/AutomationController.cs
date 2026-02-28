@@ -256,12 +256,14 @@ public class AutomationController : ControllerBase
                 .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
                 .FirstOrDefaultAsync();
 
+            var currentState = TryMapToDtoForConflict(currentSettings);
+
             return Conflict(new
             {
                 title = "Concurrency conflict",
                 status = 409,
                 detail = "The settings were modified by another user. Please reload and try again.",
-                currentState = currentSettings != null ? ToDto(currentSettings) : null
+                currentState
             });
         }
         catch (Exception ex)
@@ -333,6 +335,34 @@ public class AutomationController : ControllerBase
             AccountIds = DeserializeGuidList(dbSettings.AccountIdsJson),
             ExcludedCategoryIds = DeserializeGuidList(dbSettings.ExcludedCategoryIdsJson)
         };
+    }
+
+    private AutoApplySettingsDto? TryMapToDtoForConflict(AppSettings? dbSettings)
+    {
+        if (dbSettings == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return ToDto(dbSettings);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to parse persisted automation settings JSON while building concurrency conflict response. Returning sanitized fallback values.");
+
+            return new AutoApplySettingsDto
+            {
+                Enabled = dbSettings.AutoApplyEnabled,
+                MinimumConfidence = dbSettings.MinimumConfidence,
+                IntervalMinutes = dbSettings.IntervalMinutes,
+                AccountIds = new List<Guid>(),
+                ExcludedCategoryIds = new List<Guid>()
+            };
+        }
     }
 
     private static List<Guid> DeserializeGuidList(string? json)
