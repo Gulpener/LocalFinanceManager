@@ -78,7 +78,7 @@ else
                 <tr class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
                     data-testid="transaction-row"              data-row-index="@index"    data-transaction-id="@transaction.Id"
                     tabindex="@(focusedRowIndex == index ? 0 : -1)"  @onfocus="() => SetFocusedRow(index)"
-                    @onkeydown="HandleTableKeyDown"               @onkeydown:preventDefault="true">
+                    @onkeydown="HandleTableKeyDown">
                     <td>
                         <input type="checkbox" class="form-check-input"
                                checked="@selectedTransactionIds.Contains(transaction.Id)"
@@ -194,8 +194,6 @@ else
 
 <AssignmentAuditTrail TransactionId="@auditTransactionId" IsVisible="@showAuditTrail" OnClose="@CloseAuditTrail" />
 
-<ShortcutHelp IsVisible="@showShortcutHelp" OnClose="@(() => showShortcutHelp = false)"
-              IsTouchDevice="@isTouchDevice" />
 
 @if (selectedTransactionIds.Any())
 {

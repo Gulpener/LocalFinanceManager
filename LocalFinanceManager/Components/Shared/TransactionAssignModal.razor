@@ -378,8 +378,7 @@
 
         if (e.Key == "Enter")
         {
-            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement",
-"#assignSaveButton");
+            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement", "#assignSaveButton");
             if (isSaveButtonFocused && CanAssign && !isSubmitting)
             {
                 await AssignTransaction();
@@ -403,8 +402,22 @@
     {
         if (isFocusTrapActive)
         {
-            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
-            isFocusTrapActive = false;
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignore JS interop errors during circuit teardown.
+            }
+            catch (JSException)
+            {
+                // Ignore JS interop errors during disposal.
+            }
+            finally
+            {
+                isFocusTrapActive = false;
+            }
         }
     }
 }

@@ -95,11 +95,11 @@ public class AccessibilityTests : E2ETestBase
     }
 
     [Test]
+    [Ignore("Manual verification required: Use Tab navigation and visually confirm 2px high-contrast focus outlines.")]
     public async Task FocusIndicators_ManualVerification_Recorded()
     {
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         TestContext.Out.WriteLine("Manual verification required: Use Tab navigation and visually confirm 2px high-contrast focus outlines.");
-        Assert.Pass("Manual focus indicator verification documented in test output.");
     }
 
     private static bool IsCriticalOrSerious(string? impact)

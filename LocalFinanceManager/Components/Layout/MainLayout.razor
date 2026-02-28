@@ -19,8 +19,11 @@
     </main>
 </div>
 
-<ShortcutHelp IsVisible="@showShortcutHelp"              OnClose="CloseShortcutHelp"              IsTouchDevice="@isTouchDevice"
-              IsMacOs="@isMacOs" />
+<ShortcutHelp
+    IsVisible="@showShortcutHelp"
+    OnClose="CloseShortcutHelp"
+    IsTouchDevice="@isTouchDevice"
+    IsMacOs="@isMacOs" />
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -81,9 +84,20 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (globalShortcutsRegistered)
+        try
         {
-            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.unregisterGlobalShortcuts");
+            if (globalShortcutsRegistered)
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.unregisterGlobalShortcuts");
+            }
+        }
+        catch (Microsoft.JSInterop.JSDisconnectedException)
+        {
+            // Ignore disconnection during disposal; circuit is already closed.
+        }
+        catch (Microsoft.JSInterop.JSException)
+        {
+            // Ignore JS errors during disposal to avoid teardown failures.
         }
 
         dotNetRef?.Dispose();
