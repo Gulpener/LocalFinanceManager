@@ -28,7 +28,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
     <div class="alert alert-warning alert-dismissible fade show" role="alert" data-testid="alert-banner">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         <strong>Waarschuwing:</strong> Ongedaan maken percentage overschrijdt drempel
-        (@FormatPercent(stats.UndoRate) > 10%). Dit kan wijzen op problemen met modelkwaliteit.
+        (@FormatPercent(stats.UndoRate) > @UndoRateAlertThresholdDisplay). Dit kan wijzen op problemen met modelkwaliteit.
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
@@ -243,7 +243,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
                     <p><strong>Auto-Apply Status:</strong> Bekijk <a href="/settings/auto-apply">instellingen</a> voor
                         configuratie</p>
                         <p><strong>Ongedaan maken retentie:</strong> 30 dagen</p>
-                        <p><strong>Ongedaan maken drempel:</strong> 10%</p>
+                        <p><strong>Ongedaan maken drempel:</strong> @UndoRateAlertThresholdDisplay</p>
                         <p class="mb-0">
                             <a href="/settings/auto-apply" class="btn btn-primary">
                                 <i class="bi bi-gear"></i> Wijzig instellingen
@@ -262,6 +262,8 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
         var value = rate * 100m;
         return value.ToString("0.0", DutchCulture) + "%";
     }
+
+    private string UndoRateAlertThresholdDisplay => FormatPercent(AutomationOptions.Value.UndoRateAlertThreshold);
 
     private AutoApplyStatsDto? stats;
     private List<AutoApplyHistoryDto>? history;

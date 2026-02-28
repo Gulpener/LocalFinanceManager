@@ -2,8 +2,10 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.Globalization;
 
 namespace LocalFinanceManager.E2E.ML;
@@ -19,6 +21,7 @@ public class MonitoringDashboardTests : E2ETestBase
     private Account _testAccount = null!;
     private List<Category> _categories = null!;
     private List<Transaction> _transactions = null!;
+    private decimal _undoRateAlertThresholdPercent;
 
     [SetUp]
     public async Task SetUp()
@@ -31,6 +34,8 @@ public class MonitoringDashboardTests : E2ETestBase
         // Seed test data
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var options = scope.ServiceProvider.GetRequiredService<IOptions<AutomationOptions>>();
+        _undoRateAlertThresholdPercent = options.Value.UndoRateAlertThreshold * 100m;
 
         // Create account and categories
         _testAccount = await SeedDataHelper.SeedAccountAsync(
@@ -77,11 +82,14 @@ public class MonitoringDashboardTests : E2ETestBase
     [Category("Monitoring")]
     public async Task MonitoringDashboard_LowUndoRate_NoAlertShown()
     {
-        // Arrange - Seed 100 auto-applied, 8 undone (8% undo rate < 10% threshold)
+        const int totalAutoApplied = 100;
+        var lowUndoCount = GetUndoCountBelowThreshold(_undoRateAlertThresholdPercent, totalAutoApplied);
+
+        // Arrange - Seed auto-applied history below configured undo-rate threshold
         using (var scope = Factory!.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, 100, undoCount: 8);
+            await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, totalAutoApplied, undoCount: lowUndoCount);
 
             // Ensure data is visible to other connections when using SQLite WAL
             await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
@@ -91,7 +99,8 @@ public class MonitoringDashboardTests : E2ETestBase
 
         // Assert - No alert should be shown
         var isAlertVisible = await _dashboardPage.IsAlertBannerVisibleAsync();
-        Assert.That(isAlertVisible, Is.False, "No alert should be shown when undo rate is below 10%");
+        Assert.That(isAlertVisible, Is.False,
+            $"No alert should be shown when undo rate is below configured threshold ({_undoRateAlertThresholdPercent:0.0}%)");
 
         // Status indicator should be green
         var statusClass = await _dashboardPage.GetStatusIndicatorClassAsync();
@@ -101,9 +110,9 @@ public class MonitoringDashboardTests : E2ETestBase
         var totalCount = await _dashboardPage.GetTotalAutoAppliedCountAsync();
         var undoRate = await _dashboardPage.GetUndoRateAsync();
 
-        Assert.That(totalCount, Is.EqualTo(100), "Total auto-applied should be 100");
-        Assert.That(ParsePercentageText(undoRate), Is.EqualTo(8.0m).Within(0.01m),
-            "Undo rate should be 8.0%");
+        Assert.That(totalCount, Is.EqualTo(totalAutoApplied), $"Total auto-applied should be {totalAutoApplied}");
+        Assert.That(ParsePercentageText(undoRate), Is.EqualTo((decimal)lowUndoCount).Within(0.01m),
+            $"Undo rate should be {lowUndoCount:0.0}%");
     }
 
     [Test]
@@ -112,11 +121,14 @@ public class MonitoringDashboardTests : E2ETestBase
     [Ignore("Alert banner visibility has timing issues - API returns correct 12% undo rate but UI doesn't show alert. Requires investigation of Blazor rendering timing.")]
     public async Task MonitoringDashboard_HighUndoRate_AlertBannerShown()
     {
-        // Arrange - Seed 100 auto-applied, 12 undone (12% undo rate > 10% threshold)
+        const int totalAutoApplied = 100;
+        var highUndoCount = GetUndoCountAboveThreshold(_undoRateAlertThresholdPercent, totalAutoApplied);
+
+        // Arrange - Seed auto-applied history above configured undo-rate threshold
         using (var scope = Factory!.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, 100, undoCount: 12);
+            await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, totalAutoApplied, undoCount: highUndoCount);
             await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
         await Task.Delay(500);
@@ -126,13 +138,14 @@ public class MonitoringDashboardTests : E2ETestBase
 
         // Assert - Alert banner should be shown
         var isAlertVisible = await _dashboardPage.IsAlertBannerVisibleAsync();
-        Assert.That(isAlertVisible, Is.True, "Alert should be shown when undo rate exceeds 10%");
+        Assert.That(isAlertVisible, Is.True,
+            $"Alert should be shown when undo rate exceeds configured threshold ({_undoRateAlertThresholdPercent:0.0}%)");
 
         var alertMessage = await _dashboardPage.GetAlertMessageAsync();
         Assert.That(alertMessage, Does.Contain("undo rate").IgnoreCase,
             "Alert message should mention undo rate");
-        Assert.That(alertMessage, Does.Contain("12").Or.Contain("10"),
-            "Alert message should show threshold comparison (12% > 10%)");
+        Assert.That(alertMessage, Does.Contain(highUndoCount.ToString(CultureInfo.InvariantCulture)).Or.Contain(_undoRateAlertThresholdPercent.ToString("0", CultureInfo.InvariantCulture)),
+            "Alert message should show comparison with configured threshold");
     }
 
     [Test]
@@ -415,5 +428,21 @@ public class MonitoringDashboardTests : E2ETestBase
             .Replace(',', '.');
 
         return decimal.Parse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture);
+    }
+
+    private static int GetUndoCountBelowThreshold(decimal thresholdPercent, int totalCount)
+    {
+        var thresholdCount = thresholdPercent / 100m * totalCount;
+        var belowThreshold = (int)Math.Floor(thresholdCount);
+
+        return Math.Max(0, belowThreshold - 1);
+    }
+
+    private static int GetUndoCountAboveThreshold(decimal thresholdPercent, int totalCount)
+    {
+        var thresholdCount = thresholdPercent / 100m * totalCount;
+        var aboveThreshold = (int)Math.Floor(thresholdCount) + 1;
+
+        return Math.Clamp(aboveThreshold, 1, totalCount);
     }
 }
