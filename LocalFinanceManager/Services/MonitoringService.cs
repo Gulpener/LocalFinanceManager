@@ -173,11 +173,16 @@ public class MonitoringService : IMonitoringService
             // Use AutoAppliedAt if available; fall back to ChangedAt for older/seeded audits
             var autoApplyTimestamp = audit.AutoAppliedAt ?? audit.ChangedAt;
 
-            // Check if this auto-apply was undone (any undo after the auto-apply timestamp)
+            // Check if this auto-apply was undone by the dedicated auto-apply undo path
             var wasUndone = false;
             if (undoLookup.TryGetValue(audit.TransactionId, out var undosForTransaction))
             {
-                wasUndone = undosForTransaction.Any(u => u.ChangedAt > autoApplyTimestamp);
+                // Only treat undos created by the auto-apply undo flow as undoing this auto-apply
+                wasUndone = undosForTransaction.Any(u =>
+                    u.ChangedAt > autoApplyTimestamp &&
+                    u.ActionType == "Undo" &&
+                    u.ChangedBy == "AutoApplyUndo" &&
+                    u.Reason == "Auto-apply undo");
             }
 
             // Check if can undo (within retention window and not already undone)

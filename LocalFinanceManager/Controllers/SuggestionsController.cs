@@ -110,7 +110,14 @@ public class SuggestionsController : ControllerBase
     {
         if (feedback == null)
         {
-            return BadRequest("Feedback cannot be null");
+            var problemDetails = new ProblemDetails
+            {
+                Status = StatusCodes.Status400BadRequest,
+                Title = "Invalid request body.",
+                Detail = "Feedback cannot be null."
+            };
+
+            return BadRequest(problemDetails);
         }
 
         var validationResult = await _feedbackValidator.ValidateAsync(feedback);

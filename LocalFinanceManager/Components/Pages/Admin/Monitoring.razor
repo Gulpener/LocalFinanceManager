@@ -240,16 +240,19 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
             <h3>Configuratie</h3>
             <div class="card">
                 <div class="card-body">
-                    <p><strong>Auto-Apply Status:</strong> Bekijk <a href="/settings/auto-apply">instellingen</a> voor
-                        configuratie</p>
-                        <p><strong>Ongedaan maken retentie:</strong> 30 dagen</p>
-                        <p><strong>Ongedaan maken drempel:</strong> @UndoRateAlertThresholdDisplay</p>
-                        <p class="mb-0">
-                            <a href="/settings/auto-apply" class="btn btn-primary">
-                                <i class="bi bi-gear"></i> Wijzig instellingen
-                            </a>
-                        </p>
-                    </div>
+                    <p>
+                        <strong>Auto-Apply Status:</strong>
+                        Bekijk <a href="/settings/auto-apply">instellingen</a> voor configuratie.
+                    </p>
+                    <p>
+                        <strong>Ongedaan maken retentie &amp; drempel:</strong>
+                        Worden beheerd via de Auto-Apply instellingen.
+                    </p>
+                    <p class="mb-0">
+                        <a href="/settings/auto-apply" class="btn btn-primary">
+                            <i class="bi bi-gear"></i> Wijzig instellingen
+                        </a>
+                    </p>
                 </div>
             </div>
         </div>
