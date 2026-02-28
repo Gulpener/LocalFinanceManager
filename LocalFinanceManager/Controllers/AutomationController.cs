@@ -150,45 +150,12 @@ public class AutomationController : ControllerBase
     {
         // Try to load from database first, fallback to appsettings.json
         var dbSettings = await _dbContext.AppSettings
-            .Where(s => !s.IsArchived)
+            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
             .FirstOrDefaultAsync();
 
         if (dbSettings != null)
         {
-            List<Guid> accountIds;
-            try
-            {
-                accountIds = string.IsNullOrEmpty(dbSettings.AccountIdsJson)
-                    ? new List<Guid>()
-                    : JsonSerializer.Deserialize<List<Guid>>(dbSettings.AccountIdsJson) ?? new List<Guid>();
-            }
-            catch (JsonException)
-            {
-                accountIds = new List<Guid>();
-            }
-
-            List<Guid> excludedCategoryIds;
-            try
-            {
-                excludedCategoryIds = string.IsNullOrEmpty(dbSettings.ExcludedCategoryIdsJson)
-                    ? new List<Guid>()
-                    : JsonSerializer.Deserialize<List<Guid>>(dbSettings.ExcludedCategoryIdsJson) ?? new List<Guid>();
-            }
-            catch (JsonException)
-            {
-                excludedCategoryIds = new List<Guid>();
-            }
-
-            var settings = new AutoApplySettingsDto
-            {
-                Enabled = dbSettings.AutoApplyEnabled,
-                MinimumConfidence = dbSettings.MinimumConfidence,
-                IntervalMinutes = dbSettings.IntervalMinutes,
-                AccountIds = accountIds,
-                ExcludedCategoryIds = excludedCategoryIds
-            };
-
-            return Ok(settings);
+            return Ok(ToDto(dbSettings));
         }
 
         // Fallback to appsettings.json defaults
@@ -250,21 +217,24 @@ public class AutomationController : ControllerBase
                 ? JsonSerializer.Serialize(excludedCategoryIds)
                 : null;
 
-            await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
-                INSERT INTO "AppSettings"
-                    ("Id", "AutoApplyEnabled", "MinimumConfidence", "IntervalMinutes", "AccountIdsJson", "ExcludedCategoryIdsJson", "UpdatedBy", "CreatedAt", "UpdatedAt", "IsArchived", "RowVersion")
-                VALUES
-                    ({AppSettings.SingletonId}, {settings.Enabled}, {settings.MinimumConfidence}, {settings.IntervalMinutes}, {accountIdsJson}, {excludedCategoryIdsJson}, {"System"}, datetime('now'), datetime('now'), {false}, NULL)
-                ON CONFLICT("Id") DO UPDATE SET
-                    "AutoApplyEnabled" = excluded."AutoApplyEnabled",
-                    "MinimumConfidence" = excluded."MinimumConfidence",
-                    "IntervalMinutes" = excluded."IntervalMinutes",
-                    "AccountIdsJson" = excluded."AccountIdsJson",
-                    "ExcludedCategoryIdsJson" = excluded."ExcludedCategoryIdsJson",
-                    "UpdatedBy" = excluded."UpdatedBy",
-                    "UpdatedAt" = datetime('now'),
-                    "IsArchived" = 0;
-                """);
+            var existingSettings = await _dbContext.AppSettings
+                .FirstOrDefaultAsync(s => s.Id == AppSettings.SingletonId);
+
+            if (existingSettings == null)
+            {
+                existingSettings = new AppSettings();
+                await _dbContext.AppSettings.AddAsync(existingSettings);
+            }
+
+            existingSettings.AutoApplyEnabled = settings.Enabled;
+            existingSettings.MinimumConfidence = settings.MinimumConfidence;
+            existingSettings.IntervalMinutes = settings.IntervalMinutes;
+            existingSettings.AccountIdsJson = accountIdsJson;
+            existingSettings.ExcludedCategoryIdsJson = excludedCategoryIdsJson;
+            existingSettings.UpdatedBy = "System";
+            existingSettings.IsArchived = false;
+
+            await _dbContext.SaveChangesAsync();
 
             _settingsProvider.Invalidate();
 
@@ -276,6 +246,23 @@ public class AutomationController : ControllerBase
                 excludedCategoryIds.Count);
 
             return Ok(new { success = true, message = "Settings updated successfully" });
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogWarning(ex, "Concurrency conflict while saving auto-apply settings");
+
+            var currentSettings = await _dbContext.AppSettings
+                .AsNoTracking()
+                .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+                .FirstOrDefaultAsync();
+
+            return Conflict(new
+            {
+                title = "Concurrency conflict",
+                status = 409,
+                detail = "The settings were modified by another user. Please reload and try again.",
+                currentState = currentSettings != null ? ToDto(currentSettings) : null
+            });
         }
         catch (Exception ex)
         {
@@ -334,5 +321,34 @@ public class AutomationController : ControllerBase
 
         var estimate = await _monitoringService.EstimateAutoApplyCountAsync((float)confidence);
         return Ok(new { estimatedAutoApplyCount = estimate });
+    }
+
+    private static AutoApplySettingsDto ToDto(AppSettings dbSettings)
+    {
+        return new AutoApplySettingsDto
+        {
+            Enabled = dbSettings.AutoApplyEnabled,
+            MinimumConfidence = dbSettings.MinimumConfidence,
+            IntervalMinutes = dbSettings.IntervalMinutes,
+            AccountIds = DeserializeGuidList(dbSettings.AccountIdsJson),
+            ExcludedCategoryIds = DeserializeGuidList(dbSettings.ExcludedCategoryIdsJson)
+        };
+    }
+
+    private static List<Guid> DeserializeGuidList(string? json)
+    {
+        if (string.IsNullOrEmpty(json))
+        {
+            return new List<Guid>();
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<Guid>>(json) ?? new List<Guid>();
+        }
+        catch (JsonException)
+        {
+            return new List<Guid>();
+        }
     }
 }

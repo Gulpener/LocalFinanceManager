@@ -248,10 +248,6 @@ public class AppDbContext : DbContext
             entity.Property(s => s.Id)
                 .ValueGeneratedNever();
 
-            entity.Property(s => s.RowVersion)
-                .IsRequired(false)
-                .IsConcurrencyToken(false);
-
             entity.ToTable(tableBuilder =>
             {
                 tableBuilder.HasCheckConstraint(
