@@ -289,7 +289,7 @@ else
                 await InvokeAsync(StateHasChanged);
                 try
                 {
-                    await JS.InvokeVoidAsync("showToast", "Instellingen opgeslagen", "success");
+                    await ShowToastAsync("Instellingen opgeslagen", "success");
                 }
                 catch
                 {
@@ -342,6 +342,11 @@ else
         {
             _settings.ExcludedCategoryIds = selected.Select(Guid.Parse).ToList();
         }
+    }
+
+    private ValueTask ShowToastAsync(string message, string type)
+    {
+        return JS.InvokeVoidAsync("showToast", message, type);
     }
 
 }

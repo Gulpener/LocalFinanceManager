@@ -154,7 +154,7 @@ else if (_suggestion != null && !_isHidden)
             if (response.IsSuccessStatusCode)
             {
                 // Show success toast (feedback recorded)
-                await JS.InvokeVoidAsync("showToast", "Suggestion accepted", "success");
+                await ShowToastAsync("Suggestion accepted", "success");
             }
             else
             {
@@ -185,7 +185,7 @@ else if (_suggestion != null && !_isHidden)
             // that the suggestion was dismissed.
             _isHidden = true;
 
-            await JS.InvokeVoidAsync("showToast", "Suggestion dismissed", "info");
+            await ShowToastAsync("Suggestion dismissed", "info");
         }
         catch (Exception ex)
         {
@@ -239,5 +239,10 @@ else if (_suggestion != null && !_isHidden)
             "month" => "Month",
             _ => featureName
         };
+    }
+
+    private ValueTask ShowToastAsync(string message, string type)
+    {
+        return JS.InvokeVoidAsync("showToast", message, type);
     }
 }
