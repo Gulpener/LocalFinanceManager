@@ -361,7 +361,7 @@ public class MonitoringDashboardTests : E2ETestBase
     [Test]
     [Category("E2E")]
     [Category("Monitoring")]
-    [Ignore("Browser native confirm() dialog doesn't trigger Page.Dialog event consistently in Playwright. Consider implementing custom modal dialog instead.")]
+    [Ignore("Browser native confirm() dialog doesn't trigger Page.Dialog event consistently in Playwright.")]
     public async Task MonitoringDashboard_ConfirmationDialog_AppearsBeforeUndo()
     {
         // Arrange
