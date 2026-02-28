@@ -147,32 +147,35 @@ public class MonitoringDashboardPageModel : PageObjectBase
 
     /// <summary>
     /// Confirms the undo action in the browser's confirmation dialog.
+    /// Sets up a one-shot handler that automatically accepts the next dialog
+    /// and then detaches itself to avoid handler accumulation.
     /// </summary>
     public async Task ConfirmUndoAsync()
     {
-        // Handle browser's native confirm dialog
-        Page.Dialog += async (_, dialog) =>
+        EventHandler<IDialog>? handler = null;
+        handler = (_, dialog) =>
         {
-            await dialog.AcceptAsync();
+            _ = dialog.AcceptAsync();
+            Page.Dialog -= handler!;
         };
-        // Dialog will be handled automatically when it appears
-        await Task.Delay(100); // Small delay to ensure handler is set
+
+        Page.Dialog += handler;
+
+        // Ensure the handler is attached before the caller triggers the dialog.
+        await Task.CompletedTask;
     }
 
     /// <summary>
     /// Undoes an auto-applied transaction by clicking undo and confirming.
+    /// Uses Playwright's RunAndWaitForDialogAsync to avoid accumulating dialog handlers.
     /// </summary>
     /// <param name="rowIndex">Zero-based index of the history row.</param>
     public async Task UndoTransactionAsync(int rowIndex)
     {
-        // Set up dialog handler before clicking
-        Page.Dialog += async (_, dialog) =>
-        {
-            await dialog.AcceptAsync();
-        };
+        var dialog = await Page.RunAndWaitForDialogAsync(
+            async () => await ClickUndoButtonForRowAsync(rowIndex));
 
-        await ClickUndoButtonForRowAsync(rowIndex);
-        await Task.Delay(500); // Wait for action to complete
+        await dialog.AcceptAsync();
     }
 
     /// <summary>

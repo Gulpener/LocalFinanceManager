@@ -15,8 +15,7 @@ namespace LocalFinanceManager.Migrations
                 name: "AppSettings",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
+                    Id = table.Column<int>(type: "INTEGER", nullable: false),
                     AutoApplyEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
                     MinimumConfidence = table.Column<float>(type: "REAL", nullable: false),
                     IntervalMinutes = table.Column<int>(type: "INTEGER", nullable: false),
@@ -28,6 +27,7 @@ namespace LocalFinanceManager.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AppSettings", x => x.Id);
+                    table.CheckConstraint("CK_AppSettings_Singleton", "Id = 1");
                 });
         }
 
