@@ -53,10 +53,11 @@ else
                         <div class="mb-3">
                             <label for="confidence-threshold" class="form-label">
                                 Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence *
-                                                                                                                            100).ToString("F0"))%</strong>
+                                                                                                                                                            100).ToString("F0"))%</strong>
                             </label>
                             <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
-                                   @bind="_settings.MinimumConfidence" @bind:event="oninput" @bind:after="OnMinimumConfidenceChangedAsync">
+                                   @bind="_settings.MinimumConfidence" @bind:event="oninput"
+                                   @bind:after="OnMinimumConfidenceChangedAsync">
                                 <small class="text-muted d-block">
                                     Hoger = nauwkeuriger maar minder automatische toewijzingen.
                                     Aanbevolen: 75-85%
@@ -93,10 +94,10 @@ else
                                     (laat leeg voor alle rekeningen).</p>
 
                                     <select class="form-select" id="account-ids" multiple size="5"
-                                            @onchange="HandleAccountSelectionChanged">
+                                            @bind="SelectedAccountIds">
                                         @foreach (var account in _accounts)
                                         {
-                                            <option value="@account.Id" selected="@IsAccountSelected(account.Id)">
+                                            <option value="@account.Id">
                                                 @account.Label
                                             </option>
                                         }
@@ -115,10 +116,10 @@ else
                                         @if (_categories.Any())
                                         {
                                             <select class="form-select" id="excluded-categories" multiple size="5"
-                                                    @onchange="HandleCategorySelectionChanged">
+                                                    @bind="SelectedExcludedCategoryIds">
                                                 @foreach (var category in _categories.OrderBy(c => c.Name))
                                                 {
-                                                    <option value="@category.Id" selected="@IsCategoryExcluded(category.Id)">
+                                                    <option value="@category.Id">
                                                         @category.Name
                                                     </option>
                                                 }
@@ -202,6 +203,34 @@ else
     private int? _previewStats;
     private CancellationTokenSource? _previewDebounceCts;
     private const int PreviewDebounceDelayMs = 350;
+    private string[] _selectedAccountIds = Array.Empty<string>();
+    private string[] _selectedExcludedCategoryIds = Array.Empty<string>();
+
+    private string[] SelectedAccountIds
+    {
+        get => _selectedAccountIds;
+        set
+        {
+            _selectedAccountIds = value;
+            _settings.AccountIds = value
+                .Where(id => Guid.TryParse(id, out _))
+                .Select(Guid.Parse)
+                .ToList();
+        }
+    }
+
+    private string[] SelectedExcludedCategoryIds
+    {
+        get => _selectedExcludedCategoryIds;
+        set
+        {
+            _selectedExcludedCategoryIds = value;
+            _settings.ExcludedCategoryIds = value
+                .Where(id => Guid.TryParse(id, out _))
+                .Select(Guid.Parse)
+                .ToList();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -250,6 +279,7 @@ else
             }
 
             await LoadPreviewStats();
+            SyncSelectionBindingsFromSettings();
         }
         catch (Exception ex)
         {
@@ -336,35 +366,15 @@ else
         }
     }
 
-    private bool IsAccountSelected(Guid accountId)
+    private void SyncSelectionBindingsFromSettings()
     {
-        // If no accounts are selected, all accounts are included
-        if (_settings.AccountIds.Count == 0)
-            return false;
+        _selectedAccountIds = _settings.AccountIds
+            .Select(id => id.ToString())
+            .ToArray();
 
-        return _settings.AccountIds.Contains(accountId);
-    }
-
-    private void HandleAccountSelectionChanged(ChangeEventArgs e)
-    {
-        if (e.Value is string[] selected)
-        {
-            _settings.AccountIds = selected.Select(Guid.Parse).ToList();
-        }
-    }
-
-
-    private bool IsCategoryExcluded(Guid categoryId)
-    {
-        return _settings.ExcludedCategoryIds.Contains(categoryId);
-    }
-
-    private void HandleCategorySelectionChanged(ChangeEventArgs e)
-    {
-        if (e.Value is string[] selected)
-        {
-            _settings.ExcludedCategoryIds = selected.Select(Guid.Parse).ToList();
-        }
+        _selectedExcludedCategoryIds = _settings.ExcludedCategoryIds
+            .Select(id => id.ToString())
+            .ToArray();
     }
 
     private ValueTask ShowToastAsync(string message, string type)
