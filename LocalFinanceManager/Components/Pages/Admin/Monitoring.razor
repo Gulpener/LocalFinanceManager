@@ -259,7 +259,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
         return value.ToString("0.0", DutchCulture) + "%";
     }
 
-    private AutoApplyStats? stats;
+    private AutoApplyStatsDto? stats;
     private List<AutoApplyHistoryDto>? history;
     private int windowDays = 7;
     private bool isLoading = true;
@@ -280,7 +280,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
 
         try
         {
-            stats = await Http.GetFromJsonAsync<AutoApplyStats>($"/api/automation/stats?windowDays={windowDays}");
+            stats = await Http.GetFromJsonAsync<AutoApplyStatsDto>($"/api/automation/stats?windowDays={windowDays}");
         }
         catch (Exception ex)
         {
@@ -382,15 +382,4 @@ window.showToast('Toewijzing ongedaan gemaakt', 'success');
         };
     }
 
-    public class AutoApplyStats
-    {
-        public int WindowDays { get; set; }
-        public int TotalAutoApplied { get; set; }
-        public int TotalUndone { get; set; }
-        public int UndoCount { get; set; }
-        public decimal UndoRate { get; set; }
-        public decimal AverageConfidence { get; set; }
-        public bool IsUndoRateAboveThreshold { get; set; }
-        public DateTime? LastRunTimestamp { get; set; }
-    }
 }
