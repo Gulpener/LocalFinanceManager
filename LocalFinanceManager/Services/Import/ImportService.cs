@@ -99,7 +99,7 @@ public class ImportService
             ImportBatchId = importBatchId
         };
 
-        _logger.LogInformation("Starting import batch {ImportBatchId} for account {AccountId}", importBatchId, accountId);
+        _logger.LogInformation("Starting import batch {ImportBatchId}", importBatchId);
 
         try
         {

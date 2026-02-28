@@ -56,7 +56,7 @@ public class AccountsController : ControllerBase
             {
                 Status = StatusCodes.Status404NotFound,
                 Title = "Account not found",
-                Detail = $"Account with ID {id} was not found."
+                Detail = "The requested account was not found."
             });
         }
 
@@ -120,7 +120,7 @@ public class AccountsController : ControllerBase
                 {
                     Status = StatusCodes.Status404NotFound,
                     Title = "Account not found",
-                    Detail = $"Account with ID {id} was not found."
+                    Detail = "The requested account was not found."
                 });
             }
 
@@ -140,7 +140,7 @@ public class AccountsController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Invalid operation while updating account {AccountId}", id);
+            _logger.LogWarning(ex, "Invalid operation while updating account");
             return BadRequest(new ProblemDetails
             {
                 Status = StatusCodes.Status400BadRequest,
@@ -168,7 +168,7 @@ public class AccountsController : ControllerBase
                 {
                     Status = StatusCodes.Status404NotFound,
                     Title = "Account not found",
-                    Detail = $"Account with ID {id} was not found."
+                    Detail = "The requested account was not found."
                 });
             }
 
@@ -205,7 +205,7 @@ public class AccountsController : ControllerBase
                 {
                     Status = StatusCodes.Status404NotFound,
                     Title = "Account not found",
-                    Detail = $"Account with ID {id} was not found."
+                    Detail = "The requested account was not found."
                 });
             }
 

@@ -38,7 +38,7 @@ public class BudgetPlanService
     /// </summary>
     public async Task<List<BudgetPlanDto>> GetByAccountIdAsync(Guid accountId)
     {
-        _logger.LogInformation("Retrieving budget plans for account: {AccountId}", accountId);
+        _logger.LogInformation("Retrieving budget plans for account");
         var plans = await _budgetPlanRepository.GetByAccountIdAsync(accountId);
         return plans.Select(MapToDto).ToList();
     }
@@ -58,7 +58,7 @@ public class BudgetPlanService
     /// </summary>
     public async Task<BudgetPlanDto?> GetByAccountAndYearAsync(Guid accountId, int year)
     {
-        _logger.LogInformation("Retrieving budget plan for account {AccountId}, year {Year}", accountId, year);
+        _logger.LogInformation("Retrieving budget plan for selected year {Year}", year);
         var plan = await _budgetPlanRepository.GetByAccountAndYearAsync(accountId, year);
         return plan != null ? MapToDto(plan) : null;
     }
@@ -77,8 +77,8 @@ public class BudgetPlanService
     /// </summary>
     public async Task<BudgetPlanDto> CreateFromTemplateAsync(CreateBudgetPlanDto dto, string templateName)
     {
-        _logger.LogInformation("Creating new budget plan for account {AccountId}, year {Year} with template {TemplateName}", 
-            dto.AccountId, dto.Year, templateName);
+        _logger.LogInformation("Creating new budget plan for year {Year} with template {TemplateName}",
+            dto.Year, templateName);
 
         // 1. Validate template name
         if (!CategoryTemplates.IsValidTemplate(templateName))
@@ -90,14 +90,14 @@ public class BudgetPlanService
         var account = await _accountRepository.GetByIdAsync(dto.AccountId);
         if (account == null)
         {
-            throw new InvalidOperationException($"Account with ID {dto.AccountId} not found.");
+            throw new InvalidOperationException("Account not found.");
         }
 
         // 3. Check if a plan already exists for this account and year
         var existingPlan = await _budgetPlanRepository.GetByAccountAndYearAsync(dto.AccountId, dto.Year);
         if (existingPlan != null)
         {
-            throw new InvalidOperationException($"A budget plan already exists for account {dto.AccountId} and year {dto.Year}.");
+            throw new InvalidOperationException($"A budget plan already exists for the selected account and year {dto.Year}.");
         }
 
         // 4. Create budget plan

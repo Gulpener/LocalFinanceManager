@@ -19,6 +19,7 @@ builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("Impo
 builder.Services.Configure<MLOptions>(builder.Configuration.GetSection("MLOptions"));
 builder.Services.Configure<AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Caching"));
+builder.Services.AddDataProtection();
 
 // Register memory cache with size limits
 builder.Services.AddMemoryCache(options =>

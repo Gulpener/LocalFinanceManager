@@ -6,6 +6,7 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -43,12 +44,14 @@ public class BudgetAccountLookupServiceTests
 
         var optionsMock = new Mock<IOptions<CacheOptions>>();
         optionsMock.Setup(x => x.Value).Returns(_cacheOptions);
+        var dataProtectionProvider = new EphemeralDataProtectionProvider();
 
         _service = new BudgetAccountLookupService(
             _memoryCache,
             _cacheKeyTrackerMock.Object,
             _budgetLineRepoMock.Object,
             optionsMock.Object,
+            dataProtectionProvider,
             _loggerMock.Object);
     }
 

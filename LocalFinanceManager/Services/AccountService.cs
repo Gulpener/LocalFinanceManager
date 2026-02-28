@@ -34,7 +34,7 @@ public class AccountService
     /// </summary>
     public async Task<AccountResponse?> GetByIdAsync(Guid id)
     {
-        _logger.LogInformation("Retrieving account with ID: {AccountId}", id);
+        _logger.LogInformation("Retrieving account details");
         var account = await _accountRepository.GetByIdAsync(id);
         return account != null ? AccountResponse.FromEntity(account) : null;
     }
@@ -59,7 +59,7 @@ public class AccountService
 
         await _accountRepository.AddAsync(account);
 
-        _logger.LogInformation("Account created successfully with ID: {AccountId}", account.Id);
+        _logger.LogInformation("Account created successfully");
         return AccountResponse.FromEntity(account);
     }
 
@@ -68,12 +68,12 @@ public class AccountService
     /// </summary>
     public async Task<AccountResponse?> UpdateAsync(Guid id, UpdateAccountRequest request)
     {
-        _logger.LogInformation("Updating account with ID: {AccountId}", id);
+        _logger.LogInformation("Updating account");
 
         var account = await _accountRepository.GetByIdAsync(id);
         if (account == null)
         {
-            _logger.LogWarning("Account not found with ID: {AccountId}", id);
+            _logger.LogWarning("Account not found");
             return null;
         }
 
@@ -93,12 +93,12 @@ public class AccountService
         try
         {
             await _accountRepository.UpdateAsync(account);
-            _logger.LogInformation("Account updated successfully: {AccountId}", id);
+            _logger.LogInformation("Account updated successfully");
             return AccountResponse.FromEntity(account);
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            _logger.LogWarning(ex, "Concurrency conflict updating account: {AccountId}", id);
+            _logger.LogWarning(ex, "Concurrency conflict updating account");
             throw;
         }
     }
@@ -108,12 +108,12 @@ public class AccountService
     /// </summary>
     public async Task<bool> ArchiveAsync(Guid id)
     {
-        _logger.LogInformation("Archiving account with ID: {AccountId}", id);
+        _logger.LogInformation("Archiving account");
 
         var account = await _accountRepository.GetByIdAsync(id);
         if (account == null)
         {
-            _logger.LogWarning("Account not found with ID: {AccountId}", id);
+            _logger.LogWarning("Account not found");
             return false;
         }
 
@@ -122,12 +122,12 @@ public class AccountService
         try
         {
             await _accountRepository.UpdateAsync(account);
-            _logger.LogInformation("Account archived successfully: {AccountId}", id);
+            _logger.LogInformation("Account archived successfully");
             return true;
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            _logger.LogWarning(ex, "Concurrency conflict archiving account: {AccountId}", id);
+            _logger.LogWarning(ex, "Concurrency conflict archiving account");
             throw;
         }
     }
@@ -137,12 +137,12 @@ public class AccountService
     /// </summary>
     public async Task<bool> UnarchiveAsync(Guid id)
     {
-        _logger.LogInformation("Unarchiving account with ID: {AccountId}", id);
+        _logger.LogInformation("Unarchiving account");
 
         var account = await _accountRepository.GetByIdAsync(id);
         if (account == null)
         {
-            _logger.LogWarning("Account not found with ID: {AccountId}", id);
+            _logger.LogWarning("Account not found");
             return false;
         }
 
@@ -151,12 +151,12 @@ public class AccountService
         try
         {
             await _accountRepository.UpdateAsync(account);
-            _logger.LogInformation("Account unarchived successfully: {AccountId}", id);
+            _logger.LogInformation("Account unarchived successfully");
             return true;
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            _logger.LogWarning(ex, "Concurrency conflict unarchiving account: {AccountId}", id);
+            _logger.LogWarning(ex, "Concurrency conflict unarchiving account");
             throw;
         }
     }

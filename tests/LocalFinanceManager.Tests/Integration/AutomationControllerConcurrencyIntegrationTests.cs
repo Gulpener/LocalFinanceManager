@@ -7,6 +7,7 @@ using LocalFinanceManager.DTOs.Validators;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.Services.Background;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -101,6 +102,7 @@ public class AutomationControllerConcurrencyIntegrationTests
         var settingsProvider = new Mock<IAutoApplySettingsProvider>();
         IValidator<AutoApplySettingsDto> validator = new AutoApplySettingsValidator();
         var logger = new Mock<ILogger<AutomationController>>().Object;
+        var dataProtectionProvider = new EphemeralDataProtectionProvider();
 
         var controller = new AutomationController(
             undoService,
@@ -109,6 +111,7 @@ public class AutomationControllerConcurrencyIntegrationTests
             options,
             validator,
             settingsProvider.Object,
+            dataProtectionProvider,
             logger)
         {
             ControllerContext = new ControllerContext

@@ -1,7 +1,9 @@
 using LocalFinanceManager.Data;
+using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
 using LocalFinanceManager.Models;
+using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
@@ -145,10 +147,17 @@ public class AutoApplyTests : E2ETestBase
         var settings = await context.AppSettings
             .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
             .FirstOrDefaultAsync();
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var apiSettings = await client.GetFromJsonAsync<AutoApplySettingsDto>("api/automation/settings");
 
         Assert.That(settings, Is.Not.Null, "Settings should be saved to database");
-        Assert.That(settings!.AccountIdsJson, Does.Contain(_testAccount1.Id.ToString()),
-            "Selected account should be in saved settings");
+        Assert.That(settings!.AccountIdsJson, Is.Not.Null.And.Not.Empty,
+            "Selected account settings should be persisted");
+        Assert.That(settings.AccountIdsJson, Does.Not.Contain(_testAccount1.Id.ToString()),
+            "Selected account should not be stored as plaintext");
+        Assert.That(apiSettings, Is.Not.Null, "Settings should be retrievable via API");
+        Assert.That(apiSettings!.AccountIds, Contains.Item(_testAccount1.Id),
+            "Selected account should be returned via settings API");
     }
 
     [Test]

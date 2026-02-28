@@ -4,6 +4,7 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services.Background;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +28,7 @@ public class AutomationController : ControllerBase
     private readonly IValidator<AutoApplySettingsDto> _settingsValidator;
     private readonly IAutoApplySettingsProvider _settingsProvider;
     private readonly ILogger<AutomationController> _logger;
+    private readonly IDataProtector _accountIdsProtector;
 
     public AutomationController(
         IUndoService undoService,
@@ -35,6 +37,7 @@ public class AutomationController : ControllerBase
         IOptions<AutomationOptions> automationOptions,
         IValidator<AutoApplySettingsDto> settingsValidator,
         IAutoApplySettingsProvider settingsProvider,
+        IDataProtectionProvider dataProtectionProvider,
         ILogger<AutomationController> logger)
     {
         _undoService = undoService;
@@ -43,6 +46,7 @@ public class AutomationController : ControllerBase
         _automationOptions = automationOptions.Value;
         _settingsValidator = settingsValidator;
         _settingsProvider = settingsProvider;
+        _accountIdsProtector = dataProtectionProvider.CreateProtector("AutomationSettings.AccountIds");
         _logger = logger;
     }
 
@@ -211,7 +215,7 @@ public class AutomationController : ControllerBase
             var accountIds = settings.AccountIds ?? new List<Guid>();
             var excludedCategoryIds = settings.ExcludedCategoryIds ?? new List<Guid>();
             var accountIdsJson = accountIds.Any()
-                ? JsonSerializer.Serialize(accountIds)
+                ? ProtectGuidList(accountIds)
                 : null;
             var excludedCategoryIdsJson = excludedCategoryIds.Any()
                 ? JsonSerializer.Serialize(excludedCategoryIds)
@@ -325,14 +329,14 @@ public class AutomationController : ControllerBase
         return Ok(new { estimatedAutoApplyCount = estimate });
     }
 
-    private static AutoApplySettingsDto ToDto(AppSettings dbSettings)
+    private AutoApplySettingsDto ToDto(AppSettings dbSettings)
     {
         return new AutoApplySettingsDto
         {
             Enabled = dbSettings.AutoApplyEnabled,
             MinimumConfidence = dbSettings.MinimumConfidence,
             IntervalMinutes = dbSettings.IntervalMinutes,
-            AccountIds = DeserializeGuidList(dbSettings.AccountIdsJson),
+            AccountIds = DeserializeProtectedGuidList(dbSettings.AccountIdsJson),
             ExcludedCategoryIds = DeserializeGuidList(dbSettings.ExcludedCategoryIdsJson)
         };
     }
@@ -379,6 +383,30 @@ public class AutomationController : ControllerBase
         catch (JsonException)
         {
             return new List<Guid>();
+        }
+    }
+
+    private string ProtectGuidList(List<Guid> values)
+    {
+        var json = JsonSerializer.Serialize(values);
+        return _accountIdsProtector.Protect(json);
+    }
+
+    private List<Guid> DeserializeProtectedGuidList(string? protectedValue)
+    {
+        if (string.IsNullOrWhiteSpace(protectedValue))
+        {
+            return new List<Guid>();
+        }
+
+        try
+        {
+            var unprotectedJson = _accountIdsProtector.Unprotect(protectedValue);
+            return DeserializeGuidList(unprotectedJson);
+        }
+        catch
+        {
+            return DeserializeGuidList(protectedValue);
         }
     }
 }

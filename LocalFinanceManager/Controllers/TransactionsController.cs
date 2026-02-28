@@ -59,7 +59,7 @@ public class TransactionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting transactions for account {AccountId}", accountId);
+            _logger.LogError(ex, "Error getting transactions for account");
             return StatusCode(500, new
             {
                 type = "https://tools.ietf.org/html/rfc7231#section-6.6.1",

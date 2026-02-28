@@ -6,6 +6,7 @@ using LocalFinanceManager.Services.Background;
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.Options;
@@ -29,6 +30,7 @@ public class AutomationControllerTests
     private IOptions<AutomationOptions> _automationOptions = null!;
     private Mock<IAutoApplySettingsProvider> _settingsProviderMock = null!;
     private ILogger<AutomationController> _logger = null!;
+    private IDataProtectionProvider _dataProtectionProvider = null!;
 
     [SetUp]
     public void Setup()
@@ -52,6 +54,7 @@ public class AutomationControllerTests
         });
         _settingsProviderMock = new Mock<IAutoApplySettingsProvider>();
         _logger = new Mock<ILogger<AutomationController>>().Object;
+        _dataProtectionProvider = new EphemeralDataProtectionProvider();
         var settingsValidator = new AutoApplySettingsValidator();
 
         _controller = new AutomationController(
@@ -61,6 +64,7 @@ public class AutomationControllerTests
             _automationOptions,
             settingsValidator,
             _settingsProviderMock.Object,
+            _dataProtectionProvider,
             _logger)
         {
             ControllerContext = new ControllerContext
@@ -465,6 +469,7 @@ public class AutomationControllerTests
             _automationOptions,
             new AutoApplySettingsValidator(),
             settingsProviderMock.Object,
+            _dataProtectionProvider,
             _logger)
         {
             ControllerContext = new ControllerContext

@@ -1,5 +1,6 @@
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data.Repositories;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
@@ -16,12 +17,14 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
     private readonly IBudgetLineRepository _budgetLineRepository;
     private readonly CacheOptions _cacheOptions;
     private readonly ILogger<BudgetAccountLookupService> _logger;
+    private readonly IDataProtector _accountIdProtector;
 
     public BudgetAccountLookupService(
         IMemoryCache memoryCache,
         ICacheKeyTracker cacheKeyTracker,
         IBudgetLineRepository budgetLineRepository,
         IOptions<CacheOptions> cacheOptions,
+        IDataProtectionProvider dataProtectionProvider,
         ILogger<BudgetAccountLookupService> logger)
     {
         _memoryCache = memoryCache;
@@ -29,6 +32,7 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
         _budgetLineRepository = budgetLineRepository;
         _cacheOptions = cacheOptions.Value;
         _logger = logger;
+        _accountIdProtector = dataProtectionProvider.CreateProtector("BudgetAccountLookupService.AccountIdCache");
     }
 
     /// <inheritdoc />
@@ -37,7 +41,8 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
         // Try cache first - we cache by budget line ID directly
         var cacheKey = $"BudgetLineAccount:{budgetLineId}";
 
-        if (_memoryCache.TryGetValue<Guid>(cacheKey, out var cachedAccountId))
+        if (_memoryCache.TryGetValue<string>(cacheKey, out var protectedAccountId) &&
+            TryUnprotectGuid(protectedAccountId, out var cachedAccountId))
         {
             _logger.LogDebug("Cache hit for budget line {BudgetLineId}", budgetLineId);
             return cachedAccountId;
@@ -59,10 +64,10 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
                 Priority = CacheItemPriority.Normal
             };
 
-            _memoryCache.Set(cacheKey, accountId.Value, cacheEntryOptions);
+            _memoryCache.Set(cacheKey, ProtectGuid(accountId.Value), cacheEntryOptions);
             _cacheKeyTracker.AddKey(cacheKey);
 
-            _logger.LogDebug("Cached budget line {BudgetLineId} -> account {AccountId}", budgetLineId, accountId.Value);
+            _logger.LogDebug("Cached budget line-account mapping for budget line {BudgetLineId}", budgetLineId);
         }
 
         return accountId;
@@ -80,7 +85,8 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
         {
             var cacheKey = $"BudgetLineAccount:{budgetLineId}";
 
-            if (_memoryCache.TryGetValue<Guid>(cacheKey, out var cachedAccountId))
+            if (_memoryCache.TryGetValue<string>(cacheKey, out var protectedAccountId) &&
+                TryUnprotectGuid(protectedAccountId, out var cachedAccountId))
             {
                 result[budgetLineId] = cachedAccountId;
             }
@@ -110,7 +116,7 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
                     Priority = CacheItemPriority.Normal
                 };
 
-                _memoryCache.Set(cacheKey, accountId, cacheEntryOptions);
+                _memoryCache.Set(cacheKey, ProtectGuid(accountId), cacheEntryOptions);
                 _cacheKeyTracker.AddKey(cacheKey);
                 result[budgetLineId] = accountId;
             }
@@ -126,7 +132,7 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
         // Since we cache by BudgetLineId, we need to remove entries that belong to this account
         // This requires a more complex invalidation - we'll clear all cache for safety
         // In a production system, you might maintain a reverse index
-        _logger.LogInformation("Invalidating cache for account {AccountId}", accountId);
+        _logger.LogInformation("Invalidating cache for account");
 
         // For now, clear all cache when account changes
         // Future optimization: maintain AccountId -> BudgetLineIds mapping
@@ -157,6 +163,32 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
         {
             _memoryCache.Remove(key);
             _cacheKeyTracker.RemoveKey(key);
+        }
+    }
+
+    private string ProtectGuid(Guid value)
+    {
+        return _accountIdProtector.Protect(value.ToString("N"));
+    }
+
+    private bool TryUnprotectGuid(string? protectedValue, out Guid value)
+    {
+        value = Guid.Empty;
+
+        if (string.IsNullOrWhiteSpace(protectedValue))
+        {
+            return false;
+        }
+
+        try
+        {
+            var unprotected = _accountIdProtector.Unprotect(protectedValue);
+            return Guid.TryParseExact(unprotected, "N", out value);
+        }
+        catch
+        {
+            _logger.LogWarning("Unable to unprotect cached account mapping entry; cache entry will be ignored.");
+            return false;
         }
     }
 }
