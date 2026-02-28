@@ -136,7 +136,9 @@ public class AutoApplySettingsPageModel : PageObjectBase
     {
         try
         {
-            await Page.WaitForSelectorAsync($"{SuccessToastSelector}, .alert-success", new() { Timeout = 10000 });
+            await Page.WaitForSelectorAsync(
+                $"{SuccessToastSelector}, .alert-success, .toast.show, .toast.showing, [role='alert'].alert-success",
+                new() { Timeout = 10000 });
             return true;
         }
         catch (TimeoutException)
@@ -144,7 +146,6 @@ public class AutoApplySettingsPageModel : PageObjectBase
             return false;
         }
     }
-}
 
     /// <summary>
     /// Saves settings and waits for confirmation.

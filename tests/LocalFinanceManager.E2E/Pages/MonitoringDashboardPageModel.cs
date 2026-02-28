@@ -167,13 +167,24 @@ public class MonitoringDashboardPageModel : PageObjectBase
 
     /// <summary>
     /// Undoes an auto-applied transaction by clicking undo and confirming.
-    /// Uses Playwright's RunAndWaitForDialogAsync to avoid accumulating dialog handlers.
+    /// Waits for the next dialog event and accepts it.
     /// </summary>
     /// <param name="rowIndex">Zero-based index of the history row.</param>
     public async Task UndoTransactionAsync(int rowIndex)
     {
-        var dialog = await Page.RunAndWaitForDialogAsync(
-            async () => await ClickUndoButtonForRowAsync(rowIndex));
+        var dialogTcs = new TaskCompletionSource<IDialog>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        EventHandler<IDialog>? handler = null;
+        handler = (_, dialog) =>
+        {
+            Page.Dialog -= handler!;
+            dialogTcs.TrySetResult(dialog);
+        };
+
+        Page.Dialog += handler;
+        await ClickUndoButtonForRowAsync(rowIndex);
+
+        var dialog = await dialogTcs.Task;
 
         await dialog.AcceptAsync();
     }
