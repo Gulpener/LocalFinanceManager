@@ -157,6 +157,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["ConnectionStrings:Default"] = GetConnectionString(),
                 ["RecreateDatabase"] = "true", // Let the app recreate the database on startup for E2E tests
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
+                ["AutomationOptions:MonitoringRefreshIntervalSeconds"] = "2", // Speed up monitoring auto-refresh tests
                 ["ML:EnableAutoSuggestions"] = "false" // Disable ML during tests unless explicitly enabled
             });
         });

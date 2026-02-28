@@ -333,7 +333,7 @@ public class MonitoringDashboardTests : E2ETestBase
     [Test]
     [Category("E2E")]
     [Category("Monitoring")]
-    [Ignore("Auto-refresh requires 30-second wait, slow test")]
+    [Category("Slow")]
     public async Task MonitoringDashboard_AutoRefresh_UpdatesMetricsWithoutPageReload()
     {
         // Arrange - Seed initial data
@@ -348,9 +348,11 @@ public class MonitoringDashboardTests : E2ETestBase
         using var scope2 = Factory!.Services.CreateScope();
         var context2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
         await SeedDataHelper.SeedAutoApplyHistoryAsync(context2, _testAccount.Id, 10, undoCount: 1);
+        await context2.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
+        await Task.Delay(300);
 
-        // Wait for auto-refresh (30 seconds per spec)
-        await _dashboardPage.WaitForMetricsUpdateAsync(timeoutMs: 35000);
+        // Wait for auto-refresh (2 seconds in test configuration)
+        await _dashboardPage.WaitForMetricsUpdateAsync(timeoutMs: 10000);
 
         // Assert - Metrics should update without page reload
         var updatedCount = await _dashboardPage.GetTotalAutoAppliedCountAsync();

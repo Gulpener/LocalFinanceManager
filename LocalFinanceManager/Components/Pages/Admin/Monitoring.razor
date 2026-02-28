@@ -1,12 +1,17 @@
 @page "/admin/monitoring"
 @page "/settings/monitoring"
+@rendermode InteractiveServer
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs.ML
+@using LocalFinanceManager.Configuration
 @using System.Globalization
 @using System.Net.Http.Json
+@using Microsoft.Extensions.Options
 @inject HttpClient Http
 @inject ILogger<Monitoring> Logger
 @inject IJSRuntime JS
+@inject IOptions<AutomationOptions> AutomationOptions
+@implements IAsyncDisposable
 
 <PageTitle>Auto-Apply Monitoring</PageTitle>
 
@@ -69,7 +74,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
                         <div class="card-body text-center">
                             <h6 class="card-subtitle mb-2 text-muted">Geaccepteerd</h6>
                             <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied -
-                                                                                                                            stats.UndoCount)</p>
+                                                                                                                                                            stats.UndoCount)</p>
                             </div>
                         </div>
                     </div>
@@ -266,11 +271,52 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
     private bool loadingHistory = true;
     private bool _undoingTransaction = false;
     private string? errorMessage;
+    private CancellationTokenSource? _refreshCancellationTokenSource;
+    private Task? _refreshTask;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadStats();
         await LoadHistory();
+        StartAutoRefresh();
+    }
+
+    private void StartAutoRefresh()
+    {
+        var intervalSeconds = AutomationOptions.Value.MonitoringRefreshIntervalSeconds;
+        if (intervalSeconds <= 0)
+        {
+            Logger.LogInformation("Monitoring auto-refresh disabled by configuration");
+            return;
+        }
+
+        _refreshCancellationTokenSource = new CancellationTokenSource();
+        _refreshTask = RunAutoRefreshLoopAsync(TimeSpan.FromSeconds(intervalSeconds), _refreshCancellationTokenSource.Token);
+    }
+
+    private async Task RunAutoRefreshLoopAsync(TimeSpan interval, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var timer = new PeriodicTimer(interval);
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await InvokeAsync(async () =>
+                {
+                    await LoadStats();
+                    await LoadHistory();
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.LogDebug("Monitoring auto-refresh loop cancelled");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error in monitoring auto-refresh loop");
+        }
     }
 
     private async Task LoadStats()
@@ -376,6 +422,29 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
             >= 0.6f => "bg-warning",
             _ => "bg-secondary"
         };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_refreshCancellationTokenSource is null)
+        {
+            return;
+        }
+
+        await _refreshCancellationTokenSource.CancelAsync();
+
+        if (_refreshTask is not null)
+        {
+            try
+            {
+                await _refreshTask;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        _refreshCancellationTokenSource.Dispose();
     }
 
 }
