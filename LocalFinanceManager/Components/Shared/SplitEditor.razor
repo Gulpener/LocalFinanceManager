@@ -350,8 +350,8 @@
         }
         catch (InvalidOperationException ex)
         {
-            errorMessage = ex.Message;
-            Logger.LogWarning(ex, "Validation error tijdens split: {Message}", ex.Message);
+            errorMessage = "Kon transactie niet splitsen. Controleer de invoer en probeer opnieuw.";
+            Logger.LogWarning(ex, "Validation error while splitting transaction {TransactionId}", Transaction?.Id);
         }
         catch (Exception ex)
         {

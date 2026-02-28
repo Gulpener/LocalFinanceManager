@@ -17,6 +17,7 @@ namespace LocalFinanceManager.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/automation")]
+[IgnoreAntiforgeryToken]
 public class AutomationController : ControllerBase
 {
     private readonly IUndoService _undoService;
@@ -242,35 +243,29 @@ public class AutomationController : ControllerBase
         {
             var accountIds = settings.AccountIds ?? new List<Guid>();
             var excludedCategoryIds = settings.ExcludedCategoryIds ?? new List<Guid>();
-
-            // Load or create settings record
-            var dbSettings = await _dbContext.AppSettings
-                .Where(s => !s.IsArchived)
-                .FirstOrDefaultAsync();
-
-            if (dbSettings == null)
-            {
-                dbSettings = new AppSettings
-                {
-                    Id = AppSettings.SingletonId,
-                    IsArchived = false
-                };
-                _dbContext.AppSettings.Add(dbSettings);
-            }
-
-            // Update settings
-            dbSettings.AutoApplyEnabled = settings.Enabled;
-            dbSettings.MinimumConfidence = settings.MinimumConfidence;
-            dbSettings.IntervalMinutes = settings.IntervalMinutes;
-            dbSettings.AccountIdsJson = accountIds.Any()
+            var accountIdsJson = accountIds.Any()
                 ? JsonSerializer.Serialize(accountIds)
                 : null;
-            dbSettings.ExcludedCategoryIdsJson = excludedCategoryIds.Any()
+            var excludedCategoryIdsJson = excludedCategoryIds.Any()
                 ? JsonSerializer.Serialize(excludedCategoryIds)
                 : null;
-            dbSettings.UpdatedBy = "System"; // Uses a system identifier because no authenticated user context is available here
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "AppSettings"
+                    ("Id", "AutoApplyEnabled", "MinimumConfidence", "IntervalMinutes", "AccountIdsJson", "ExcludedCategoryIdsJson", "UpdatedBy", "CreatedAt", "UpdatedAt", "IsArchived", "RowVersion")
+                VALUES
+                    ({AppSettings.SingletonId}, {settings.Enabled}, {settings.MinimumConfidence}, {settings.IntervalMinutes}, {accountIdsJson}, {excludedCategoryIdsJson}, {"System"}, datetime('now'), datetime('now'), {false}, NULL)
+                ON CONFLICT("Id") DO UPDATE SET
+                    "AutoApplyEnabled" = excluded."AutoApplyEnabled",
+                    "MinimumConfidence" = excluded."MinimumConfidence",
+                    "IntervalMinutes" = excluded."IntervalMinutes",
+                    "AccountIdsJson" = excluded."AccountIdsJson",
+                    "ExcludedCategoryIdsJson" = excluded."ExcludedCategoryIdsJson",
+                    "UpdatedBy" = excluded."UpdatedBy",
+                    "UpdatedAt" = datetime('now'),
+                    "IsArchived" = 0;
+                """);
+
             _settingsProvider.Invalidate();
 
             _logger.LogInformation(
@@ -281,35 +276,6 @@ public class AutomationController : ControllerBase
                 excludedCategoryIds.Count);
 
             return Ok(new { success = true, message = "Settings updated successfully" });
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            var currentSettings = await _dbContext.AppSettings
-                .AsNoTracking()
-                .Where(s => !s.IsArchived)
-                .FirstOrDefaultAsync();
-
-            return Conflict(new
-            {
-                type = "https://tools.ietf.org/html/rfc7231#section-6.5.8",
-                title = "Conflict",
-                status = 409,
-                detail = "Settings were updated by another process. Please reload and try again.",
-                current = currentSettings == null
-                    ? null
-                    : new AutoApplySettingsDto
-                    {
-                        Enabled = currentSettings.AutoApplyEnabled,
-                        MinimumConfidence = currentSettings.MinimumConfidence,
-                        IntervalMinutes = currentSettings.IntervalMinutes,
-                        AccountIds = string.IsNullOrEmpty(currentSettings.AccountIdsJson)
-                            ? new List<Guid>()
-                            : JsonSerializer.Deserialize<List<Guid>>(currentSettings.AccountIdsJson) ?? new List<Guid>(),
-                        ExcludedCategoryIds = string.IsNullOrEmpty(currentSettings.ExcludedCategoryIdsJson)
-                            ? new List<Guid>()
-                            : JsonSerializer.Deserialize<List<Guid>>(currentSettings.ExcludedCategoryIdsJson) ?? new List<Guid>()
-                    }
-            });
         }
         catch (Exception ex)
         {

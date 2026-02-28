@@ -4,6 +4,7 @@
 @using LocalFinanceManager.Models
 @inject AccountService AccountService
 @inject NavigationManager Navigation
+@inject ILogger<AccountCreate> Logger
 @rendermode InteractiveServer
 
 <PageTitle>Create Account</PageTitle>
@@ -112,11 +113,13 @@
         catch (HttpRequestException ex)
         {
             // Handle validation errors
-            errorMessage = $"Error creating account: {ex.Message}";
+            Logger.LogError(ex, "HTTP error while creating account.");
+            errorMessage = "Could not create account.";
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error creating account: {ex.Message}";
+            Logger.LogError(ex, "Unexpected error while creating account.");
+            errorMessage = "Could not create account.";
         }
         finally
         {

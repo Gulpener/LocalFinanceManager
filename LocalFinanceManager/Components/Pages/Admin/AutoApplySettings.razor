@@ -4,11 +4,49 @@
 @using LocalFinanceManager.Data.Repositories
 @using System.Net.Http.Json
 @inject HttpClient Http
+@inject ILogger<AutoApplySettings> Logger
 @inject IAccountRepository AccountRepository
 @inject ICategoryRepository CategoryRepository
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 @implements IDisposable
+
+<script>
+    window.localFinanceAutoApply = window.localFinanceAutoApply || {};
+
+    window.localFinanceAutoApply.getSettingsSnapshot = () => {
+        const getSelectedValues = (id) => {
+            const select = document.getElementById(id);
+            if (!select) {
+                return [];
+            }
+
+            return Array.from(select.selectedOptions)
+                .map(option => option.value)
+                .filter(value => typeof value === "string" && value.length > 0);
+        };
+
+        const enableToggle = document.getElementById("enable-auto-apply");
+        const confidenceSlider = document.getElementById("confidence-threshold");
+        const intervalInput = document.getElementById("intervalMinutes");
+
+        const minimumConfidence = confidenceSlider
+            ? Number.parseFloat(confidenceSlider.value)
+            : 0.8;
+
+        const intervalMinutes = intervalInput
+            ? Number.parseInt(intervalInput.value, 10)
+            : 15;
+
+        return {
+            Enabled: Boolean(enableToggle?.checked),
+            MinimumConfidence: Number.isFinite(minimumConfidence) ? minimumConfidence : 0.8,
+            IntervalMinutes: Number.isFinite(intervalMinutes) ? intervalMinutes : 15,
+            AccountIds: getSelectedValues("account-ids"),
+            ExcludedCategoryIds: getSelectedValues("excluded-categories")
+        };
+    };
+</script>
 
 <PageTitle>Auto-Apply instellingen</PageTitle>
 
@@ -53,7 +91,7 @@ else
                         <div class="mb-3">
                             <label for="confidence-threshold" class="form-label">
                                 Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence *
-                                                                                                                                                            100).ToString("F0"))%</strong>
+                                                                                                                                                                                            100).ToString("F0"))%</strong>
                             </label>
                             <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
                                    @bind="_settings.MinimumConfidence" @bind:event="oninput"
@@ -93,8 +131,7 @@ else
                                 <p class="text-muted">Selecteer welke rekeningen moeten worden gebruikt voor automatische toewijzing
                                     (laat leeg voor alle rekeningen).</p>
 
-                                    <select class="form-select" id="account-ids" multiple size="5"
-                                            @bind="SelectedAccountIds">
+                                    <select class="form-select" id="account-ids" multiple size="5"                                       @bind="SelectedAccountIds">
                                         @foreach (var account in _accounts)
                                         {
                                             <option value="@account.Id">
@@ -211,8 +248,8 @@ else
         get => _selectedAccountIds;
         set
         {
-            _selectedAccountIds = value;
-            _settings.AccountIds = value
+            _selectedAccountIds = value ?? Array.Empty<string>();
+            _settings.AccountIds = _selectedAccountIds
                 .Where(id => Guid.TryParse(id, out _))
                 .Select(Guid.Parse)
                 .ToList();
@@ -224,8 +261,8 @@ else
         get => _selectedExcludedCategoryIds;
         set
         {
-            _selectedExcludedCategoryIds = value;
-            _settings.ExcludedCategoryIds = value
+            _selectedExcludedCategoryIds = value ?? Array.Empty<string>();
+            _settings.ExcludedCategoryIds = _selectedExcludedCategoryIds
                 .Where(id => Guid.TryParse(id, out _))
                 .Select(Guid.Parse)
                 .ToList();
@@ -283,7 +320,8 @@ else
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Fout bij laden van instellingen: {ex.Message}";
+            Logger.LogError(ex, "Failed to load auto-apply settings.");
+            _errorMessage = "Kon instellingen niet laden.";
         }
     }
 
@@ -334,6 +372,8 @@ else
             _errorMessage = null;
             _successMessage = null;
 
+            await SyncSettingsFromDomAsync();
+
             var response = await Http.PostAsJsonAsync("/api/automation/settings", _settings);
 
             if (response.IsSuccessStatusCode)
@@ -352,13 +392,16 @@ else
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                _errorMessage = $"Fout bij opslaan: {errorContent}";
+                Logger.LogWarning("Saving auto-apply settings failed with status code {StatusCode}. Response: {ErrorContent}",
+response.StatusCode, errorContent);
+                _errorMessage = "Kon instellingen niet opslaan.";
                 await InvokeAsync(StateHasChanged);
             }
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Fout bij opslaan van instellingen: {ex.Message}";
+            Logger.LogError(ex, "Failed to save auto-apply settings.");
+            _errorMessage = "Kon instellingen niet opslaan.";
         }
         finally
         {
@@ -368,13 +411,45 @@ else
 
     private void SyncSelectionBindingsFromSettings()
     {
-        _selectedAccountIds = _settings.AccountIds
+        _selectedAccountIds = (_settings.AccountIds ?? new List<Guid>())
             .Select(id => id.ToString())
             .ToArray();
 
-        _selectedExcludedCategoryIds = _settings.ExcludedCategoryIds
+        _selectedExcludedCategoryIds = (_settings.ExcludedCategoryIds ?? new List<Guid>())
             .Select(id => id.ToString())
             .ToArray();
+    }
+
+    private async Task SyncSettingsFromDomAsync()
+    {
+        try
+        {
+            var snapshot = await JS.InvokeAsync<AutoApplyDomSnapshot?>("localFinanceAutoApply.getSettingsSnapshot");
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            _settings.Enabled = snapshot.Enabled;
+            _settings.MinimumConfidence = snapshot.MinimumConfidence;
+            _settings.IntervalMinutes = snapshot.IntervalMinutes;
+
+            SelectedAccountIds = snapshot.AccountIds ?? Array.Empty<string>();
+            SelectedExcludedCategoryIds = snapshot.ExcludedCategoryIds ?? Array.Empty<string>();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "DOM snapshot sync for auto-apply settings was unavailable; using bound values.");
+        }
+    }
+
+    private sealed class AutoApplyDomSnapshot
+    {
+        public bool Enabled { get; set; }
+        public float MinimumConfidence { get; set; }
+        public int IntervalMinutes { get; set; }
+        public string[]? AccountIds { get; set; }
+        public string[]? ExcludedCategoryIds { get; set; }
     }
 
     private ValueTask ShowToastAsync(string message, string type)

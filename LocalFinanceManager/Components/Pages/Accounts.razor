@@ -3,6 +3,7 @@
 @using LocalFinanceManager.DTOs
 @inject AccountService AccountService
 @inject NavigationManager Navigation
+@inject ILogger<Accounts> Logger
 @rendermode InteractiveServer
 
 <PageTitle>Accounts</PageTitle>
@@ -102,7 +103,8 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading accounts: {ex.Message}";
+            Logger.LogError(ex, "Failed to load accounts.");
+            errorMessage = "Could not load accounts.";
         }
     }
 
@@ -128,7 +130,8 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error archiving account: {ex.Message}";
+            Logger.LogError(ex, "Failed to archive account {AccountId}.", accountToArchive.Id);
+            errorMessage = "Could not archive account.";
         }
     }
 

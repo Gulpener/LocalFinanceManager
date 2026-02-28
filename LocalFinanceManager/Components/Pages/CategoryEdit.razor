@@ -3,10 +3,12 @@
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
 @using LocalFinanceManager.Components.Shared
+@using System.Net
 @using static LocalFinanceManager.Components.Shared.Breadcrumb
 @inject NavigationManager Navigation
 @inject CategoryService CategoryService
 @inject BudgetPlanService BudgetPlanService
+@inject ILogger<CategoryEdit> Logger
 @rendermode InteractiveServer
 
 <PageTitle>Categorie Bewerken</PageTitle>
@@ -21,88 +23,88 @@ else
 
     <h1>Categorie Bewerken</h1>
 
-@if (category == null)
-{
-    <p><em>Categorie laden...</em></p>
-}
-else
-{
-    <div class="row">
-        <div class="col-md-6">
-            <EditForm Model="@categoryName" OnValidSubmit="HandleSubmit">
-                <DataAnnotationsValidator />
+    @if (category == null)
+    {
+        <p><em>Categorie laden...</em></p>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <EditForm Model="@categoryName" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
 
-                @if (!string.IsNullOrEmpty(errorMessage))
-                {
-                    <div class="alert alert-danger">@errorMessage</div>
-                }
-
-                @if (!string.IsNullOrEmpty(concurrencyMessage))
-                {
-                    <div class="alert alert-warning">
-                        <p>@concurrencyMessage</p>
-                        <button type="button" class="btn btn-sm btn-warning" @onclick="ReloadCategory">
-                            Laatste Versie Herladen
-                        </button>
-                        <button type="button" class="btn btn-sm btn-secondary" @onclick="CancelReload">
-                            Annuleren
-                        </button>
-                    </div>
-                }
-
-                <div class="mb-3">
-                    <label for="name" class="form-label">Naam</label>
-                    <InputText id="name" class="form-control" @bind-Value="categoryName" />
-                    @if (validationErrors.ContainsKey("Name"))
+                    @if (!string.IsNullOrEmpty(errorMessage))
                     {
-                        <div class="text-danger">@string.Join(", ", validationErrors["Name"])</div>
+                        <div class="alert alert-danger">@errorMessage</div>
                     }
-                </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Type</label>
-                    <div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="type" id="typeIncome" 
-                                   checked="@(categoryType == CategoryType.Income)" 
-                                   @onclick="@(() => categoryType = CategoryType.Income)" />
-                            <label class="form-check-label" for="typeIncome">
-                                Inkomsten
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="type" id="typeExpense" 
-                                   checked="@(categoryType == CategoryType.Expense)" 
-                                   @onclick="@(() => categoryType = CategoryType.Expense)" />
-                            <label class="form-check-label" for="typeExpense">
-                                Uitgaven
-                            </label>
-                        </div>
-                    </div>
-                    @if (validationErrors.ContainsKey("Type"))
+                    @if (!string.IsNullOrEmpty(concurrencyMessage))
                     {
-                        <div class="text-danger">@string.Join(", ", validationErrors["Type"])</div>
+                        <div class="alert alert-warning">
+                            <p>@concurrencyMessage</p>
+                            <button type="button" class="btn btn-sm btn-warning" @onclick="ReloadCategory">
+                                Laatste Versie Herladen
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary" @onclick="CancelReload">
+                                Annuleren
+                            </button>
+                        </div>
                     }
-                </div>
 
-                <div class="mb-3">
-                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                        @if (isSubmitting)
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Naam</label>
+                        <InputText id="name" class="form-control" @bind-Value="categoryName" />
+                        @if (validationErrors.ContainsKey("Name"))
                         {
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            <span> Opslaan...</span>
+                            <div class="text-danger">@string.Join(", ", validationErrors["Name"])</div>
                         }
-                        else
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="type" id="typeIncome"
+                                       checked="@(categoryType == CategoryType.Income)"
+                                       @onclick="@(() => categoryType = CategoryType.Income)" />
+                                <label class="form-check-label" for="typeIncome">
+                                    Inkomsten
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="type" id="typeExpense"
+                                       checked="@(categoryType == CategoryType.Expense)"
+                                       @onclick="@(() => categoryType = CategoryType.Expense)" />
+                                <label class="form-check-label" for="typeExpense">
+                                    Uitgaven
+                                </label>
+                            </div>
+                        </div>
+                        @if (validationErrors.ContainsKey("Type"))
                         {
-                            <span>Wijzigingen Opslaan</span>
+                            <div class="text-danger">@string.Join(", ", validationErrors["Type"])</div>
                         }
-                    </button>
-                    <a href="/budgets/@BudgetPlanId/edit" class="btn btn-secondary">Annuleren</a>
-                </div>
-            </EditForm>
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span> Opslaan...</span>
+                            }
+                            else
+                            {
+                                <span>Wijzigingen Opslaan</span>
+                            }
+                        </button>
+                        <a href="/budgets/@BudgetPlanId/edit" class="btn btn-secondary">Annuleren</a>
+                    </div>
+                </EditForm>
+            </div>
         </div>
-    </div>
-}
+    }
 }
 
 @code {
@@ -150,7 +152,8 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fout bij laden van budget plan: {ex.Message}";
+            Logger.LogError(ex, "Failed to load budget plan {BudgetPlanId} for category edit.", BudgetPlanId);
+            errorMessage = "Fout bij laden van budget plan.";
         }
     }
 
@@ -178,7 +181,8 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fout bij laden van categorie: {ex.Message}";
+            Logger.LogError(ex, "Failed to load category {CategoryId} for budget plan {BudgetPlanId}.", Id, BudgetPlanId);
+            errorMessage = "Fout bij laden van categorie.";
         }
     }
 
@@ -209,14 +213,15 @@ else
                 errorMessage = "Fout bij bijwerken van categorie.";
             }
         }
-        catch (HttpRequestException ex) when (ex.Message.Contains("409"))
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
         {
             // Handle concurrency conflict
             concurrencyMessage = "De categorie is gewijzigd door een ander proces. Wilt u de laatste versie herladen?";
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fout bij bijwerken van categorie: {ex.Message}";
+            Logger.LogError(ex, "Failed to update category {CategoryId} for budget plan {BudgetPlanId}.", Id, BudgetPlanId);
+            errorMessage = "Fout bij bijwerken van categorie.";
         }
         finally
         {

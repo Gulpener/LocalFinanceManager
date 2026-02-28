@@ -7,6 +7,7 @@
 @inject CategoryService CategoryService
 @inject BudgetPlanService BudgetPlanService
 @inject NavigationManager Navigation
+@inject ILogger<CategoryCreate> Logger
 @rendermode InteractiveServer
 
 <PageTitle>Nieuwe Categorie</PageTitle>
@@ -21,68 +22,68 @@ else
 
     <h1>Nieuwe Categorie Aanmaken</h1>
 
-<div class="row">
-    <div class="col-md-6">
-        <EditForm Model="@categoryName" OnValidSubmit="HandleSubmit">
-            <DataAnnotationsValidator />
+    <div class="row">
+        <div class="col-md-6">
+            <EditForm Model="@categoryName" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
 
-            @if (!string.IsNullOrEmpty(errorMessage))
-            {
-                <div class="alert alert-danger">@errorMessage</div>
-            }
-
-            <div class="mb-3">
-                <label for="name" class="form-label">Naam</label>
-                <InputText id="name" class="form-control" @bind-Value="categoryName" />
-                @if (validationErrors.ContainsKey("Name"))
+                @if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    <div class="text-danger">@string.Join(", ", validationErrors["Name"])</div>
+                    <div class="alert alert-danger">@errorMessage</div>
                 }
-            </div>
 
-            <div class="mb-3">
-                <label class="form-label">Type</label>
-                <div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="type" id="typeIncome" 
-                               checked="@(categoryType == CategoryType.Income)" 
-                               @onclick="@(() => categoryType = CategoryType.Income)" />
-                        <label class="form-check-label" for="typeIncome">
-                            Inkomsten
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="type" id="typeExpense" 
-                               checked="@(categoryType == CategoryType.Expense)" 
-                               @onclick="@(() => categoryType = CategoryType.Expense)" />
-                        <label class="form-check-label" for="typeExpense">
-                            Uitgaven
-                        </label>
-                    </div>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Naam</label>
+                    <InputText id="name" class="form-control" @bind-Value="categoryName" />
+                    @if (validationErrors.ContainsKey("Name"))
+                    {
+                        <div class="text-danger">@string.Join(", ", validationErrors["Name"])</div>
+                    }
                 </div>
-                @if (validationErrors.ContainsKey("Type"))
-                {
-                    <div class="text-danger">@string.Join(", ", validationErrors["Type"])</div>
-                }
-            </div>
 
-            <div class="mb-3">
-                <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                    @if (isSubmitting)
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="type" id="typeIncome"
+                                   checked="@(categoryType == CategoryType.Income)"
+                                   @onclick="@(() => categoryType = CategoryType.Income)" />
+                            <label class="form-check-label" for="typeIncome">
+                                Inkomsten
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="type" id="typeExpense"
+                                   checked="@(categoryType == CategoryType.Expense)"
+                                   @onclick="@(() => categoryType = CategoryType.Expense)" />
+                            <label class="form-check-label" for="typeExpense">
+                                Uitgaven
+                            </label>
+                        </div>
+                    </div>
+                    @if (validationErrors.ContainsKey("Type"))
                     {
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        <span> Aanmaken...</span>
+                        <div class="text-danger">@string.Join(", ", validationErrors["Type"])</div>
                     }
-                    else
-                    {
-                        <span>Categorie Aanmaken</span>
-                    }
-                </button>
-                <a href="/budgets/@BudgetPlanId/edit" class="btn btn-secondary">Annuleren</a>
-            </div>
-        </EditForm>
+                </div>
+
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <span> Aanmaken...</span>
+                        }
+                        else
+                        {
+                            <span>Categorie Aanmaken</span>
+                        }
+                    </button>
+                    <a href="/budgets/@BudgetPlanId/edit" class="btn btn-secondary">Annuleren</a>
+                </div>
+            </EditForm>
+        </div>
     </div>
-</div>
 }
 
 @code {
@@ -123,7 +124,8 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fout bij laden van budget plan: {ex.Message}";
+            Logger.LogError(ex, "Failed to load budget plan {BudgetPlanId} for category creation.", BudgetPlanId);
+            errorMessage = "Fout bij laden van budget plan.";
         }
     }
 
@@ -135,9 +137,9 @@ else
 
         try
         {
-            var request = new CreateCategoryDto 
-            { 
-                Name = categoryName, 
+            var request = new CreateCategoryDto
+            {
+                Name = categoryName,
                 Type = categoryType,
                 BudgetPlanId = BudgetPlanId
             };
@@ -146,11 +148,13 @@ else
         }
         catch (HttpRequestException ex)
         {
-            errorMessage = $"Fout bij aanmaken van categorie: {ex.Message}";
+            Logger.LogError(ex, "HTTP error while creating category for budget plan {BudgetPlanId}.", BudgetPlanId);
+            errorMessage = "Fout bij aanmaken van categorie.";
         }
         catch (Exception ex)
         {
-            errorMessage = $"Fout bij aanmaken van categorie: {ex.Message}";
+            Logger.LogError(ex, "Unexpected error while creating category for budget plan {BudgetPlanId}.", BudgetPlanId);
+            errorMessage = "Fout bij aanmaken van categorie.";
         }
         finally
         {

@@ -5,6 +5,7 @@
 @inject BudgetPlanService BudgetPlanService
 @inject AccountService AccountService
 @inject NavigationManager Navigation
+@inject ILogger<BudgetPlanCreate> Logger
 @rendermode InteractiveServer
 
 <PageTitle>Create Budget Plan</PageTitle>
@@ -54,7 +55,8 @@
                 <div class="form-text">Select a template to auto-create categories for this budget plan.</div>
             </div>
 
-            @if (!string.IsNullOrEmpty(model.TemplateName) && CategoryTemplates.Templates.ContainsKey(model.TemplateName))
+            @if (!string.IsNullOrEmpty(model.TemplateName) &&
+                        CategoryTemplates.Templates.ContainsKey(model.TemplateName))
             {
                 <div class="mb-3">
                     <label class="form-label">Template Preview (@model.TemplateName)</label>
@@ -66,7 +68,8 @@
                                     @foreach (var (name, type) in CategoryTemplates.Templates[model.TemplateName])
                                     {
                                         <li>
-                                            <i class="bi @(type == CategoryType.Income ? "bi-arrow-down-circle text-success" : "bi-arrow-up-circle text-danger")"></i>
+                                            <i
+                                            class="bi @(type == CategoryType.Income ? "bi-arrow-down-circle text-success" : "bi-arrow-up-circle text-danger")"></i>
                                             @name (@(type == CategoryType.Income ? "Inkomsten" : "Uitgaven"))
                                         </li>
                                     }
@@ -130,7 +133,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message;
+            Logger.LogError(ex, "Failed to create budget plan.");
+            errorMessage = "Kon budgetplan niet aanmaken.";
         }
         finally
         {

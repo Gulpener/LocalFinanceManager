@@ -43,11 +43,10 @@ public class AutoApplySettingsPageModel : PageObjectBase
     /// <param name="enabled">True to enable, false to disable.</param>
     public async Task SetEnableToggleAsync(bool enabled)
     {
-        var isChecked = await Page.IsCheckedAsync(EnableToggleSelector);
-        if (isChecked != enabled)
-        {
-            await Page.ClickAsync(EnableToggleSelector);
-        }
+        await Page.SetCheckedAsync(EnableToggleSelector, enabled);
+        await Page.WaitForFunctionAsync(
+            "({ selector, expected }) => { const el = document.querySelector(selector); return !!el && el.checked === expected; }",
+            new { selector = EnableToggleSelector, expected = enabled });
     }
 
     /// <summary>
@@ -98,6 +97,9 @@ public class AutoApplySettingsPageModel : PageObjectBase
     {
         var values = accountIds.Select(id => id.ToString()).ToArray();
         await Page.SelectOptionAsync(AccountMultiSelectSelector, values);
+        await Page.WaitForFunctionAsync(
+            "({ selector, expected }) => { const el = document.querySelector(selector); if (!el) return false; const actual = Array.from(el.selectedOptions).map(o => o.value); return expected.every(v => actual.includes(v)); }",
+            new { selector = AccountMultiSelectSelector, expected = values });
     }
 
     /// <summary>
@@ -108,6 +110,9 @@ public class AutoApplySettingsPageModel : PageObjectBase
     {
         var values = categoryIds.Select(id => id.ToString()).ToArray();
         await Page.SelectOptionAsync(ExcludedCategoriesSelector, values);
+        await Page.WaitForFunctionAsync(
+            "({ selector, expected }) => { const el = document.querySelector(selector); if (!el) return false; const actual = Array.from(el.selectedOptions).map(o => o.value); return expected.every(v => actual.includes(v)); }",
+            new { selector = ExcludedCategoriesSelector, expected = values });
     }
 
     /// <summary>
@@ -153,6 +158,20 @@ public class AutoApplySettingsPageModel : PageObjectBase
     public async Task SaveSettingsAsync()
     {
         await ClickSaveButtonAsync();
-        await WaitForSuccessToastAsync();
+        var success = await WaitForSuccessToastAsync();
+        if (!success)
+        {
+            var errorMessage = await GetErrorAlertAsync();
+            if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                throw new InvalidOperationException($"Saving auto-apply settings did not succeed: {errorMessage}");
+            }
+        }
+    }
+
+    private async Task<string?> GetErrorAlertAsync()
+    {
+        var error = await Page.QuerySelectorAsync(".alert-danger");
+        return error is null ? null : await error.InnerTextAsync();
     }
 }

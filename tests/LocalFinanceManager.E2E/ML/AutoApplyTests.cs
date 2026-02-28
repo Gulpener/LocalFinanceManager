@@ -93,9 +93,15 @@ public class AutoApplyTests : E2ETestBase
         // Reload page to verify persistence
         await _settingsPage.NavigateAsync();
 
-        // Assert - Toggle state should be persisted
-        var newState = await _settingsPage.IsEnabledAsync();
-        Assert.That(newState, Is.EqualTo(!initialState), "Toggle state should be persisted after save");
+        // Assert - Toggle state should be persisted in singleton settings row
+        using var scope = Factory!.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var settings = await context.AppSettings
+            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .FirstOrDefaultAsync();
+
+        Assert.That(settings, Is.Not.Null, "Settings should be saved to database");
+        Assert.That(settings!.AutoApplyEnabled, Is.EqualTo(!initialState), "Toggle state should be persisted after save");
     }
 
     [Test]
@@ -136,7 +142,9 @@ public class AutoApplyTests : E2ETestBase
         // Assert - Settings should be saved with selected account
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var settings = await context.AppSettings.FirstOrDefaultAsync();
+        var settings = await context.AppSettings
+            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .FirstOrDefaultAsync();
 
         Assert.That(settings, Is.Not.Null, "Settings should be saved to database");
         Assert.That(settings!.AccountIdsJson, Does.Contain(_testAccount1.Id.ToString()),
@@ -159,7 +167,9 @@ public class AutoApplyTests : E2ETestBase
         // Assert - Excluded category should be persisted
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var settings = await context.AppSettings.FirstOrDefaultAsync();
+        var settings = await context.AppSettings
+            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .FirstOrDefaultAsync();
 
         Assert.That(settings, Is.Not.Null, "Settings should be saved");
         Assert.That(settings!.ExcludedCategoryIdsJson, Does.Contain(excludeCategory.Id.ToString()),
@@ -222,7 +232,9 @@ public class AutoApplyTests : E2ETestBase
         {
             using var scope = Factory!.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var settings = await context.AppSettings.FirstOrDefaultAsync();
+            var settings = await context.AppSettings
+                .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+                .FirstOrDefaultAsync();
 
             Assert.That(settings, Is.Not.Null, "Settings should be persisted after saving");
             Assert.That(settings!.AutoApplyEnabled, Is.EqualTo(expectedState),

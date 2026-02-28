@@ -74,7 +74,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
                         <div class="card-body text-center">
                             <h6 class="card-subtitle mb-2 text-muted">Geaccepteerd</h6>
                             <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied -
-                                                                                                                                                            stats.UndoCount)</p>
+                                                                                                                                                                                            stats.UndoCount)</p>
                             </div>
                         </div>
                     </div>
@@ -390,13 +390,15 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                await JS.InvokeVoidAsync("alert", $"Fout bij ongedaan maken: {errorContent}");
+                Logger.LogWarning("Undo auto-apply failed with status code {StatusCode}. Response: {ErrorContent}", response.StatusCode,
+errorContent);
+                await JS.InvokeVoidAsync("alert", "Fout bij ongedaan maken van de toewijzing.");
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to undo auto-apply for transaction {TransactionId}", transactionId);
-            await JS.InvokeVoidAsync("alert", $"Fout: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", "Fout bij ongedaan maken van de toewijzing.");
         }
         finally
         {

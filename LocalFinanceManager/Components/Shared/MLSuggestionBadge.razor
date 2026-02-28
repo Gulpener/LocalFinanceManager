@@ -160,12 +160,14 @@ else if (_suggestion != null && !_isHidden)
             else
             {
                 var errorMessage = await response.Content.ReadAsStringAsync();
-                await JS.InvokeVoidAsync("alert", $"Failed to accept suggestion: {errorMessage}");
+                Logger.LogWarning("Failed to accept suggestion for transaction {TransactionId}. Status: {StatusCode}, Response: {ErrorMessage}", TransactionId, response.StatusCode, errorMessage);
+                await JS.InvokeVoidAsync("alert", "Kon suggestie niet accepteren.");
             }
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Error accepting suggestion: {ex.Message}");
+            Logger.LogError(ex, "Unexpected error while accepting suggestion for transaction {TransactionId}", TransactionId);
+            await JS.InvokeVoidAsync("alert", "Kon suggestie niet accepteren.");
         }
         finally
         {
@@ -190,7 +192,8 @@ else if (_suggestion != null && !_isHidden)
         }
         catch (Exception ex)
         {
-            await JS.InvokeVoidAsync("alert", $"Error handling suggestion rejection: {ex.Message}");
+            Logger.LogError(ex, "Unexpected error while rejecting suggestion for transaction {TransactionId}", TransactionId);
+            await JS.InvokeVoidAsync("alert", "Kon suggestie niet verwerken.");
         }
         finally
         {
