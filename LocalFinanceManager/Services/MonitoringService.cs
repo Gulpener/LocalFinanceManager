@@ -60,16 +60,38 @@ public class MonitoringService : IMonitoringService
             .Where(a => a.ChangedAt >= startDate)
             .ToListAsync();
 
-        // Get undo operations for auto-applied assignments
-        var undoAudits = await _dbContext.TransactionAudits
-            .Where(a => !a.IsArchived)
-            .Where(a => a.ActionType == "Undo")
-            .Where(a => a.ChangedAt >= startDate)
-            .Where(a => a.Reason != null && a.Reason.Contains("auto-applied"))
-            .ToListAsync();
-
         var totalAutoApplied = autoAppliedAudits.Count;
-        var totalUndone = undoAudits.Count;
+
+        // Derive undos from in-window auto-applies to avoid skew from unrelated undo events.
+        // This mirrors history logic: an auto-apply is considered undone when a later undo exists
+        // for the same transaction.
+        var totalUndone = 0;
+        if (totalAutoApplied > 0)
+        {
+            var transactionIds = autoAppliedAudits
+                .Select(a => a.TransactionId)
+                .Distinct()
+                .ToList();
+
+            var undoAudits = await _dbContext.TransactionAudits
+                .Where(a => !a.IsArchived)
+                .Where(a => a.ActionType == "Undo")
+                .Where(a => transactionIds.Contains(a.TransactionId))
+                .Select(a => new { a.TransactionId, a.ChangedAt })
+                .ToListAsync();
+
+            var undoLookup = undoAudits
+                .GroupBy(a => a.TransactionId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.ChangedAt).ToList());
+
+            totalUndone = autoAppliedAudits.Count(a =>
+            {
+                var autoApplyTimestamp = a.AutoAppliedAt ?? a.ChangedAt;
+                return undoLookup.TryGetValue(a.TransactionId, out var undoTimestamps)
+                    && undoTimestamps.Any(undoAt => undoAt > autoApplyTimestamp);
+            });
+        }
+
         var undoRate = totalAutoApplied > 0 ? (decimal)totalUndone / totalAutoApplied : 0;
         var avgConfidence = autoAppliedAudits.Any() && autoAppliedAudits.Any(a => a.Confidence.HasValue)
             ? autoAppliedAudits.Where(a => a.Confidence.HasValue).Average(a => a.Confidence!.Value)

@@ -175,6 +175,31 @@ public class MonitoringServiceTests : IDisposable
     }
 
     [Test]
+    public async Task GetAutoApplyStatsAsync_UndoForOldAutoApply_DoesNotSkewUndoRate()
+    {
+        // Arrange
+        var recentTransaction = CreateTransaction();
+        var oldTransaction = CreateTransaction();
+
+        var recentAutoApply = CreateAutoApplyAudit(recentTransaction.Id, 0.91f, daysAgo: 2);
+        var oldAutoApply = CreateAutoApplyAudit(oldTransaction.Id, 0.86f, daysAgo: 10); // Outside 7-day window
+        var undoForOldAutoApply = CreateUndoAudit(oldTransaction.Id, daysAgo: 1);
+        undoForOldAutoApply.Reason = "Manual correction"; // Intentionally unrelated wording
+
+        _dbContext.Transactions.AddRange(recentTransaction, oldTransaction);
+        _dbContext.TransactionAudits.AddRange(recentAutoApply, oldAutoApply, undoForOldAutoApply);
+        await _dbContext.SaveChangesAsync();
+
+        // Act
+        var stats = await _monitoringService.GetAutoApplyStatsAsync(7);
+
+        // Assert
+        Assert.That(stats.TotalAutoApplied, Is.EqualTo(1));
+        Assert.That(stats.TotalUndone, Is.EqualTo(0));
+        Assert.That(stats.UndoRate, Is.EqualTo(0));
+    }
+
+    [Test]
     public async Task IsUndoRateAboveThresholdAsync_AboveThreshold_ReturnsTrue()
     {
         // Arrange

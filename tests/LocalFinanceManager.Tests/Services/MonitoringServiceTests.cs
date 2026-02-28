@@ -128,20 +128,23 @@ public class MonitoringServiceTests
         };
         dbContext.Accounts.Add(account);
 
-        var transaction = new Transaction
-        {
-            Id = Guid.NewGuid(),
-            AccountId = account.Id,
-            Description = "Test Transaction",
-            Amount = 100m,
-            Date = DateTime.Now
-        };
-        dbContext.Transactions.Add(transaction);
-
-        // Add 10 auto-applied audit entries
+        // Add 10 transactions with one auto-apply each
+        var transactions = new List<Transaction>();
         for (int i = 0; i < 10; i++)
         {
-            var audit = new TransactionAudit
+            var transaction = new Transaction
+            {
+                Id = Guid.NewGuid(),
+                AccountId = account.Id,
+                Description = $"Test Transaction {i}",
+                Amount = 100m,
+                Date = DateTime.Now.AddDays(-i)
+            };
+
+            transactions.Add(transaction);
+            dbContext.Transactions.Add(transaction);
+
+            var autoApplyAudit = new TransactionAudit
             {
                 Id = Guid.NewGuid(),
                 TransactionId = transaction.Id,
@@ -151,19 +154,19 @@ public class MonitoringServiceTests
                 ChangedAt = DateTime.UtcNow.AddDays(-i),
                 Confidence = 0.85f
             };
-            dbContext.TransactionAudits.Add(audit);
+            dbContext.TransactionAudits.Add(autoApplyAudit);
         }
 
         // Add 3 undo operations (30% undo rate > 10% threshold)
-        for (int i = 0; i < 3; i++)
+        for (int i = 1; i <= 3; i++)
         {
             var undoAudit = new TransactionAudit
             {
                 Id = Guid.NewGuid(),
-                TransactionId = transaction.Id,
+                TransactionId = transactions[i].Id,
                 ActionType = "Undo",
-                ChangedAt = DateTime.UtcNow.AddDays(-i),
-                Reason = "User undid auto-applied assignment"
+                ChangedAt = DateTime.UtcNow,
+                Reason = "Manual correction"
             };
             dbContext.TransactionAudits.Add(undoAudit);
         }
