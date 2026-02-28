@@ -1,4 +1,7 @@
 ﻿@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+@inject LocalFinanceManager.Services.IDeviceDetectionService DeviceDetectionService
 
 <div class="page">
     <div class="sidebar">
@@ -16,8 +19,73 @@
     </main>
 </div>
 
+<ShortcutHelp IsVisible="@showShortcutHelp"              OnClose="CloseShortcutHelp"              IsTouchDevice="@isTouchDevice"
+              IsMacOs="@isMacOs" />
+
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private bool showShortcutHelp;
+    private bool isTouchDevice;
+    private bool isMacOs;
+    private DotNetObjectReference<MainLayout>? dotNetRef;
+    private bool globalShortcutsRegistered;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        isTouchDevice = await DeviceDetectionService.IsTouchDeviceAsync();
+        var os = await DeviceDetectionService.GetOperatingSystemAsync();
+        isMacOs = os == LocalFinanceManager.Services.ClientOperatingSystem.MacOS;
+
+        if (!isTouchDevice)
+        {
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.registerGlobalShortcuts", dotNetRef, "HandleGlobalShortcut");
+            globalShortcutsRegistered = true;
+        }
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public Task HandleGlobalShortcut(string key)
+    {
+        if (key == "?" && !showShortcutHelp)
+        {
+            showShortcutHelp = true;
+            StateHasChanged();
+        }
+        else if (key == "Escape" && showShortcutHelp)
+        {
+            showShortcutHelp = false;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task CloseShortcutHelp()
+    {
+        showShortcutHelp = false;
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (globalShortcutsRegistered)
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.unregisterGlobalShortcuts");
+        }
+
+        dotNetRef?.Dispose();
+    }
+}

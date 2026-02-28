@@ -13,6 +13,23 @@ A personal finance management application built with Blazor Server and .NET 10, 
 - **Budget Tracking**: Track spending against budget allocations with visual indicators
 - **Soft-Delete**: Archive accounts, budget plans, and transactions instead of permanent deletion
 
+## Keyboard Shortcuts
+
+The transaction workflow supports keyboard-first navigation for accessibility and power users.
+
+- `?` — Open keyboard shortcut help
+- `/` — Focus filter input
+- `Esc` — Close active modal
+- `Tab` — Navigate through modal form controls
+- `Enter` — Submit when save/assign button is focused
+- `Space` — Toggle selected transaction checkbox
+- `Ctrl+A` / `Cmd+A` — Select all visible transactions
+- `Ctrl+D` / `Cmd+D` — Deselect all visible transactions
+- `Arrow Up/Down` — Navigate focused transaction row
+- `Home` / `End` — Jump to first/last transaction row
+
+On touch devices, keyboard shortcuts are disabled and the help modal shows touch gestures instead.
+
 ## Technologies
 
 - **.NET 10** (Blazor Server)

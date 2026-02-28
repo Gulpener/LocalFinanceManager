@@ -3,16 +3,18 @@
 @using LocalFinanceManager.Data.Repositories
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
+@inject IJSRuntime JSRuntime
 @inject ILogger<BulkAssignModal> Logger
 
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+    <div id="bulkAssignModal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
+         aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Bulk toewijzing</h5>
-                    <button type="button" class="btn-close" @onclick="OnClose" aria-label="Sluiten"></button>
+                    <h5 id="bulkAssignTitle" class="modal-title">Bulk toewijzing</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose" aria-label="Press Esc to close"></button>
                 </div>
                 <div class="modal-body">
                     @if (!string.IsNullOrEmpty(errorMessage))
@@ -26,7 +28,7 @@
                     @if (bulkResult != null)
                     {
                         <div class="alert @(bulkResult.Success ? "alert-success" : "alert-warning") alert-dismissible fade show"
-                            role="alert">
+                             role="alert">
                             <i class="bi @(bulkResult.Success ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")"></i>
                             @bulkResult.Message
                             <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
@@ -100,7 +102,7 @@
                         <div class="mb-3">
                             <label for="bulkNoteInput" class="form-label">Notitie (optioneel)</label>
                             <textarea id="bulkNoteInput" class="form-control" rows="2" maxlength="500" @bind="note"
-                        placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
+                                      placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
                             <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
                         </div>
 
@@ -124,12 +126,12 @@
                             <label class="form-label">Voortgang</label>
                             <div class="progress" style="height: 30px;">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                                    style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
-                                    aria-valuemax="100">
+                                     style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
+                                     aria-valuemax="100">
                                     @progressPercentage%
                                 </div>
                             </div>
-                            <div class="text-muted small mt-1">
+                            <div class="text-muted small mt-1" aria-live="polite">
                                 @progressMessage
                             </div>
                         </div>
@@ -141,8 +143,8 @@
                         <button type="button" class="btn btn-secondary" @onclick="OnClose" disabled="@isProcessing">
                             Annuleren
                         </button>
-                        <button type="button" class="btn btn-primary" @onclick="BulkAssign"
-                            disabled="@(!CanAssign || isProcessing)">
+                        <button id="bulkAssignButton" type="button" class="btn btn-primary" @onclick="BulkAssign"
+                                disabled="@(!CanAssign || isProcessing)">
                             @if (isProcessing)
                             {
                                 <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
@@ -179,6 +181,7 @@
     private string? progressMessage;
     private BulkAssignResultDto? bulkResult;
     private bool showErrorDetails = false;
+    private bool isFocusTrapActive;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
 
@@ -189,6 +192,12 @@
             if (budgetLines == null)
             {
                 await LoadBudgetLines();
+            }
+
+            if (!isFocusTrapActive)
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#bulkAssignModal");
+                isFocusTrapActive = true;
             }
         }
         else if (!IsVisible)
@@ -202,6 +211,12 @@
             progressMessage = null;
             bulkResult = null;
             showErrorDetails = false;
+
+            if (isFocusTrapActive)
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+                isFocusTrapActive = false;
+            }
         }
     }
 
@@ -295,6 +310,28 @@
         finally
         {
             isProcessing = false;
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            if (!isProcessing)
+            {
+                await OnClose.InvokeAsync();
+            }
+            return;
+        }
+
+        if (e.Key == "Enter")
+        {
+            var isAssignButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement",
+"#bulkAssignButton");
+            if (isAssignButtonFocused && CanAssign && !isProcessing)
+            {
+                await BulkAssign();
+            }
         }
     }
 
