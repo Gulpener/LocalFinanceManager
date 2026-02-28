@@ -118,6 +118,37 @@ export ASPNETCORE_ConnectionStrings__Default="Data Source=/var/data/myapp.db"
 dotnet run
 ```
 
+#### Data Protection Key Persistence (Important for Containers)
+
+This app protects persisted settings (including encrypted account filter values). In container/ephemeral deployments, Data Protection keys must be persisted to a stable mounted volume to keep existing values decryptable after restarts.
+
+Default configuration in `appsettings.json`:
+
+```json
+{
+  "DataProtection": {
+    "KeyRingPath": "data-protection-keys",
+    "ApplicationName": "LocalFinanceManager"
+  }
+}
+```
+
+Recommended production override via environment variables:
+
+```powershell
+# PowerShell (Windows)
+$env:ASPNETCORE_DataProtection__KeyRingPath = "C:\app\keys"
+$env:ASPNETCORE_DataProtection__ApplicationName = "LocalFinanceManager"
+dotnet run
+
+# Bash (Linux containers)
+export ASPNETCORE_DataProtection__KeyRingPath="/app/keys"
+export ASPNETCORE_DataProtection__ApplicationName="LocalFinanceManager"
+dotnet run
+```
+
+Ensure `/app/keys` (or your chosen path) is backed by a persistent volume.
+
 **Switching Environments:**
 
 ```powershell

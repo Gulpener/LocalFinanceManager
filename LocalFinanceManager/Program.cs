@@ -4,7 +4,9 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
 using LocalFinanceManager.Models;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using AppDataProtectionOptions = LocalFinanceManager.Configuration.DataProtectionOptions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +21,32 @@ builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("Impo
 builder.Services.Configure<MLOptions>(builder.Configuration.GetSection("MLOptions"));
 builder.Services.Configure<AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Caching"));
-builder.Services.AddDataProtection();
+builder.Services.Configure<AppDataProtectionOptions>(builder.Configuration.GetSection(AppDataProtectionOptions.SectionName));
+
+var dataProtectionOptions = builder.Configuration
+    .GetSection(AppDataProtectionOptions.SectionName)
+    .Get<AppDataProtectionOptions>() ?? new AppDataProtectionOptions();
+
+var keyRingPath = dataProtectionOptions.KeyRingPath;
+if (string.IsNullOrWhiteSpace(keyRingPath))
+{
+    keyRingPath = Path.Combine(builder.Environment.ContentRootPath, "data-protection-keys");
+}
+else if (!Path.IsPathRooted(keyRingPath))
+{
+    keyRingPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, keyRingPath));
+}
+
+Directory.CreateDirectory(keyRingPath);
+
+var dataProtectionApplicationName = string.IsNullOrWhiteSpace(dataProtectionOptions.ApplicationName)
+    ? "LocalFinanceManager"
+    : dataProtectionOptions.ApplicationName;
+
+builder.Services
+    .AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keyRingPath))
+    .SetApplicationName(dataProtectionApplicationName);
 
 // Register memory cache with size limits
 builder.Services.AddMemoryCache(options =>
