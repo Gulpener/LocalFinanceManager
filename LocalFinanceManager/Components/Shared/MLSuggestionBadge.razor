@@ -47,8 +47,8 @@ else if (_noModelAvailable && !_isHidden)
 else if (_suggestion != null && !_isHidden)
 {
     <span class="ml-suggestion-wrapper">
-        <span class="badge @GetBadgeClass() position-relative" data-bs-toggle="tooltip" data-bs-html="true"
-            title="@GetTooltipContent()" data-testid="ml-suggestion-badge"
+        <span class="badge @GetBadgeClass() position-relative" data-bs-toggle="tooltip"
+            title="@GetTooltipText()" data-testid="ml-suggestion-badge"
             data-confidence="@_suggestion.Confidence.ToString("0.00", CultureInfo.InvariantCulture)" @ref="_badgeElement">
             @_suggestion.CategoryName @((_suggestion.Confidence * 100).ToString("F0"))% 🤖
 
@@ -237,22 +237,6 @@ else if (_suggestion != null && !_isHidden)
             >= 0.6f => "bg-warning",
             _ => "bg-secondary"
         };
-    }
-
-    private string GetTooltipContent()
-    {
-        if (_suggestion == null || _suggestion.Explanation.Count == 0)
-            return "ML-based suggestion";
-
-        var top3Features = _suggestion.Explanation
-        .OrderByDescending(f => f.Importance)
-        .Take(3)
-        .ToList();
-
-        var featureText = string.Join("<br/>",
-        top3Features.Select(f => $"{FormatFeatureName(f.FeatureName)}: {f.FeatureValue} ({f.Importance * 100:F0}%)"));
-
-        return $"<strong>Based on:</strong><br/>{featureText}";
     }
 
     private string GetTooltipText()

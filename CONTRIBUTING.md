@@ -20,6 +20,7 @@ Use descriptive branch names with the following prefixes:
 - `docs/` — Documentation-only changes (e.g., `docs/update-readme`)
 
 **Examples:**
+
 ```bash
 git checkout -b feature/budget-template-system
 git checkout -b bugfix/category-dropdown-empty
@@ -31,6 +32,7 @@ git checkout -b docs/api-documentation
 ### Before Creating a PR
 
 1. **Create a feature branch** from `main`:
+
    ```bash
    git checkout main
    git pull origin main
@@ -45,6 +47,7 @@ git checkout -b docs/api-documentation
    - E2E tests for user workflows
 
 4. **Run all tests locally**:
+
    ```bash
    dotnet test
    ```
@@ -57,6 +60,7 @@ git checkout -b docs/api-documentation
 ### Creating a PR
 
 1. **Push your branch**:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -112,6 +116,8 @@ All pull requests must meet these requirements before merging:
 
 All code must follow the technical decisions specified in [`docs/Implementation-Guidelines.md`](docs/Implementation-Guidelines.md):
 
+Security review and safe rendering/interop patterns are documented in [docs/Security-Checklist.md](docs/Security-Checklist.md).
+
 ### Key Standards
 
 - **.NET Version:** net10.0
@@ -142,22 +148,25 @@ For detailed examples and patterns, see [`docs/Implementation-Guidelines.md`](do
 ### Initial Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/Gulpener/LocalFinanceManager.git
    cd LocalFinanceManager
    ```
 
 2. **Restore dependencies:**
+
    ```bash
    dotnet restore
    ```
 
 3. **Run the application:**
+
    ```bash
    cd LocalFinanceManager
    dotnet run
    ```
-   
+
    The app will start at http://localhost:5244 with automatic migrations and seed data.
 
 4. **Install Playwright browsers** (for E2E tests):
@@ -279,6 +288,7 @@ When reporting a bug or requesting a feature, use the appropriate GitHub issue t
 - **Security Issue:** For security vulnerabilities (use responsibly)
 
 Provide as much detail as possible, including:
+
 - Steps to reproduce (for bugs)
 - Expected vs. actual behavior
 - Environment details (.NET version, OS, browser)

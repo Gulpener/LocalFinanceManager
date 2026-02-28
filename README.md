@@ -22,6 +22,10 @@ A personal finance management application built with Blazor Server and .NET 10, 
 - **Playwright** for end-to-end testing
 - **NUnit/xUnit** for unit and integration testing
 
+## Security
+
+- Use the secure coding checklist during development and review: [docs/Security-Checklist.md](docs/Security-Checklist.md)
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
@@ -325,14 +329,12 @@ If you're seeing unexpected data or an empty database:
    ```
 
 2. Navigate to `/admin/settings` to verify:
-
    - Current environment (Development/Production)
    - Database file path in use
    - Database file existence and size
    - Seed data status
 
 3. Verify database file in use:
-
    - Development: `localfinancemanager.dev.db`
    - Production: `localfinancemanager.db`
 
