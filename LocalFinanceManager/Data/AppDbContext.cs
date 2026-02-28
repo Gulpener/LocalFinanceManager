@@ -245,6 +245,16 @@ public class AppDbContext : DbContext
         // Configure AppSettings entity (singleton)
         modelBuilder.Entity<AppSettings>(entity =>
         {
+            entity.Property(s => s.Id)
+                .ValueGeneratedNever();
+
+            entity.ToTable(tableBuilder =>
+            {
+                tableBuilder.HasCheckConstraint(
+                    "CK_AppSettings_SingletonId",
+                    $"lower(Id) = '{LocalFinanceManager.Models.AppSettings.SingletonId:D}'");
+            });
+
             entity.Property(s => s.MinimumConfidence)
                 .IsRequired();
 
