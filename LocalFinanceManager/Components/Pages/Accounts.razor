@@ -10,6 +10,11 @@
 
 <h1>Accounts</h1>
 
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
 <div class="mb-3">
     <a href="/accounts/new" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Create New Account
@@ -100,6 +105,7 @@ else
         try
         {
             accounts = await AccountService.GetAllActiveAsync();
+            errorMessage = null;
         }
         catch (Exception ex)
         {
@@ -122,15 +128,18 @@ else
     {
         if (accountToArchive == null) return;
 
+        var accountId = accountToArchive.Id;
+
         try
         {
-            await AccountService.ArchiveAsync(accountToArchive.Id);
+            await AccountService.ArchiveAsync(accountId);
             accountToArchive = null;
             await LoadAccounts(); // Reload the list
+            errorMessage = null;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to archive account {AccountId}.", accountToArchive.Id);
+            Logger.LogError(ex, "Failed to archive account {AccountId}.", accountId);
             errorMessage = "Could not archive account.";
         }
     }
