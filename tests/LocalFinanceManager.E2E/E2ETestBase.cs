@@ -26,37 +26,37 @@ public abstract class E2ETestBase : PageTest
         try
         {
             // Use fixture-specific ID for isolation (each test fixture gets its own server + database)
-            Console.WriteLine($"[WorkerSetUp] Initializing fixture {_fixtureId}");
+            TestContext.Progress.WriteLine($"[WorkerSetUp] Initializing fixture {_fixtureId}");
             TestContext.Out.WriteLine($"Initializing fixture {_fixtureId}");
 
             // Create factory with unique database per fixture
             Factory = new TestWebApplicationFactory(_fixtureId);
-            Console.WriteLine($"[WorkerSetUp] Factory created with database: {Factory.TestDatabasePath}");
-            Console.WriteLine($"[WorkerSetUp] Server will listen on: {Factory.ServerAddress}");
+            TestContext.Progress.WriteLine($"[WorkerSetUp] Factory created with database: {Factory.TestDatabasePath}");
+            TestContext.Progress.WriteLine($"[WorkerSetUp] Server will listen on: {Factory.ServerAddress}");
 
             // Delete old database files before starting server
             await Factory.InitializeDatabaseAsync();
-            Console.WriteLine("[WorkerSetUp] Database files cleaned up");
+            TestContext.Progress.WriteLine("[WorkerSetUp] Database files cleaned up");
 
             // Start the server (migrations will run automatically via Program.cs)
             Factory.EnsureServerStarted();
-            Console.WriteLine("[WorkerSetUp] Factory.EnsureServerStarted() completed");
+            TestContext.Progress.WriteLine("[WorkerSetUp] Factory.EnsureServerStarted() completed");
 
             // Wait for server to be ready (includes migration time)
             await WaitForServerReadyAsync();
-            Console.WriteLine("[WorkerSetUp] Server is ready");
+            TestContext.Progress.WriteLine("[WorkerSetUp] Server is ready");
 
             // Now that migrations are complete, enable WAL mode for better concurrency
             await Factory.EnableWALModeAsync();
-            Console.WriteLine("[WorkerSetUp] WAL mode enabled");
+            TestContext.Progress.WriteLine("[WorkerSetUp] WAL mode enabled");
 
             TestContext.Out.WriteLine($"Fixture {_fixtureId} ready at: {BaseUrl}");
-            Console.WriteLine($"[WorkerSetUp] Fixture {_fixtureId} ready at: {BaseUrl}");
+            TestContext.Progress.WriteLine($"[WorkerSetUp] Fixture {_fixtureId} ready at: {BaseUrl}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[WorkerSetUp] ERROR: {ex.GetType().Name}: {ex.Message}");
-            Console.WriteLine($"[WorkerSetUp] Stack trace: {ex.StackTrace}");
+            TestContext.Progress.WriteLine($"[WorkerSetUp] ERROR: {ex.GetType().Name}: {ex.Message}");
+            TestContext.Progress.WriteLine($"[WorkerSetUp] Stack trace: {ex.StackTrace}");
             throw;
         }
     }
