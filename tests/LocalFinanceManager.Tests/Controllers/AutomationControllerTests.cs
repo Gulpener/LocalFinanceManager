@@ -256,6 +256,35 @@ public class AutomationControllerTests
     }
 
     [Test]
+    public async Task UpdateSettings_IntervalMinutesNegative_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidSettings = new AutoApplySettingsDto
+        {
+            Enabled = true,
+            MinimumConfidence = 0.8f,
+            IntervalMinutes = -1,
+            AccountIds = new List<Guid>(),
+            ExcludedCategoryIds = new List<Guid>()
+        };
+
+        // Act
+        var result = await _controller.UpdateSettings(invalidSettings);
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var objectResult = (ObjectResult)result;
+        Assert.That(objectResult.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(objectResult.Value, Is.InstanceOf<ValidationProblemDetails>());
+
+        var problemDetails = (ValidationProblemDetails)objectResult.Value!;
+        Assert.That(problemDetails.Errors.ContainsKey(nameof(AutoApplySettingsDto.IntervalMinutes)), Is.True);
+        Assert.That(
+            problemDetails.Errors[nameof(AutoApplySettingsDto.IntervalMinutes)],
+            Contains.Item("Interval must be greater than 0 minutes"));
+    }
+
+    [Test]
     public async Task UpdateSettings_IntervalMinutesTooHigh_ReturnsBadRequest()
     {
         // Arrange
@@ -282,6 +311,64 @@ public class AutomationControllerTests
         Assert.That(
             problemDetails.Errors[nameof(AutoApplySettingsDto.IntervalMinutes)],
             Contains.Item("Interval cannot exceed 1440 minutes (24 hours)"));
+    }
+
+    [Test]
+    public async Task UpdateSettings_NullAccountIds_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidSettings = new AutoApplySettingsDto
+        {
+            Enabled = true,
+            MinimumConfidence = 0.8f,
+            IntervalMinutes = 15,
+            AccountIds = null!,
+            ExcludedCategoryIds = new List<Guid>()
+        };
+
+        // Act
+        var result = await _controller.UpdateSettings(invalidSettings);
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var objectResult = (ObjectResult)result;
+        Assert.That(objectResult.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(objectResult.Value, Is.InstanceOf<ValidationProblemDetails>());
+
+        var problemDetails = (ValidationProblemDetails)objectResult.Value!;
+        Assert.That(problemDetails.Errors.ContainsKey(nameof(AutoApplySettingsDto.AccountIds)), Is.True);
+        Assert.That(
+            problemDetails.Errors[nameof(AutoApplySettingsDto.AccountIds)],
+            Contains.Item("AccountIds cannot be null"));
+    }
+
+    [Test]
+    public async Task UpdateSettings_NullExcludedCategoryIds_ReturnsBadRequest()
+    {
+        // Arrange
+        var invalidSettings = new AutoApplySettingsDto
+        {
+            Enabled = true,
+            MinimumConfidence = 0.8f,
+            IntervalMinutes = 15,
+            AccountIds = new List<Guid>(),
+            ExcludedCategoryIds = null!
+        };
+
+        // Act
+        var result = await _controller.UpdateSettings(invalidSettings);
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<ObjectResult>());
+        var objectResult = (ObjectResult)result;
+        Assert.That(objectResult.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(objectResult.Value, Is.InstanceOf<ValidationProblemDetails>());
+
+        var problemDetails = (ValidationProblemDetails)objectResult.Value!;
+        Assert.That(problemDetails.Errors.ContainsKey(nameof(AutoApplySettingsDto.ExcludedCategoryIds)), Is.True);
+        Assert.That(
+            problemDetails.Errors[nameof(AutoApplySettingsDto.ExcludedCategoryIds)],
+            Contains.Item("ExcludedCategoryIds cannot be null"));
     }
 
     [Test]
