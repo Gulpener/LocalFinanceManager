@@ -177,6 +177,8 @@ dotnet test --collect:"XPlat Code Coverage"
 
 E2E tests use NUnit + Playwright and test against a running instance:
 
+- For E2E database initialization and migration behavior, see [tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md](tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md#database-migration-strategy-e2e).
+
 ```bash
 # First time: Install Playwright browsers
 pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install

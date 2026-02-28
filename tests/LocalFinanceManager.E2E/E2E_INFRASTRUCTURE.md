@@ -118,6 +118,16 @@ dotnet test tests/LocalFinanceManager.E2E
 
 Videos will be saved to `test-results/videos/`.
 
+## Database Migration Strategy (E2E)
+
+To keep E2E runs deterministic and avoid intermittent SQLite migration lock/setup failures during full solution test runs:
+
+- `TestWebApplicationFactory.InitializeDatabaseAsync()` deletes fixture database files and applies `MigrateAsync()` **before** the web host starts.
+- E2E host configuration sets `SkipDatabaseMigrations=true`, so startup in `Program.cs` does not run migrations a second time for E2E.
+- `RecreateDatabase` is `false` in E2E because cleanup is handled explicitly by the factory.
+
+This keeps migration execution single-path for E2E fixtures while preserving normal automatic startup migrations for the app outside E2E tests.
+
 ## Using SeedDataHelper
 
 ### Overview
