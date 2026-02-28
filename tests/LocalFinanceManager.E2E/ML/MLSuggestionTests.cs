@@ -61,7 +61,6 @@ public class MLSuggestionTests : E2ETestBase
 
         // Create labeled examples (training data) to simulate trained model
         // At least 10 per category for training threshold
-        var labeledExamples = new List<LabeledExample>();
         for (int i = 0; i < transactions.Count; i++)
         {
             var transaction = transactions[i];
@@ -88,7 +87,6 @@ public class MLSuggestionTests : E2ETestBase
                 AcceptedSuggestion = true,
                 SuggestionConfidence = 0.85f
             };
-            labeledExamples.Add(labeledExample);
             context.LabeledExamples.Add(labeledExample);
         }
         await context.SaveChangesAsync();

@@ -258,7 +258,7 @@ public class AutoApplyTests : E2ETestBase
             DateTime.UtcNow,
             "Test Transaction");
 
-        var budgetLine = await SeedDataHelper.SeedBudgetLineAsync(
+        await SeedDataHelper.SeedBudgetLineAsync(
             context,
             _testAccount1.CurrentBudgetPlanId!.Value,
             _categories.First().Id,
