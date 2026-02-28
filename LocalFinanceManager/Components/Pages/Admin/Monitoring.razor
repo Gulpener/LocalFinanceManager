@@ -73,41 +73,40 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <h6 class="card-subtitle mb-2 text-muted">Geaccepteerd</h6>
-                            <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied -
-                                                                                                                                                                                            stats.UndoCount)</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <h6 class="card-subtitle mb-2 text-muted">Ongedaan gemaakt</h6>
-                                <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "")">
-                                    @stats.UndoCount
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="card h-100 @(stats.IsUndoRateAboveThreshold ? "border-danger" : "border-success")">
-                            <div class="card-body text-center">
-                                <h6 class="card-subtitle mb-2 text-muted">Ongedaan maken %</h6>
-                                <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "text-success")"
-                                       data-testid="undo-rate">
-                                    @FormatPercent(stats.UndoRate)
-                                </p>
-                                @if (stats.IsUndoRateAboveThreshold)
-                                {
-                                    <span class="badge bg-danger">Boven drempel</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-success" data-testid="status-indicator">OK</span>
-                                }
-                            </div>
+                            <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied - stats.UndoCount)</p>
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <h6 class="card-subtitle mb-2 text-muted">Ongedaan gemaakt</h6>
+                            <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "")">
+                                @stats.UndoCount
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card h-100 @(stats.IsUndoRateAboveThreshold ? "border-danger" : "border-success")">
+                        <div class="card-body text-center">
+                            <h6 class="card-subtitle mb-2 text-muted">Ongedaan maken %</h6>
+                            <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "text-success")"
+                               data-testid="undo-rate">
+                                @FormatPercent(stats.UndoRate)
+                            </p>
+                            @if (stats.IsUndoRateAboveThreshold)
+                            {
+                                <span class="badge bg-danger">Boven drempel</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success" data-testid="status-indicator">OK</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 @if (stats.AverageConfidence > 0)
                 {
