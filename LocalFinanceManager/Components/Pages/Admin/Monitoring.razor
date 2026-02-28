@@ -381,7 +381,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
 
             if (response.IsSuccessStatusCode)
             {
-                await JS.InvokeVoidAsync("showToast", "Toewijzing ongedaan gemaakt", "success");
+                await ShowToastAsync("Toewijzing ongedaan gemaakt", "success");
 
                 // Reload stats and history
                 await LoadStats();
@@ -402,6 +402,11 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
         {
             _undoingTransaction = false;
         }
+    }
+
+    private ValueTask ShowToastAsync(string message, string type)
+    {
+        return JS.InvokeVoidAsync("showToast", message, type);
     }
 
     private string GetConfidenceClass(decimal confidence)
