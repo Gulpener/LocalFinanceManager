@@ -48,12 +48,14 @@ public class AutomationControllerTests
             ConfidenceThreshold = 0.85m
         });
         _logger = new Mock<ILogger<AutomationController>>().Object;
+        var settingsValidator = new AutoApplySettingsValidator();
 
         _controller = new AutomationController(
             _undoService,
             _monitoringService,
             _dbContext,
             _automationOptions,
+            settingsValidator,
             _logger)
         {
             ControllerContext = new ControllerContext
@@ -63,7 +65,6 @@ public class AutomationControllerTests
         };
 
         // Setup validator with actual FluentValidation
-        var validator = new AutoApplySettingsValidator();
         var objectValidator = new Mock<IObjectModelValidator>();
         objectValidator.Setup(o => o.Validate(
             It.IsAny<ActionContext>(),
@@ -75,7 +76,7 @@ public class AutomationControllerTests
             {
                 if (model is AutoApplySettingsDto dto)
                 {
-                    var validationResult = validator.Validate(dto);
+                    var validationResult = settingsValidator.Validate(dto);
                     if (!validationResult.IsValid)
                     {
                         foreach (var error in validationResult.Errors)
@@ -198,9 +199,14 @@ public class AutomationControllerTests
         // Assert
         Assert.That(result, Is.InstanceOf<ObjectResult>());
         var objectResult = (ObjectResult)result;
-        // ValidationProblem returns ObjectResult but doesn't set StatusCode property directly
-        // Check if ModelState has errors instead
-        Assert.That(_controller.ModelState.IsValid, Is.False);
+        Assert.That(objectResult.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+        Assert.That(objectResult.Value, Is.InstanceOf<ValidationProblemDetails>());
+
+        var problemDetails = (ValidationProblemDetails)objectResult.Value!;
+        Assert.That(problemDetails.Errors.ContainsKey(nameof(AutoApplySettingsDto.MinimumConfidence)), Is.True);
+        Assert.That(
+            problemDetails.Errors[nameof(AutoApplySettingsDto.MinimumConfidence)],
+            Contains.Item("Minimum confidence must be between 0.0 and 1.0"));
     }
 
     [Test]
