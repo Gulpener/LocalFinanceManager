@@ -124,9 +124,12 @@ public sealed class AutoApplySettingsProvider : IAutoApplySettingsProvider
             var unprotectedJson = _accountIdsProtector.Unprotect(protectedValue);
             return DeserializeGuidList(unprotectedJson);
         }
-        catch
+        catch (Exception exception)
         {
-            return DeserializeGuidList(protectedValue);
+            _logger.LogError(
+                exception,
+                "Failed to unprotect auto-apply AccountIds; treating automation settings as invalid.");
+            throw;
         }
     }
 }

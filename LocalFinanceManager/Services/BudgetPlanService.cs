@@ -77,8 +77,11 @@ public class BudgetPlanService
     /// </summary>
     public async Task<BudgetPlanDto> CreateFromTemplateAsync(CreateBudgetPlanDto dto, string templateName)
     {
+        var safeTemplateName = templateName
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty);
         _logger.LogInformation("Creating new budget plan for year {Year} with template {TemplateName}",
-            dto.Year, templateName);
+            dto.Year, safeTemplateName);
 
         // 1. Validate template name
         if (!CategoryTemplates.IsValidTemplate(templateName))

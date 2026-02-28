@@ -41,11 +41,19 @@ public class BudgetAccountLookupService : IBudgetAccountLookupService
         // Try cache first - we cache by budget line ID directly
         var cacheKey = $"BudgetLineAccount:{budgetLineId}";
 
-        if (_memoryCache.TryGetValue<string>(cacheKey, out var protectedAccountId) &&
-            TryUnprotectGuid(protectedAccountId, out var cachedAccountId))
+        if (_memoryCache.TryGetValue<string>(cacheKey, out var protectedAccountId))
         {
-            _logger.LogDebug("Cache hit for budget line {BudgetLineId}", budgetLineId);
-            return cachedAccountId;
+            if (TryUnprotectGuid(protectedAccountId, out var cachedAccountId))
+            {
+                _logger.LogDebug("Cache hit for budget line {BudgetLineId}", budgetLineId);
+                return cachedAccountId;
+            }
+
+            _logger.LogWarning(
+                "Failed to unprotect cached account id for budget line {BudgetLineId}. Removing corrupted cache entry.",
+                budgetLineId);
+
+            _memoryCache.Remove(cacheKey);
         }
 
         _logger.LogDebug("Cache miss for budget line {BudgetLineId}, querying database", budgetLineId);
