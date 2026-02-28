@@ -161,6 +161,39 @@ public class MLSuggestionTests : E2ETestBase
     [Test]
     [Category("E2E")]
     [Category("ML")]
+    [Category("Security")]
+    public async Task MLSuggestionBadge_DoesNotUseHtmlTitleTooltipAttributes()
+    {
+        // Arrange
+        await _transactionsPage.NavigateAsync();
+        await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
+
+        // Act
+        var badgeSelector = "[data-testid='ml-suggestion-badge']";
+        var badge = await Page.QuerySelectorAsync(badgeSelector);
+
+        if (badge == null)
+        {
+            Assert.Ignore("Skipping: ML model not trained, no suggestions available");
+            return;
+        }
+
+        var titleAttribute = await badge.GetAttributeAsync("title");
+        var bootstrapToggle = await badge.GetAttributeAsync("data-bs-toggle");
+        var bootstrapHtml = await badge.GetAttributeAsync("data-bs-html");
+
+        // Assert
+        Assert.That(titleAttribute, Is.Null.Or.Empty,
+            "Badge should not expose tooltip HTML content via title attribute");
+        Assert.That(bootstrapToggle, Is.Null.Or.Empty,
+            "Badge should not use Bootstrap tooltip initialization attributes for untrusted content");
+        Assert.That(bootstrapHtml, Is.Null.Or.Empty,
+            "Badge should never enable HTML tooltip rendering for suggestion explanation content");
+    }
+
+    [Test]
+    [Category("E2E")]
+    [Category("ML")]
     public async Task MLSuggestionBadge_AcceptButton_AssignsTransactionAndHidesBadge()
     {
         // Arrange

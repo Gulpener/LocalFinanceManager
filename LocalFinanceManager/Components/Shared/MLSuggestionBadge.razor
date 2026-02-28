@@ -47,9 +47,8 @@ else if (_noModelAvailable && !_isHidden)
 else if (_suggestion != null && !_isHidden)
 {
     <span class="ml-suggestion-wrapper">
-        <span class="badge @GetBadgeClass() position-relative" data-bs-toggle="tooltip"
-            title="@GetTooltipText()" data-testid="ml-suggestion-badge"
-            data-confidence="@_suggestion.Confidence.ToString("0.00", CultureInfo.InvariantCulture)" @ref="_badgeElement">
+        <span class="badge @GetBadgeClass() position-relative" data-testid="ml-suggestion-badge"
+            data-confidence="@_suggestion.Confidence.ToString("0.00", CultureInfo.InvariantCulture)">
             @_suggestion.CategoryName @((_suggestion.Confidence * 100).ToString("F0"))% 🤖
 
             @if (_isAutoApplied)
@@ -95,21 +94,11 @@ else if (_suggestion != null && !_isHidden)
     private bool _isHidden = false;
     private bool _isAutoApplied = false;
     private bool _noModelAvailable = false;
-    private ElementReference _badgeElement;
 
     protected override async Task OnInitializedAsync()
     {
         _isAutoApplied = IsAutoApplied;
         await LoadSuggestion();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && _suggestion != null)
-        {
-            // Initialize Bootstrap tooltips via a dedicated JS function instead of eval
-            await JS.InvokeVoidAsync("initializeBootstrapTooltips");
-        }
     }
 
     private async Task LoadSuggestion()
