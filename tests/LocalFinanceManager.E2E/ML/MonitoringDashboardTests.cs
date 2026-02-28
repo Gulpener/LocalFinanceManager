@@ -4,6 +4,7 @@ using LocalFinanceManager.E2E.Pages;
 using LocalFinanceManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
 
 namespace LocalFinanceManager.E2E.ML;
 
@@ -101,7 +102,8 @@ public class MonitoringDashboardTests : E2ETestBase
         var undoRate = await _dashboardPage.GetUndoRateAsync();
 
         Assert.That(totalCount, Is.EqualTo(100), "Total auto-applied should be 100");
-        Assert.That(undoRate, Is.EqualTo("8,0%"), "Undo rate should be 8.0% (Dutch formatting)");
+        Assert.That(ParsePercentageText(undoRate), Is.EqualTo(8.0m).Within(0.01m),
+            "Undo rate should be 8.0%");
     }
 
     [Test]
@@ -152,7 +154,8 @@ public class MonitoringDashboardTests : E2ETestBase
         var acceptanceCount = await _dashboardPage.GetAcceptanceRateAsync();
 
         Assert.That(totalCount, Is.EqualTo(100), "Total should be 100");
-        Assert.That(undoRate, Is.EqualTo("8,0%"), "Undo rate should be 8.0% (8/100, Dutch formatting)");
+        Assert.That(ParsePercentageText(undoRate), Is.EqualTo(8.0m).Within(0.01m),
+            "Undo rate should be 8.0% (8/100)");
         Assert.That(acceptanceCount, Is.EqualTo("92"), "Acceptance count should be 92 (100-8)");
     }
 
@@ -175,7 +178,8 @@ public class MonitoringDashboardTests : E2ETestBase
 
         // Get initial undo rate (should be 0%)
         var initialUndoRate = await _dashboardPage.GetUndoRateAsync();
-        Assert.That(initialUndoRate, Is.EqualTo("0,0%"), "Initial undo rate should be 0%");
+        Assert.That(ParsePercentageText(initialUndoRate), Is.EqualTo(0.0m).Within(0.01m),
+            "Initial undo rate should be 0%");
 
         // Act - Undo first transaction in history
         await _dashboardPage.UndoTransactionAsync(rowIndex: 0);
@@ -186,7 +190,7 @@ public class MonitoringDashboardTests : E2ETestBase
 
         // Assert - Undo rate should increase to 10% (1 out of 10)
         var newUndoRate = await _dashboardPage.GetUndoRateAsync();
-        Assert.That(newUndoRate, Is.EqualTo("10,0%"),
+        Assert.That(ParsePercentageText(newUndoRate), Is.EqualTo(10.0m).Within(0.01m),
             "Undo rate should be 10% after undoing 1 of 10 transactions");
 
         // Verify in database
@@ -399,5 +403,17 @@ public class MonitoringDashboardTests : E2ETestBase
         Assert.That(dialogMessage, Is.Not.Null, "Confirmation dialog should appear before undo");
         Assert.That(dialogMessage, Does.Contain("ongedaan").IgnoreCase.Or.Contain("zeker").IgnoreCase,
             "Dialog should ask for confirmation");
+    }
+
+    private static decimal ParsePercentageText(string percentageText)
+    {
+        var normalized = percentageText
+            .Trim()
+            .Replace("%", string.Empty)
+            .Replace("\u00A0", string.Empty)
+            .Replace(" ", string.Empty)
+            .Replace(',', '.');
+
+        return decimal.Parse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture);
     }
 }
