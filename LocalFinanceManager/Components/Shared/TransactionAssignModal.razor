@@ -173,6 +173,7 @@
     private string? errorMessage;
     private bool isSubmitting;
     private bool isFocusTrapActive;
+    private bool isInitialFocusSet;
     private ElementReference modalContainerRef;
     private ElementReference closeButtonRef;
     private ElementReference budgetLineSelectRef;
@@ -193,6 +194,7 @@
     {
         if (!IsVisible)
         {
+            isInitialFocusSet = false;
             return;
         }
 
@@ -200,6 +202,11 @@
         {
             await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#transactionAssignModal");
             isFocusTrapActive = true;
+        }
+
+        if (isInitialFocusSet)
+        {
+            return;
         }
 
         try
@@ -212,6 +219,8 @@
             {
                 await modalContainerRef.FocusAsync();
             }
+
+            isInitialFocusSet = true;
         }
         catch (Exception ex)
         {
@@ -394,6 +403,7 @@
             isFocusTrapActive = false;
         }
 
+        isInitialFocusSet = false;
         ResetForm();
         await OnClose.InvokeAsync();
     }
