@@ -18,9 +18,7 @@
         <div class="modal-dialog modal-lg" @onclick:stopPropagation>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
-                                                                                                                                                                                                                                                                    $"({Transaction.Date.Year})"
-                                                                                                                                                                                                                                                                    : "")</h5>
+                    <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen@TransactionYearSuffix</h5>
                         <button type="button" class="btn-close" @onclick="Close"
                                 aria-label="Druk op Esc om te sluiten"></button>
                     </div>
@@ -177,6 +175,10 @@
     private bool wasVisible;
     private ElementReference modalContainerRef;
     private ElementReference budgetLineSelectRef;
+
+    private string TransactionYearSuffix => Transaction?.Date.Year > 0
+        ? $" ({Transaction.Date.Year})"
+        : string.Empty;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
 
