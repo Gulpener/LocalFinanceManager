@@ -5,6 +5,7 @@
 @inject IBudgetLineRepository BudgetLineRepository
 @inject IJSRuntime JSRuntime
 @inject ILogger<BulkAssignModal> Logger
+@implements IAsyncDisposable
 
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
 {
@@ -335,6 +336,29 @@
             if (isAssignButtonFocused && CanAssign && !isProcessing)
             {
                 await BulkAssign();
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (isFocusTrapActive)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignore JS interop errors during circuit teardown.
+            }
+            catch (JSException)
+            {
+                // Ignore JS interop errors during disposal.
+            }
+            finally
+            {
+                isFocusTrapActive = false;
             }
         }
     }

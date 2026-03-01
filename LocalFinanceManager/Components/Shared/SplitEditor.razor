@@ -6,6 +6,7 @@
 @inject IBudgetPlanRepository BudgetPlanRepository
 @inject IJSRuntime JSRuntime
 @inject ILogger<SplitEditor> Logger
+@implements IAsyncDisposable
 
 @if (IsVisible && Transaction != null)
 {
@@ -458,6 +459,29 @@
             if (isSaveButtonFocused && CanSave && !isSaving)
             {
                 await SaveSplit();
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (isFocusTrapActive)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignore JS interop errors during circuit teardown.
+            }
+            catch (JSException)
+            {
+                // Ignore JS interop errors during disposal.
+            }
+            finally
+            {
+                isFocusTrapActive = false;
             }
         }
     }
