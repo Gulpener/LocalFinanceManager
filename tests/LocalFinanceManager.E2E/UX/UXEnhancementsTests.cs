@@ -11,7 +11,7 @@ namespace LocalFinanceManager.E2E.UX;
 /// E2E tests for UX enhancement features from UserStory 5.3:
 /// - Keyboard shortcuts
 /// - Quick filters
-/// - Recent categories
+/// - Recent budget lines
 /// - Loading skeletons
 /// </summary>
 [TestFixture]
@@ -187,7 +187,7 @@ public class UXEnhancementsTests : E2ETestBase
     }
 
     [Test]
-    public async Task RecentCategories_Display_In_AssignModal()
+    public async Task RecentBudgetLines_Display_In_AssignModal()
     {
         // Arrange
         using var scope = Factory!.CreateDbScope();
@@ -199,7 +199,7 @@ public class UXEnhancementsTests : E2ETestBase
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Groceries", "Transportation");
         var budgetLine = await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
 
-        // Create and assign a transaction to track category usage
+        // Create and assign a transaction to track budget line usage
         var transaction1 = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Transaction 1");
         await SeedDataHelper.AssignTransactionAsync(context, transaction1.Id, budgetLine.Id);
 
@@ -208,7 +208,7 @@ public class UXEnhancementsTests : E2ETestBase
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        // Note: Recent categories require localStorage tracking which needs actual user interaction
+        // Note: Recent budget lines require localStorage tracking which needs actual user interaction
         // This test verifies the UI structure is present
 
         // Act - Open assignment modal

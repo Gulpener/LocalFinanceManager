@@ -57,7 +57,7 @@ dotnet test tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj --filte
   - `import-preview.png`
   - `assignment-modal-open.png`
   - `multi-account-setup.png`
-  - `multi-account-category-filter.png`
+  - `multi-account-budget-line-filter.png`
   - `multi-account-validation-error.png`
 
 ## Test data and cleanup strategy

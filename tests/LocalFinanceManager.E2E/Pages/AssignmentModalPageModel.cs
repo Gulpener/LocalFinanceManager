@@ -4,14 +4,13 @@ namespace LocalFinanceManager.E2E.Pages;
 
 /// <summary>
 /// Page Object Model for the Assignment Modal.
-/// Provides methods to interact with the transaction assignment modal (category selection, notes, etc.).
+/// Provides methods to interact with the transaction assignment modal (budget line selection, notes, etc.).
 /// </summary>
 public class AssignmentModalPageModel : PageObjectBase
 {
     // Selectors
     private const string ModalSelector = "#transactionAssignModal";
-    private const string CategoryDropdownSelector = "#budgetLineSelect";
-    private const string BudgetLineDropdownSelector = "#budgetLineSelect";
+    private const string BudgetLineSelectSelector = "#budgetLineSelect";
     private const string NoteInputSelector = "#noteInput";
     private const string AssignButtonSelector = "#assignSaveButton";
     private const string CancelButtonSelector = "button:has-text('Annuleren')";
@@ -35,21 +34,12 @@ public class AssignmentModalPageModel : PageObjectBase
     }
 
     /// <summary>
-    /// Selects a category from the category dropdown.
-    /// </summary>
-    /// <param name="categoryId">ID of the category to select.</param>
-    public async Task SelectCategoryAsync(Guid categoryId)
-    {
-        await Page.SelectOptionAsync(CategoryDropdownSelector, categoryId.ToString());
-    }
-
-    /// <summary>
     /// Selects a budget line from the budget line dropdown.
     /// </summary>
     /// <param name="budgetLineId">ID of the budget line to select.</param>
     public async Task SelectBudgetLineAsync(Guid budgetLineId)
     {
-        await Page.SelectOptionAsync(BudgetLineDropdownSelector, budgetLineId.ToString());
+        await Page.SelectOptionAsync(BudgetLineSelectSelector, budgetLineId.ToString());
     }
 
     /// <summary>

@@ -81,7 +81,7 @@ public class MultiAccountValidationTests : E2ETestBase
 
         await transactionsPage.NavigateAsync();
         await transactionsPage.SelectAccountFilterAsync(accountAId);
-        await transactionsPage.TakeScreenshotAsync("multi-account-category-filter");
+        await transactionsPage.TakeScreenshotAsync("multi-account-budget-line-filter");
 
         using (var validationScope = Factory.CreateDbScope())
         {

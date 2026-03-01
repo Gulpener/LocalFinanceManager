@@ -77,7 +77,7 @@ public class BasicAssignmentTests : E2ETestBase
     }
 
     [Test]
-    public async Task AssignedTransaction_ShowsCategoryBadge()
+    public async Task AssignedTransaction_ShowsBudgetLineBadge()
     {
         using (var scope = Factory!.CreateDbScope())
         {
@@ -95,7 +95,7 @@ public class BasicAssignmentTests : E2ETestBase
     }
 
     [Test]
-    public async Task Reassign_ChangesCategoryFromFoodToTransport()
+    public async Task Reassign_ChangesBudgetLineFromFoodToTransport()
     {
         Guid transactionId;
 
