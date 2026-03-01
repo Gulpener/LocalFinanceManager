@@ -184,6 +184,7 @@
     private bool isFocusTrapActive;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
+    private bool ShouldRenderModal => IsVisible && TransactionIds != null && TransactionIds.Any();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -192,12 +193,6 @@
             if (budgetLines == null)
             {
                 await LoadBudgetLines();
-            }
-
-            if (!isFocusTrapActive)
-            {
-                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#bulkAssignModal");
-                isFocusTrapActive = true;
             }
         }
         else if (!IsVisible)
@@ -217,6 +212,15 @@
                 await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
                 isFocusTrapActive = false;
             }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShouldRenderModal && !isFocusTrapActive)
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#bulkAssignModal");
+            isFocusTrapActive = true;
         }
     }
 
