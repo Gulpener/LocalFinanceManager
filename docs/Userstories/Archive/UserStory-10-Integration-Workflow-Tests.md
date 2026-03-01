@@ -255,20 +255,20 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 
 ## Definition of Done
 
-- [ ] Tests/ directory created: `LocalFinanceManager.E2E/Tests/`
-- [ ] TransactionListPage.cs enhanced with 6 methods: SelectFilterAsync, ClickAuditTrailAsync, SelectTransactionAsync, SelectAllOnPageAsync, DeselectAllAsync, ClickBulkAssignAsync
-- [ ] ImportModalPageModel.cs created with upload, preview, mapping, import methods
-- [ ] TransactionImportTests.cs created with 8 tests (CSV/JSON, preview, mapping, deduplication, errors)
-- [ ] BasicAssignmentTests.cs created with 11 tests (modal, categories, validation, audit, filters, pagination)
-- [ ] MultiAccountValidationTests.cs created with 1 test (UserStory-4 enforcement)
-- [ ] All 20 tests passing locally (headless mode) and in CI (Chromium-only)
-- [ ] Per-test cleanup verified (no database bloat, tests runnable in any order)
-- [ ] E2E_TEST_GUIDE.md created with test execution, debugging, CI setup documentation
-- [ ] Screenshots captured for import preview, assignment modal, validation errors, multi-account setup
-- [ ] Test execution time <5 minutes verified in CI
-- [ ] No manual migrations required (automatic via `Database.MigrateAsync()`)
-- [ ] Code reviewed and merged to main branch
-- [ ] Phase 2 (UserStory-10.1) unblocked for implementation
+- [x] Tests/ directory created: `LocalFinanceManager.E2E/Tests/`
+- [x] TransactionListPage.cs enhanced with 6 methods: SelectFilterAsync, ClickAuditTrailAsync, SelectTransactionAsync, SelectAllOnPageAsync, DeselectAllAsync, ClickBulkAssignAsync
+- [x] ImportModalPageModel.cs created with upload, preview, mapping, import methods
+- [x] TransactionImportTests.cs created with 8 tests (CSV/JSON, preview, mapping, deduplication, errors)
+- [x] BasicAssignmentTests.cs created with 11 tests (modal, categories, validation, audit, filters, pagination)
+- [x] MultiAccountValidationTests.cs created with 1 test (UserStory-4 enforcement)
+- [x] All 20 tests passing locally (headless mode) and in CI (Chromium-only)
+- [x] Per-test cleanup verified (no database bloat, tests runnable in any order)
+- [x] E2E_TEST_GUIDE.md created with test execution, debugging, CI setup documentation
+- [x] Screenshots captured for import preview, assignment modal, validation errors, multi-account setup
+- [x] Test execution time <5 minutes verified in CI
+- [x] No manual migrations required (automatic via `Database.MigrateAsync()`)
+- [x] Code reviewed and merged to main branch
+- [x] Phase 2 (UserStory-10.1) unblocked for implementation
 
 ## Dependencies
 
