@@ -131,8 +131,8 @@ public class TransactionsPageModel : PageObjectBase
                 $"Row index {rowIndex} is out of range. Only {rows.Count} rows found.");
         }
 
-        var assignButton = await rows[rowIndex].QuerySelectorAsync(AssignButtonInRowSelector);
-        if (assignButton == null)
+        var assignButton = Page.Locator(TransactionRowSelector).Nth(rowIndex).Locator(AssignButtonInRowSelector).First;
+        if (await assignButton.CountAsync() == 0)
         {
             throw new InvalidOperationException($"Assign button not found for row {rowIndex}.");
         }
