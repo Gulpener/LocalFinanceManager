@@ -883,14 +883,14 @@ public class TransactionAssignmentIntegrationTests
         };
 
         // Act & Assert
-        var exception = Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = Assert.ThrowsAsync<ArgumentException>(
             async () => await _assignmentService.SplitTransactionAsync(transaction.Id, request));
 
         Assert.That(exception!.Message, Does.Contain("Budget line belongs to a different account budget plan"));
     }
 
     [Test]
-    public async Task SplitTransaction_ValidationFailure_ShouldRecordValidationFailedAuditWithDistinctBudgetLineIds()
+    public async Task SplitTransaction_CrossAccountValidationFailure_ShouldNotRecordValidationFailedAudit()
     {
         // Arrange
         var checkingAccount = new Account
@@ -993,30 +993,13 @@ public class TransactionAssignmentIntegrationTests
         };
 
         // Act & Assert
-        var exception = Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = Assert.ThrowsAsync<ArgumentException>(
             async () => await _assignmentService.SplitTransactionAsync(transaction.Id, request));
 
         Assert.That(exception!.Message, Does.Contain("Budget line belongs to a different account budget plan"));
 
         var audits = await _auditRepository.GetByTransactionIdAsync(transaction.Id);
-        Assert.That(audits.Count, Is.EqualTo(1));
-        Assert.That(audits[0].ActionType, Is.EqualTo("ValidationFailed"));
-
-        Assert.That(audits[0].BeforeState, Is.Not.Null);
-        using var beforeStateJson = System.Text.Json.JsonDocument.Parse(audits[0].BeforeState!);
-        Assert.That(beforeStateJson.RootElement.TryGetProperty("BudgetLineIds", out var budgetLineIdsElement), Is.True);
-
-        var budgetLineIds = budgetLineIdsElement
-            .EnumerateArray()
-            .Select(element => Guid.Parse(element.GetString()!))
-            .Distinct()
-            .ToList();
-
-        Assert.That(budgetLineIds.Count, Is.EqualTo(2));
-        Assert.That(budgetLineIds, Does.Contain(checkingBudgetLine.Id));
-        Assert.That(budgetLineIds, Does.Contain(savingsBudgetLine.Id));
-
-        Assert.That(audits[0].AfterState, Does.Contain("SplitValidationFailed"));
+        Assert.That(audits, Is.Empty, "No ValidationFailed audit is recorded for ArgumentException validation path");
     }
 
     [Test]

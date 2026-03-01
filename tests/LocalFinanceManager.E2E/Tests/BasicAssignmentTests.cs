@@ -144,7 +144,7 @@ public class BasicAssignmentTests : E2ETestBase
         using var assertionScope = Factory.CreateDbScope();
         var assignmentService = assertionScope.ServiceProvider.GetRequiredService<LocalFinanceManager.Services.ITransactionAssignmentService>();
 
-        var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var ex = Assert.ThrowsAsync<ArgumentException>(async () =>
             await assignmentService.AssignTransactionAsync(transactionId, new LocalFinanceManager.DTOs.AssignTransactionRequest
             {
                 BudgetLineId = foreignBudgetLineId
