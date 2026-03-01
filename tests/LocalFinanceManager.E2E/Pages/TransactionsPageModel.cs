@@ -67,7 +67,12 @@ public class TransactionsPageModel : PageObjectBase
         };
 
         await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
-        await WaitForSelectorAsync(TransactionTableSelector);
+        await Page.WaitForFunctionAsync(
+            @"arg => {
+                const select = document.querySelector(arg.selector);
+                return !!select && select.value === arg.value;
+            }",
+            new { selector = AssignmentStatusFilterSelector, value });
     }
 
     /// <summary>

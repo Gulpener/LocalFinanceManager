@@ -7,7 +7,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 ## Requirements
 
 - Implement 19 tests across 3 test suites: SplitAssignmentTests (9), BulkAssignmentTests (9), IntegrationWorkflowTests (1)
-- Leverage PageObjectModels enhanced in UserStory-10 (TransactionListPage with bulk methods)
+- Leverage PageObjectModels enhanced in UserStory-10 (TransactionsPageModel with bulk methods)
 - Use existing PageObjectModels: SplitEditorPageModel, BulkAssignModalPageModel (already complete from US-5.1)
 - Per-test cleanup strategy (same pattern as UserStory-10)
 - Combined Phase 1 + Phase 2 execution time target <10 minutes
