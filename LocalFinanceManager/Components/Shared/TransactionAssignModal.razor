@@ -19,8 +19,8 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
-                                                                                                                                            $"({Transaction.Date.Year})"
-                                                                                                                                            : "")</h5>
+                                                                                                                                                                    $"({Transaction.Date.Year})"
+                                                                                                                                                                    : "")</h5>
                         <button type="button" class="btn-close" @onclick="Close" aria-label="Press Esc to close"></button>
                     </div>
                     <div class="modal-body">
@@ -398,7 +398,8 @@
 
         if (e.Key == "Enter")
         {
-            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement", "#assignSaveButton");
+            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement",
+"#assignSaveButton");
             if (isSaveButtonFocused && CanAssign && !isSubmitting)
             {
                 await AssignTransaction();

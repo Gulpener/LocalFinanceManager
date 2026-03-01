@@ -36,6 +36,30 @@ public class KeyboardNavigationTests : E2ETestBase
     }
 
     [Test]
+    public async Task SplitEditor_InitialFocus_IsSetToFirstCategorySelect()
+    {
+        using var scope = Factory!.CreateDbScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var account = await SeedDataHelper.SeedAccountAsync(context, "Split Focus Test", "NL91ABNA0417164300", 1000m);
+        var budgetPlanId = account.CurrentBudgetPlanId!.Value;
+        var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Food");
+        await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -75m, DateTime.Now, "Split Focus Transaction");
+
+        await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        await Page.Locator("button:has-text('Split')").First.ClickAsync();
+
+        var splitModal = Page.Locator("#splitEditorModal");
+        await Expect(splitModal).ToBeVisibleAsync();
+        await Page.WaitForFunctionAsync("() => document.activeElement?.matches('#splitEditorModal select.form-select:not([disabled])') === true");
+
+        var isFocusedInsideSplitModal = await Page.EvaluateAsync<bool>("() => !!document.activeElement?.closest('#splitEditorModal')");
+        Assert.That(isFocusedInsideSplitModal, Is.True);
+    }
+
+    [Test]
     public async Task AssignmentModal_Enter_OnSave_SubmitsAndCloses()
     {
         using var scope = Factory!.CreateDbScope();

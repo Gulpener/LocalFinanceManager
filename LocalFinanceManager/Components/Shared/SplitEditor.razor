@@ -10,7 +10,7 @@
 @if (IsVisible && Transaction != null)
 {
     <div id="splitEditorModal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
-         aria-labelledby="splitEditorTitle" @onkeydown="HandleKeyDown">
+         aria-labelledby="splitEditorTitle" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -185,7 +185,10 @@
     private string? successMessage;
     private const decimal RoundingTolerance = 0.01m;
     private bool isFocusTrapActive;
+    private bool isInitialFocusSet;
+    private bool wasVisible;
     private int focusedSplitIndex;
+    private ElementReference modalContainerRef;
 
     private class SplitRow
     {
@@ -201,6 +204,18 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = false;
+        }
+
+        if (IsVisible && !wasVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = true;
+        }
+
         if (IsVisible && Transaction != null)
         {
             if (budgetLines == null)
@@ -214,12 +229,6 @@
             }
 
             focusedSplitIndex = 0;
-
-            if (!isFocusTrapActive)
-            {
-                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#splitEditorModal");
-                isFocusTrapActive = true;
-            }
         }
         else if (!IsVisible)
         {
@@ -234,6 +243,41 @@
                 await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
                 isFocusTrapActive = false;
             }
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            return;
+        }
+
+        if (!isFocusTrapActive)
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#splitEditorModal");
+            isFocusTrapActive = true;
+        }
+
+        if (isInitialFocusSet)
+        {
+            return;
+        }
+
+        isInitialFocusSet = true;
+
+        try
+        {
+            var focused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.focusSelector", "#splitEditorModal select.form-select:not([disabled])");
+            if (!focused)
+            {
+                await modalContainerRef.FocusAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to set initial focus in split editor modal");
         }
     }
 
