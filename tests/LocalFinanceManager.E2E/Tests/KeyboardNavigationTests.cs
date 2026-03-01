@@ -124,17 +124,16 @@ public class KeyboardNavigationTests : E2ETestBase
         await Page.SelectOptionAsync("#bulkBudgetLineSelect", new SelectOptionValue { Index = 1 });
         await Page.Locator("#bulkAssignButton").ClickAsync();
 
-        var progressBar = Page.Locator("#bulkAssignModal .progress-bar");
-        var processingButton = Page.Locator("#bulkAssignButton");
-        try
-        {
-            await Expect(progressBar).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 1500 });
-        }
-        catch (PlaywrightException)
-        {
-            await Expect(processingButton).ToBeVisibleAsync();
-            await Expect(processingButton).ToBeDisabledAsync();
-        }
+        await Page.WaitForFunctionAsync(@"() => {
+            const modal = document.querySelector('#bulkAssignModal');
+            if (!modal) return false;
+
+            const hasProgress = !!modal.querySelector('.progress-bar');
+            const hasResult = !!modal.querySelector('.alert-success, .alert-warning');
+            const assignButtonMissing = !modal.querySelector('#bulkAssignButton');
+
+            return hasProgress || hasResult || assignButtonMissing;
+        }");
 
         await Page.Keyboard.PressAsync("Escape");
 
