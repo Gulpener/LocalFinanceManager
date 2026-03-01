@@ -1,5 +1,6 @@
 using Bunit;
 using Bunit.JSInterop;
+using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Components.Pages;
 using LocalFinanceManager.Components.Shared;
 using LocalFinanceManager.Data.Repositories;
@@ -217,6 +218,8 @@ public class ShortcutHelpTests
         services.AddSingleton(budgetPlanRepositoryMock.Object);
         services.AddSingleton(recentCategoriesServiceMock.Object);
         services.AddSingleton(hostEnvironmentMock.Object);
+        services.AddOptions();
+        services.Configure<BulkAssignUiOptions>(_ => { });
         services.AddLogging();
     }
 }
