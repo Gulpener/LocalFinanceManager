@@ -58,12 +58,22 @@ public class TransactionsPageModel : PageObjectBase
     /// <param name="filterType">All, Assigned, or Uncategorized.</param>
     public async Task SelectFilterAsync(string filterType)
     {
-        var value = filterType.Trim().ToLowerInvariant() switch
+        if (filterType is null)
+        {
+            throw new ArgumentNullException(nameof(filterType));
+        }
+
+        var normalized = filterType.Trim().ToLowerInvariant();
+
+        var value = normalized switch
         {
             "all" => "all",
             "assigned" => "assigned",
             "uncategorized" => "unassigned",
-            _ => "all"
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(filterType),
+                filterType,
+                "Unsupported filter type for SelectFilterAsync. Expected 'all', 'assigned', or 'uncategorized'.")
         };
 
         await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
