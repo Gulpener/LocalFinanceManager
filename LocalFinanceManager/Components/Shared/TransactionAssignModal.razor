@@ -173,6 +173,7 @@
     private bool isSubmitting;
     private bool isFocusTrapActive;
     private bool isInitialFocusSet;
+    private bool wasVisible;
     private ElementReference modalContainerRef;
     private ElementReference budgetLineSelectRef;
 
@@ -180,6 +181,18 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = false;
+        }
+
+        if (IsVisible && !wasVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = true;
+        }
+
         if (IsVisible && Transaction != null)
         {
             await LoadBudgetLines();
@@ -207,6 +220,8 @@
             return;
         }
 
+        isInitialFocusSet = true;
+
         try
         {
             if (budgetLineSelectRef.Context != null)
@@ -217,8 +232,6 @@
             {
                 await modalContainerRef.FocusAsync();
             }
-
-            isInitialFocusSet = true;
         }
         catch (Exception ex)
         {
@@ -402,6 +415,7 @@
         }
 
         isInitialFocusSet = false;
+        wasVisible = false;
         ResetForm();
         await OnClose.InvokeAsync();
     }
