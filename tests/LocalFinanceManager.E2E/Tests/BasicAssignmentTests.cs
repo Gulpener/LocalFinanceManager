@@ -239,6 +239,6 @@ public class BasicAssignmentTests : E2ETestBase
 
         await Expect(Page.Locator("#bulkAssignModal")).ToBeVisibleAsync();
 
-        await Page.ScreenshotAsync(new() { Path = "test-results/screenshots/assignment-modal-open.png", FullPage = true });
+        await _transactionsPage.TakeScreenshotAsync("assignment-modal-open");
     }
 }
