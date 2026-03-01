@@ -385,9 +385,7 @@
 
         if (e.Key == "Enter")
         {
-            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>(
-                "localFinanceKeyboard.isActiveElement",
-                "#assignSaveButton");
+            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement", "#assignSaveButton");
             if (isSaveButtonFocused && CanAssign && !isSubmitting)
             {
                 await AssignTransaction();
