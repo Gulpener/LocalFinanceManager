@@ -108,9 +108,23 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         }
 
         // Validate account budget-plan ownership and year matching for all unique budget lines
-        foreach (var budgetLineId in request.Splits.Select(s => s.BudgetLineId).Distinct())
+        var budgetLineIds = request.Splits.Select(s => s.BudgetLineId).Distinct().ToList();
+        try
         {
-            await ValidateBudgetLineAssignmentAsync(transaction, budgetLineId);
+            foreach (var budgetLineId in budgetLineIds)
+            {
+                await ValidateBudgetLineAssignmentAsync(transaction, budgetLineId);
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            await RecordAuditAsync(
+                transactionId,
+                "ValidationFailed",
+                new { BudgetLineIds = budgetLineIds },
+                new { ErrorCode = "SplitValidationFailed", Error = ex.Message });
+
+            throw;
         }
 
         // Validate split sum
