@@ -53,12 +53,12 @@ dotnet test tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj --filte
 ## Screenshot capture
 
 - Failure screenshots: `test-results/screenshots/` (auto)
-- US-10 manual screenshots:
-  - `import-preview.png`
-  - `assignment-modal-open.png`
-  - `multi-account-setup.png`
-  - `multi-account-budget-line-filter.png`
-  - `multi-account-validation-error.png`
+- US-10 manual screenshots (captured by the helper under `test-results/screenshots/` with timestamped filenames):
+  - `import-preview_YYYYMMDD_HHMMSS.png`
+  - `assignment-modal-open_YYYYMMDD_HHMMSS.png`
+  - `multi-account-setup_YYYYMMDD_HHMMSS.png`
+  - `multi-account-budget-line-filter_YYYYMMDD_HHMMSS.png`
+  - `multi-account-validation-error_YYYYMMDD_HHMMSS.png`
 
 ## Test data and cleanup strategy
 
