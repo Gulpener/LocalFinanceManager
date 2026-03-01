@@ -357,25 +357,31 @@
 
             // Wait a moment to show completion
             var completionMessageVisibleMilliseconds = Math.Max(0, uiOptions.CompletionMessageVisibleMilliseconds);
-            if (completionMessageVisibleMilliseconds > 0)
+            if (completionMessageVisibleMilliseconds > 0 && bulkAssignCancellationTokenSource is not null)
             {
-                await Task.Delay(completionMessageVisibleMilliseconds);
+                await Task.Delay(completionMessageVisibleMilliseconds, bulkAssignCancellationTokenSource.Token);
             }
 
             var applyMinimumVisibleDuration = !uiOptions.ApplyMinimumVisibleDurationOnlyInDevelopment
                 || HostEnvironment.IsDevelopment();
 
             var minimumProcessingVisibleMilliseconds = Math.Max(0, uiOptions.MinimumProcessingVisibleMilliseconds);
-            if (applyMinimumVisibleDuration && minimumProcessingVisibleMilliseconds > 0)
+            if (applyMinimumVisibleDuration && minimumProcessingVisibleMilliseconds > 0 && bulkAssignCancellationTokenSource is not null)
             {
                 var elapsedMilliseconds = (int)(DateTime.UtcNow - processingStartedAt).TotalMilliseconds;
                 var remainingMilliseconds = minimumProcessingVisibleMilliseconds - elapsedMilliseconds;
                 if (remainingMilliseconds > 0)
                 {
-                    await Task.Delay(remainingMilliseconds);
+                    await Task.Delay(remainingMilliseconds, bulkAssignCancellationTokenSource.Token);
                 }
             }
 
+            if (bulkAssignCancellationTokenSource?.IsCancellationRequested == true)
+            {
+                progressMessage = "Bulk toewijzing geannuleerd.";
+                bulkResult = null;
+                return;
+            }
             await OnBulkAssigned.InvokeAsync();
         }
         catch (OperationCanceledException)
