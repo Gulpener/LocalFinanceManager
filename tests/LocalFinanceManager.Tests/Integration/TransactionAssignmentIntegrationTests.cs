@@ -890,7 +890,7 @@ public class TransactionAssignmentIntegrationTests
     }
 
     [Test]
-    public async Task SplitTransaction_CrossAccountValidationFailure_ShouldNotRecordValidationFailedAudit()
+    public async Task SplitTransaction_CrossAccountValidationFailure_ShouldRecordValidationFailedAudit()
     {
         // Arrange
         var checkingAccount = new Account
@@ -999,7 +999,8 @@ public class TransactionAssignmentIntegrationTests
         Assert.That(exception!.Message, Does.Contain("Budget line belongs to a different account budget plan"));
 
         var audits = await _auditRepository.GetByTransactionIdAsync(transaction.Id);
-        Assert.That(audits, Is.Empty, "No ValidationFailed audit is recorded for ArgumentException validation path");
+        Assert.That(audits, Has.Count.EqualTo(1), "A ValidationFailed audit is recorded for ArgumentException validation path");
+        Assert.That(audits[0].ActionType, Is.EqualTo("ValidationFailed"));
     }
 
     [Test]
