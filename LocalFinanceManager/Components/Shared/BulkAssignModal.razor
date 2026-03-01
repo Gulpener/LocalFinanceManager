@@ -208,11 +208,7 @@
             bulkResult = null;
             showErrorDetails = false;
 
-            if (isFocusTrapActive)
-            {
-                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
-                isFocusTrapActive = false;
-            }
+            await ReleaseFocusTrapAsync();
         }
     }
 
@@ -341,6 +337,11 @@
     }
 
     public async ValueTask DisposeAsync()
+    {
+        await ReleaseFocusTrapAsync();
+    }
+
+    private async ValueTask ReleaseFocusTrapAsync()
     {
         if (isFocusTrapActive)
         {
