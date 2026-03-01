@@ -1,10 +1,14 @@
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.Data.Repositories
+@using LocalFinanceManager.Configuration
+@using Microsoft.Extensions.Options
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
 @inject IJSRuntime JSRuntime
 @inject ILogger<BulkAssignModal> Logger
+@inject IWebHostEnvironment HostEnvironment
+@inject IOptions<BulkAssignUiOptions> BulkAssignUiOptionsAccessor
 @implements IAsyncDisposable
 
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
@@ -311,7 +315,7 @@
         try
         {
             var processingStartedAt = DateTime.UtcNow;
-            const int minimumProcessingVisibleMilliseconds = 2000;
+            var uiOptions = BulkAssignUiOptionsAccessor.Value;
 
             isProcessing = true;
             progressPercentage = 0;
@@ -352,13 +356,24 @@
             StateHasChanged();
 
             // Wait a moment to show completion
-            await Task.Delay(500);
-
-            var elapsedMilliseconds = (int)(DateTime.UtcNow - processingStartedAt).TotalMilliseconds;
-            var remainingMilliseconds = minimumProcessingVisibleMilliseconds - elapsedMilliseconds;
-            if (remainingMilliseconds > 0)
+            var completionMessageVisibleMilliseconds = Math.Max(0, uiOptions.CompletionMessageVisibleMilliseconds);
+            if (completionMessageVisibleMilliseconds > 0)
             {
-                await Task.Delay(remainingMilliseconds);
+                await Task.Delay(completionMessageVisibleMilliseconds);
+            }
+
+            var applyMinimumVisibleDuration = !uiOptions.ApplyMinimumVisibleDurationOnlyInDevelopment
+                || HostEnvironment.IsDevelopment();
+
+            var minimumProcessingVisibleMilliseconds = Math.Max(0, uiOptions.MinimumProcessingVisibleMilliseconds);
+            if (applyMinimumVisibleDuration && minimumProcessingVisibleMilliseconds > 0)
+            {
+                var elapsedMilliseconds = (int)(DateTime.UtcNow - processingStartedAt).TotalMilliseconds;
+                var remainingMilliseconds = minimumProcessingVisibleMilliseconds - elapsedMilliseconds;
+                if (remainingMilliseconds > 0)
+                {
+                    await Task.Delay(remainingMilliseconds);
+                }
             }
 
             await OnBulkAssigned.InvokeAsync();
