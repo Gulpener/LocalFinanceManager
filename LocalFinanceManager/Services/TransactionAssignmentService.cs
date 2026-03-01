@@ -120,7 +120,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         {
             await RecordAuditAsync(
                 transactionId,
-                "ValidationError",
+                "ValidationFailed",
                 new { BudgetLineIds = budgetLineIds },
                 new { ErrorCode = "SplitValidationFailed", Error = ex.Message });
 
