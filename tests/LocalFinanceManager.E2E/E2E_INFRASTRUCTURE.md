@@ -495,7 +495,6 @@ var account = await SeedDataHelper.SeedAccountAsync(context, "Test", "...", 1000
 ❌ **Don't** interact with selectors directly in tests:
 
 ```csharp
-await Page.ClickAsync("button[data-action='assign']");
 await Page.SelectOptionAsync("#budgetLineSelect", budgetLineId.ToString());
 ```
 
