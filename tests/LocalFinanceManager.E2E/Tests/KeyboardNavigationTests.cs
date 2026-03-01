@@ -125,14 +125,15 @@ public class KeyboardNavigationTests : E2ETestBase
         await Page.Locator("#bulkAssignButton").ClickAsync();
 
         var progressBar = Page.Locator("#bulkAssignModal .progress-bar");
-        var closeButton = Page.Locator("#bulkAssignModal button:has-text('Sluiten')");
+        var processingButton = Page.Locator("#bulkAssignButton");
         try
         {
             await Expect(progressBar).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 1500 });
         }
         catch (PlaywrightException)
         {
-            await Expect(closeButton).ToBeVisibleAsync();
+            await Expect(processingButton).ToBeVisibleAsync();
+            await Expect(processingButton).ToBeDisabledAsync();
         }
 
         await Page.Keyboard.PressAsync("Escape");

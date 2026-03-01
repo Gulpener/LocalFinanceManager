@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Builder;
@@ -28,7 +26,6 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private IHost? _host;
     private readonly string _testDatabasePath;
-    private readonly int _port;
     private readonly string _fixtureId;
 
     public string ServerAddress { get; private set; }
@@ -39,26 +36,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         // Use fixture ID to create one database per test fixture (enables parallel execution)
         _fixtureId = fixtureId;
         _testDatabasePath = $"localfinancemanager.e2etest.fixture_{_fixtureId}.db";
-        _port = GetAvailablePort();
-        // Use 127.0.0.1 instead of localhost for dynamic port binding (Kestrel requirement)
-        ServerAddress = $"http://127.0.0.1:{_port}";
-    }
-
-    /// <summary>
-    /// Gets an available port by temporarily binding to one, then releasing it.
-    /// Uses a small delay after release to ensure OS fully releases the port before Kestrel binds.
-    /// </summary>
-    private static int GetAvailablePort()
-    {
-        using var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-
-        // Small delay to ensure OS releases the port
-        System.Threading.Thread.Sleep(50);
-
-        return port;
+        // Let Kestrel bind to an OS-assigned port to avoid race conditions in parallel test runs.
+        ServerAddress = "http://127.0.0.1:0";
     }
     /// <summary>
     /// Gets the connection string for the test database with WAL mode enabled.
@@ -129,6 +108,22 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         _host = builder.Build();
         _host.Start();
 
+        var addressFeature = _host.Services
+            .GetRequiredService<IServer>()
+            .Features
+            .Get<IServerAddressesFeature>();
+
+        var assignedAddress = addressFeature?.Addresses
+            .FirstOrDefault(address => address.Contains("127.0.0.1", StringComparison.OrdinalIgnoreCase))
+            ?? addressFeature?.Addresses.FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(assignedAddress))
+        {
+            throw new InvalidOperationException("Failed to resolve Kestrel assigned test server address.");
+        }
+
+        ServerAddress = assignedAddress;
+
         return dummyHost;
     }
 
@@ -140,12 +135,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         builder.UseContentRoot(projectDir);
         builder.UseWebRoot(Path.Combine(projectDir, "wwwroot"));
 
-        // Use Kestrel with a real HTTP endpoint for Playwright E2E tests
-        // Use dynamically allocated port to avoid conflicts
+        // Use Kestrel with a real HTTP endpoint for Playwright E2E tests.
+        // Keep ':0' so the OS picks a free ephemeral port atomically.
         builder.UseKestrel();
 
-        // CRITICAL: Must use 127.0.0.1 instead of localhost for dynamic port binding
-        // Kestrel does not support "localhost:0" - only "127.0.0.1:0" or "[::1]:0"
+        // CRITICAL: Must use 127.0.0.1 instead of localhost for dynamic port binding.
+        // Kestrel does not support "localhost:0" - only "127.0.0.1:0" or "[::1]:0".
         builder.UseUrls(ServerAddress);
 
         // Also set via configuration to ensure it takes precedence
@@ -326,6 +321,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     public async Task CloseAllConnectionsAsync()
     {
+        if (_host == null)
+        {
+            return;
+        }
+
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
