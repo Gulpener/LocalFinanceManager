@@ -118,11 +118,21 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         }
         catch (InvalidOperationException ex)
         {
-            await RecordAuditAsync(
-                transactionId,
-                "ValidationFailed",
-                new { BudgetLineIds = budgetLineIds },
-                new { ErrorCode = "SplitValidationFailed", Error = ex.Message });
+            try
+            {
+                await RecordAuditAsync(
+                    transactionId,
+                    "ValidationFailed",
+                    new { BudgetLineIds = budgetLineIds },
+                    new { ErrorCode = "SplitValidationFailed", Error = ex.Message });
+            }
+            catch (Exception auditEx)
+            {
+                _logger.LogError(
+                    auditEx,
+                    "Failed to record audit for split validation failure on transaction {TransactionId}",
+                    transactionId);
+            }
 
             throw;
         }
