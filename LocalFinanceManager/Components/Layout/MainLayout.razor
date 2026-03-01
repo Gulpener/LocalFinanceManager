@@ -1,6 +1,4 @@
 ﻿@inherits LayoutComponentBase
-@implements IAsyncDisposable
-@inject IJSRuntime JSRuntime
 
 <div class="page">
     <div class="sidebar">
@@ -25,21 +23,3 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
-
-@code {
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.unregisterGlobalShortcuts");
-        }
-        catch (Microsoft.JSInterop.JSDisconnectedException)
-        {
-            // Ignore disconnection during disposal; circuit is already closed.
-        }
-        catch (Microsoft.JSInterop.JSException)
-        {
-            // Ignore JS errors during disposal to avoid teardown failures.
-        }
-    }
-}
