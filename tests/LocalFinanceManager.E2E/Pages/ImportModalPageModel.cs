@@ -131,13 +131,23 @@ public class ImportModalPageModel : PageObjectBase
 
     public async Task<string> GetImportResultAsync()
     {
-        var successText = await Page.Locator(".alert-success").First.TextContentAsync();
-        if (!string.IsNullOrWhiteSpace(successText))
+        var successLocator = Page.Locator(".alert-success").First;
+        if (await successLocator.CountAsync() > 0)
         {
-            return successText;
+            var successText = await successLocator.TextContentAsync();
+            if (!string.IsNullOrWhiteSpace(successText))
+            {
+                return successText;
+            }
         }
 
-        var errorText = await Page.Locator(".alert-danger").First.TextContentAsync();
-        return errorText ?? string.Empty;
+        var errorLocator = Page.Locator(".alert-danger").First;
+        if (await errorLocator.CountAsync() > 0)
+        {
+            var errorText = await errorLocator.TextContentAsync();
+            return errorText ?? string.Empty;
+        }
+
+        return string.Empty;
     }
 }
