@@ -345,7 +345,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         if (budgetPlan.AccountId != transaction.AccountId)
         {
-            throw new InvalidOperationException(
+            throw new ArgumentException(
                 $"Budget line belongs to a different account budget plan. Transaction account: {transaction.AccountId}, budget line account: {budgetPlan.AccountId}.");
         }
     }
