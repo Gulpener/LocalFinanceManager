@@ -461,6 +461,9 @@ else
 
         if (key == "/")
         {
+            // Ensure the quick filters panel is expanded before focusing the assignment status filter
+            isExpanded = true;
+            await InvokeAsync(StateHasChanged);
             await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.focusSelector", "#assignmentStatusFilter");
             return;
         }

@@ -34,7 +34,7 @@ window.localFinanceKeyboard = (function () {
 
     return {
         isTouchDevice: function () {
-            return (navigator.maxTouchPoints || 0) > 0 && ('ontouchstart' in window || navigator.msMaxTouchPoints > 0);
+            return (navigator.maxTouchPoints || 0) > 0;
         },
 
         getOperatingSystem: function () {

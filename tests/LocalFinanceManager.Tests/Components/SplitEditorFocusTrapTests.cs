@@ -62,24 +62,7 @@ public class SplitEditorFocusTrapTests
         cut.WaitForAssertion(() =>
             Assert.That(context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.trapFocus"), Is.True));
 
-#pragma warning disable BL0005
-        cut.Instance.IsVisible = false;
-#pragma warning restore BL0005
-        await cut.InvokeAsync(async () =>
-        {
-            var onParametersSetAsync = typeof(SplitEditor).GetMethod(
-                "OnParametersSetAsync",
-                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-            Assert.That(onParametersSetAsync, Is.Not.Null);
-
-            var lifecycleTask = (Task?)onParametersSetAsync!.Invoke(cut.Instance, null);
-            if (lifecycleTask != null)
-            {
-                await lifecycleTask;
-            }
-        });
-
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.IsVisible, false));
         Assert.That(
             context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.releaseFocusTrap"),
             Is.True,
