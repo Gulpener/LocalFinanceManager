@@ -7,6 +7,7 @@
 @inject IDeviceDetectionService DeviceDetectionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@implements IAsyncDisposable
 @rendermode InteractiveServer
 
 <PageTitle>Transacties</PageTitle>
@@ -245,6 +246,8 @@ else
     private bool isMacOs;
     private int focusedRowIndex;
     private bool touchDeviceDetected;
+    private DotNetObjectReference<Transactions>? dotNetRef;
+    private bool globalShortcutsRegistered;
 
     protected override async Task OnInitializedAsync()
     {
@@ -264,6 +267,14 @@ else
             isTouchDevice = await DeviceDetectionService.IsTouchDeviceAsync();
             var os = await DeviceDetectionService.GetOperatingSystemAsync();
             isMacOs = os == LocalFinanceManager.Services.ClientOperatingSystem.MacOS;
+
+            if (!isTouchDevice)
+            {
+                dotNetRef = DotNetObjectReference.Create(this);
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.registerGlobalShortcuts", dotNetRef, "HandleGlobalShortcut");
+                globalShortcutsRegistered = true;
+            }
+
             touchDeviceDetected = true;
             StateHasChanged();
         }
@@ -273,6 +284,23 @@ else
             isMacOs = false;
             touchDeviceDetected = true;
         }
+    }
+
+    [JSInvokable]
+    public Task HandleGlobalShortcut(string key)
+    {
+        if (key == "?" && !showShortcutHelp)
+        {
+            showShortcutHelp = true;
+            StateHasChanged();
+        }
+        else if (key == "Escape" && showShortcutHelp)
+        {
+            showShortcutHelp = false;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
     }
 
     private async Task LoadAccountsAsync()
@@ -629,5 +657,26 @@ else
         // Reload transactions to reflect the accepted suggestion
         await LoadTransactionsAsync();
         StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (globalShortcutsRegistered)
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.unregisterGlobalShortcuts");
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore disconnection during disposal; circuit is already closed.
+        }
+        catch (JSException)
+        {
+            // Ignore JS errors during disposal to avoid teardown failures.
+        }
+
+        dotNetRef?.Dispose();
     }
 }

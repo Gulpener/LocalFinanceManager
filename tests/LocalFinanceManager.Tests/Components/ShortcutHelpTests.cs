@@ -1,6 +1,12 @@
 using Bunit;
+using LocalFinanceManager.Components.Pages;
 using LocalFinanceManager.Components.Shared;
+using LocalFinanceManager.Data.Repositories;
+using LocalFinanceManager.Models;
+using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
 
 namespace LocalFinanceManager.Tests.Components;
 
@@ -64,5 +70,94 @@ public class ShortcutHelpTests
             Assert.That(text, Does.Contain("Swipe"));
             Assert.That(text, Does.Contain("Lang indrukken"));
         });
+    }
+
+    [Test]
+    public async Task Transactions_HandleGlobalShortcut_QuestionMark_ShowsShortcutHelpModal()
+    {
+        using var context = new BunitContext();
+
+        var cut = RenderTransactions(context);
+
+        Assert.That(cut.FindAll("#shortcutHelpModal"), Is.Empty);
+
+        await cut.InvokeAsync(() => cut.Instance.HandleGlobalShortcut("?"));
+
+        cut.WaitForAssertion(() =>
+        {
+            var modal = cut.Find("#shortcutHelpModal");
+            Assert.That(modal, Is.Not.Null);
+        });
+    }
+
+    [Test]
+    public async Task Transactions_HandleGlobalShortcut_Escape_ClosesShortcutHelpModal()
+    {
+        using var context = new BunitContext();
+
+        var cut = RenderTransactions(context);
+
+        await cut.InvokeAsync(() => cut.Instance.HandleGlobalShortcut("?"));
+
+        cut.WaitForAssertion(() =>
+        {
+            var modal = cut.Find("#shortcutHelpModal");
+            Assert.That(modal, Is.Not.Null);
+        });
+
+        await cut.InvokeAsync(() => cut.Instance.HandleGlobalShortcut("Escape"));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.That(cut.FindAll("#shortcutHelpModal"), Is.Empty);
+        });
+    }
+
+    private static IRenderedComponent<Transactions> RenderTransactions(BunitContext context)
+    {
+        ConfigureTransactionsDependencies(context.Services);
+        return context.Render<Transactions>();
+    }
+
+    private static void ConfigureTransactionsDependencies(IServiceCollection services)
+    {
+        var transactionRepositoryMock = new Mock<ITransactionRepository>();
+        var accountRepositoryMock = new Mock<IAccountRepository>();
+        var deviceDetectionServiceMock = new Mock<IDeviceDetectionService>();
+        var filterStateServiceMock = new Mock<IFilterStateService>();
+        var assignmentServiceMock = new Mock<ITransactionAssignmentService>();
+        var budgetLineRepositoryMock = new Mock<IBudgetLineRepository>();
+        var budgetPlanRepositoryMock = new Mock<IBudgetPlanRepository>();
+        var recentCategoriesServiceMock = new Mock<IRecentCategoriesService>();
+
+        transactionRepositoryMock
+            .Setup(x => x.GetAllWithSplitsAsync())
+            .ReturnsAsync(new List<Transaction>());
+
+        accountRepositoryMock
+            .Setup(x => x.GetActiveAsync())
+            .ReturnsAsync(new List<Account>());
+
+        deviceDetectionServiceMock
+            .Setup(x => x.IsTouchDeviceAsync())
+            .ReturnsAsync(true);
+
+        deviceDetectionServiceMock
+            .Setup(x => x.GetOperatingSystemAsync())
+            .ReturnsAsync(ClientOperatingSystem.Windows);
+
+        filterStateServiceMock
+            .Setup(x => x.LoadFiltersAsync())
+            .ReturnsAsync((FilterState?)null);
+
+        services.AddSingleton(transactionRepositoryMock.Object);
+        services.AddSingleton(accountRepositoryMock.Object);
+        services.AddSingleton(deviceDetectionServiceMock.Object);
+        services.AddSingleton(filterStateServiceMock.Object);
+        services.AddSingleton(assignmentServiceMock.Object);
+        services.AddSingleton(budgetLineRepositoryMock.Object);
+        services.AddSingleton(budgetPlanRepositoryMock.Object);
+        services.AddSingleton(recentCategoriesServiceMock.Object);
+        services.AddLogging();
     }
 }
