@@ -58,8 +58,22 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Transaction {transactionId} not found");
         }
 
-        // Validate year matching
-        await ValidateYearMatchAsync(transaction, request.BudgetLineId);
+        try
+        {
+            // Validate account budget-plan ownership and year matching
+            await ValidateBudgetLineBelongsToTransactionAccountAsync(transaction, request.BudgetLineId);
+            await ValidateYearMatchAsync(transaction, request.BudgetLineId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            await RecordAuditAsync(
+                transactionId,
+                "ValidationFailed",
+                new { request.BudgetLineId },
+                new { ErrorCode = "CrossAccountBudgetLineAssignment", Error = ex.Message });
+
+            throw;
+        }
 
         // Clear existing splits
         await _splitRepository.DeleteByTransactionIdAsync(transactionId);
@@ -290,6 +304,27 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException(
                 $"Cannot assign {transactionYear} transaction to {budgetPlan.Year} budget plan. " +
                 $"Create a budget plan for {transactionYear} first.");
+        }
+    }
+
+    private async Task ValidateBudgetLineBelongsToTransactionAccountAsync(Transaction transaction, Guid budgetLineId)
+    {
+        var budgetLine = await _budgetLineRepository.GetByIdAsync(budgetLineId);
+        if (budgetLine == null)
+        {
+            throw new InvalidOperationException($"Budget line {budgetLineId} not found");
+        }
+
+        var budgetPlan = budgetLine.BudgetPlan;
+        if (budgetPlan == null)
+        {
+            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLineId}");
+        }
+
+        if (budgetPlan.AccountId != transaction.AccountId)
+        {
+            throw new InvalidOperationException(
+                $"Budget line belongs to a different account budget plan. Transaction account: {transaction.AccountId}, budget line account: {budgetPlan.AccountId}.");
         }
     }
 

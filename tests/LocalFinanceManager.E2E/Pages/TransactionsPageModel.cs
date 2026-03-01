@@ -10,8 +10,16 @@ public class TransactionsPageModel : PageObjectBase
 {
     // Selectors
     private const string AccountFilterSelector = "#account-filter";
+    private const string AssignmentStatusFilterSelector = "#assignmentStatusFilter";
     private const string TransactionTableSelector = "table[data-testid='transactions-table']";
     private const string TransactionRowSelector = "tbody tr[data-testid='transaction-row']";
+    private const string TransactionRowByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}']";
+    private const string TransactionCheckboxByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}'] input[type='checkbox']";
+    private const string SelectAllCheckboxSelector = "thead input[type='checkbox'][aria-label='Selecteer alle zichtbare transacties']";
+    private const string BulkAssignButtonSelector = "button:has-text('Bulk toewijzen')";
+    private const string DeselectAllButtonSelector = "button:has-text('Deselecteer alles')";
+    private const string AssignButtonInRowSelector = "button:has-text('Toewijzen'), button:has-text('Wijzig')";
+    private const string AuditButtonInRowSelector = "button[title='Bekijk toewijzingsgeschiedenis']";
     private const string PaginationSelector = ".pagination";
     private const string PageButtonSelector = ".pagination button[data-page='{0}']";
     private const string NextPageButtonSelector = ".pagination button[aria-label='Next']";
@@ -42,6 +50,24 @@ public class TransactionsPageModel : PageObjectBase
     {
         await Page.SelectOptionAsync(AccountFilterSelector, accountId.ToString());
         await WaitForSelectorAsync(TransactionRowSelector); // Wait for table to reload
+    }
+
+    /// <summary>
+    /// Selects assignment status filter by display value.
+    /// </summary>
+    /// <param name="filterType">All, Assigned, or Uncategorized.</param>
+    public async Task SelectFilterAsync(string filterType)
+    {
+        var value = filterType.Trim().ToLowerInvariant() switch
+        {
+            "all" => "all",
+            "assigned" => "assigned",
+            "uncategorized" => "unassigned",
+            _ => "all"
+        };
+
+        await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
+        await WaitForSelectorAsync(TransactionTableSelector);
     }
 
     /// <summary>
@@ -105,13 +131,67 @@ public class TransactionsPageModel : PageObjectBase
                 $"Row index {rowIndex} is out of range. Only {rows.Count} rows found.");
         }
 
-        var assignButton = await rows[rowIndex].QuerySelectorAsync("button[data-action='assign']");
+        var assignButton = await rows[rowIndex].QuerySelectorAsync(AssignButtonInRowSelector);
         if (assignButton == null)
         {
             throw new InvalidOperationException($"Assign button not found for row {rowIndex}.");
         }
 
         await assignButton.ClickAsync();
+    }
+
+    /// <summary>
+    /// Clicks audit trail button for a specific transaction.
+    /// </summary>
+    public async Task ClickAuditTrailAsync(Guid transactionId)
+    {
+        var selector = string.Format(TransactionRowByIdSelector, transactionId);
+        var row = Page.Locator(selector);
+        await row.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+
+        var auditButton = row.Locator(AuditButtonInRowSelector).First;
+        await auditButton.ClickAsync();
+    }
+
+    /// <summary>
+    /// Selects a transaction checkbox by transaction id.
+    /// </summary>
+    public async Task SelectTransactionAsync(Guid transactionId)
+    {
+        var selector = string.Format(TransactionCheckboxByIdSelector, transactionId);
+        var checkbox = Page.Locator(selector).First;
+        await checkbox.CheckAsync();
+    }
+
+    /// <summary>
+    /// Selects all currently visible transactions.
+    /// </summary>
+    public async Task SelectAllOnPageAsync()
+    {
+        await Page.Locator(SelectAllCheckboxSelector).CheckAsync();
+    }
+
+    /// <summary>
+    /// Clears all selected transactions.
+    /// </summary>
+    public async Task DeselectAllAsync()
+    {
+        var deselectButton = Page.Locator(DeselectAllButtonSelector);
+        if (await deselectButton.CountAsync() > 0)
+        {
+            await deselectButton.First.ClickAsync();
+            return;
+        }
+
+        await Page.Locator(SelectAllCheckboxSelector).UncheckAsync();
+    }
+
+    /// <summary>
+    /// Opens bulk assign modal from bottom action bar.
+    /// </summary>
+    public async Task ClickBulkAssignAsync()
+    {
+        await Page.Locator(BulkAssignButtonSelector).First.ClickAsync();
     }
 
     /// <summary>

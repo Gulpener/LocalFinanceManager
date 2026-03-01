@@ -9,12 +9,12 @@ namespace LocalFinanceManager.E2E.Pages;
 public class AssignmentModalPageModel : PageObjectBase
 {
     // Selectors
-    private const string ModalSelector = "[data-testid='assignment-modal']";
-    private const string CategoryDropdownSelector = "#category-select";
+    private const string ModalSelector = "#transactionAssignModal";
+    private const string CategoryDropdownSelector = "#budgetLineSelect";
     private const string BudgetLineDropdownSelector = "#budgetline-select";
-    private const string NoteInputSelector = "#assignment-note";
-    private const string AssignButtonSelector = "button[data-action='submit-assign']";
-    private const string CancelButtonSelector = "button[data-action='cancel-assign']";
+    private const string NoteInputSelector = "#noteInput";
+    private const string AssignButtonSelector = "#assignSaveButton";
+    private const string CancelButtonSelector = "button:has-text('Annuleren')";
     private const string SplitButtonSelector = "button[data-action='split-transaction']";
 
     /// <summary>
