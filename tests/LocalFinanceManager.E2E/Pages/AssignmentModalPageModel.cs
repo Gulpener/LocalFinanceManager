@@ -14,7 +14,6 @@ public class AssignmentModalPageModel : PageObjectBase
     private const string NoteInputSelector = "#noteInput";
     private const string AssignButtonSelector = "#assignSaveButton";
     private const string CancelButtonSelector = "button:has-text('Annuleren')";
-    private const string SplitButtonSelector = "button[data-action='split-transaction']";
 
     /// <summary>
     /// Initializes a new instance of the AssignmentModalPageModel class.
@@ -67,14 +66,6 @@ public class AssignmentModalPageModel : PageObjectBase
     {
         await Page.ClickAsync(CancelButtonSelector);
         await WaitForModalToCloseAsync();
-    }
-
-    /// <summary>
-    /// Clicks the Split button to open the split editor.
-    /// </summary>
-    public async Task ClickSplitAsync()
-    {
-        await Page.ClickAsync(SplitButtonSelector);
     }
 
     /// <summary>
