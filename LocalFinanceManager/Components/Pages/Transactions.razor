@@ -13,8 +13,8 @@
 
 <h1 @onkeydown:window="HandleGlobalKeyDown">Transacties
     <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => showShortcutHelp = true"
-            id="shortcutHelpButton" data-testid="shortcut-help-button"
-            title="Toetsenbord sneltoetsen" aria-label="Toetsenbord sneltoetsen">
+            id="shortcutHelpButton" data-testid="shortcut-help-button"            title="Toetsenbord sneltoetsen"
+            aria-label="Toetsenbord sneltoetsen">
         <i class="bi bi-question-circle"></i>
     </button>
 </h1>
@@ -60,7 +60,7 @@ else
                 <th style="width: 40px;">
                     <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll"
                            checked="@(selectedTransactionIds.Count == filteredTransactions.Count && filteredTransactions.Any())"
-                           aria-label="Selecteer alle zichtbare transacties"          title="Selecteer alles" />
+                           aria-label="Selecteer alle zichtbare transacties" title="Selecteer alles" />
                 </th>
                 <th>Status</th>
                 <th>Datum</th>
@@ -76,8 +76,8 @@ else
             {
                 var transaction = filteredTransactions[index];
                 <tr class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
-                    data-testid="transaction-row"              data-row-index="@index"    data-transaction-id="@transaction.Id"
-                    tabindex="@(focusedRowIndex == index ? 0 : -1)"  @onfocus="() => SetFocusedRow(index)"
+                    data-testid="transaction-row" data-row-index="@index" data-transaction-id="@transaction.Id"
+                    tabindex="@(focusedRowIndex == index ? 0 : -1)" @onfocus="() => SetFocusedRow(index)"
                     @onkeydown="HandleTableKeyDown">
                     <td>
                         <input type="checkbox" class="form-check-input"
