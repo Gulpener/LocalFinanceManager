@@ -310,6 +310,9 @@
 
         try
         {
+            var processingStartedAt = DateTime.UtcNow;
+            const int minimumProcessingVisibleMilliseconds = 2000;
+
             isProcessing = true;
             progressPercentage = 0;
             errorMessage = null;
@@ -350,6 +353,13 @@
 
             // Wait a moment to show completion
             await Task.Delay(500);
+
+            var elapsedMilliseconds = (int)(DateTime.UtcNow - processingStartedAt).TotalMilliseconds;
+            var remainingMilliseconds = minimumProcessingVisibleMilliseconds - elapsedMilliseconds;
+            if (remainingMilliseconds > 0)
+            {
+                await Task.Delay(remainingMilliseconds);
+            }
 
             await OnBulkAssigned.InvokeAsync();
         }
