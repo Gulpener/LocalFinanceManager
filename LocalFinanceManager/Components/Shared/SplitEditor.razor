@@ -239,11 +239,7 @@
             successMessage = null;
             isSaving = false;
 
-            if (isFocusTrapActive)
-            {
-                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
-                isFocusTrapActive = false;
-            }
+            await ReleaseFocusTrapAsync();
         }
     }
 
@@ -465,24 +461,31 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (isFocusTrapActive)
+        await ReleaseFocusTrapAsync();
+    }
+
+    private async ValueTask ReleaseFocusTrapAsync()
+    {
+        if (!isFocusTrapActive)
         {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
-            }
-            catch (JSDisconnectedException)
-            {
-                // Ignore JS interop errors during circuit teardown.
-            }
-            catch (JSException)
-            {
-                // Ignore JS interop errors during disposal.
-            }
-            finally
-            {
-                isFocusTrapActive = false;
-            }
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore JS interop errors during circuit teardown.
+        }
+        catch (JSException)
+        {
+            // Ignore JS interop errors during disposal.
+        }
+        finally
+        {
+            isFocusTrapActive = false;
         }
     }
 }
