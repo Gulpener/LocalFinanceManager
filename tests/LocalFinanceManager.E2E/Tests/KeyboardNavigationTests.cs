@@ -157,12 +157,23 @@ public class KeyboardNavigationTests : E2ETestBase
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
         await Page.Locator("button:has-text('Toewijzen')").First.ClickAsync();
-        await Expect(Page.Locator("#transactionAssignModal")).ToBeVisibleAsync();
+        var modal = Page.Locator("#transactionAssignModal");
+        await Expect(modal).ToBeVisibleAsync();
 
         await Page.SelectOptionAsync("#budgetLineSelect", new SelectOptionValue { Index = 1 });
-        await Page.Locator("#assignSaveButton").PressAsync("Enter");
+        var saveButton = Page.Locator("#assignSaveButton");
+        await Expect(saveButton).ToBeEnabledAsync();
+        await saveButton.FocusAsync();
 
-        await Expect(Page.Locator("#transactionAssignModal")).Not.ToBeVisibleAsync();
+        await Page.WaitForFunctionAsync("() => document.activeElement?.id === 'assignSaveButton'");
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Page.WaitForSelectorAsync("#transactionAssignModal", new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Hidden,
+            Timeout = 15000
+        });
+        await Expect(modal).Not.ToBeVisibleAsync();
     }
 
     [Test]
