@@ -186,6 +186,7 @@
     {
         if (!IsVisible)
         {
+            await ReleaseFocusTrapAsync();
             isInitialFocusSet = false;
             wasVisible = false;
         }
