@@ -60,15 +60,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         try
         {
-            var budgetLine = await _budgetLineRepository.GetByIdAsync(request.BudgetLineId);
-            if (budgetLine == null)
-            {
-                throw new InvalidOperationException($"Budget line {request.BudgetLineId} not found");
-            }
-
-            // Validate account budget-plan ownership and year matching
-            ValidateBudgetLineBelongsToTransactionAccount(transaction, budgetLine);
-            ValidateYearMatch(transaction, budgetLine);
+            await ValidateBudgetLineAssignmentAsync(transaction, request.BudgetLineId);
         }
         catch (InvalidOperationException ex)
         {
@@ -115,10 +107,10 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Transaction {transactionId} not found");
         }
 
-        // Validate year matching for all splits
-        foreach (var split in request.Splits)
+        // Validate account budget-plan ownership and year matching for all unique budget lines
+        foreach (var budgetLineId in request.Splits.Select(s => s.BudgetLineId).Distinct())
         {
-            await ValidateYearMatchAsync(transaction, split.BudgetLineId);
+            await ValidateBudgetLineAssignmentAsync(transaction, budgetLineId);
         }
 
         // Validate split sum
@@ -288,7 +280,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         await _auditRepository.AddAsync(audit);
     }
 
-    private async Task ValidateYearMatchAsync(Transaction transaction, Guid budgetLineId)
+    private async Task ValidateBudgetLineAssignmentAsync(Transaction transaction, Guid budgetLineId)
     {
         var budgetLine = await _budgetLineRepository.GetByIdAsync(budgetLineId);
         if (budgetLine == null)
@@ -296,6 +288,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Budget line {budgetLineId} not found");
         }
 
+        ValidateBudgetLineBelongsToTransactionAccount(transaction, budgetLine);
         ValidateYearMatch(transaction, budgetLine);
     }
 
@@ -316,17 +309,6 @@ public class TransactionAssignmentService : ITransactionAssignmentService
                 $"Cannot assign {transactionYear} transaction to {budgetPlan.Year} budget plan. " +
                 $"Create a budget plan for {transactionYear} first.");
         }
-    }
-
-    private async Task ValidateBudgetLineBelongsToTransactionAccountAsync(Transaction transaction, Guid budgetLineId)
-    {
-        var budgetLine = await _budgetLineRepository.GetByIdAsync(budgetLineId);
-        if (budgetLine == null)
-        {
-            throw new InvalidOperationException($"Budget line {budgetLineId} not found");
-        }
-
-        ValidateBudgetLineBelongsToTransactionAccount(transaction, budgetLine);
     }
 
     private static void ValidateBudgetLineBelongsToTransactionAccount(Transaction transaction, BudgetLine budgetLine)

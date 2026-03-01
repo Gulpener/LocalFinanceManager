@@ -781,6 +781,115 @@ public class TransactionAssignmentIntegrationTests
     }
 
     [Test]
+    public async Task SplitTransaction_CrossAccountSplit_ShouldThrowException()
+    {
+        // Arrange
+        var checkingAccount = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Checking Account",
+            Type = AccountType.Checking,
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            StartingBalance = 1000m
+        };
+
+        var savingsAccount = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Savings Account",
+            Type = AccountType.Savings,
+            IBAN = "NL91ABNA0417164301",
+            Currency = "EUR",
+            StartingBalance = 2500m
+        };
+
+        await _context.Accounts.AddRangeAsync(checkingAccount, savingsAccount);
+
+        var checkingBudgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = checkingAccount.Id,
+            Year = 2026,
+            Name = "Checking Budget 2026",
+            IsArchived = false
+        };
+
+        var savingsBudgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = savingsAccount.Id,
+            Year = 2026,
+            Name = "Savings Budget 2026",
+            IsArchived = false
+        };
+
+        await _context.BudgetPlans.AddRangeAsync(checkingBudgetPlan, savingsBudgetPlan);
+
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            AccountId = checkingAccount.Id,
+            Amount = -100.00m,
+            Date = new DateTime(2026, 2, 1),
+            Description = "Cross-account split transaction"
+        };
+        await _context.Transactions.AddAsync(transaction);
+        await _context.SaveChangesAsync();
+
+        var checkingCategory = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Checking Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = checkingBudgetPlan.Id
+        };
+        var savingsCategory = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Savings Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = savingsBudgetPlan.Id
+        };
+
+        await _context.Categories.AddRangeAsync(checkingCategory, savingsCategory);
+        await _context.SaveChangesAsync();
+
+        var checkingBudgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = checkingBudgetPlan.Id,
+            CategoryId = checkingCategory.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+        var savingsBudgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = savingsBudgetPlan.Id,
+            CategoryId = savingsCategory.Id,
+            MonthlyAmountsJson = System.Text.Json.JsonSerializer.Serialize(new decimal[12])
+        };
+
+        await _context.BudgetLines.AddRangeAsync(checkingBudgetLine, savingsBudgetLine);
+        await _context.SaveChangesAsync();
+
+        var request = new SplitTransactionRequest
+        {
+            Splits = new List<SplitAllocationDto>
+            {
+                new SplitAllocationDto { BudgetLineId = checkingBudgetLine.Id, Amount = 50.00m, Note = "Checking split" },
+                new SplitAllocationDto { BudgetLineId = savingsBudgetLine.Id, Amount = 50.00m, Note = "Savings split" }
+            }
+        };
+
+        // Act & Assert
+        var exception = Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await _assignmentService.SplitTransactionAsync(transaction.Id, request));
+
+        Assert.That(exception!.Message, Does.Contain("Budget line belongs to a different account budget plan"));
+    }
+
+    [Test]
     public async Task BulkAssignTransactions_WithProgressReporting_ShouldReportAccurateProgress()
     {
         // Arrange
