@@ -234,7 +234,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 - **UserStory-10 REQUIRED (blocking):** Must complete Phase 1 before starting Phase 2. UserStory-10 provides:
   - Tests/ directory structure
-  - Enhanced TransactionListPage with bulk operation methods
+  - Enhanced TransactionsPageModel with bulk operation methods
   - ImportModalPageModel for transaction creation
   - E2E_TEST_GUIDE.md foundation
   - 20 passing foundation tests
