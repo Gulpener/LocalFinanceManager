@@ -240,11 +240,11 @@ public class UXEnhancementsTests : E2ETestBase
         var assignButton = Page.Locator("button:has-text('Toewijzen')").First;
         await assignButton.ClickAsync();
 
-        var modal = Page.Locator(".modal.show");
+        var modal = Page.Locator("#transactionAssignModal");
         await Expect(modal).ToBeVisibleAsync();
 
         // Act - Press Escape
-        await Page.Keyboard.PressAsync("Escape");
+        await modal.PressAsync("Escape");
 
         // Assert - Modal should close
         await Expect(modal).Not.ToBeVisibleAsync();
