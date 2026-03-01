@@ -11,7 +11,7 @@ public class AssignmentModalPageModel : PageObjectBase
     // Selectors
     private const string ModalSelector = "#transactionAssignModal";
     private const string CategoryDropdownSelector = "#budgetLineSelect";
-    private const string BudgetLineDropdownSelector = "#budgetline-select";
+    private const string BudgetLineDropdownSelector = "#budgetLineSelect";
     private const string NoteInputSelector = "#noteInput";
     private const string AssignButtonSelector = "#assignSaveButton";
     private const string CancelButtonSelector = "button:has-text('Annuleren')";

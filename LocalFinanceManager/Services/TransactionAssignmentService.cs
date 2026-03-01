@@ -70,7 +70,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
                 transactionId,
                 "ValidationFailed",
                 new { request.BudgetLineId },
-                new { ErrorCode = "CrossAccountBudgetLineAssignment", Error = ex.Message });
+                new { ErrorCode = "AssignmentValidationFailed", Error = ex.Message });
 
             throw;
         }
