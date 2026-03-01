@@ -21,8 +21,7 @@
                     <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
                                                                                                                                             $"({Transaction.Date.Year})"
                                                                                                                                             : "")</h5>
-                        <button type="button" class="btn-close" @onclick="Close" aria-label="Press Esc to close"
-                                @ref="closeButtonRef"></button>
+                        <button type="button" class="btn-close" @onclick="Close" aria-label="Press Esc to close"></button>
                     </div>
                     <div class="modal-body">
                         @if (!string.IsNullOrEmpty(errorMessage))
@@ -175,7 +174,6 @@
     private bool isFocusTrapActive;
     private bool isInitialFocusSet;
     private ElementReference modalContainerRef;
-    private ElementReference closeButtonRef;
     private ElementReference budgetLineSelectRef;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
