@@ -60,9 +60,15 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         try
         {
+            var budgetLine = await _budgetLineRepository.GetByIdAsync(request.BudgetLineId);
+            if (budgetLine == null)
+            {
+                throw new InvalidOperationException($"Budget line {request.BudgetLineId} not found");
+            }
+
             // Validate account budget-plan ownership and year matching
-            await ValidateBudgetLineBelongsToTransactionAccountAsync(transaction, request.BudgetLineId);
-            await ValidateYearMatchAsync(transaction, request.BudgetLineId);
+            ValidateBudgetLineBelongsToTransactionAccount(transaction, budgetLine);
+            ValidateYearMatch(transaction, budgetLine);
         }
         catch (InvalidOperationException ex)
         {
@@ -290,13 +296,18 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Budget line {budgetLineId} not found");
         }
 
+        ValidateYearMatch(transaction, budgetLine);
+    }
+
+    private static void ValidateYearMatch(Transaction transaction, BudgetLine budgetLine)
+    {
         var transactionYear = transaction.Date.Year;
 
         // Load budget plan to get year
         var budgetPlan = budgetLine.BudgetPlan;
         if (budgetPlan == null)
         {
-            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLineId}");
+            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLine.Id}");
         }
 
         if (budgetPlan.Year != transactionYear)
@@ -315,10 +326,15 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Budget line {budgetLineId} not found");
         }
 
+        ValidateBudgetLineBelongsToTransactionAccount(transaction, budgetLine);
+    }
+
+    private static void ValidateBudgetLineBelongsToTransactionAccount(Transaction transaction, BudgetLine budgetLine)
+    {
         var budgetPlan = budgetLine.BudgetPlan;
         if (budgetPlan == null)
         {
-            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLineId}");
+            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLine.Id}");
         }
 
         if (budgetPlan.AccountId != transaction.AccountId)
