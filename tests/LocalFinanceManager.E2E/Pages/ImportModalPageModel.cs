@@ -104,7 +104,7 @@ public class ImportModalPageModel : PageObjectBase
             "exact" => "exact",
             "fuzzy" => "fuzzy",
             "none" => "none",
-            _ => "exact"
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), $"Unknown deduplication mode: {mode}")
         };
 
         await Page.SelectOptionAsync("xpath=//label[contains(normalize-space(),'Deduplicatie strategie')]/following-sibling::select[1]", value);
