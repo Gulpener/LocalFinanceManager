@@ -13,11 +13,13 @@
 
 <h1 @onkeydown:window="HandleGlobalKeyDown">Transacties
     <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => showShortcutHelp = true"
-            id="shortcutHelpButton" data-testid="shortcut-help-button"            title="Toetsenbord sneltoetsen"
+            id="shortcutHelpButton" data-testid="shortcut-help-button" title="Toetsenbord sneltoetsen"
             aria-label="Toetsenbord sneltoetsen">
         <i class="bi bi-question-circle"></i>
     </button>
 </h1>
+
+<ShortcutHelp IsVisible="showShortcutHelp"   IsTouchDevice="isTouchDevice"  OnClose="@(() => showShortcutHelp = false)" />
 
 <!-- Quick Filters -->
 <QuickFilters CurrentFilters="filterState" OnFiltersChanged="OnFiltersChanged" />
