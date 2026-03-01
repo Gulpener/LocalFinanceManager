@@ -241,6 +241,7 @@ else
 
     private bool showShortcutHelp;
     private bool isTouchDevice;
+    private bool isMacOs;
     private int focusedRowIndex;
     private bool touchDeviceDetected;
 
@@ -260,12 +261,15 @@ else
         try
         {
             isTouchDevice = await DeviceDetectionService.IsTouchDeviceAsync();
+            var os = await DeviceDetectionService.GetOperatingSystemAsync();
+            isMacOs = os == LocalFinanceManager.Services.ClientOperatingSystem.MacOS;
             touchDeviceDetected = true;
             StateHasChanged();
         }
         catch
         {
             isTouchDevice = false;
+            isMacOs = false;
             touchDeviceDetected = true;
         }
     }
