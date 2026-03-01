@@ -86,7 +86,7 @@ public class UXEnhancementsTests : E2ETestBase
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Groceries", "Transportation");
         var budgetLine = await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
 
-        // Seed transactions (5 assigned, 5 unassigned)
+        // Seed transactions (5 total: 3 assigned, 2 unassigned)
         for (int i = 0; i < 5; i++)
         {
             var transaction = await SeedDataHelper.SeedTransactionAsync(
