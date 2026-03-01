@@ -12,10 +12,22 @@ Total: **20 tests**.
 
 ## Prerequisites
 
-Install Playwright browsers (Chromium only):
+On a fresh checkout, build the E2E project first so `playwright.ps1` is generated:
+
+```powershell
+dotnet build tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj
+```
+
+Then install Playwright browsers (Chromium only):
 
 ```powershell
 pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install chromium
+```
+
+Alternative (works even if you do not want to call the generated script directly):
+
+```powershell
+dotnet tool run playwright install chromium --project tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj
 ```
 
 ## Run tests

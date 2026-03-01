@@ -496,7 +496,7 @@ var account = await SeedDataHelper.SeedAccountAsync(context, "Test", "...", 1000
 
 ```csharp
 await Page.ClickAsync("button[data-action='assign']");
-await Page.FillAsync("#category-select", categoryId.ToString());
+await Page.SelectOptionAsync("#budgetLineSelect", budgetLineId.ToString());
 ```
 
 ✅ **Do** use PageObjectModels:
