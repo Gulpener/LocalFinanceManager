@@ -68,7 +68,7 @@ public class MultiAccountValidationTests : E2ETestBase
         await transactionsPage.NavigateAsync();
         await transactionsPage.SelectAccountFilterAsync(accountAId);
 
-        await Page.ScreenshotAsync(new() { Path = "test-results/screenshots/multi-account-setup.png", FullPage = true });
+        await transactionsPage.TakeScreenshotAsync("multi-account-setup");
 
         using (var assignScope = Factory.CreateDbScope())
         {
@@ -81,7 +81,7 @@ public class MultiAccountValidationTests : E2ETestBase
 
         await transactionsPage.NavigateAsync();
         await transactionsPage.SelectAccountFilterAsync(accountAId);
-        await Page.ScreenshotAsync(new() { Path = "test-results/screenshots/multi-account-category-filter.png", FullPage = true });
+        await transactionsPage.TakeScreenshotAsync("multi-account-category-filter");
 
         using (var validationScope = Factory.CreateDbScope())
         {
@@ -95,7 +95,7 @@ public class MultiAccountValidationTests : E2ETestBase
             Assert.That(validationException!.Message, Does.Contain("different account budget plan"));
         }
 
-        await Page.ScreenshotAsync(new() { Path = "test-results/screenshots/multi-account-validation-error.png", FullPage = true });
+        await transactionsPage.TakeScreenshotAsync("multi-account-validation-error");
 
         // Verify account filter isolation still holds for account A
         var tableText = await Page.Locator("table[data-testid='transactions-table']").TextContentAsync();

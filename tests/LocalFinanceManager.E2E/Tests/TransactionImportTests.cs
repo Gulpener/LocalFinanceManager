@@ -39,7 +39,7 @@ public class TransactionImportTests : E2ETestBase
         Assert.That(await _importPage.IsPreviewVisibleAsync(), Is.True);
         Assert.That(await _importPage.GetPreviewCountAsync(), Is.EqualTo(3));
 
-        await Page.ScreenshotAsync(new() { Path = "test-results/screenshots/import-preview.png", FullPage = true });
+        await _importPage.TakeScreenshotAsync("import-preview");
     }
 
     [Test]
