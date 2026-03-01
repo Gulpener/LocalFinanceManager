@@ -404,6 +404,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        CancelInProgressBulkAssign();
         await ReleaseFocusTrapAsync();
     }
 

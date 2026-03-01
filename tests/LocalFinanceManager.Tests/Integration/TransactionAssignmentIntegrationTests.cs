@@ -938,7 +938,7 @@ public class TransactionAssignmentIntegrationTests
         cancellationTokenSource.Cancel();
 
         // Act + Assert
-        Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
             await _assignmentService.BulkAssignTransactionsAsync(request, cancellationToken: cancellationTokenSource.Token));
 
         var splits = await _splitRepository.GetByTransactionIdAsync(transaction.Id);
