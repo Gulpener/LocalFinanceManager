@@ -30,7 +30,6 @@
 @code {
     private bool showShortcutHelp;
     private bool isTouchDevice;
-    private bool isMacOs;
     private DotNetObjectReference<MainLayout>? dotNetRef;
     private bool globalShortcutsRegistered;
 
@@ -42,8 +41,6 @@
         }
 
         isTouchDevice = await DeviceDetectionService.IsTouchDeviceAsync();
-        var os = await DeviceDetectionService.GetOperatingSystemAsync();
-        isMacOs = os == LocalFinanceManager.Services.ClientOperatingSystem.MacOS;
 
         if (!isTouchDevice)
         {
@@ -69,12 +66,6 @@
             StateHasChanged();
         }
 
-        return Task.CompletedTask;
-    }
-
-    private Task CloseShortcutHelp()
-    {
-        showShortcutHelp = false;
         return Task.CompletedTask;
     }
 

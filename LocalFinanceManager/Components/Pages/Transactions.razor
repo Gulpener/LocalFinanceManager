@@ -19,7 +19,8 @@
     </button>
 </h1>
 
-<ShortcutHelp IsVisible="showShortcutHelp" IsTouchDevice="isTouchDevice" IsMacOs="isMacOs" OnClose="@(() => showShortcutHelp = false)" />
+<ShortcutHelp IsVisible="showShortcutHelp" IsTouchDevice="isTouchDevice" IsMacOs="isMacOs"
+              OnClose="@(() => showShortcutHelp = false)" />
 
 <!-- Quick Filters -->
 <QuickFilters CurrentFilters="filterState" OnFiltersChanged="OnFiltersChanged" />
