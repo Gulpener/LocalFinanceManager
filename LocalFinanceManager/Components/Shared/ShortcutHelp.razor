@@ -1,9 +1,10 @@
 @inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
 @if (IsVisible)
 {
     <div id="shortcutHelpModal" class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);"
-         role="dialog" aria-modal="true" aria-labelledby="shortcutHelpTitle" @onkeydown="HandleKeyDown">
+         role="dialog" aria-modal="true" aria-labelledby="shortcutHelpTitle" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -168,6 +169,43 @@
     public bool IsMacOs { get; set; }
 
     private string PrimaryModifier => IsMacOs ? "Cmd" : "Ctrl";
+    private bool isFocusTrapActive;
+    private bool wasVisible;
+    private ElementReference modalContainerRef;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            wasVisible = true;
+            return;
+        }
+
+        if (wasVisible)
+        {
+            await ReleaseFocusTrapAsync();
+            wasVisible = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!IsVisible)
+        {
+            return;
+        }
+
+        if (!isFocusTrapActive)
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#shortcutHelpModal");
+            isFocusTrapActive = true;
+        }
+
+        if (firstRender)
+        {
+            await modalContainerRef.FocusAsync();
+        }
+    }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
@@ -184,6 +222,38 @@
 
     private async Task Close()
     {
+        await ReleaseFocusTrapAsync();
+        wasVisible = false;
         await OnClose.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ReleaseFocusTrapAsync();
+    }
+
+    private async ValueTask ReleaseFocusTrapAsync()
+    {
+        if (!isFocusTrapActive)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore JS interop errors during circuit teardown.
+        }
+        catch (JSException)
+        {
+            // Ignore JS interop errors during disposal.
+        }
+        finally
+        {
+            isFocusTrapActive = false;
+        }
     }
 }

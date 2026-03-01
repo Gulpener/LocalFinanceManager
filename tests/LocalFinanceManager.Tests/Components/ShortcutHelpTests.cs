@@ -1,4 +1,5 @@
 using Bunit;
+using Bunit.JSInterop;
 using LocalFinanceManager.Components.Pages;
 using LocalFinanceManager.Components.Shared;
 using LocalFinanceManager.Data.Repositories;
@@ -17,6 +18,8 @@ public class ShortcutHelpTests
     public void HelpModal_Displays_AllKeyboardShortcuts()
     {
         using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
         var cut = context.Render<ShortcutHelp>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.IsTouchDevice, false));
@@ -42,6 +45,8 @@ public class ShortcutHelpTests
     public void HelpModal_Closes_When_EscapePressed()
     {
         using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
         var closed = false;
 
         var cut = context.Render<ShortcutHelp>(parameters => parameters
@@ -57,6 +62,8 @@ public class ShortcutHelpTests
     public void HelpModal_Shows_TouchSection_OnTouchDevices()
     {
         using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
         var cut = context.Render<ShortcutHelp>(parameters => parameters
             .Add(p => p.IsVisible, true)
             .Add(p => p.IsTouchDevice, true));
@@ -76,6 +83,7 @@ public class ShortcutHelpTests
     public async Task Transactions_HandleGlobalShortcut_QuestionMark_ShowsShortcutHelpModal()
     {
         using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
 
         var cut = RenderTransactions(context);
 
@@ -94,6 +102,7 @@ public class ShortcutHelpTests
     public async Task Transactions_HandleGlobalShortcut_Escape_ClosesShortcutHelpModal()
     {
         using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
 
         var cut = RenderTransactions(context);
 
@@ -111,6 +120,62 @@ public class ShortcutHelpTests
         {
             Assert.That(cut.FindAll("#shortcutHelpModal"), Is.Empty);
         });
+    }
+
+    [Test]
+    public async Task HelpModal_ReleasesFocusTrap_WhenVisibilityTurnsFalse()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        var cut = context.Render<ShortcutHelp>(parameters => parameters
+            .Add(p => p.IsVisible, true));
+
+        cut.WaitForAssertion(() =>
+            Assert.That(context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.trapFocus"), Is.True));
+
+#pragma warning disable BL0005
+        cut.Instance.IsVisible = false;
+#pragma warning restore BL0005
+        await cut.InvokeAsync(async () =>
+        {
+            var onParametersSetAsync = typeof(ShortcutHelp).GetMethod(
+                "OnParametersSetAsync",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+            Assert.That(onParametersSetAsync, Is.Not.Null);
+
+            var lifecycleTask = (Task?)onParametersSetAsync!.Invoke(cut.Instance, null);
+            if (lifecycleTask != null)
+            {
+                await lifecycleTask;
+            }
+        });
+
+        Assert.That(
+            context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.releaseFocusTrap"),
+            Is.True,
+            "Expected ShortcutHelp to release the document focus trap when hidden.");
+    }
+
+    [Test]
+    public async Task HelpModal_ReleasesFocusTrap_OnDispose_WhenVisible()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        var cut = context.Render<ShortcutHelp>(parameters => parameters
+            .Add(p => p.IsVisible, true));
+
+        cut.WaitForAssertion(() =>
+            Assert.That(context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.trapFocus"), Is.True));
+
+        await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+
+        Assert.That(
+            context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.releaseFocusTrap"),
+            Is.True,
+            "Expected ShortcutHelp disposal to release the document focus trap.");
     }
 
     private static IRenderedComponent<Transactions> RenderTransactions(BunitContext context)
