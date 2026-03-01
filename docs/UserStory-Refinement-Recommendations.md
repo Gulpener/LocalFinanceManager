@@ -9,8 +9,8 @@
 
 **Status Overview:**
 
-- ✅ **16 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, US-9.2) - Archived
-- ✅ **5 stories ready** for immediate implementation (US-9.1, US-10, US-10.1, US-10.2, US-11, US-17)
+- ✅ **17 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, US-9.1, US-9.2) - Archived
+- ✅ **5 stories ready** for immediate implementation (US-10, US-10.1, US-10.2, US-11, US-17)
 - 🔴 **5 stories need refinement** (US-12, US-13, US-14, US-15, US-16) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
@@ -34,6 +34,7 @@
 - UserStory-8 (ML Suggestion & Auto-Apply) - ✅ **COMPLETED & ARCHIVED** - ML model training, auto-apply with monitoring dashboard
 - UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
+- UserStory-9.1 (Keyboard Shortcuts) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-9.2 (Quick Filters & Performance) - ✅ **COMPLETED & ARCHIVED** - Performance optimizations and quick filter UI
 
 ---
@@ -41,16 +42,6 @@
 ## Detailed User Story Status
 
 ### ✅ Ready for Implementation (No Refinement Needed)
-
-#### UserStory-9.1: Keyboard Shortcuts
-
-**File:** [docs/Userstories/UserStory-9.1-Keyboard-Shortcuts.md](docs/Userstories/UserStory-9.1-Keyboard-Shortcuts.md)
-
-**Status:** ✅ **Ready** - Keyboard navigation for power users.
-
-**Estimated Effort:** 1-2 days
-
----
 
 #### UserStory-17: Transaction Audit Trail UI
 
@@ -1050,7 +1041,7 @@ public async Task RunWeeklyBackup(TimerInfo timer)
 
 10. ✅ **UserStory-5.3** (UX Enhancements) - **COMPLETED & ARCHIVED**
 11. ✅ **UserStory-9.2** (Quick Filters & Performance) - **COMPLETED & ARCHIVED**
-12. **UserStory-9.1** (Keyboard Shortcuts) - Ready (1-2 days)
+12. ✅ **UserStory-9.1** (Keyboard Shortcuts) - **COMPLETED & ARCHIVED**
 
 ### Phase 5: Multi-User & Post-MVP (Weeks 11+)
 
@@ -1152,7 +1143,7 @@ Use this structure for all new stories:
 ## Next Actions
 
 1. **Immediate:** Start implementing UserStory-7 (Copilot Agents) - production-ready
-2. **This Week:** Continue with UserStory-8 (ML Suggestion & Auto-Apply) and UserStory-9.1 (Keyboard Shortcuts)
+2. **This Week:** Continue with UserStory-10.x E2E expansion and UserStory-17 (Transaction Audit Trail UI)
 3. **Future:** Expand UserStory-12, 13, 14, 15, 16 with implementation tasks (10-12 hours total)
 
 **Total Refinement Effort Remaining:** ~10-12 hours across 5 remaining stories
@@ -1174,7 +1165,7 @@ Use this structure for all new stories:
 13. ✅ ~~UserStory-9.2 (Quick Filters & Performance)~~ - **COMPLETED & ARCHIVED**
 14. ~~UserStory-7~~ (Copilot Agents) - ✅ **ARCHIVED (NOT IMPLEMENTED)**
 15. ~~UserStory-8~~ (ML Suggestion & Auto-Apply) - ✅ **COMPLETED & ARCHIVED**
-16. **UserStory-9.1** (Keyboard Shortcuts) - Ready for implementation
+16. ✅ ~~UserStory-9.1~~ (Keyboard Shortcuts) - **COMPLETED & ARCHIVED**
 17. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation
 18. **UserStory-10** (Integration Workflow Tests) - Ready for implementation
 19. **UserStory-10.1** (Advanced Assignment Tests) - Ready for implementation

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="bunit" Version="2.6.2" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="FluentValidation" Version="11.11.0" />
     <PackageReference Include="IbanNet" Version="6.0.0" />

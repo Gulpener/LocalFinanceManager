@@ -3,15 +3,18 @@
 @using LocalFinanceManager.Data.Repositories
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
+@inject IJSRuntime JSRuntime
 @inject ILogger<BulkAssignModal> Logger
+@implements IAsyncDisposable
 
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+    <div id="bulkAssignModal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
+         aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Bulk toewijzing</h5>
+                    <h5 id="bulkAssignTitle" class="modal-title">Bulk toewijzing</h5>
                     <button type="button" class="btn-close" @onclick="OnClose" aria-label="Sluiten"></button>
                 </div>
                 <div class="modal-body">
@@ -26,7 +29,7 @@
                     @if (bulkResult != null)
                     {
                         <div class="alert @(bulkResult.Success ? "alert-success" : "alert-warning") alert-dismissible fade show"
-                            role="alert">
+                             role="alert">
                             <i class="bi @(bulkResult.Success ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")"></i>
                             @bulkResult.Message
                             <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
@@ -100,7 +103,7 @@
                         <div class="mb-3">
                             <label for="bulkNoteInput" class="form-label">Notitie (optioneel)</label>
                             <textarea id="bulkNoteInput" class="form-control" rows="2" maxlength="500" @bind="note"
-                        placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
+                                      placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
                             <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
                         </div>
 
@@ -124,12 +127,12 @@
                             <label class="form-label">Voortgang</label>
                             <div class="progress" style="height: 30px;">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                                    style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
-                                    aria-valuemax="100">
+                                     style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
+                                     aria-valuemax="100">
                                     @progressPercentage%
                                 </div>
                             </div>
-                            <div class="text-muted small mt-1">
+                            <div class="text-muted small mt-1" aria-live="polite">
                                 @progressMessage
                             </div>
                         </div>
@@ -141,8 +144,8 @@
                         <button type="button" class="btn btn-secondary" @onclick="OnClose" disabled="@isProcessing">
                             Annuleren
                         </button>
-                        <button type="button" class="btn btn-primary" @onclick="BulkAssign"
-                            disabled="@(!CanAssign || isProcessing)">
+                        <button id="bulkAssignButton" type="button" class="btn btn-primary" @onclick="BulkAssign"
+                                disabled="@(!CanAssign || isProcessing)">
                             @if (isProcessing)
                             {
                                 <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
@@ -179,11 +182,29 @@
     private string? progressMessage;
     private BulkAssignResultDto? bulkResult;
     private bool showErrorDetails = false;
+    private bool isFocusTrapActive;
+    private bool isInitialFocusSet;
+    private bool wasVisible;
+    private ElementReference modalContainerRef;
+    private CancellationTokenSource? bulkAssignCancellationTokenSource;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
+    private bool ShouldRenderModal => IsVisible && TransactionIds != null && TransactionIds.Any();
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = false;
+        }
+
+        if (IsVisible && !wasVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = true;
+        }
+
         if (IsVisible && BudgetPlanId.HasValue)
         {
             if (budgetLines == null)
@@ -193,6 +214,8 @@
         }
         else if (!IsVisible)
         {
+            CancelInProgressBulkAssign();
+
             // Reset state when modal closes
             selectedBudgetLineId = null;
             note = null;
@@ -202,6 +225,43 @@
             progressMessage = null;
             bulkResult = null;
             showErrorDetails = false;
+
+            await ReleaseFocusTrapAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!ShouldRenderModal)
+        {
+            isInitialFocusSet = false;
+            return;
+        }
+
+        if (!isFocusTrapActive)
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#bulkAssignModal");
+            isFocusTrapActive = true;
+        }
+
+        if (isInitialFocusSet)
+        {
+            return;
+        }
+
+        isInitialFocusSet = true;
+
+        try
+        {
+            var focused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.focusSelector", "#bulkAssignModal select.form-select:not([disabled])");
+            if (!focused)
+            {
+                await modalContainerRef.FocusAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to set initial focus in bulk assign modal");
         }
     }
 
@@ -254,6 +314,9 @@
             progressPercentage = 0;
             errorMessage = null;
             bulkResult = null;
+            bulkAssignCancellationTokenSource?.Cancel();
+            bulkAssignCancellationTokenSource?.Dispose();
+            bulkAssignCancellationTokenSource = new CancellationTokenSource();
 
             progressMessage = "Voorbereiden...";
             StateHasChanged();
@@ -276,7 +339,10 @@
                 StateHasChanged();
             });
 
-            bulkResult = await AssignmentService.BulkAssignTransactionsAsync(request, progressReporter);
+            bulkResult = await AssignmentService.BulkAssignTransactionsAsync(
+                request,
+                progressReporter,
+                bulkAssignCancellationTokenSource.Token);
 
             progressPercentage = 100;
             progressMessage = "Voltooid!";
@@ -287,6 +353,11 @@
 
             await OnBulkAssigned.InvokeAsync();
         }
+        catch (OperationCanceledException)
+        {
+            progressMessage = "Bulk toewijzing geannuleerd.";
+            bulkResult = null;
+        }
         catch (Exception ex)
         {
             errorMessage = "Er is een fout opgetreden bij de bulk toewijzing.";
@@ -295,6 +366,68 @@
         finally
         {
             isProcessing = false;
+            bulkAssignCancellationTokenSource?.Dispose();
+            bulkAssignCancellationTokenSource = null;
+        }
+    }
+
+    private void CancelInProgressBulkAssign()
+    {
+        if (!isProcessing || bulkAssignCancellationTokenSource == null || bulkAssignCancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
+        progressMessage = "Annuleren...";
+        bulkAssignCancellationTokenSource.Cancel();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            CancelInProgressBulkAssign();
+            await OnClose.InvokeAsync();
+            return;
+        }
+
+        if (e.Key == "Enter")
+        {
+            var isAssignButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement",
+                "#bulkAssignButton");
+            if (isAssignButtonFocused && CanAssign && !isProcessing)
+            {
+                await BulkAssign();
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        CancelInProgressBulkAssign();
+        await ReleaseFocusTrapAsync();
+    }
+
+    private async ValueTask ReleaseFocusTrapAsync()
+    {
+        if (isFocusTrapActive)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+            }
+            catch (JSDisconnectedException)
+            {
+                // Ignore JS interop errors during circuit teardown.
+            }
+            catch (JSException)
+            {
+                // Ignore JS interop errors during disposal.
+            }
+            finally
+            {
+                isFocusTrapActive = false;
+            }
         }
     }
 

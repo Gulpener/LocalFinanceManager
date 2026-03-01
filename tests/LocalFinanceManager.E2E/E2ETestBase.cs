@@ -224,6 +224,8 @@ public abstract class E2ETestBase : PageTest
 
         // Set default viewport size
         options.ViewportSize = new ViewportSize { Width = 1920, Height = 1080 };
+        options.HasTouch = false;
+        options.IsMobile = false;
 
         // Note: SlowMo is no longer supported in BrowserNewContextOptions.
         // To enable slow motion for debugging, configure BrowserTypeLaunchOptions.SlowMo

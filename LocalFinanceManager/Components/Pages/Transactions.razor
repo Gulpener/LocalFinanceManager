@@ -4,17 +4,24 @@
 @using LocalFinanceManager.Services
 @inject ITransactionRepository TransactionRepository
 @inject IAccountRepository AccountRepository
+@inject IDeviceDetectionService DeviceDetectionService
+@inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@implements IAsyncDisposable
 @rendermode InteractiveServer
 
 <PageTitle>Transacties</PageTitle>
 
-<h1>Transacties
+<h1 @onkeydown:window="HandleGlobalKeyDown">Transacties
     <button type="button" class="btn btn-sm btn-outline-secondary ms-2" @onclick="() => showShortcutHelp = true"
-            title="Toetsenbord sneltoetsen">
+            id="shortcutHelpButton" data-testid="shortcut-help-button" title="Toetsenbord sneltoetsen"
+            aria-label="Toetsenbord sneltoetsen">
         <i class="bi bi-question-circle"></i>
     </button>
 </h1>
+
+<ShortcutHelp IsVisible="showShortcutHelp" IsTouchDevice="isTouchDevice" IsMacOs="isMacOs"
+              OnClose="@(() => showShortcutHelp = false)" />
 
 <!-- Quick Filters -->
 <QuickFilters CurrentFilters="filterState" OnFiltersChanged="OnFiltersChanged" />
@@ -57,7 +64,7 @@ else
                 <th style="width: 40px;">
                     <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll"
                            checked="@(selectedTransactionIds.Count == filteredTransactions.Count && filteredTransactions.Any())"
-                           title="Selecteer alles" />
+                           aria-label="Selecteer alle zichtbare transacties" title="Selecteer alles" />
                 </th>
                 <th>Status</th>
                 <th>Datum</th>
@@ -69,13 +76,17 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var transaction in filteredTransactions)
+            @for (var index = 0; index < filteredTransactions.Count; index++)
             {
-                <tr class="@(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
-                    data-testid="transaction-row">
+                var transaction = filteredTransactions[index];
+                <tr class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
+                    data-testid="transaction-row" data-row-index="@index" data-transaction-id="@transaction.Id"
+                    tabindex="@(focusedRowIndex == index ? 0 : -1)" @onfocus="() => SetFocusedRow(index)"
+                    @onkeydown="HandleTableKeyDown">
                     <td>
                         <input type="checkbox" class="form-check-input"
                                checked="@selectedTransactionIds.Contains(transaction.Id)"
+                               aria-label="@($"Selecteer transactie {transaction.Description}")"
                                @onchange="() => ToggleSelectTransaction(transaction.Id)" />
                     </td>
                     <td>
@@ -171,7 +182,7 @@ else
         @filteredTransactions.Count van @transactionDtos.Count transactie(s) weergegeven
         @if (unassignedCount > 0)
         {
-            <span class="text-warning">(@unassignedCount niet toegewezen)</span>
+            <span class="text-body-secondary">(@unassignedCount niet toegewezen)</span>
         }
     </p>
 }
@@ -187,7 +198,6 @@ else
 
 <AssignmentAuditTrail TransactionId="@auditTransactionId" IsVisible="@showAuditTrail" OnClose="@CloseAuditTrail" />
 
-<ShortcutHelp IsVisible="@showShortcutHelp" OnClose="@(() => showShortcutHelp = false)" />
 
 @if (selectedTransactionIds.Any())
 {
@@ -231,12 +241,66 @@ else
     private bool showAuditTrail = false;
     private Guid? auditTransactionId = null;
 
-    private bool showShortcutHelp = false;
+    private bool showShortcutHelp;
+    private bool isTouchDevice;
+    private bool isMacOs;
+    private int focusedRowIndex;
+    private bool touchDeviceDetected;
+    private DotNetObjectReference<Transactions>? dotNetRef;
+    private bool globalShortcutsRegistered;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadAccountsAsync();
         await LoadTransactionsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || touchDeviceDetected)
+        {
+            return;
+        }
+
+        try
+        {
+            isTouchDevice = await DeviceDetectionService.IsTouchDeviceAsync();
+            var os = await DeviceDetectionService.GetOperatingSystemAsync();
+            isMacOs = os == LocalFinanceManager.Services.ClientOperatingSystem.MacOS;
+
+            if (!isTouchDevice)
+            {
+                dotNetRef = DotNetObjectReference.Create(this);
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.registerGlobalShortcuts", dotNetRef, "HandleGlobalShortcut");
+                globalShortcutsRegistered = true;
+            }
+
+            touchDeviceDetected = true;
+            StateHasChanged();
+        }
+        catch
+        {
+            isTouchDevice = false;
+            isMacOs = false;
+            touchDeviceDetected = true;
+        }
+    }
+
+    [JSInvokable]
+    public Task HandleGlobalShortcut(string key)
+    {
+        if (key == "?" && !showShortcutHelp)
+        {
+            showShortcutHelp = true;
+            StateHasChanged();
+        }
+        else if (key == "Escape" && showShortcutHelp)
+        {
+            showShortcutHelp = false;
+            StateHasChanged();
+        }
+
+        return Task.CompletedTask;
     }
 
     private async Task LoadAccountsAsync()
@@ -339,6 +403,15 @@ else
         filteredTransactions = query.OrderByDescending(t => t.Date).ToList();
         filteredTotalAmount = filteredTransactions.Sum(t => t.Amount);
         unassignedCount = transactionDtos.Count(t => !t.IsAssigned);
+
+        if (filteredTransactions.Count == 0)
+        {
+            focusedRowIndex = 0;
+        }
+        else if (focusedRowIndex >= filteredTransactions.Count)
+        {
+            focusedRowIndex = filteredTransactions.Count - 1;
+        }
     }
 
     private void OnFiltersChanged(FilterState newFilters)
@@ -355,6 +428,104 @@ else
         : Guid.Parse(selectedAccountIdString);
 
         await LoadTransactionsAsync();
+    }
+
+    private void SetFocusedRow(int rowIndex)
+    {
+        focusedRowIndex = rowIndex;
+    }
+
+    private async Task HandleTableKeyDown(KeyboardEventArgs e)
+    {
+        if (isTouchDevice || filteredTransactions.Count == 0)
+        {
+            return;
+        }
+
+        var key = e.Key;
+        var isModifierPressed = e.CtrlKey || e.MetaKey;
+
+        if (isModifierPressed && key.Equals("a", StringComparison.OrdinalIgnoreCase))
+        {
+            selectedTransactionIds = filteredTransactions.Select(t => t.Id).ToList();
+            StateHasChanged();
+            return;
+        }
+
+        if (isModifierPressed && key.Equals("d", StringComparison.OrdinalIgnoreCase))
+        {
+            selectedTransactionIds.Clear();
+            StateHasChanged();
+            return;
+        }
+
+        if (key == "/")
+        {
+            await InvokeAsync(StateHasChanged);
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.focusSelector", "#assignmentStatusFilter");
+            return;
+        }
+
+        if (key == "ArrowDown")
+        {
+            focusedRowIndex = Math.Min(focusedRowIndex + 1, filteredTransactions.Count - 1);
+            await FocusRowAsync(focusedRowIndex);
+            return;
+        }
+
+        if (key == "ArrowUp")
+        {
+            focusedRowIndex = Math.Max(focusedRowIndex - 1, 0);
+            await FocusRowAsync(focusedRowIndex);
+            return;
+        }
+
+        if (key == "Home")
+        {
+            focusedRowIndex = 0;
+            await FocusRowAsync(focusedRowIndex);
+            return;
+        }
+
+        if (key == "End")
+        {
+            focusedRowIndex = filteredTransactions.Count - 1;
+            await FocusRowAsync(focusedRowIndex);
+            return;
+        }
+
+
+        if (key == "Enter")
+        {
+            OpenAssignModal(filteredTransactions[focusedRowIndex]);
+        }
+    }
+
+    private void HandleGlobalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key != "Escape")
+        {
+            return;
+        }
+
+        if (showAssignModal)
+        {
+            CloseAssignModal();
+            StateHasChanged();
+            return;
+        }
+
+        if (showShortcutHelp)
+        {
+            showShortcutHelp = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FocusRowAsync(int rowIndex)
+    {
+        await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.focusSelector", $"tr[data-row-index='{rowIndex}']");
+        StateHasChanged();
     }
 
     private void OpenAssignModal(TransactionDto transaction)
@@ -487,5 +658,26 @@ else
         // Reload transactions to reflect the accepted suggestion
         await LoadTransactionsAsync();
         StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (globalShortcutsRegistered)
+            {
+                await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.unregisterGlobalShortcuts");
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore disconnection during disposal; circuit is already closed.
+        }
+        catch (JSException)
+        {
+            // Ignore JS errors during disposal to avoid teardown failures.
+        }
+
+        dotNetRef?.Dispose();
     }
 }

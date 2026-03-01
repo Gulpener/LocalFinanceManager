@@ -6,21 +6,23 @@
 @inject IBudgetLineRepository BudgetLineRepository
 @inject IBudgetPlanRepository BudgetPlanRepository
 @inject IRecentCategoriesService RecentCategoriesService
+@inject IJSRuntime JSRuntime
 @inject ILogger<TransactionAssignModal> Logger
 @implements IAsyncDisposable
 
 @if (IsVisible && Transaction != null)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog"
-         aria-modal="true" aria-labelledby="assignModalTitle" @onclick="Close" @onkeydown="HandleKeyDown">
+    <div id="transactionAssignModal" class="modal fade show d-block" tabindex="-1"
+         style="background-color: rgba(0,0,0,0.5);" role="dialog" aria-modal="true" aria-labelledby="assignModalTitle"
+         @onclick="Close" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-lg" @onclick:stopPropagation>
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
-                                                                    $"({Transaction.Date.Year})"
-                                                                    : "")</h5>
-                        <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"
-                                @ref="closeButtonRef"></button>
+                                                                                                                                                                                                                    $"({Transaction.Date.Year})"
+                                                                                                                                                                                                                    : "")</h5>
+                        <button type="button" class="btn-close" @onclick="Close"
+                                aria-label="Druk op Esc om te sluiten"></button>
                     </div>
                     <div class="modal-body">
                         @if (!string.IsNullOrEmpty(errorMessage))
@@ -87,7 +89,7 @@
                                     {
                                         <button type="button"
                                                 class="btn btn-sm @(selectedBudgetLineId == budgetLine.Id.ToString() ? "btn-primary" : "btn-outline-primary")"
-                                                @onclick="() => SelectBudgetLine(budgetLine.Id.ToString())"                                            @onclick:stopPropagation>
+                                                @onclick="() => SelectBudgetLine(budgetLine.Id.ToString())" @onclick:stopPropagation>
                                             @budgetLine.CategoryName
                                         </button>
                                     }
@@ -114,7 +116,8 @@
                                 }
                                 else
                                 {
-                                    <select id="budgetLineSelect" class="form-select" @bind="selectedBudgetLineId">
+                                    <select id="budgetLineSelect" class="form-select" @bind="selectedBudgetLineId"
+                                            @ref="budgetLineSelectRef">
                                         <option value="">-- Selecteer een budgetlijn --</option>
                                         @foreach (var budgetLine in budgetLines)
                                         {
@@ -136,7 +139,7 @@
                             <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@isSubmitting">
                                 Annuleren
                             </button>
-                            <button type="button" class="btn btn-primary" @onclick="AssignTransaction"
+                            <button id="assignSaveButton" type="button" class="btn btn-primary" @onclick="AssignTransaction"
                                     disabled="@(!CanAssign || isSubmitting)">
                                 @if (isSubmitting)
                                 {
@@ -169,12 +172,28 @@
     private string? note;
     private string? errorMessage;
     private bool isSubmitting;
-    private ElementReference closeButtonRef;
+    private bool isFocusTrapActive;
+    private bool isInitialFocusSet;
+    private bool wasVisible;
+    private ElementReference modalContainerRef;
+    private ElementReference budgetLineSelectRef;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = false;
+        }
+
+        if (IsVisible && !wasVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = true;
+        }
+
         if (IsVisible && Transaction != null)
         {
             await LoadBudgetLines();
@@ -185,16 +204,39 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (IsVisible && closeButtonRef.Context != null)
+        if (!IsVisible)
         {
-            try
+            isInitialFocusSet = false;
+            return;
+        }
+
+        if (!isFocusTrapActive)
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#transactionAssignModal");
+            isFocusTrapActive = true;
+        }
+
+        if (isInitialFocusSet)
+        {
+            return;
+        }
+
+        isInitialFocusSet = true;
+
+        try
+        {
+            if (budgetLineSelectRef.Context != null)
             {
-                await closeButtonRef.FocusAsync();
+                await budgetLineSelectRef.FocusAsync();
             }
-            catch (Exception ex)
+            else
             {
-                Logger.LogWarning(ex, "Failed to set focus on close button");
+                await modalContainerRef.FocusAsync();
             }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to set focus on budget line selector");
         }
     }
 
@@ -352,17 +394,57 @@
         if (e.Key == "Escape")
         {
             await Close();
+            return;
+        }
+
+        if (e.Key == "Enter")
+        {
+            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement",
+                "#assignSaveButton");
+            if (isSaveButtonFocused && CanAssign && !isSubmitting)
+            {
+                await AssignTransaction();
+            }
         }
     }
 
     private async Task Close()
     {
+        await ReleaseFocusTrapAsync();
+
+        isInitialFocusSet = false;
+        wasVisible = false;
         ResetForm();
         await OnClose.InvokeAsync();
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        return ValueTask.CompletedTask;
+        await ReleaseFocusTrapAsync();
+    }
+
+    private async ValueTask ReleaseFocusTrapAsync()
+    {
+        if (!isFocusTrapActive)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore JS interop errors during circuit teardown.
+        }
+        catch (JSException)
+        {
+            // Ignore JS interop errors during disposal.
+        }
+        finally
+        {
+            isFocusTrapActive = false;
+        }
     }
 }

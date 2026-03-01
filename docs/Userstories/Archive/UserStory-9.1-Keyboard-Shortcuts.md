@@ -74,8 +74,8 @@ This story **enhances** existing assignment components without modifying their c
 
 ### 1. Keyboard Shortcut Help Modal
 
-- [ ] Create `ShortcutHelp.razor` component in `Components/Shared/`
-- [ ] Add modal with keyboard shortcut documentation table:
+- [x] Create `ShortcutHelp.razor` component in `Components/Shared/`
+- [x] Add modal with keyboard shortcut documentation table:
   - **Tab:** Navigate between form fields in modals
   - **Enter:** Submit assignment/split/bulk modal (when save button focused)
   - **Esc:** Close modal without saving
@@ -86,85 +86,85 @@ This story **enhances** existing assignment components without modifying their c
   - **?:** Show this help modal
   - **Arrow Up/Down:** Navigate between transaction rows
   - **Enter (on row):** Open assignment modal for focused row
-- [ ] Add mobile/touch device section:
+- [x] Add mobile/touch device section:
   - Detect touch device: `navigator.maxTouchPoints > 0` via JSInterop
   - Show touch gestures instead of keyboard shortcuts on mobile
   - Touch gestures: Tap (select), Swipe (dismiss modal), Long press (context menu)
-- [ ] Add global keyboard event listener in `App.razor` or `MainLayout.razor`
-- [ ] Implement `?` key handler to show help modal (prevent default browser behavior)
-- [ ] Add `Esc` key handler to close help modal
-- [ ] Style help modal with responsive design (mobile-friendly, scrollable)
-- [ ] Add "Print" button to help modal (print-friendly CSS)
+- [x] Add global keyboard event listener in `App.razor` or `MainLayout.razor`
+- [x] Implement `?` key handler to show help modal (prevent default browser behavior)
+- [x] Add `Esc` key handler to close help modal
+- [x] Style help modal with responsive design (mobile-friendly, scrollable)
+- [x] Add "Print" button to help modal (print-friendly CSS)
 
 ### 2. Device Detection Service (Optional)
 
-- [ ] Create `DeviceDetectionService.cs` in `Services/`
-- [ ] Implement `IsTouchDeviceAsync()` method:
+- [x] Create `DeviceDetectionService.cs` in `Services/`
+- [x] Implement `IsTouchDeviceAsync()` method:
   - Use IJSRuntime to check `navigator.maxTouchPoints > 0`
   - Cache result for session (avoid repeated JSInterop calls)
-- [ ] Implement `GetOperatingSystemAsync()` method:
+- [x] Implement `GetOperatingSystemAsync()` method:
   - Detect Windows/Mac/Linux via user agent
   - Return OS enum for conditional shortcut display (Ctrl vs Cmd)
-- [ ] Register service as scoped in `Program.cs`
+- [x] Register service as scoped in DI setup
 
 ### 3. TransactionAssignModal Keyboard Navigation
 
-- [ ] Update `TransactionAssignModal.razor` to handle keyboard events:
+- [x] Update `TransactionAssignModal.razor` to handle keyboard events:
   - Add `@onkeydown` event handler on modal container
   - Implement Tab navigation (cycle through category → budget line → note → save → cancel)
   - Prevent Tab from escaping modal (keyboard trap prevention with focus wrap)
   - Implement Enter to submit when save button focused (check `event.target`)
   - Implement Esc to close modal without saving (call CloseModal method)
-- [ ] Add visual focus indicators:
+- [x] Add visual focus indicators:
   - CSS class `.focus-visible:focus` with 2px solid outline
   - High contrast color (e.g., `#0078d4` or `#005a9e`)
   - Ensure focus indicator visible on all interactive elements
-- [ ] Ensure keyboard shortcuts don't conflict with browser defaults:
+- [x] Ensure keyboard shortcuts don't conflict with browser defaults:
   - Use `event.preventDefault()` for custom shortcuts
   - Allow browser shortcuts (Ctrl+C, Ctrl+V) to work normally
-- [ ] Add focus management on modal open:
+- [x] Add focus management on modal open:
   - Set initial focus to category selector
   - Announce modal to screen readers (`role="dialog"`, `aria-modal="true"`)
 
 ### 4. SplitEditor Keyboard Navigation
 
-- [ ] Update `SplitEditor.razor` to handle keyboard events:
+- [x] Update `SplitEditor.razor` to handle keyboard events:
   - Add `@onkeydown` event handler on editor container
   - Implement Tab navigation through split rows (cycle through categories, amounts)
   - Implement Enter to submit when save button focused
   - Implement Esc to close editor without saving
-- [ ] Add keyboard shortcuts for split row management:
+- [x] Add keyboard shortcuts for split row management:
   - Ctrl+Plus (+) to add new split row
   - Ctrl+Minus (-) to remove focused split row
   - Tab through category → amount → add/remove buttons
-- [ ] Add visual focus indicators on split rows
-- [ ] Ensure focus returns to trigger element when editor closes
+- [x] Add visual focus indicators on split rows
+- [x] Ensure focus returns to trigger element when editor closes
 
 ### 5. BulkAssignModal Keyboard Navigation
 
-- [ ] Update `BulkAssignModal.razor` to handle keyboard events:
+- [x] Update `BulkAssignModal.razor` to handle keyboard events:
   - Add `@onkeydown` event handler on modal container
   - Implement Tab navigation through category selector → assign button → cancel
   - Implement Enter to start bulk assignment
   - Implement Esc to close modal without saving
-- [ ] Add progress indicator keyboard accessibility:
+- [x] Add progress indicator keyboard accessibility:
   - Announce progress updates to screen readers (`aria-live="polite"`)
   - Allow Esc to cancel in-progress bulk operation
-- [ ] Add visual focus indicators on modal elements
+- [x] Add visual focus indicators on modal elements
 
 ### 6. Transaction List Keyboard Shortcuts
 
-- [ ] Update `Transactions.razor` to handle keyboard events:
+- [x] Update `Transactions.razor` to handle keyboard events:
   - Add `@onkeydown` event handler on transaction table
   - Implement Space key to toggle transaction checkbox when row focused
   - Implement Ctrl+A to select all visible transactions (prevent browser default)
   - Implement Ctrl+D to deselect all transactions
   - Implement `/` key to focus search/filter input (prevent browser default)
-- [ ] Add keyboard focus management:
+- [x] Add keyboard focus management:
   - Arrow Up/Down keys to navigate between transaction rows
   - Enter key to open assignment modal for focused row
   - Home key to focus first row, End key to focus last row
-- [ ] Add visual focus indicator for focused transaction row:
+- [x] Add visual focus indicator for focused transaction row:
   - CSS class `.transaction-row:focus` with background highlight
   - Ensure focus indicator contrasts with row background
 - [ ] Ensure keyboard navigation works with pagination:
@@ -173,14 +173,14 @@ This story **enhances** existing assignment components without modifying their c
 
 ### 7. Global Keyboard Event Coordination
 
-- [ ] Update `App.razor` or `MainLayout.razor` with global keyboard listener:
+- [x] Update `App.razor` or `MainLayout.razor` with global keyboard listener:
   - Listen for `?` key to show ShortcutHelp modal
   - Check if any modal is open before handling global shortcuts
   - Prevent global shortcuts when input fields focused (e.g., don't trigger `/` when typing in text field)
-- [ ] Add keyboard event priority system:
+- [x] Add keyboard event priority system:
   - Modal-level shortcuts take precedence over global shortcuts
   - Input field shortcuts (Ctrl+A in text field) override component shortcuts
-- [ ] Disable keyboard shortcuts on mobile/touch devices:
+- [x] Disable keyboard shortcuts on mobile/touch devices:
   - Check `DeviceDetectionService.IsTouchDeviceAsync()` on app init
   - Conditionally register keyboard listeners only on non-touch devices
 
@@ -190,11 +190,11 @@ This story **enhances** existing assignment components without modifying their c
   - Store reference to last focused element before modal opens
   - Implement `RestoreFocusAsync()` to return focus after modal closes
   - Implement `TrapFocusAsync(elementRef)` to prevent Tab from escaping modals
-- [ ] Ensure modals trap focus properly:
+- [x] Ensure modals trap focus properly:
   - Add `tabindex="-1"` on modal container for initial focus
   - Add `@onfocusout` handler to detect Tab wrap-around
   - Cycle focus back to first focusable element when Tab reaches end
-- [ ] Ensure focus visible when navigating with keyboard:
+- [x] Ensure focus visible when navigating with keyboard:
   - Add `:focus-visible` CSS styles (not just `:focus` which shows on click)
   - Use CSS `:focus-visible { outline: 2px solid #0078d4; }`
 
@@ -206,10 +206,10 @@ This story **enhances** existing assignment components without modifying their c
 - [ ] Verify logical tab order:
   - Tab order follows visual order (left to right, top to bottom)
   - Skip navigation links not needed (Blazor Server SPA)
-- [ ] Verify keyboard trap prevention:
+- [x] Verify keyboard trap prevention:
   - Focus cycles properly in modals (Tab from last element returns to first)
   - Esc key always closes modals (no keyboard traps)
-- [ ] Verify screen reader announcements:
+- [x] Verify screen reader announcements:
   - Modals have `role="dialog"` and `aria-modal="true"`
   - Form fields have proper `<label>` elements or `aria-label`
   - Error messages associated with fields via `aria-describedby`
@@ -217,7 +217,7 @@ This story **enhances** existing assignment components without modifying their c
 
 ### 10. Testing - Unit Tests
 
-- [ ] Create `ShortcutHelpTests.cs` in `LocalFinanceManager.Tests/Components/`
+- [x] Create `ShortcutHelpTests.cs` in `LocalFinanceManager.Tests/Components/`
 - [ ] Test: Help modal displays all keyboard shortcuts
   - Render ShortcutHelp component
   - Assert all 10 shortcuts displayed in table
@@ -232,7 +232,7 @@ This story **enhances** existing assignment components without modifying their c
 
 > **Note:** Requires US-5.1 E2E infrastructure (PlaywrightFixture, PageObjectModels).
 
-- [ ] Create `KeyboardNavigationTests.cs` in `LocalFinanceManager.E2E/Tests/`
+- [x] Create `KeyboardNavigationTests.cs` in `LocalFinanceManager.E2E/Tests/`
 - [ ] Test: Press `Tab` in assignment modal → Focus moves through fields
   - Seed transaction, open assignment modal
   - Press Tab repeatedly
@@ -262,8 +262,8 @@ This story **enhances** existing assignment components without modifying their c
 
 > **Note:** Uses `Deque.AxeCore.Playwright` for automated accessibility scanning.
 
-- [ ] Install `Deque.AxeCore.Playwright` NuGet package in `LocalFinanceManager.E2E`
-- [ ] Create `AccessibilityTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [x] Install `Deque.AxeCore.Playwright` NuGet package in `LocalFinanceManager.E2E`
+- [x] Create `AccessibilityTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
 - [ ] Test: Run axe-core on Transactions page → Zero critical violations
   - Navigate to transactions page
   - Run `await page.RunAxe()` scan
@@ -287,18 +287,18 @@ This story **enhances** existing assignment components without modifying their c
 
 ### 13. Documentation
 
-- [ ] Update `README.md` with keyboard shortcuts section:
+- [x] Update `README.md` with keyboard shortcuts section:
   - List all 10 keyboard shortcuts with descriptions
   - Note mobile/touch device behavior (shortcuts disabled)
-- [ ] Create `docs/ACCESSIBILITY.md`:
+- [x] Create `docs/ACCESSIBILITY.md`:
   - Document WCAG 2.1 Level AA compliance
   - List keyboard shortcuts and their behavior
   - Describe focus management system
   - Include screen reader testing notes
   - List tested assistive technologies (NVDA, JAWS, VoiceOver)
-- [ ] Add inline help tooltips in UI:
+- [x] Add inline help tooltips in UI:
   - Tooltip on "?" icon: "Press ? to view keyboard shortcuts"
-  - Tooltip on close button in modal: "Press Esc to close"
+  - Tooltip on close button in modal: "Druk op Esc om te sluiten"
 
 ## Testing
 

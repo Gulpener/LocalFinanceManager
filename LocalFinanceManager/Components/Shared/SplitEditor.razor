@@ -4,16 +4,19 @@
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
 @inject IBudgetPlanRepository BudgetPlanRepository
+@inject IJSRuntime JSRuntime
 @inject ILogger<SplitEditor> Logger
+@implements IAsyncDisposable
 
 @if (IsVisible && Transaction != null)
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+    <div id="splitEditorModal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
+         aria-labelledby="splitEditorTitle" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Transactie splitsen</h5>
-                    <button type="button" class="btn-close" @onclick="OnClose" aria-label="Sluiten"></button>
+                    <h5 id="splitEditorTitle" class="modal-title">Transactie splitsen</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose" aria-label="Druk op Esc om te sluiten"></button>
                 </div>
                 <div class="modal-body">
                     @if (!string.IsNullOrEmpty(errorMessage))
@@ -77,7 +80,7 @@
                                             }
                                             else
                                             {
-                                                <select class="form-select" @bind="split.BudgetLineId" required>
+                                                <select class="form-select" @bind="split.BudgetLineId" required @onfocus="() => focusedSplitIndex = index">
                                                     <option value="">-- Selecteer budgetlijn --</option>
                                                     @foreach (var bl in budgetLines)
                                                     {
@@ -88,10 +91,12 @@
                                         </td>
                                         <td>
                                             <input type="number" step="0.01" min="0" class="form-control" @bind="split.Amount"
+                                                @onfocus="() => focusedSplitIndex = index"
                                                 @bind:event="onchange" @bind:after="RecalculateSum" required />
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-outline-danger"
+                                                @onfocus="() => focusedSplitIndex = index"
                                                 @onclick="() => RemoveSplit(index)" disabled="@(splits.Count <= 2)"
                                                 title="@(splits.Count <= 2 ? "Minimaal 2 splits vereist" : "Verwijder split")">
                                                 <i class="bi bi-trash"></i>
@@ -103,7 +108,7 @@
                             <tfoot>
                                 <tr>
                                     <td colspan="3">
-                                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddSplit">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddSplit" id="splitAddButton">
                                             <i class="bi bi-plus-circle"></i> Voeg split toe
                                         </button>
                                     </td>
@@ -154,7 +159,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="OnClose">Annuleren</button>
-                    <button type="button" class="btn btn-primary" @onclick="SaveSplit" disabled="@(!CanSave || isSaving)">
+                    <button id="splitSaveButton" type="button" class="btn btn-primary" @onclick="SaveSplit" disabled="@(!CanSave || isSaving)">
                         @if (isSaving)
                         {
                             <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
@@ -180,6 +185,11 @@
     private string? errorMessage;
     private string? successMessage;
     private const decimal RoundingTolerance = 0.01m;
+    private bool isFocusTrapActive;
+    private bool isInitialFocusSet;
+    private bool wasVisible;
+    private int focusedSplitIndex;
+    private ElementReference modalContainerRef;
 
     private class SplitRow
     {
@@ -195,6 +205,18 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = false;
+        }
+
+        if (IsVisible && !wasVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = true;
+        }
+
         if (IsVisible && Transaction != null)
         {
             if (budgetLines == null)
@@ -206,6 +228,8 @@
             {
                 InitializeSplits();
             }
+
+            focusedSplitIndex = 0;
         }
         else if (!IsVisible)
         {
@@ -214,6 +238,43 @@
             errorMessage = null;
             successMessage = null;
             isSaving = false;
+
+            await ReleaseFocusTrapAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            return;
+        }
+
+        if (!isFocusTrapActive)
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#splitEditorModal");
+            isFocusTrapActive = true;
+        }
+
+        if (isInitialFocusSet)
+        {
+            return;
+        }
+
+        isInitialFocusSet = true;
+
+        try
+        {
+            var focused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.focusSelector", "#splitEditorModal select.form-select:not([disabled])");
+            if (!focused)
+            {
+                await modalContainerRef.FocusAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to set initial focus in split editor modal");
         }
     }
 
@@ -298,6 +359,7 @@
     private void AddSplit()
     {
         splits.Add(new SplitRow { Amount = 0 });
+        focusedSplitIndex = splits.Count - 1;
     }
 
     private void RemoveSplit(int index)
@@ -305,6 +367,7 @@
         if (splits.Count > 2)
         {
             splits.RemoveAt(index);
+            focusedSplitIndex = Math.Max(0, Math.Min(focusedSplitIndex, splits.Count - 1));
             RecalculateSum();
         }
     }
@@ -361,6 +424,68 @@
         finally
         {
             isSaving = false;
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await OnClose.InvokeAsync();
+            return;
+        }
+
+        if ((e.CtrlKey || e.MetaKey) && (e.Key == "+" || e.Key == "="))
+        {
+            AddSplit();
+            StateHasChanged();
+            return;
+        }
+
+        if ((e.CtrlKey || e.MetaKey) && e.Key == "-")
+        {
+            RemoveSplit(focusedSplitIndex);
+            StateHasChanged();
+            return;
+        }
+
+        if (e.Key == "Enter")
+        {
+            var isSaveButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement", "#splitSaveButton");
+            if (isSaveButtonFocused && CanSave && !isSaving)
+            {
+                await SaveSplit();
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ReleaseFocusTrapAsync();
+    }
+
+    private async ValueTask ReleaseFocusTrapAsync()
+    {
+        if (!isFocusTrapActive)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.releaseFocusTrap");
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore JS interop errors during circuit teardown.
+        }
+        catch (JSException)
+        {
+            // Ignore JS interop errors during disposal.
+        }
+        finally
+        {
+            isFocusTrapActive = false;
         }
     }
 }

@@ -58,3 +58,32 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+:focus-visible {
+    outline: 2px solid #005a9e;
+    outline-offset: 2px;
+}
+
+.transaction-row:focus,
+tr[data-testid="transaction-row"]:focus {
+    background-color: var(--bs-primary-bg-subtle);
+}
+
+@media print {
+    .modal {
+        position: static !important;
+        display: block !important;
+        background: white !important;
+    }
+
+    .modal-backdrop,
+    .modal .btn-close,
+    .modal .modal-footer .btn {
+        display: none !important;
+    }
+
+    .modal-dialog {
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+}

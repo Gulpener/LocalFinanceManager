@@ -54,6 +54,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITransactionAssignmentService, TransactionAssignmentService>();
         services.AddScoped<IRecentCategoriesService, RecentCategoriesService>();
         services.AddScoped<IFilterStateService, FilterStateService>();
+        services.AddScoped<IDeviceDetectionService, DeviceDetectionService>();
 
         return services;
     }

@@ -25,4 +25,10 @@
     <ProjectReference Include="..\..\LocalFinanceManager.ML\LocalFinanceManager.ML.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="fixtures\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
