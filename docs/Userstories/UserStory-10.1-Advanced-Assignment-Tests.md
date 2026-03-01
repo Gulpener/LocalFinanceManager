@@ -259,7 +259,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 **Prerequisites from UserStory-10:**
 
 - ✅ Tests/ directory created
-- ✅ TransactionListPage enhanced with bulk methods (SelectTransactionAsync, DeselectAllAsync, etc.)
+- ✅ TransactionsPageModel enhanced with bulk methods (SelectTransactionAsync, DeselectAllAsync, etc.)
 - ✅ ImportModalPageModel available for transaction import
 - ✅ E2E_TEST_GUIDE.md foundation established
 
