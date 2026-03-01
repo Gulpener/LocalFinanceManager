@@ -62,7 +62,10 @@ public class SplitEditorFocusTrapTests
         cut.WaitForAssertion(() =>
             Assert.That(context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.trapFocus"), Is.True));
 
-        cut.SetParametersAndRender(parameters => parameters.Add(p => p.IsVisible, false));
+        await cut.InvokeAsync(() => cut.Instance.SetParametersAsync(ParameterView.FromDictionary(new Dictionary<string, object?>
+        {
+            [nameof(SplitEditor.IsVisible)] = false
+        })));
         Assert.That(
             context.JSInterop.Invocations.Any(i => i.Identifier == "localFinanceKeyboard.releaseFocusTrap"),
             Is.True,

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using LocalFinanceManager.Data;
+using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -9,6 +10,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -181,6 +183,9 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                     sqliteOptions.CommandTimeout(60);
                 });
             });
+
+            services.RemoveAll<IDeviceDetectionService>();
+            services.AddScoped<IDeviceDetectionService, DesktopDeviceDetectionService>();
         });
 
         // Configure logging to output to test console
@@ -388,5 +393,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 }
             }
         }
+    }
+
+    private sealed class DesktopDeviceDetectionService : IDeviceDetectionService
+    {
+        public Task<bool> IsTouchDeviceAsync() => Task.FromResult(false);
+
+        public Task<ClientOperatingSystem> GetOperatingSystemAsync() => Task.FromResult(ClientOperatingSystem.Windows);
     }
 }

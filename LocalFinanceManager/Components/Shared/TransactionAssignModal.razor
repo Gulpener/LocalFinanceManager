@@ -19,9 +19,10 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
-                                                                                                                                                                                            $"({Transaction.Date.Year})"
-                                                                                                                                                                                            : "")</h5>
-                        <button type="button" class="btn-close" @onclick="Close" aria-label="Press Esc to close"></button>
+                                                                                                                                                                                                                    $"({Transaction.Date.Year})"
+                                                                                                                                                                                                                    : "")</h5>
+                        <button type="button" class="btn-close" @onclick="Close"
+                                aria-label="Druk op Esc om te sluiten"></button>
                     </div>
                     <div class="modal-body">
                         @if (!string.IsNullOrEmpty(errorMessage))

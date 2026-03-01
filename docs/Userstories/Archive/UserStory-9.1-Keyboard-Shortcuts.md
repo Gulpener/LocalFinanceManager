@@ -298,7 +298,7 @@ This story **enhances** existing assignment components without modifying their c
   - List tested assistive technologies (NVDA, JAWS, VoiceOver)
 - [x] Add inline help tooltips in UI:
   - Tooltip on "?" icon: "Press ? to view keyboard shortcuts"
-  - Tooltip on close button in modal: "Press Esc to close"
+  - Tooltip on close button in modal: "Druk op Esc om te sluiten"
 
 ## Testing
 
