@@ -77,8 +77,8 @@ tr[data-testid="transaction-row"]:focus {
     }
 
     .modal-backdrop,
-    .btn,
-    .btn-close {
+    .modal .btn-close,
+    .modal .modal-footer .btn {
         display: none !important;
     }
 

@@ -48,11 +48,8 @@ public class FixtureModelsTests
 
     private static string GetFixturesRootPath()
     {
-        return Path.GetFullPath(Path.Combine(
+        return Path.Combine(
             TestContext.CurrentContext.TestDirectory,
-            "..",
-            "..",
-            "..",
-            "fixtures"));
+            "fixtures");
     }
 }
