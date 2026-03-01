@@ -194,9 +194,6 @@ else
 
 <AssignmentAuditTrail TransactionId="@auditTransactionId" IsVisible="@showAuditTrail" OnClose="@CloseAuditTrail" />
 
-<ShortcutHelp IsVisible="@showShortcutHelp" OnClose="@(() => showShortcutHelp = false)"
-              IsTouchDevice="@isTouchDevice" />
-
 
 @if (selectedTransactionIds.Any())
 {

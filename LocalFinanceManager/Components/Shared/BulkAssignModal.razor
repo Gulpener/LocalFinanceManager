@@ -332,7 +332,7 @@
         if (e.Key == "Enter")
         {
             var isAssignButtonFocused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.isActiveElement",
-"#bulkAssignButton");
+                "#bulkAssignButton");
             if (isAssignButtonFocused && CanAssign && !isProcessing)
             {
                 await BulkAssign();

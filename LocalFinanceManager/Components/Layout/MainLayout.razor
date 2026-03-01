@@ -19,11 +19,7 @@
     </main>
 </div>
 
-<ShortcutHelp
-    IsVisible="@showShortcutHelp"
-    OnClose="CloseShortcutHelp"
-    IsTouchDevice="@isTouchDevice"
-    IsMacOs="@isMacOs" />
+@* ShortcutHelp is rendered on specific pages (e.g., Transactions) to avoid duplicate modal IDs. *@
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
