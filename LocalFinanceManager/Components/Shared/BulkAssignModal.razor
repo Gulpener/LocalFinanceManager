@@ -186,6 +186,7 @@
     private bool isInitialFocusSet;
     private bool wasVisible;
     private ElementReference modalContainerRef;
+    private CancellationTokenSource? bulkAssignCancellationTokenSource;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
     private bool ShouldRenderModal => IsVisible && TransactionIds != null && TransactionIds.Any();
@@ -213,6 +214,8 @@
         }
         else if (!IsVisible)
         {
+            CancelInProgressBulkAssign();
+
             // Reset state when modal closes
             selectedBudgetLineId = null;
             note = null;
@@ -311,6 +314,9 @@
             progressPercentage = 0;
             errorMessage = null;
             bulkResult = null;
+            bulkAssignCancellationTokenSource?.Cancel();
+            bulkAssignCancellationTokenSource?.Dispose();
+            bulkAssignCancellationTokenSource = new CancellationTokenSource();
 
             progressMessage = "Voorbereiden...";
             StateHasChanged();
@@ -333,7 +339,10 @@
                 StateHasChanged();
             });
 
-            bulkResult = await AssignmentService.BulkAssignTransactionsAsync(request, progressReporter);
+            bulkResult = await AssignmentService.BulkAssignTransactionsAsync(
+                request,
+                progressReporter,
+                bulkAssignCancellationTokenSource.Token);
 
             progressPercentage = 100;
             progressMessage = "Voltooid!";
@@ -344,6 +353,11 @@
 
             await OnBulkAssigned.InvokeAsync();
         }
+        catch (OperationCanceledException)
+        {
+            progressMessage = "Bulk toewijzing geannuleerd.";
+            bulkResult = null;
+        }
         catch (Exception ex)
         {
             errorMessage = "Er is een fout opgetreden bij de bulk toewijzing.";
@@ -352,17 +366,28 @@
         finally
         {
             isProcessing = false;
+            bulkAssignCancellationTokenSource?.Dispose();
+            bulkAssignCancellationTokenSource = null;
         }
+    }
+
+    private void CancelInProgressBulkAssign()
+    {
+        if (!isProcessing || bulkAssignCancellationTokenSource == null || bulkAssignCancellationTokenSource.IsCancellationRequested)
+        {
+            return;
+        }
+
+        progressMessage = "Annuleren...";
+        bulkAssignCancellationTokenSource.Cancel();
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Escape")
         {
-            if (!isProcessing)
-            {
-                await OnClose.InvokeAsync();
-            }
+            CancelInProgressBulkAssign();
+            await OnClose.InvokeAsync();
             return;
         }
 

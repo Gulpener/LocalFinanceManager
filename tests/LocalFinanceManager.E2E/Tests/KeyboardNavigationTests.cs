@@ -1,6 +1,7 @@
 using LocalFinanceManager.Data;
 using LocalFinanceManager.E2E.Helpers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Playwright;
 
 namespace LocalFinanceManager.E2E.Tests;
@@ -82,6 +83,55 @@ public class KeyboardNavigationTests : E2ETestBase
 
         var isFocusedInsideBulkModal = await Page.EvaluateAsync<bool>("() => !!document.activeElement?.closest('#bulkAssignModal')");
         Assert.That(isFocusedInsideBulkModal, Is.True);
+    }
+
+    [Test]
+    public async Task BulkAssignModal_Escape_DuringProcessing_CancelsAndCloses()
+    {
+        using var scope = Factory!.CreateDbScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var account = await SeedDataHelper.SeedAccountAsync(context, "Bulk Esc Processing Test", "NL91ABNA0417164300", 1000m);
+        var budgetPlanId = account.CurrentBudgetPlanId!.Value;
+        var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Utilities");
+        await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
+
+        var seededTransactionIds = new List<Guid>();
+        for (var i = 0; i < 40; i++)
+        {
+            var transaction = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -10m - i, DateTime.Now.AddMinutes(-i), $"Bulk Esc Tx {i}");
+            seededTransactionIds.Add(transaction.Id);
+        }
+
+        await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        var seededRows = Page.Locator("tr[data-testid='transaction-row']:has-text('Bulk Esc Tx')");
+        var rowCheckboxes = seededRows.Locator("input[type='checkbox']");
+        var rowCount = await rowCheckboxes.CountAsync();
+        Assert.That(rowCount, Is.GreaterThan(0));
+
+        for (var i = 0; i < rowCount; i++)
+        {
+            await rowCheckboxes.Nth(i).CheckAsync();
+        }
+
+        await Page.Locator("button:has-text('Bulk toewijzen')").ClickAsync();
+
+        var bulkModal = Page.Locator("#bulkAssignModal");
+        await Expect(bulkModal).ToBeVisibleAsync();
+
+        await Expect(Page.Locator("#bulkBudgetLineSelect")).ToBeEnabledAsync();
+        await Page.SelectOptionAsync("#bulkBudgetLineSelect", new SelectOptionValue { Index = 1 });
+        await Page.Locator("#bulkAssignButton").ClickAsync();
+
+        var progressBar = Page.Locator("#bulkAssignModal .progress-bar");
+        await Expect(progressBar).ToBeVisibleAsync();
+
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Expect(bulkModal).Not.ToBeVisibleAsync();
+
+        Assert.Pass("Escape sluit de bulk-assign modal tijdens een zichtbare verwerkingsstatus.");
     }
 
     [Test]

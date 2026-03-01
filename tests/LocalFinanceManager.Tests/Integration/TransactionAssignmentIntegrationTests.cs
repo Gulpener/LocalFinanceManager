@@ -872,4 +872,76 @@ public class TransactionAssignmentIntegrationTests
                 $"Progress should be monotonically increasing at index {i}");
         }
     }
+
+    [Test]
+    public async Task BulkAssignTransactions_WhenCancellationRequested_ShouldThrowOperationCanceledException()
+    {
+        // Arrange
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            Label = "Test Account",
+            Type = AccountType.Checking,
+            IBAN = "NL91ABNA0417164300",
+            Currency = "EUR",
+            StartingBalance = 1000m
+        };
+        await _context.Accounts.AddAsync(account);
+
+        var budgetPlan = new BudgetPlan
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Year = DateTime.UtcNow.Year,
+            Name = "Test Budget",
+            IsArchived = false
+        };
+        await _context.BudgetPlans.AddAsync(budgetPlan);
+
+        var category = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test Category",
+            Type = CategoryType.Expense,
+            BudgetPlanId = budgetPlan.Id
+        };
+        await _context.Categories.AddAsync(category);
+
+        var budgetLine = new BudgetLine
+        {
+            Id = Guid.NewGuid(),
+            BudgetPlanId = budgetPlan.Id,
+            CategoryId = category.Id,
+            MonthlyAmountsJson = "[500,500,500,500,500,500,500,500,500,500,500,500]"
+        };
+        await _context.BudgetLines.AddAsync(budgetLine);
+
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            AccountId = account.Id,
+            Amount = -50m,
+            Date = DateTime.UtcNow,
+            Description = "Test Transaction"
+        };
+        await _context.Transactions.AddAsync(transaction);
+        await _context.SaveChangesAsync();
+
+        var request = new BulkAssignTransactionsRequest
+        {
+            TransactionIds = new List<Guid> { transaction.Id },
+            BudgetLineId = budgetLine.Id,
+            Note = "Bulk assignment with cancellation"
+        };
+
+        using var cancellationTokenSource = new CancellationTokenSource();
+        cancellationTokenSource.Cancel();
+
+        // Act + Assert
+        Assert.ThrowsAsync<OperationCanceledException>(async () =>
+            await _assignmentService.BulkAssignTransactionsAsync(request, cancellationToken: cancellationTokenSource.Token));
+
+        var splits = await _splitRepository.GetByTransactionIdAsync(transaction.Id);
+        Assert.That(splits, Is.Empty);
+    }
 }
