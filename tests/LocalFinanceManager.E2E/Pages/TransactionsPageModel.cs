@@ -10,6 +10,7 @@ public class TransactionsPageModel : PageObjectBase
 {
     private const int FilterTableStableWaitMs = 300;
     private const int FilterTableUpdateTimeoutMs = 5000;
+    private const string FilterPollingStateKey = "__lfm_transactions_filter_polling_state";
 
     // Selectors
     private const string AccountFilterSelector = "#account-filter";
@@ -107,64 +108,85 @@ public class TransactionsPageModel : PageObjectBase
             }",
             TransactionRowSelector);
 
-        await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
-        await Page.WaitForFunctionAsync(
+        await Page.EvaluateAsync(
             @"arg => {
-                const select = document.querySelector(arg.selector);
-                return !!select && select.value === arg.value;
-            }",
-            new { selector = AssignmentStatusFilterSelector, value });
-
-        await Page.WaitForFunctionAsync(
-            @"arg => {
-                const rows = Array.from(document.querySelectorAll(arg.rowSelector));
-                const currentSignature = rows
-                    .map(row => {
-                        const id = row.getAttribute('data-transaction-id') ?? '';
-                        const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
-                        const status = isUnassigned ? 'unassigned' : 'assigned';
-                        return `${id}|${status}`;
-                    })
-                    .join(';');
-
-                const hasTableChanged = currentSignature !== arg.initialTableSignature;
-                const rowsMatchFilter = arg.expectedStatusMode === 'unassigned'
-                    ? rows.every(row => !!row.querySelector('[aria-label=""Niet toegewezen""]'))
-                    : arg.expectedStatusMode === 'assigned'
-                        ? rows.every(row => !row.querySelector('[aria-label=""Niet toegewezen""]'))
-                        : true;
-
-                if (!rowsMatchFilter)
-                {
-                    return false;
-                }
-
-                if (hasTableChanged)
-                {
-                    return true;
-                }
-
-                if (arg.expectedStatusMode === 'all')
-                {
-                    return arg.previousValue === arg.value || Date.now() - arg.startedAt >= arg.minStableMs;
-                }
-
-                return true;
+                window[arg.stateKey] = { startedAt: Date.now() };
             }",
             new
             {
-                rowSelector = TransactionRowSelector,
-                initialTableSignature,
-                expectedStatusMode,
-                previousValue,
-                value,
-                startedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-                minStableMs = FilterTableStableWaitMs,
-            },
-            new PageWaitForFunctionOptions
-            {
-                Timeout = FilterTableUpdateTimeoutMs
+                stateKey = FilterPollingStateKey,
             });
+
+        try
+        {
+            await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
+            await Page.WaitForFunctionAsync(
+                @"arg => {
+                    const select = document.querySelector(arg.selector);
+                    return !!select && select.value === arg.value;
+                }",
+                new { selector = AssignmentStatusFilterSelector, value });
+
+            await Page.WaitForFunctionAsync(
+                @"arg => {
+                    const rows = Array.from(document.querySelectorAll(arg.rowSelector));
+                    const currentSignature = rows
+                        .map(row => {
+                            const id = row.getAttribute('data-transaction-id') ?? '';
+                            const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
+                            const status = isUnassigned ? 'unassigned' : 'assigned';
+                            return `${id}|${status}`;
+                        })
+                        .join(';');
+
+                    const hasTableChanged = currentSignature !== arg.initialTableSignature;
+                    const rowsMatchFilter = arg.expectedStatusMode === 'unassigned'
+                        ? rows.every(row => !!row.querySelector('[aria-label=""Niet toegewezen""]'))
+                        : arg.expectedStatusMode === 'assigned'
+                            ? rows.every(row => !row.querySelector('[aria-label=""Niet toegewezen""]'))
+                            : true;
+
+                    if (!rowsMatchFilter)
+                    {
+                        return false;
+                    }
+
+                    if (hasTableChanged)
+                    {
+                        return true;
+                    }
+
+                    if (arg.expectedStatusMode === 'all')
+                    {
+                        const startedAt = window[arg.stateKey]?.startedAt ?? Date.now();
+                        return arg.previousValue === arg.value || Date.now() - startedAt >= arg.minStableMs;
+                    }
+
+                    return true;
+                }",
+                new
+                {
+                    rowSelector = TransactionRowSelector,
+                    initialTableSignature,
+                    expectedStatusMode,
+                    previousValue,
+                    value,
+                    stateKey = FilterPollingStateKey,
+                    minStableMs = FilterTableStableWaitMs,
+                },
+                new PageWaitForFunctionOptions
+                {
+                    Timeout = FilterTableUpdateTimeoutMs
+                });
+        }
+        finally
+        {
+            await Page.EvaluateAsync(
+                @"stateKey => {
+                    delete window[stateKey];
+                }",
+                FilterPollingStateKey);
+        }
     }
 
     /// <summary>
