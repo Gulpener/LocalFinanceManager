@@ -2,14 +2,14 @@
 
 ## Objective
 
-Implement advanced E2E tests (19 tests) covering split assignment, bulk assignment, and integration workflows. Builds on US-10 foundation to achieve 80% critical path coverage (39 tests total across US-10 + US-10.1).
+Implement advanced E2E tests (19 tests) covering split assignment, bulk assignment, and integration workflows. Builds on UserStory-10 foundation to achieve 80% critical path coverage (39 tests total across UserStory-10 + UserStory-10.1).
 
 ## Requirements
 
 - Implement 19 tests across 3 test suites: SplitAssignmentTests (9), BulkAssignmentTests (9), IntegrationWorkflowTests (1)
-- Leverage PageObjectModels enhanced in US-9 (TransactionListPage with bulk methods)
+- Leverage PageObjectModels enhanced in UserStory-10 (TransactionListPage with bulk methods)
 - Use existing PageObjectModels: SplitEditorPageModel, BulkAssignModalPageModel (already complete from US-5.1)
-- Per-test cleanup strategy (same pattern as US-9)
+- Per-test cleanup strategy (same pattern as UserStory-10)
 - Combined Phase 1 + Phase 2 execution time target <10 minutes
 - CI parallel execution groups (Phase 1 tests, Phase 2 tests)
 - Integration workflow test validates cross-feature data flow (import → assign → split → bulk)
@@ -18,7 +18,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 **When to Write Advanced E2E Tests:**
 
-- After foundational tests (US-9) complete and passing
+- After foundational tests (UserStory-10) complete and passing
 - When testing complex multi-step workflows (split editor, bulk progress)
 - When validating cross-feature integration (import + assignment + validation)
 
@@ -31,7 +31,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 **Test Data Strategy:**
 
-- Reuse SeedDataHelper patterns from US-9
+- Reuse SeedDataHelper patterns from UserStory-10
 - Create larger datasets for bulk operations (20+ transactions)
 - Test boundary conditions (sum tolerance ±0.01, pagination thresholds)
 
@@ -122,7 +122,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 - [ ] Create `IntegrationWorkflowTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
 - [ ] Test: Complete workflow validates cross-feature integration:
   - **Setup:** Create account with budget plan and 50 transactions via SeedDataHelper
-  - **Import:** Verify 50 transactions imported successfully (prerequisite from US-9)
+  - **Import:** Verify 50 transactions imported successfully (prerequisite from UserStory-10)
   - **Screenshot:** Capture `workflow-start.png`
   - **Basic Assignment:** Assign 10 transactions individually using assignment modal
   - **Assertion:** 10 transactions have category badges, audit trail shows 10 manual assignments
@@ -142,9 +142,9 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 ### 4. CI Configuration
 
 - [ ] Update GitHub Actions workflow with parallel execution groups:
-  - Group 1: Transaction Import + Basic Assignment (US-9)
-  - Group 2: Split + Bulk Assignment (US-9.1)
-  - Group 3: Multi-Account + Integration Workflow (US-9 + US-9.1)
+  - Group 1: Transaction Import + Basic Assignment (UserStory-10)
+  - Group 2: Split + Bulk Assignment (UserStory-10.1)
+  - Group 3: Multi-Account + Integration Workflow (UserStory-10 + UserStory-10.1)
 - [ ] Configure CI timeout: 15 minutes (allows for <10 min test execution + overhead)
 - [ ] Verify screenshot/video artifact upload on failure
 - [ ] Add test result summary to PR comments (39 tests: 20 Phase 1 + 19 Phase 2)
@@ -159,7 +159,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 - **BulkAssignmentTests.cs** (9 tests): Bulk selection, progress tracking, partial failures, error accordion, pagination persistence
 - **IntegrationWorkflowTests.cs** (1 test): Cross-feature workflow (import → basic → bulk → split)
 
-**Total: 19 tests** completing Phase 2 (combined with US-9: 39 tests achieving 80% critical path coverage)
+**Total: 19 tests** completing Phase 2 (combined with UserStory-10: 39 tests achieving 80% critical path coverage)
 
 ### Test Scenarios
 
@@ -187,21 +187,21 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 **3. Integration Workflow (1 test):**
 
-- Cross-feature validation: import (US-9) → basic (US-9) → bulk → split
+- Cross-feature validation: import (UserStory-10) → basic (UserStory-10) → bulk → split
 - Audit trail comprehensive validation
 - Transaction list filter accuracy (assigned vs unassigned counts)
 - Badge display consistency across assignment types
 
 ### Per-Test Cleanup Strategy
 
-- Same pattern as US-9: fresh database state for each test
+- Same pattern as UserStory-10: fresh database state for each test
 - No test interdependencies (tests runnable in any order)
 - Isolated test data via SeedDataHelper
 
 ## Success Criteria
 
 - ✅ 19 tests implemented and passing (9 split + 9 bulk + 1 integration)
-- ✅ Combined with US-9: 39 tests total achieving 80% critical path coverage
+- ✅ Combined with UserStory-10: 39 tests total achieving 80% critical path coverage
 - ✅ Split editor tests validate sum validation (±0.01 tolerance)
 - ✅ Bulk assignment tests validate progress tracking and partial failures
 - ✅ Integration workflow test validates cross-feature data flow
@@ -220,7 +220,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 - [ ] BulkAssignmentTests.cs created with 9 tests (selection, progress, partial failures, pagination)
 - [ ] IntegrationWorkflowTests.cs created with 1 test (import → basic → bulk → split workflow)
 - [ ] All 19 tests passing locally (headless mode) and in CI (Chromium-only)
-- [ ] Combined US-9 + US-9.1: 39 tests passing with 80% critical path coverage
+- [ ] Combined UserStory-10 + UserStory-10.1: 39 tests passing with 80% critical path coverage
 - [ ] CI parallel execution configured (3 groups, 15-minute timeout)
 - [ ] Per-test cleanup verified (tests runnable in any order without failures)
 - [ ] Screenshots captured for split editor states, bulk progress, integration workflow stages
@@ -228,11 +228,11 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 - [ ] E2E_TEST_GUIDE.md updated with Phase 2 test organization
 - [ ] No manual migrations required (automatic via `Database.MigrateAsync()`)
 - [ ] Code reviewed and merged to main branch
-- [ ] Phase 3 (US-9.2) ready to be refined once US-7 ML features implemented
+- [ ] Phase 3 (UserStory-10.2) ready to be refined once US-7 ML features implemented
 
 ## Dependencies
 
-- **UserStory-10 REQUIRED (blocking):** Must complete Phase 1 before starting Phase 2. US-10 provides:
+- **UserStory-10 REQUIRED (blocking):** Must complete Phase 1 before starting Phase 2. UserStory-10 provides:
   - Tests/ directory structure
   - Enhanced TransactionListPage with bulk operation methods
   - ImportModalPageModel for transaction creation
@@ -254,16 +254,16 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 ## Implementation Status
 
-> **Phase 2 Context:** This story implements advanced assignment tests (19) building on US-9 Phase 1 foundation (20 tests). Combined coverage: 39 tests achieving 80% critical path coverage. Phase 3 ML tests (25 estimated) deferred to US-9.2 pending US-7 completion.
+> **Phase 2 Context:** This story implements advanced assignment tests (19) building on UserStory-10 Phase 1 foundation (20 tests). Combined coverage: 39 tests achieving 80% critical path coverage. Phase 3 ML tests (25 estimated) deferred to UserStory-10.2 pending US-7 completion.
 
-**Prerequisites from US-9:**
+**Prerequisites from UserStory-10:**
 
 - ✅ Tests/ directory created
 - ✅ TransactionListPage enhanced with bulk methods (SelectTransactionAsync, DeselectAllAsync, etc.)
 - ✅ ImportModalPageModel available for transaction import
 - ✅ E2E_TEST_GUIDE.md foundation established
 
-**US-9.1 Adds:**
+**UserStory-10.1 Adds:**
 
 - 9 split assignment tests (sum validation, row management)
 - 9 bulk assignment tests (progress tracking, partial failures)
@@ -272,7 +272,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 ## Pattern Adherence from UserStory-10
 
-**Reuses US-9 Patterns:**
+**Reuses UserStory-10 Patterns:**
 
 - Per-test cleanup strategy (fresh database state)
 - SeedDataHelper for test data creation
@@ -280,7 +280,7 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 - Screenshot capture for key workflow stages
 - Chromium-only browser testing
 
-**Extends US-9 Patterns:**
+**Extends UserStory-10 Patterns:**
 
 - Advanced PageObjectModel usage (SplitEditorPage, BulkOperationPage)
 - Progress polling patterns for async operations
@@ -289,8 +289,8 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 ## Notes
 
-- **Phase 1 Dependency:** US-9 must complete first; import/basic tests validate foundation for advanced tests
-- **Phase 3 Continuation:** US-9.2 implements ML tests (25 estimated) after US-7 ML features complete
+- **Phase 1 Dependency:** UserStory-10 must complete first; import/basic tests validate foundation for advanced tests
+- **Phase 3 Continuation:** UserStory-10.2 implements ML tests (25 estimated) after US-7 ML features complete
 - **CI Parallel Execution:** 3 groups reduce total execution time (<10 minutes vs sequential ~15 minutes)
 - **Integration Test Value:** Validates that import, basic, bulk, and split features work seamlessly together
 - **Screenshot Artifacts:** Critical for debugging split sum validation failures and bulk progress issues

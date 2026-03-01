@@ -14,7 +14,7 @@
 
 ## Objective
 
-Implement foundational E2E tests (20 tests) covering transaction import, basic assignment, and multi-account validation. Addresses technical debt from archived US-5 and deferred MVP-3 import tests. Establishes foundation for Phase 2 (US-10.1) and Phase 3 (US-10.2).
+Implement foundational E2E tests (20 tests) covering transaction import, basic assignment, and multi-account validation. Addresses technical debt from archived US-5 and deferred MVP-3 import tests. Establishes foundation for Phase 2 (UserStory-10.1) and Phase 3 (UserStory-10.2).
 
 ## Requirements
 
@@ -180,7 +180,7 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
   - **Test Naming Conventions:** `{Feature}Tests.cs` (e.g., `TransactionImportTests.cs`, `BasicAssignmentTests.cs`)
   - **Running Specific Tests:** Filter examples (`--filter "FullyQualifiedName~Import"`)
 - [ ] Document Phase 1 test organization: 20 tests across 3 suites (8 + 11 + 1)
-- [ ] Add note referencing Phase 2 (US-9.1) and Phase 3 (US-9.2) for complete test coverage
+- [ ] Add note referencing Phase 2 (UserStory-10.1) and Phase 3 (UserStory-10.2) for complete test coverage
 
 ## Testing
 
@@ -192,7 +192,7 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 - **BasicAssignmentTests.cs** (11 tests): Modal interaction, category selection, validation, audit trail, filters, pagination
 - **MultiAccountValidationTests.cs** (1 test): UserStory-4 budget plan isolation enforcement
 
-**Total: 20 tests** establishing foundation for Phase 2 (US-9.1: 19 tests) and Phase 3 (US-9.2: 25 tests estimated)
+**Total: 20 tests** establishing foundation for Phase 2 (UserStory-10.1: 19 tests) and Phase 3 (UserStory-10.2: 25 tests estimated)
 
 ### Test Scenarios
 
@@ -250,7 +250,7 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 - ✅ `E2E_TEST_GUIDE.md` created with comprehensive documentation
 - ✅ CI execution configured (Chromium-only, parallel execution)
 - ✅ All tests pass locally and in CI environment (no flaky tests)
-- ✅ Foundation ready for Phase 2 (US-9.1) implementation
+- ✅ Foundation ready for Phase 2 (UserStory-10.1) implementation
 - ✅ Code follows Implementation-Guidelines.md patterns (async/await, error handling, DI conventions)
 
 ## Definition of Done
@@ -268,11 +268,11 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 - [ ] Test execution time <5 minutes verified in CI
 - [ ] No manual migrations required (automatic via `Database.MigrateAsync()`)
 - [ ] Code reviewed and merged to main branch
-- [ ] Phase 2 (US-9.1) unblocked for implementation
+- [ ] Phase 2 (UserStory-10.1) unblocked for implementation
 
 ## Dependencies
 
-- **UserStory-5.1 (E2E Infrastructure):** REQUIRED - Must complete before starting US-9. Provides PageObjectModels, SeedDataHelper, screenshot configuration, E2ETestBase, TestWebApplicationFactory.
+- **UserStory-5.1 (E2E Infrastructure):** REQUIRED - Must complete before starting UserStory-10. Provides PageObjectModels, SeedDataHelper, screenshot configuration, E2ETestBase, TestWebApplicationFactory.
 
 ## Estimated Effort
 
@@ -288,11 +288,11 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 
 ## Implementation Status
 
-> **Technical Debt Context:** US-5 and US-6 were archived in January 2026 with E2E tests marked "write immediately after feature implementation", but 29 tests were never completed. Additionally, 8 transaction import tests were deferred from MVP-3 as technical debt. This story consolidates Phase 1 foundation tests (20 total), with Phase 2 advanced tests (19) deferred to US-9.1 and Phase 3 ML tests (25 estimated) deferred to US-9.2 to maintain reasonable story size.
+> **Technical Debt Context:** US-5 and US-6 were archived in January 2026 with E2E tests marked "write immediately after feature implementation", but 29 tests were never completed. Additionally, 8 transaction import tests were deferred from MVP-3 as technical debt. This story consolidates Phase 1 foundation tests (20 total), with Phase 2 advanced tests (19) deferred to UserStory-10.1 and Phase 3 ML tests (25 estimated) deferred to UserStory-10.2 to maintain reasonable story size.
 
 **Original Scope:**
 
-- US-9 initially planned for 2 integration tests (0.5-1 day)
+- UserStory-10 initially planned for 2 integration tests (0.5-1 day)
 - Redistributed test strategy assumed features would implement their own E2E tests
 
 **Current Reality:**
@@ -300,9 +300,9 @@ Implement foundational E2E tests (20 tests) covering transaction import, basic a
 - US-5 archived: 11 basic assignment tests never implemented
 - US-6 active: 18 split/bulk tests not yet implemented
 - MVP-3 import tests: 8 tests deferred as technical debt
-- Total missing: 39 critical tests (20 in US-9 + 19 in US-9.1)
+- Total missing: 39 critical tests (20 in UserStory-10 + 19 in UserStory-10.1)
 
-**US-9 Scope (Phase 1):**
+**UserStory-10 Scope (Phase 1):**
 
 - 8 transaction import tests (addresses MVP-3 technical debt)
 - 11 basic assignment tests (addresses US-5 technical debt)
