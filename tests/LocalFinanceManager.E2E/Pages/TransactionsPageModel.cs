@@ -8,6 +8,9 @@ namespace LocalFinanceManager.E2E.Pages;
 /// </summary>
 public class TransactionsPageModel : PageObjectBase
 {
+    private const int FilterTableStableWaitMs = 300;
+    private const int FilterTableUpdateTimeoutMs = 5000;
+
     // Selectors
     private const string AccountFilterSelector = "#account-filter";
     private const string AssignmentStatusFilterSelector = "#assignmentStatusFilter";
@@ -63,6 +66,14 @@ public class TransactionsPageModel : PageObjectBase
             throw new ArgumentNullException(nameof(filterType));
         }
 
+        var initialRowCount = await Page.Locator(TransactionRowSelector).CountAsync();
+        var initialFirstRowId = await Page.EvaluateAsync<string>(
+            @"selector => {
+                const firstRow = document.querySelector(selector);
+                return firstRow ? (firstRow.getAttribute('data-transaction-id') ?? '') : '';
+            }",
+            TransactionRowSelector);
+
         var normalized = filterType.Trim().ToLowerInvariant();
 
         var value = normalized switch
@@ -83,6 +94,46 @@ public class TransactionsPageModel : PageObjectBase
                 return !!select && select.value === arg.value;
             }",
             new { selector = AssignmentStatusFilterSelector, value });
+
+        await Page.WaitForFunctionAsync(
+            @"arg => {
+                const rows = Array.from(document.querySelectorAll(arg.rowSelector));
+                const currentRowCount = rows.length;
+                const currentFirstRowId = rows[0]?.getAttribute('data-transaction-id') ?? '';
+
+                if (currentRowCount !== arg.initialRowCount || currentFirstRowId !== arg.initialFirstRowId)
+                {
+                    return true;
+                }
+
+                const stateKey = arg.stateKey;
+                const now = Date.now();
+                const signature = `${currentRowCount}|${currentFirstRowId}`;
+                const state = window[stateKey] || { signature: null, stableSince: now };
+
+                if (state.signature !== signature)
+                {
+                    state.signature = signature;
+                    state.stableSince = now;
+                    window[stateKey] = state;
+                    return false;
+                }
+
+                window[stateKey] = state;
+                return now - state.stableSince >= arg.minStableMs;
+            }",
+            new
+            {
+                rowSelector = TransactionRowSelector,
+                initialRowCount,
+                initialFirstRowId,
+                minStableMs = FilterTableStableWaitMs,
+                stateKey = $"__lfm_filter_wait_state_{Guid.NewGuid():N}"
+            },
+            new PageWaitForFunctionOptions
+            {
+                Timeout = FilterTableUpdateTimeoutMs
+            });
     }
 
     /// <summary>
