@@ -66,14 +66,6 @@ public class TransactionsPageModel : PageObjectBase
             throw new ArgumentNullException(nameof(filterType));
         }
 
-        var initialRowCount = await Page.Locator(TransactionRowSelector).CountAsync();
-        var initialFirstRowId = await Page.EvaluateAsync<string>(
-            @"selector => {
-                const firstRow = document.querySelector(selector);
-                return firstRow ? (firstRow.getAttribute('data-transaction-id') ?? '') : '';
-            }",
-            TransactionRowSelector);
-
         var normalized = filterType.Trim().ToLowerInvariant();
 
         var value = normalized switch
@@ -87,6 +79,34 @@ public class TransactionsPageModel : PageObjectBase
                 "Unsupported filter type for SelectFilterAsync. Expected 'all', 'assigned', or 'uncategorized'.")
         };
 
+        var expectedStatusMode = value switch
+        {
+            "assigned" => "assigned",
+            "unassigned" => "unassigned",
+            _ => "all"
+        };
+
+        var previousValue = await Page.EvaluateAsync<string>(
+            @"selector => {
+                const select = document.querySelector(selector);
+                return select ? select.value : '';
+            }",
+            AssignmentStatusFilterSelector);
+
+        var initialTableSignature = await Page.EvaluateAsync<string>(
+            @"selector => {
+                const rows = Array.from(document.querySelectorAll(selector));
+                return rows
+                    .map(row => {
+                        const id = row.getAttribute('data-transaction-id') ?? '';
+                        const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
+                        const status = isUnassigned ? 'unassigned' : 'assigned';
+                        return `${id}|${status}`;
+                    })
+                    .join(';');
+            }",
+            TransactionRowSelector);
+
         await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
         await Page.WaitForFunctionAsync(
             @"arg => {
@@ -98,37 +118,48 @@ public class TransactionsPageModel : PageObjectBase
         await Page.WaitForFunctionAsync(
             @"arg => {
                 const rows = Array.from(document.querySelectorAll(arg.rowSelector));
-                const currentRowCount = rows.length;
-                const currentFirstRowId = rows[0]?.getAttribute('data-transaction-id') ?? '';
+                const currentSignature = rows
+                    .map(row => {
+                        const id = row.getAttribute('data-transaction-id') ?? '';
+                        const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
+                        const status = isUnassigned ? 'unassigned' : 'assigned';
+                        return `${id}|${status}`;
+                    })
+                    .join(';');
 
-                if (currentRowCount !== arg.initialRowCount || currentFirstRowId !== arg.initialFirstRowId)
+                const hasTableChanged = currentSignature !== arg.initialTableSignature;
+                const rowsMatchFilter = arg.expectedStatusMode === 'unassigned'
+                    ? rows.every(row => !!row.querySelector('[aria-label=""Niet toegewezen""]'))
+                    : arg.expectedStatusMode === 'assigned'
+                        ? rows.every(row => !row.querySelector('[aria-label=""Niet toegewezen""]'))
+                        : true;
+
+                if (!rowsMatchFilter)
+                {
+                    return false;
+                }
+
+                if (hasTableChanged)
                 {
                     return true;
                 }
 
-                const stateKey = arg.stateKey;
-                const now = Date.now();
-                const signature = `${currentRowCount}|${currentFirstRowId}`;
-                const state = window[stateKey] || { signature: null, stableSince: now };
-
-                if (state.signature !== signature)
+                if (arg.expectedStatusMode === 'all')
                 {
-                    state.signature = signature;
-                    state.stableSince = now;
-                    window[stateKey] = state;
-                    return false;
+                    return arg.previousValue === arg.value || Date.now() - arg.startedAt >= arg.minStableMs;
                 }
 
-                window[stateKey] = state;
-                return now - state.stableSince >= arg.minStableMs;
+                return true;
             }",
             new
             {
                 rowSelector = TransactionRowSelector,
-                initialRowCount,
-                initialFirstRowId,
+                initialTableSignature,
+                expectedStatusMode,
+                previousValue,
+                value,
+                startedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 minStableMs = FilterTableStableWaitMs,
-                stateKey = $"__lfm_filter_wait_state_{Guid.NewGuid():N}"
             },
             new PageWaitForFunctionOptions
             {
