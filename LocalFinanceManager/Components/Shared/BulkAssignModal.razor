@@ -312,6 +312,7 @@
             return;
         }
 
+        CancellationTokenSource? currentBulkAssignCancellationTokenSource = null;
         try
         {
             var processingStartedAt = DateTime.UtcNow;
@@ -323,7 +324,9 @@
             bulkResult = null;
             bulkAssignCancellationTokenSource?.Cancel();
             bulkAssignCancellationTokenSource?.Dispose();
-            bulkAssignCancellationTokenSource = new CancellationTokenSource();
+            currentBulkAssignCancellationTokenSource = new CancellationTokenSource();
+            bulkAssignCancellationTokenSource = currentBulkAssignCancellationTokenSource;
+            var cancellationToken = currentBulkAssignCancellationTokenSource.Token;
 
             progressMessage = "Voorbereiden...";
             StateHasChanged();
@@ -349,7 +352,7 @@
             bulkResult = await AssignmentService.BulkAssignTransactionsAsync(
                 request,
                 progressReporter,
-                bulkAssignCancellationTokenSource.Token);
+                cancellationToken);
 
             progressPercentage = 100;
             progressMessage = "Voltooid!";
@@ -357,31 +360,33 @@
 
             // Wait a moment to show completion
             var completionMessageVisibleMilliseconds = Math.Max(0, uiOptions.CompletionMessageVisibleMilliseconds);
-            if (completionMessageVisibleMilliseconds > 0 && bulkAssignCancellationTokenSource is not null)
+            if (completionMessageVisibleMilliseconds > 0)
             {
-                await Task.Delay(completionMessageVisibleMilliseconds, bulkAssignCancellationTokenSource.Token);
+                await Task.Delay(completionMessageVisibleMilliseconds, cancellationToken);
             }
 
             var applyMinimumVisibleDuration = !uiOptions.ApplyMinimumVisibleDurationOnlyInDevelopment
                 || HostEnvironment.IsDevelopment();
 
             var minimumProcessingVisibleMilliseconds = Math.Max(0, uiOptions.MinimumProcessingVisibleMilliseconds);
-            if (applyMinimumVisibleDuration && minimumProcessingVisibleMilliseconds > 0 && bulkAssignCancellationTokenSource is not null)
+            if (applyMinimumVisibleDuration && minimumProcessingVisibleMilliseconds > 0)
             {
                 var elapsedMilliseconds = (int)(DateTime.UtcNow - processingStartedAt).TotalMilliseconds;
                 var remainingMilliseconds = minimumProcessingVisibleMilliseconds - elapsedMilliseconds;
                 if (remainingMilliseconds > 0)
                 {
-                    await Task.Delay(remainingMilliseconds, bulkAssignCancellationTokenSource.Token);
+                    await Task.Delay(remainingMilliseconds, cancellationToken);
                 }
             }
 
-            if (bulkAssignCancellationTokenSource?.IsCancellationRequested == true)
+            if (cancellationToken.IsCancellationRequested)
             {
                 progressMessage = "Bulk toewijzing geannuleerd.";
                 bulkResult = null;
                 return;
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
             await OnBulkAssigned.InvokeAsync();
         }
         catch (OperationCanceledException)
@@ -397,8 +402,16 @@
         finally
         {
             isProcessing = false;
-            bulkAssignCancellationTokenSource?.Dispose();
-            bulkAssignCancellationTokenSource = null;
+
+            if (currentBulkAssignCancellationTokenSource is not null)
+            {
+                currentBulkAssignCancellationTokenSource.Dispose();
+            }
+
+            if (ReferenceEquals(bulkAssignCancellationTokenSource, currentBulkAssignCancellationTokenSource))
+            {
+                bulkAssignCancellationTokenSource = null;
+            }
         }
     }
 
