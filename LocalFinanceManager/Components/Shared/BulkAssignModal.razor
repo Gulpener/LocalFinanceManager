@@ -10,7 +10,7 @@
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
 {
     <div id="bulkAssignModal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
-         aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown">
+         aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -183,12 +183,27 @@
     private BulkAssignResultDto? bulkResult;
     private bool showErrorDetails = false;
     private bool isFocusTrapActive;
+    private bool isInitialFocusSet;
+    private bool wasVisible;
+    private ElementReference modalContainerRef;
 
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
     private bool ShouldRenderModal => IsVisible && TransactionIds != null && TransactionIds.Any();
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = false;
+        }
+
+        if (IsVisible && !wasVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = true;
+        }
+
         if (IsVisible && BudgetPlanId.HasValue)
         {
             if (budgetLines == null)
@@ -214,10 +229,36 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (ShouldRenderModal && !isFocusTrapActive)
+        if (!ShouldRenderModal)
+        {
+            isInitialFocusSet = false;
+            return;
+        }
+
+        if (!isFocusTrapActive)
         {
             await JSRuntime.InvokeVoidAsync("localFinanceKeyboard.trapFocus", "#bulkAssignModal");
             isFocusTrapActive = true;
+        }
+
+        if (isInitialFocusSet)
+        {
+            return;
+        }
+
+        isInitialFocusSet = true;
+
+        try
+        {
+            var focused = await JSRuntime.InvokeAsync<bool>("localFinanceKeyboard.focusSelector", "#bulkAssignModal select.form-select:not([disabled])");
+            if (!focused)
+            {
+                await modalContainerRef.FocusAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to set initial focus in bulk assign modal");
         }
     }
 

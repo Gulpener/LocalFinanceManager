@@ -60,6 +60,31 @@ public class KeyboardNavigationTests : E2ETestBase
     }
 
     [Test]
+    public async Task BulkAssignModal_InitialFocus_IsSetToBudgetLineSelect()
+    {
+        using var scope = Factory!.CreateDbScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var account = await SeedDataHelper.SeedAccountAsync(context, "Bulk Focus Test", "NL91ABNA0417164300", 1000m);
+        var budgetPlanId = account.CurrentBudgetPlanId!.Value;
+        var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Household");
+        await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -25m, DateTime.Now, "Bulk Focus Transaction");
+
+        await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        await Page.Locator("tr[data-testid='transaction-row'] input[type='checkbox']").First.CheckAsync();
+        await Page.Locator("button:has-text('Bulk toewijzen')").ClickAsync();
+
+        var bulkModal = Page.Locator("#bulkAssignModal");
+        await Expect(bulkModal).ToBeVisibleAsync();
+        await Page.WaitForFunctionAsync("() => document.activeElement?.matches('#bulkAssignModal select.form-select:not([disabled])') === true");
+
+        var isFocusedInsideBulkModal = await Page.EvaluateAsync<bool>("() => !!document.activeElement?.closest('#bulkAssignModal')");
+        Assert.That(isFocusedInsideBulkModal, Is.True);
+    }
+
+    [Test]
     public async Task AssignmentModal_Enter_OnSave_SubmitsAndCloses()
     {
         using var scope = Factory!.CreateDbScope();
