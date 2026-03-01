@@ -296,13 +296,6 @@ else
         }
         else if (key == "Escape")
         {
-            if (showAssignModal)
-            {
-                CloseAssignModal();
-                StateHasChanged();
-                return Task.CompletedTask;
-            }
-
             if (showBulkAssignModal)
             {
                 CloseBulkAssignModal();
