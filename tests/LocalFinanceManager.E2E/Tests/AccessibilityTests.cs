@@ -33,7 +33,7 @@ public class AccessibilityTests : E2ETestBase
         var budgetPlanId = account.CurrentBudgetPlanId!.Value;
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "A11y Category");
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -15m, DateTime.Now, "A11y Tx");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -15m, DateTime.UtcNow, "A11y Tx");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await Page.Locator("button:has-text('Toewijzen')").First.ClickAsync();
@@ -74,7 +74,7 @@ public class AccessibilityTests : E2ETestBase
         var budgetPlanId = account.CurrentBudgetPlanId!.Value;
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Tab Order Category");
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -33m, DateTime.Now, "Tab Order Tx");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -33m, DateTime.UtcNow, "Tab Order Tx");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await Page.Locator("button:has-text('Toewijzen')").First.ClickAsync();

@@ -93,7 +93,7 @@ public class UXEnhancementsTests : E2ETestBase
                 context,
                 account.Id,
                 -50m,
-                DateTime.Now.AddDays(-i),
+                DateTime.UtcNow.AddDays(-i),
                 $"Transaction {i}");
 
             // Assign first 3 transactions
@@ -134,10 +134,10 @@ public class UXEnhancementsTests : E2ETestBase
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
 
         // Seed transactions with different dates
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now.AddDays(-5), "Recent 1");
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now.AddDays(-10), "Recent 2");
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now.AddDays(-40), "Old 1");
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now.AddDays(-100), "Old 2");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow.AddDays(-5), "Recent 1");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow.AddDays(-10), "Recent 2");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow.AddDays(-40), "Old 1");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow.AddDays(-100), "Old 2");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -167,7 +167,7 @@ public class UXEnhancementsTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Test Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -200,11 +200,11 @@ public class UXEnhancementsTests : E2ETestBase
         var budgetLine = await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
 
         // Create and assign a transaction to track budget line usage
-        var transaction1 = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Transaction 1");
+        var transaction1 = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Transaction 1");
         await SeedDataHelper.AssignTransactionAsync(context, transaction1.Id, budgetLine.Id);
 
         // Create new unassigned transaction
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -30m, DateTime.Now, "Transaction 2");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -30m, DateTime.UtcNow, "Transaction 2");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -232,7 +232,7 @@ public class UXEnhancementsTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Test Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -254,7 +254,7 @@ public class UXEnhancementsTests : E2ETestBase
     public async Task LoadingSkeleton_ElementExists_And_HiddenAfterLoad()
     {
         // Arrange
-        // No specific data setup needed; skeleton should display during initial load regardless of seed data.        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        // No specific data setup needed; skeleton should display during initial load regardless of seed data.        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Test Transaction");
 
         // Act - Navigate to transactions page WITHOUT waiting for network idle
         // This allows us to catch the loading skeleton before it disappears
@@ -297,7 +297,7 @@ public class UXEnhancementsTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Test Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -332,7 +332,7 @@ public class UXEnhancementsTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Test Account", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Test Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Test Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 

@@ -19,7 +19,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var budgetPlanId = account.CurrentBudgetPlanId!.Value;
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Groceries");
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.Now, "Keyboard Tab Test");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Keyboard Tab Test");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -46,7 +46,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var budgetPlanId = account.CurrentBudgetPlanId!.Value;
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Food");
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -75m, DateTime.Now, "Split Focus Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -75m, DateTime.UtcNow, "Split Focus Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -70,7 +70,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var budgetPlanId = account.CurrentBudgetPlanId!.Value;
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Household");
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -25m, DateTime.Now, "Bulk Focus Transaction");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -25m, DateTime.UtcNow, "Bulk Focus Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -99,7 +99,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var seededTransactionIds = new List<Guid>();
         for (var i = 0; i < 40; i++)
         {
-            var transaction = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -10m - i, DateTime.Now.AddMinutes(-i), $"Bulk Esc Tx {i}");
+            var transaction = await SeedDataHelper.SeedTransactionAsync(context, account.Id, -10m - i, DateTime.UtcNow.AddMinutes(-i), $"Bulk Esc Tx {i}");
             seededTransactionIds.Add(transaction.Id);
         }
 
@@ -144,7 +144,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var budgetPlanId = account.CurrentBudgetPlanId!.Value;
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Utilities");
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -32m, DateTime.Now, "Keyboard Enter Test");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -32m, DateTime.UtcNow, "Keyboard Enter Test");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -167,7 +167,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var budgetPlanId = account.CurrentBudgetPlanId!.Value;
         var categories = await SeedDataHelper.SeedCategoriesAsync(context, budgetPlanId, "Leisure");
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -20m, DateTime.Now, "Keyboard Esc Test");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -20m, DateTime.UtcNow, "Keyboard Esc Test");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -188,7 +188,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Space Test", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -10m, DateTime.Now, "Keyboard Space Test");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -10m, DateTime.UtcNow, "Keyboard Space Test");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -212,7 +212,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Space Single Toggle Test", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -12m, DateTime.Now, "Keyboard Space Single Toggle Test");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -12m, DateTime.UtcNow, "Keyboard Space Single Toggle Test");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
@@ -240,7 +240,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var account = await SeedDataHelper.SeedAccountAsync(context, "CtrlA Test", "NL91ABNA0417164300", 1000m);
         for (var i = 0; i < 5; i++)
         {
-            await SeedDataHelper.SeedTransactionAsync(context, account.Id, -5m - i, DateTime.Now.AddDays(-i), $"CtrlA Tx {i}");
+            await SeedDataHelper.SeedTransactionAsync(context, account.Id, -5m - i, DateTime.UtcNow.AddDays(-i), $"CtrlA Tx {i}");
         }
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
@@ -264,7 +264,7 @@ public class KeyboardNavigationTests : E2ETestBase
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var account = await SeedDataHelper.SeedAccountAsync(context, "Slash Test", "NL91ABNA0417164300", 1000m);
-        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -25m, DateTime.Now, "Slash Tx");
+        await SeedDataHelper.SeedTransactionAsync(context, account.Id, -25m, DateTime.UtcNow, "Slash Tx");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 

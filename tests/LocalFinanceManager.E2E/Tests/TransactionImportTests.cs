@@ -4,6 +4,7 @@ using LocalFinanceManager.E2E.Pages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
+using System.Globalization;
 
 namespace LocalFinanceManager.E2E.Tests;
 
@@ -12,6 +13,11 @@ public class TransactionImportTests : E2ETestBase
 {
     private ImportModalPageModel _importPage = null!;
     private Guid _accountId;
+
+    private static string ToIsoDate(DateTime date)
+    {
+        return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    }
 
     [SetUp]
     public async Task SetUp()
@@ -28,7 +34,10 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task UploadCsv_ShowsPreview_WithExpectedCount()
     {
-        var csv = "Date,Amount,Description,Counterparty,ExternalId\n2026-02-01,-12.50,Coffee,Store,EXT-1\n2026-02-02,-20.00,Lunch,Cafe,EXT-2\n2026-02-03,2500.00,Salary,Employer,EXT-3";
+        var firstDate = DateTime.UtcNow.Date.AddDays(-3);
+        var secondDate = firstDate.AddDays(1);
+        var thirdDate = firstDate.AddDays(2);
+        var csv = $"Date,Amount,Description,Counterparty,ExternalId\n{ToIsoDate(firstDate)},-12.50,Coffee,Store,EXT-1\n{ToIsoDate(secondDate)},-20.00,Lunch,Cafe,EXT-2\n{ToIsoDate(thirdDate)},2500.00,Salary,Employer,EXT-3";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
@@ -45,7 +54,8 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task Csv_AutoMapping_DetectsStandardHeaders()
     {
-        var csv = "Date,Amount,Description,Counterparty,ExternalId\n2026-02-01,-12.50,Coffee,Store,EXT-1";
+        var csvDate = DateTime.UtcNow.Date.AddDays(-2);
+        var csv = $"Date,Amount,Description,Counterparty,ExternalId\n{ToIsoDate(csvDate)},-12.50,Coffee,Store,EXT-1";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
@@ -61,7 +71,8 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task Csv_ManualMapping_UpdatesSelectedColumn()
     {
-        var csv = "Date,Amount,Memo,Counterparty\n2026-02-01,-12.50,Manual mapped text,Store";
+        var csvDate = DateTime.UtcNow.Date.AddDays(-2);
+        var csv = $"Date,Amount,Memo,Counterparty\n{ToIsoDate(csvDate)},-12.50,Manual mapped text,Store";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
@@ -76,16 +87,19 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task Import_ExactDeduplication_SkipsDuplicateExternalId()
     {
+        var firstDate = DateTime.UtcNow.Date.AddDays(-2);
+        var secondDate = firstDate.AddDays(1);
+
         using (var scope = Factory!.CreateDbScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await SeedDataHelper.SeedTransactionAsync(context, _accountId, -12.50m, new DateTime(2026, 2, 1), "Existing Coffee");
+            await SeedDataHelper.SeedTransactionAsync(context, _accountId, -12.50m, firstDate, "Existing Coffee");
             var existing = await context.Transactions.FirstAsync(t => t.AccountId == _accountId);
             existing.ExternalId = "EXT-DUP";
             await context.SaveChangesAsync();
         }
 
-        var csv = "Date,Amount,Description,Counterparty,ExternalId\n2026-02-01,-12.50,Coffee duplicate,Store,EXT-DUP\n2026-02-02,-20.00,Lunch,Cafe,EXT-NEW";
+        var csv = $"Date,Amount,Description,Counterparty,ExternalId\n{ToIsoDate(firstDate)},-12.50,Coffee duplicate,Store,EXT-DUP\n{ToIsoDate(secondDate)},-20.00,Lunch,Cafe,EXT-NEW";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
@@ -101,13 +115,16 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task Import_FuzzyDeduplication_SkipsSimilarTransaction()
     {
+        var seedDate = DateTime.UtcNow.Date.AddDays(-2);
+        var importDate = seedDate.AddDays(1);
+
         using (var scope = Factory!.CreateDbScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await SeedDataHelper.SeedTransactionAsync(context, _accountId, -50.00m, new DateTime(2026, 2, 10), "Grocery Store Albert Heijn");
+            await SeedDataHelper.SeedTransactionAsync(context, _accountId, -50.00m, seedDate, "Grocery Store Albert Heijn");
         }
 
-        var csv = "Date,Amount,Description,Counterparty,ExternalId\n2026-02-11,-50.00,Grocery Store Heijn,Albert Heijn,EXT-FUZZY-1";
+        var csv = $"Date,Amount,Description,Counterparty,ExternalId\n{ToIsoDate(importDate)},-50.00,Grocery Store Heijn,Albert Heijn,EXT-FUZZY-1";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
@@ -123,7 +140,8 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task Import_WithInvalidRows_ImportsValidSubset()
     {
-        var csv = "Date,Amount,Description,Counterparty,ExternalId\nNOT_A_DATE,-12.50,Bad row,Store,EXT-BAD\n2026-02-02,-20.00,Good row,Cafe,EXT-GOOD";
+        var validDate = DateTime.UtcNow.Date.AddDays(-2);
+        var csv = $"Date,Amount,Description,Counterparty,ExternalId\nNOT_A_DATE,-12.50,Bad row,Store,EXT-BAD\n{ToIsoDate(validDate)},-20.00,Good row,Cafe,EXT-GOOD";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
@@ -142,7 +160,9 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task Import_JsonFormat_Succeeds()
     {
-        var json = "[{\"Date\":\"2026-02-01\",\"Amount\":-5.25,\"Description\":\"Coffee JSON\",\"Counterparty\":\"Cafe\",\"ExternalId\":\"JSON-1\"},{\"Date\":\"2026-02-02\",\"Amount\":42.0,\"Description\":\"Refund JSON\",\"Counterparty\":\"Shop\",\"ExternalId\":\"JSON-2\"}]";
+        var firstDate = DateTime.UtcNow.Date.AddDays(-2);
+        var secondDate = firstDate.AddDays(1);
+        var json = $"[{{\"Date\":\"{ToIsoDate(firstDate)}\",\"Amount\":-5.25,\"Description\":\"Coffee JSON\",\"Counterparty\":\"Cafe\",\"ExternalId\":\"JSON-1\"}},{{\"Date\":\"{ToIsoDate(secondDate)}\",\"Amount\":42.0,\"Description\":\"Refund JSON\",\"Counterparty\":\"Shop\",\"ExternalId\":\"JSON-2\"}}]";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
@@ -158,7 +178,8 @@ public class TransactionImportTests : E2ETestBase
     [Test]
     public async Task Import_NavigateToTransactions_ShowsImportedRow()
     {
-        var csv = "Date,Amount,Description,Counterparty,ExternalId\n2026-02-20,-35.00,US10 NAV TEST,Store,EXT-NAV";
+        var csvDate = DateTime.UtcNow.Date.AddDays(-1);
+        var csv = $"Date,Amount,Description,Counterparty,ExternalId\n{ToIsoDate(csvDate)},-35.00,US10 NAV TEST,Store,EXT-NAV";
 
         await _importPage.NavigateAsync();
         await _importPage.SelectAccountAsync(_accountId);
