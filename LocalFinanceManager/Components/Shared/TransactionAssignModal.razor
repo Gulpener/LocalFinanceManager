@@ -14,13 +14,13 @@
 {
     <div id="transactionAssignModal" class="modal fade show d-block" tabindex="-1"
          style="background-color: rgba(0,0,0,0.5);" role="dialog" aria-modal="true" aria-labelledby="assignModalTitle"
-            @onclick="Close" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
+         @onclick="Close" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-lg" @onclick:stopPropagation>
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
-                                                                                                                                                                                                                                            $"({Transaction.Date.Year})"
-                                                                                                                                                                                                                                            : "")</h5>
+                                                                                                                                                                                                                                                                    $"({Transaction.Date.Year})"
+                                                                                                                                                                                                                                                                    : "")</h5>
                         <button type="button" class="btn-close" @onclick="Close"
                                 aria-label="Druk op Esc om te sluiten"></button>
                     </div>
