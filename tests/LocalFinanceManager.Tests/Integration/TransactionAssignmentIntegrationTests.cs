@@ -890,7 +890,7 @@ public class TransactionAssignmentIntegrationTests
     }
 
     [Test]
-    public async Task SplitTransaction_ValidationFailure_ShouldRecordValidationFailedAuditWithDistinctBudgetLineIds()
+    public async Task SplitTransaction_ValidationFailure_ShouldRecordValidationErrorAuditWithDistinctBudgetLineIds()
     {
         // Arrange
         var checkingAccount = new Account
@@ -1000,7 +1000,7 @@ public class TransactionAssignmentIntegrationTests
 
         var audits = await _auditRepository.GetByTransactionIdAsync(transaction.Id);
         Assert.That(audits.Count, Is.EqualTo(1));
-        Assert.That(audits[0].ActionType, Is.EqualTo("ValidationFailed"));
+        Assert.That(audits[0].ActionType, Is.EqualTo("ValidationError"));
 
         Assert.That(audits[0].BeforeState, Is.Not.Null);
         using var beforeStateJson = System.Text.Json.JsonDocument.Parse(audits[0].BeforeState!);
