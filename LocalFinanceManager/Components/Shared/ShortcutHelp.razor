@@ -170,14 +170,25 @@
 
     private string PrimaryModifier => IsMacOs ? "Cmd" : "Ctrl";
     private bool isFocusTrapActive;
+    private bool isInitialFocusSet;
     private bool wasVisible;
     private ElementReference modalContainerRef;
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!IsVisible)
+        {
+            isInitialFocusSet = false;
+        }
+
+        if (IsVisible && !wasVisible)
+        {
+            isInitialFocusSet = false;
+            wasVisible = true;
+        }
+
         if (IsVisible)
         {
-            wasVisible = true;
             return;
         }
 
@@ -201,9 +212,10 @@
             isFocusTrapActive = true;
         }
 
-        if (firstRender)
+        if (!isInitialFocusSet)
         {
             await modalContainerRef.FocusAsync();
+            isInitialFocusSet = true;
         }
     }
 
@@ -223,6 +235,7 @@
     private async Task Close()
     {
         await ReleaseFocusTrapAsync();
+        isInitialFocusSet = false;
         wasVisible = false;
         await OnClose.InvokeAsync();
     }
