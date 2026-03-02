@@ -166,7 +166,9 @@ public class SplitEditorPageModel : PageObjectBase
         }
 
         var classList = await validationIndicator.GetAttributeAsync("class");
-        return classList?.Contains("valid") ?? false;
+        // Split by whitespace to avoid "invalid" containing "valid" as a substring
+        var classes = classList?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        return classes.Contains("valid");
     }
 
     /// <summary>

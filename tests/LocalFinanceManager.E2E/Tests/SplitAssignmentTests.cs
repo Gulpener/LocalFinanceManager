@@ -246,7 +246,9 @@ public class SplitAssignmentTests : E2ETestBase
         // Verify database shows new split amounts
         using var scope = Factory!.CreateDbScope();
         var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var splits = await ctx.TransactionSplits.Where(s => s.TransactionId == _transactionId).ToListAsync();
+        var splits = await ctx.TransactionSplits
+            .Where(s => s.TransactionId == _transactionId && !s.IsArchived)
+            .ToListAsync();
         Assert.That(splits.Count, Is.EqualTo(2));
         Assert.That(splits.Select(s => s.Amount), Is.EquivalentTo(new[] { 70m, 30m }));
     }
