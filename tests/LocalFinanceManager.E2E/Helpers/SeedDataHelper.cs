@@ -193,12 +193,18 @@ public static class SeedDataHelper
         decimal maxAmount)
     {
         var transactions = new List<Transaction>();
+        var currentYearStart = new DateTime(DateTime.UtcNow.Year, 1, 1);
         var startDate = DateTime.UtcNow.AddDays(-90);
+        if (startDate < currentYearStart)
+        {
+            startDate = currentYearStart;
+        }
+        var maxDays = Math.Max(1, (int)(DateTime.UtcNow - startDate).TotalDays);
 
         for (int i = 0; i < count; i++)
         {
             var amount = (decimal)(_random.NextDouble() * (double)(maxAmount - minAmount) + (double)minAmount);
-            var daysOffset = _random.Next(0, 90);
+            var daysOffset = _random.Next(0, maxDays);
             var description = _transactionDescriptions[_random.Next(_transactionDescriptions.Length)];
 
             var transaction = new Transaction
