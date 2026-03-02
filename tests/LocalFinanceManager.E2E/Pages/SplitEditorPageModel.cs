@@ -29,6 +29,16 @@ public class SplitEditorPageModel : PageObjectBase
     }
 
     /// <summary>
+    /// Checks whether the split editor modal is currently visible.
+    /// </summary>
+    /// <returns>True if the modal is visible, false otherwise.</returns>
+    public async Task<bool> IsVisibleAsync()
+    {
+        var modal = await Page.QuerySelectorAsync(ModalSelector);
+        return modal != null && await modal.IsVisibleAsync();
+    }
+
+    /// <summary>
     /// Waits for the split editor modal to appear.
     /// </summary>
     public async Task WaitForModalAsync()
@@ -99,6 +109,9 @@ public class SplitEditorPageModel : PageObjectBase
         }
 
         await amountInput.FillAsync(amount.ToString("0.00"));
+        // Press Tab to blur the input, triggering Blazor's @bind:event="onchange" binding
+        // and the subsequent @bind:after="RecalculateSum" callback for live sum validation.
+        await amountInput.PressAsync("Tab");
     }
 
     /// <summary>

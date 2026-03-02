@@ -43,8 +43,17 @@ jobs:
         run: pwsh -Command "cd tests/LocalFinanceManager.E2E; pwsh bin/Release/net10.0/playwright.ps1 install --with-deps chromium"
         shell: pwsh
 
-      - name: Run E2E tests (including ignored tests)
-        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage"
+      - name: Run E2E tests - Phase 1 (Import + Basic Assignment)
+        timeout-minutes: 10
+        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~TransactionImportTests|FullyQualifiedName~BasicAssignmentTests|FullyQualifiedName~MultiAccountValidationTests"
+
+      - name: Run E2E tests - Phase 2 (Split + Bulk Assignment)
+        timeout-minutes: 10
+        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~SplitAssignmentTests|FullyQualifiedName~BulkAssignmentTests"
+
+      - name: Run E2E tests - Phase 2 (Integration Workflow + UX + Other)
+        timeout-minutes: 10
+        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests|FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests"
 
       - name: Upload test results
         if: always()
@@ -52,6 +61,16 @@ jobs:
         with:
           name: test-results
           path: "**/TestResults/**/*.trx"
+          retention-days: 30
+
+      - name: Upload screenshots and videos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: |
+            **/test-results/screenshots/**
+            **/test-results/videos/**
           retention-days: 30
 
       - name: Upload code coverage

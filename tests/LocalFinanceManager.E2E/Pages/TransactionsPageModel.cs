@@ -29,6 +29,8 @@ public class TransactionsPageModel : PageObjectBase
     private const string NextPageButtonSelector = ".pagination button[aria-label='Next']";
     private const string PreviousPageButtonSelector = ".pagination button[aria-label='Previous']";
 
+    private const string SplitButtonInRowSelector = "button[title='Splits transactie']";
+
     /// <summary>
     /// Initializes a new instance of the TransactionsPageModel class.
     /// </summary>
@@ -335,6 +337,20 @@ public class TransactionsPageModel : PageObjectBase
     public async Task ClickBulkAssignAsync()
     {
         await Page.Locator(BulkAssignButtonSelector).First.ClickAsync();
+    }
+
+    /// <summary>
+    /// Clicks the "Split" button for a specific transaction row by transaction ID.
+    /// </summary>
+    /// <param name="transactionId">ID of the transaction to open split editor for.</param>
+    public async Task ClickSplitButtonAsync(Guid transactionId)
+    {
+        var rowSelector = string.Format(TransactionRowByIdSelector, transactionId);
+        var row = Page.Locator(rowSelector);
+        await row.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+
+        var splitButton = row.Locator(SplitButtonInRowSelector).First;
+        await splitButton.ClickAsync();
     }
 
     /// <summary>

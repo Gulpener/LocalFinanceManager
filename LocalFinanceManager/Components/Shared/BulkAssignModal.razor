@@ -13,7 +13,7 @@
 
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
 {
-    <div id="bulkAssignModal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
+    <div id="bulkAssignModal" data-testid="bulk-assign-modal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
          aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -36,6 +36,7 @@
                              role="alert">
                             <i class="bi @(bulkResult.Success ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")"></i>
                             @bulkResult.Message
+                            <span aria-hidden="true"><span data-testid="success-count">@bulkResult.AssignedCount</span> <span data-testid="failure-count">@bulkResult.FailedCount</span></span>
                             <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
                         </div>
 
@@ -45,7 +46,7 @@
                                 <div class="card-body">
                                     <h6 class="card-subtitle mb-2 text-muted">
                                         Fouten details
-                                        <button class="btn btn-sm btn-link" @onclick="ToggleErrorDetails">
+                                        <button class="btn btn-sm btn-link" data-testid="error-accordion" @onclick="ToggleErrorDetails">
                                             @(showErrorDetails ? "Verbergen" : "Tonen")
                                         </button>
                                     </h6>
@@ -54,7 +55,7 @@
                                         <ul class="list-group">
                                             @foreach (var failedId in bulkResult.FailedTransactionIds)
                                             {
-                                                <li class="list-group-item">
+                                                <li class="list-group-item" data-testid="error-message">
                                                     Transactie ID: @failedId
                                                 </li>
                                             }
@@ -127,13 +128,13 @@
                     else
                     {
                         <!-- Progress Bar -->
-                        <div class="mb-3">
+                        <div class="mb-3" data-testid="bulk-progress-bar">
                             <label class="form-label">Voortgang</label>
                             <div class="progress" style="height: 30px;">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
                                      style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
                                      aria-valuemax="100">
-                                    @progressPercentage%
+                                    <span data-testid="progress-percentage">@progressPercentage%</span>
                                 </div>
                             </div>
                             <div class="text-muted small mt-1" aria-live="polite">
@@ -159,7 +160,7 @@
                     }
                     else
                     {
-                        <button type="button" class="btn btn-primary" @onclick="OnClose">
+                        <button type="button" class="btn btn-primary" data-action="close-bulk-modal" @onclick="OnClose">
                             Sluiten
                         </button>
                     }
