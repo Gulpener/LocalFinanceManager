@@ -1,10 +1,14 @@
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.Data.Repositories
+@using LocalFinanceManager.Configuration
+@using Microsoft.Extensions.Options
 @inject ITransactionAssignmentService AssignmentService
 @inject IBudgetLineRepository BudgetLineRepository
 @inject IJSRuntime JSRuntime
 @inject ILogger<BulkAssignModal> Logger
+@inject IWebHostEnvironment HostEnvironment
+@inject IOptions<BulkAssignUiOptions> BulkAssignUiOptionsAccessor
 @implements IAsyncDisposable
 
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
@@ -308,15 +312,21 @@
             return;
         }
 
+        CancellationTokenSource? currentBulkAssignCancellationTokenSource = null;
         try
         {
+            var processingStartedAt = DateTime.UtcNow;
+            var uiOptions = BulkAssignUiOptionsAccessor.Value;
+
             isProcessing = true;
             progressPercentage = 0;
             errorMessage = null;
             bulkResult = null;
             bulkAssignCancellationTokenSource?.Cancel();
             bulkAssignCancellationTokenSource?.Dispose();
-            bulkAssignCancellationTokenSource = new CancellationTokenSource();
+            currentBulkAssignCancellationTokenSource = new CancellationTokenSource();
+            bulkAssignCancellationTokenSource = currentBulkAssignCancellationTokenSource;
+            var cancellationToken = currentBulkAssignCancellationTokenSource.Token;
 
             progressMessage = "Voorbereiden...";
             StateHasChanged();
@@ -342,14 +352,35 @@
             bulkResult = await AssignmentService.BulkAssignTransactionsAsync(
                 request,
                 progressReporter,
-                bulkAssignCancellationTokenSource.Token);
+                cancellationToken);
 
             progressPercentage = 100;
             progressMessage = "Voltooid!";
             StateHasChanged();
 
-            // Wait a moment to show completion
-            await Task.Delay(500);
+            // Wait a moment to show completion.
+            // Do NOT pass cancellationToken here: the service call already completed and assignments
+            // were applied, so the UI should always surface the result and trigger the parent refresh
+            // regardless of whether the user requested cancellation after the fact.
+            var completionMessageVisibleMilliseconds = Math.Max(0, uiOptions.CompletionMessageVisibleMilliseconds);
+            if (completionMessageVisibleMilliseconds > 0)
+            {
+                await Task.Delay(completionMessageVisibleMilliseconds);
+            }
+
+            var applyMinimumVisibleDuration = !uiOptions.ApplyMinimumVisibleDurationOnlyInDevelopment
+                || HostEnvironment.IsDevelopment();
+
+            var minimumProcessingVisibleMilliseconds = Math.Max(0, uiOptions.MinimumProcessingVisibleMilliseconds);
+            if (applyMinimumVisibleDuration && minimumProcessingVisibleMilliseconds > 0)
+            {
+                var elapsedMilliseconds = (int)(DateTime.UtcNow - processingStartedAt).TotalMilliseconds;
+                var remainingMilliseconds = minimumProcessingVisibleMilliseconds - elapsedMilliseconds;
+                if (remainingMilliseconds > 0)
+                {
+                    await Task.Delay(remainingMilliseconds);
+                }
+            }
 
             await OnBulkAssigned.InvokeAsync();
         }
@@ -366,8 +397,16 @@
         finally
         {
             isProcessing = false;
-            bulkAssignCancellationTokenSource?.Dispose();
-            bulkAssignCancellationTokenSource = null;
+
+            if (currentBulkAssignCancellationTokenSource is not null)
+            {
+                currentBulkAssignCancellationTokenSource.Dispose();
+            }
+
+            if (ReferenceEquals(bulkAssignCancellationTokenSource, currentBulkAssignCancellationTokenSource))
+            {
+                bulkAssignCancellationTokenSource = null;
+            }
         }
     }
 

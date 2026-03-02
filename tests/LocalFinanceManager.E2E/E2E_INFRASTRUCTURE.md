@@ -237,7 +237,7 @@ public async Task FilterTransactionsByAccount()
 
 ```csharp
 [Test]
-public async Task AssignTransactionToCategory()
+public async Task AssignTransactionToBudgetLine()
 {
     // Arrange
     var transactionsPage = new TransactionsPageModel(Page, BaseUrl);
@@ -247,7 +247,7 @@ public async Task AssignTransactionToCategory()
     // Act - Use assignment modal
     var assignmentModal = new AssignmentModalPageModel(Page, BaseUrl);
     await assignmentModal.WaitForModalAsync();
-    await assignmentModal.SelectCategoryAsync(categoryId);
+    await assignmentModal.SelectBudgetLineAsync(budgetLineId);
     await assignmentModal.EnterNoteAsync("Test assignment");
     await assignmentModal.ClickAssignAsync();
 
@@ -495,15 +495,14 @@ var account = await SeedDataHelper.SeedAccountAsync(context, "Test", "...", 1000
 ❌ **Don't** interact with selectors directly in tests:
 
 ```csharp
-await Page.ClickAsync("button[data-action='assign']");
-await Page.FillAsync("#category-select", categoryId.ToString());
+await Page.SelectOptionAsync("#budgetLineSelect", budgetLineId.ToString());
 ```
 
 ✅ **Do** use PageObjectModels:
 
 ```csharp
 var assignmentModal = new AssignmentModalPageModel(Page, BaseUrl);
-await assignmentModal.SelectCategoryAsync(categoryId);
+await assignmentModal.SelectBudgetLineAsync(budgetLineId);
 await assignmentModal.ClickAssignAsync();
 ```
 
@@ -517,7 +516,7 @@ Follow the pattern: `MethodUnderTest_Scenario_ExpectedOutcome`
 
 ```csharp
 [Test]
-public async Task AssignTransaction_ValidCategory_AssignsSuccessfully()
+public async Task AssignTransaction_ValidBudgetLine_AssignsSuccessfully()
 ```
 
 ### 5. Follow AAA Pattern

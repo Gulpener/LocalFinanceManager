@@ -58,8 +58,20 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Transaction {transactionId} not found");
         }
 
-        // Validate year matching
-        await ValidateYearMatchAsync(transaction, request.BudgetLineId);
+        try
+        {
+            await ValidateBudgetLineAssignmentAsync(transaction, request.BudgetLineId);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            await RecordAuditAsync(
+                transactionId,
+                "ValidationFailed",
+                new { request.BudgetLineId },
+                new { ErrorCode = "AssignmentValidationFailed", Error = ex.Message });
+
+            throw;
+        }
 
         // Clear existing splits
         await _splitRepository.DeleteByTransactionIdAsync(transactionId);
@@ -95,10 +107,34 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Transaction {transactionId} not found");
         }
 
-        // Validate year matching for all splits
-        foreach (var split in request.Splits)
+        // Validate account budget-plan ownership and year matching for all unique budget lines
+        var budgetLineIds = request.Splits.Select(s => s.BudgetLineId).Distinct().ToList();
+        try
         {
-            await ValidateYearMatchAsync(transaction, split.BudgetLineId);
+            foreach (var budgetLineId in budgetLineIds)
+            {
+                await ValidateBudgetLineAssignmentAsync(transaction, budgetLineId);
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            try
+            {
+                await RecordAuditAsync(
+                    transactionId,
+                    "ValidationFailed",
+                    new { BudgetLineIds = budgetLineIds },
+                    new { ErrorCode = "SplitValidationFailed", Error = ex.Message });
+            }
+            catch (Exception auditEx)
+            {
+                _logger.LogError(
+                    auditEx,
+                    "Failed to record audit for split validation failure on transaction {TransactionId}",
+                    transactionId);
+            }
+
+            throw;
         }
 
         // Validate split sum
@@ -268,7 +304,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         await _auditRepository.AddAsync(audit);
     }
 
-    private async Task ValidateYearMatchAsync(Transaction transaction, Guid budgetLineId)
+    private async Task ValidateBudgetLineAssignmentAsync(Transaction transaction, Guid budgetLineId)
     {
         var budgetLine = await _budgetLineRepository.GetByIdAsync(budgetLineId);
         if (budgetLine == null)
@@ -276,13 +312,19 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException($"Budget line {budgetLineId} not found");
         }
 
+        ValidateBudgetLineBelongsToTransactionAccount(transaction, budgetLine);
+        ValidateYearMatch(transaction, budgetLine);
+    }
+
+    private static void ValidateYearMatch(Transaction transaction, BudgetLine budgetLine)
+    {
         var transactionYear = transaction.Date.Year;
 
         // Load budget plan to get year
         var budgetPlan = budgetLine.BudgetPlan;
         if (budgetPlan == null)
         {
-            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLineId}");
+            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLine.Id}");
         }
 
         if (budgetPlan.Year != transactionYear)
@@ -290,6 +332,21 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new InvalidOperationException(
                 $"Cannot assign {transactionYear} transaction to {budgetPlan.Year} budget plan. " +
                 $"Create a budget plan for {transactionYear} first.");
+        }
+    }
+
+    private static void ValidateBudgetLineBelongsToTransactionAccount(Transaction transaction, BudgetLine budgetLine)
+    {
+        var budgetPlan = budgetLine.BudgetPlan;
+        if (budgetPlan == null)
+        {
+            throw new InvalidOperationException($"Budget plan not found for budget line {budgetLine.Id}");
+        }
+
+        if (budgetPlan.AccountId != transaction.AccountId)
+        {
+            throw new ArgumentException(
+                $"Budget line belongs to a different account budget plan. Transaction account: {transaction.AccountId}, budget line account: {budgetPlan.AccountId}.");
         }
     }
 

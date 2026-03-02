@@ -1,12 +1,15 @@
 using Bunit;
 using Bunit.JSInterop;
+using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Components.Pages;
 using LocalFinanceManager.Components.Shared;
 using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Moq;
 
 namespace LocalFinanceManager.Tests.Components;
@@ -180,6 +183,7 @@ public class ShortcutHelpTests
         var budgetLineRepositoryMock = new Mock<IBudgetLineRepository>();
         var budgetPlanRepositoryMock = new Mock<IBudgetPlanRepository>();
         var recentCategoriesServiceMock = new Mock<IRecentCategoriesService>();
+        var hostEnvironmentMock = new Mock<IWebHostEnvironment>();
 
         transactionRepositoryMock
             .Setup(x => x.GetAllWithSplitsAsync())
@@ -201,6 +205,10 @@ public class ShortcutHelpTests
             .Setup(x => x.LoadFiltersAsync())
             .ReturnsAsync((FilterState?)null);
 
+        hostEnvironmentMock
+            .Setup(x => x.EnvironmentName)
+            .Returns(Environments.Development);
+
         services.AddSingleton(transactionRepositoryMock.Object);
         services.AddSingleton(accountRepositoryMock.Object);
         services.AddSingleton(deviceDetectionServiceMock.Object);
@@ -209,6 +217,9 @@ public class ShortcutHelpTests
         services.AddSingleton(budgetLineRepositoryMock.Object);
         services.AddSingleton(budgetPlanRepositoryMock.Object);
         services.AddSingleton(recentCategoriesServiceMock.Object);
+        services.AddSingleton(hostEnvironmentMock.Object);
+        services.AddOptions();
+        services.Configure<BulkAssignUiOptions>(_ => { });
         services.AddLogging();
     }
 }

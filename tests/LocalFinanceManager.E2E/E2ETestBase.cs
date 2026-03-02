@@ -86,6 +86,8 @@ public abstract class E2ETestBase : PageTest
         _currentTestName = TestContext.CurrentContext.Test.Name;
         TestContext.Out.WriteLine($"Starting test: {_currentTestName}");
 
+        Directory.CreateDirectory(Path.Combine("test-results", "screenshots"));
+
         // Optional: Uncomment if your tests need clean database state
         // Most tests can share state within a worker for better performance
         // await Factory!.TruncateTablesAsync();

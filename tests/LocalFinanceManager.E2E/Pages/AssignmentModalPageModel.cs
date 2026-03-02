@@ -4,18 +4,16 @@ namespace LocalFinanceManager.E2E.Pages;
 
 /// <summary>
 /// Page Object Model for the Assignment Modal.
-/// Provides methods to interact with the transaction assignment modal (category selection, notes, etc.).
+/// Provides methods to interact with the transaction assignment modal (budget line selection, notes, etc.).
 /// </summary>
 public class AssignmentModalPageModel : PageObjectBase
 {
     // Selectors
-    private const string ModalSelector = "[data-testid='assignment-modal']";
-    private const string CategoryDropdownSelector = "#category-select";
-    private const string BudgetLineDropdownSelector = "#budgetline-select";
-    private const string NoteInputSelector = "#assignment-note";
-    private const string AssignButtonSelector = "button[data-action='submit-assign']";
-    private const string CancelButtonSelector = "button[data-action='cancel-assign']";
-    private const string SplitButtonSelector = "button[data-action='split-transaction']";
+    private const string ModalSelector = "#transactionAssignModal";
+    private const string BudgetLineSelectSelector = "#budgetLineSelect";
+    private const string NoteInputSelector = "#noteInput";
+    private const string AssignButtonSelector = "#assignSaveButton";
+    private const string CancelButtonSelector = "#assignCancelButton";
 
     /// <summary>
     /// Initializes a new instance of the AssignmentModalPageModel class.
@@ -35,21 +33,12 @@ public class AssignmentModalPageModel : PageObjectBase
     }
 
     /// <summary>
-    /// Selects a category from the category dropdown.
-    /// </summary>
-    /// <param name="categoryId">ID of the category to select.</param>
-    public async Task SelectCategoryAsync(Guid categoryId)
-    {
-        await Page.SelectOptionAsync(CategoryDropdownSelector, categoryId.ToString());
-    }
-
-    /// <summary>
     /// Selects a budget line from the budget line dropdown.
     /// </summary>
     /// <param name="budgetLineId">ID of the budget line to select.</param>
     public async Task SelectBudgetLineAsync(Guid budgetLineId)
     {
-        await Page.SelectOptionAsync(BudgetLineDropdownSelector, budgetLineId.ToString());
+        await Page.SelectOptionAsync(BudgetLineSelectSelector, budgetLineId.ToString());
     }
 
     /// <summary>
@@ -77,14 +66,6 @@ public class AssignmentModalPageModel : PageObjectBase
     {
         await Page.ClickAsync(CancelButtonSelector);
         await WaitForModalToCloseAsync();
-    }
-
-    /// <summary>
-    /// Clicks the Split button to open the split editor.
-    /// </summary>
-    public async Task ClickSplitAsync()
-    {
-        await Page.ClickAsync(SplitButtonSelector);
     }
 
     /// <summary>

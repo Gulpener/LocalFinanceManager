@@ -7,13 +7,13 @@
 @if (IsVisible)
 {
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog"
-        aria-modal="true" aria-labelledby="auditTrailModalTitle" @onclick="Close" @onkeydown="HandleKeyDown">
+         aria-modal="true" aria-labelledby="auditTrailModalTitle" @onclick="Close" @onkeydown="HandleKeyDown">
         <div class="modal-dialog modal-lg" @onclick:stopPropagation>
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="auditTrailModalTitle">Toewijzingsgeschiedenis</h5>
                     <button type="button" class="btn-close" @onclick="Close" aria-label="Sluiten"
-                        @ref="closeButtonRef"></button>
+                            @ref="closeButtonRef"></button>
                 </div>
                 <div class="modal-body">
                     @if (loading)
@@ -76,7 +76,7 @@
                                                 <div class="mt-2">
                                                     <strong>Details:</strong>
                                                     <pre
-                                                        class="mt-1 mb-0 p-2 bg-light border rounded"><code>@entry.AfterState</code></pre>
+                                                    class="mt-1 mb-0 p-2 bg-light border rounded"><code>@entry.AfterState</code></pre>
                                                 </div>
                                             }
 
@@ -185,6 +185,8 @@
             "unassign" => "bi-dash-circle",
             "split" => "bi-scissors",
             "bulk_assign" => "bi-collection",
+            "validationfailed" => "bi-exclamation-triangle",
+            "validationerror" => "bi-exclamation-triangle",
             _ => "bi-pencil"
         };
     }
@@ -198,6 +200,8 @@
             "unassign" => "Toewijzing ongedaan gemaakt",
             "split" => "Gesplitst",
             "bulk_assign" => "Bulk toewijzing",
+            "validationfailed" => "Validatie mislukt",
+            "validationerror" => "Validatie mislukt",
             _ => actionType
         };
     }
@@ -211,6 +215,8 @@
             "unassign" => "bg-warning text-dark",
             "split" => "bg-primary",
             "bulk_assign" => "bg-secondary",
+            "validationfailed" => "bg-danger",
+            "validationerror" => "bg-danger",
             _ => "bg-light text-dark"
         };
     }

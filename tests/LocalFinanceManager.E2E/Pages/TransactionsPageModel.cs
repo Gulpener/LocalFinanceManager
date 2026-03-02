@@ -8,10 +8,22 @@ namespace LocalFinanceManager.E2E.Pages;
 /// </summary>
 public class TransactionsPageModel : PageObjectBase
 {
+    private const int FilterTableStableWaitMs = 300;
+    private const int FilterTableUpdateTimeoutMs = 5000;
+    private const string FilterPollingStateKey = "__lfm_transactions_filter_polling_state";
+
     // Selectors
     private const string AccountFilterSelector = "#account-filter";
+    private const string AssignmentStatusFilterSelector = "#assignmentStatusFilter";
     private const string TransactionTableSelector = "table[data-testid='transactions-table']";
     private const string TransactionRowSelector = "tbody tr[data-testid='transaction-row']";
+    private const string TransactionRowByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}']";
+    private const string TransactionCheckboxByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}'] input[type='checkbox']";
+    private const string SelectAllCheckboxSelector = "thead input[type='checkbox'][aria-label='Selecteer alle zichtbare transacties']";
+    private const string BulkAssignButtonSelector = "button:has-text('Bulk toewijzen')";
+    private const string DeselectAllButtonSelector = "button:has-text('Deselecteer alles')";
+    private const string AssignButtonInRowSelector = "button:has-text('Toewijzen'), button:has-text('Wijzig')";
+    private const string AuditButtonInRowSelector = "button[title='Bekijk toewijzingsgeschiedenis']";
     private const string PaginationSelector = ".pagination";
     private const string PageButtonSelector = ".pagination button[data-page='{0}']";
     private const string NextPageButtonSelector = ".pagination button[aria-label='Next']";
@@ -42,6 +54,163 @@ public class TransactionsPageModel : PageObjectBase
     {
         await Page.SelectOptionAsync(AccountFilterSelector, accountId.ToString());
         await WaitForSelectorAsync(TransactionRowSelector); // Wait for table to reload
+    }
+
+    /// <summary>
+    /// Selects assignment status filter by display value.
+    /// </summary>
+    /// <param name="filterType">All, Assigned, or Uncategorized.</param>
+    public async Task SelectFilterAsync(string filterType)
+    {
+        if (filterType is null)
+        {
+            throw new ArgumentNullException(nameof(filterType));
+        }
+
+        var normalized = filterType.Trim().ToLowerInvariant();
+
+        var value = normalized switch
+        {
+            "all" => "all",
+            "assigned" => "assigned",
+            "uncategorized" => "unassigned",
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(filterType),
+                filterType,
+                "Unsupported filter type for SelectFilterAsync. Expected 'all', 'assigned', or 'uncategorized'.")
+        };
+
+        var expectedStatusMode = value switch
+        {
+            "assigned" => "assigned",
+            "unassigned" => "unassigned",
+            _ => "all"
+        };
+
+        var previousValue = await Page.EvaluateAsync<string>(
+            @"selector => {
+                const select = document.querySelector(selector);
+                return select ? select.value : '';
+            }",
+            AssignmentStatusFilterSelector);
+
+        var initialTableSignature = await Page.EvaluateAsync<string>(
+            @"selector => {
+                const rows = Array.from(document.querySelectorAll(selector));
+                return rows
+                    .map(row => {
+                        const id = row.getAttribute('data-transaction-id') ?? '';
+                        const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
+                        const status = isUnassigned ? 'unassigned' : 'assigned';
+                        return `${id}|${status}`;
+                    })
+                    .join(';');
+            }",
+            TransactionRowSelector);
+
+        await Page.EvaluateAsync(
+            @"arg => {
+                window[arg.stateKey] = { startedAt: Date.now() };
+            }",
+            new
+            {
+                stateKey = FilterPollingStateKey,
+            });
+
+        try
+        {
+            await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
+            await Page.WaitForFunctionAsync(
+                @"arg => {
+                    const select = document.querySelector(arg.selector);
+                    return !!select && select.value === arg.value;
+                }",
+                new { selector = AssignmentStatusFilterSelector, value });
+
+            await Page.WaitForFunctionAsync(
+                @"arg => {
+                    const rows = Array.from(document.querySelectorAll(arg.rowSelector));
+                    const currentSignature = rows
+                        .map(row => {
+                            const id = row.getAttribute('data-transaction-id') ?? '';
+                            const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
+                            const status = isUnassigned ? 'unassigned' : 'assigned';
+                            return `${id}|${status}`;
+                        })
+                        .join(';');
+
+                    const hasTableChanged = currentSignature !== arg.initialTableSignature;
+                    const rowsMatchFilter = arg.expectedStatusMode === 'unassigned'
+                        ? rows.every(row => !!row.querySelector('[aria-label=""Niet toegewezen""]'))
+                        : arg.expectedStatusMode === 'assigned'
+                            ? rows.every(row => !row.querySelector('[aria-label=""Niet toegewezen""]'))
+                            : true;
+
+                    if (!rowsMatchFilter)
+                    {
+                        return false;
+                    }
+
+                    // If the table contents have changed compared to the initial signature,
+                    // and rows match the filter, we can consider the update completed.
+                    // Require at least one row here so a transient empty table during reload
+                    // does not prematurely satisfy the wait; stable empty tables are handled
+                    // by the stability window logic below.
+                    if (hasTableChanged && rows.length > 0)
+                    {
+                        return true;
+                    }
+
+                    // Fallback: no detected table change yet (or empty table). Use a small stability window
+                    // tracked on window[arg.stateKey] to avoid flakiness.
+                    const state = window[arg.stateKey] || (window[arg.stateKey] = {});
+
+                    if (state.currentValue !== arg.value)
+                    {
+                        state.currentValue = arg.value;
+                        state.startedAt = Date.now();
+                    }
+
+                    const startedAt = state.startedAt ?? Date.now();
+                    const elapsed = Date.now() - startedAt;
+
+                    if (arg.expectedStatusMode === 'all')
+                    {
+                        // If the filter value did not change, we don't need to wait for stability.
+                        if (arg.previousValue === arg.value)
+                        {
+                            return true;
+                        }
+
+                        return elapsed >= arg.minStableMs;
+                    }
+
+                    // For 'assigned' and 'unassigned', also require a minimum stable duration.
+                    return elapsed >= arg.minStableMs;
+                }",
+                new
+                {
+                    rowSelector = TransactionRowSelector,
+                    initialTableSignature,
+                    expectedStatusMode,
+                    previousValue,
+                    value,
+                    stateKey = FilterPollingStateKey,
+                    minStableMs = FilterTableStableWaitMs,
+                },
+                new PageWaitForFunctionOptions
+                {
+                    Timeout = FilterTableUpdateTimeoutMs
+                });
+        }
+        finally
+        {
+            await Page.EvaluateAsync(
+                @"stateKey => {
+                    delete window[stateKey];
+                }",
+                FilterPollingStateKey);
+        }
     }
 
     /// <summary>
@@ -105,13 +274,67 @@ public class TransactionsPageModel : PageObjectBase
                 $"Row index {rowIndex} is out of range. Only {rows.Count} rows found.");
         }
 
-        var assignButton = await rows[rowIndex].QuerySelectorAsync("button[data-action='assign']");
-        if (assignButton == null)
+        var assignButton = Page.Locator(TransactionRowSelector).Nth(rowIndex).Locator(AssignButtonInRowSelector).First;
+        if (await assignButton.CountAsync() == 0)
         {
             throw new InvalidOperationException($"Assign button not found for row {rowIndex}.");
         }
 
         await assignButton.ClickAsync();
+    }
+
+    /// <summary>
+    /// Clicks audit trail button for a specific transaction.
+    /// </summary>
+    public async Task ClickAuditTrailAsync(Guid transactionId)
+    {
+        var selector = string.Format(TransactionRowByIdSelector, transactionId);
+        var row = Page.Locator(selector);
+        await row.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+
+        var auditButton = row.Locator(AuditButtonInRowSelector).First;
+        await auditButton.ClickAsync();
+    }
+
+    /// <summary>
+    /// Selects a transaction checkbox by transaction id.
+    /// </summary>
+    public async Task SelectTransactionAsync(Guid transactionId)
+    {
+        var selector = string.Format(TransactionCheckboxByIdSelector, transactionId);
+        var checkbox = Page.Locator(selector).First;
+        await checkbox.CheckAsync();
+    }
+
+    /// <summary>
+    /// Selects all currently visible transactions.
+    /// </summary>
+    public async Task SelectAllOnPageAsync()
+    {
+        await Page.Locator(SelectAllCheckboxSelector).CheckAsync();
+    }
+
+    /// <summary>
+    /// Clears all selected transactions.
+    /// </summary>
+    public async Task DeselectAllAsync()
+    {
+        var deselectButton = Page.Locator(DeselectAllButtonSelector);
+        if (await deselectButton.CountAsync() > 0)
+        {
+            await deselectButton.First.ClickAsync();
+            return;
+        }
+
+        await Page.Locator(SelectAllCheckboxSelector).UncheckAsync();
+    }
+
+    /// <summary>
+    /// Opens bulk assign modal from bottom action bar.
+    /// </summary>
+    public async Task ClickBulkAssignAsync()
+    {
+        await Page.Locator(BulkAssignButtonSelector).First.ClickAsync();
     }
 
     /// <summary>

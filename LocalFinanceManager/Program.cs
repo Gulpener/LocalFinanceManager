@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
 builder.Services.Configure<MLOptions>(builder.Configuration.GetSection("MLOptions"));
 builder.Services.Configure<AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
+builder.Services.Configure<BulkAssignUiOptions>(builder.Configuration.GetSection("BulkAssignUiOptions"));
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Caching"));
 
 // Register memory cache with size limits

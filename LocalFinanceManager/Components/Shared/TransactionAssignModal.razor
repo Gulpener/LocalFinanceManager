@@ -18,140 +18,138 @@
         <div class="modal-dialog modal-lg" @onclick:stopPropagation>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen @(Transaction?.Date.Year > 0 ?
-                                                                                                                                                                                                                    $"({Transaction.Date.Year})"
-                                                                                                                                                                                                                    : "")</h5>
-                        <button type="button" class="btn-close" @onclick="Close"
-                                aria-label="Druk op Esc om te sluiten"></button>
+                    <h5 class="modal-title" id="assignModalTitle">Transactie toewijzen@TransactionYearSuffix</h5>
+                    <button type="button" class="btn-close" @onclick="Close"
+                            aria-label="Druk op Esc om te sluiten"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> @errorMessage
+                        </div>
+                    }
+
+                    <!-- Transaction Details -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2 text-muted">Transactie details</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Datum:</dt>
+                                <dd class="col-sm-9">@Transaction?.Date.ToString("dd-MM-yyyy")</dd>
+
+                                <dt class="col-sm-3">Beschrijving:</dt>
+                                <dd class="col-sm-9">@Transaction?.Description</dd>
+
+                                <dt class="col-sm-3">Tegenpartij:</dt>
+                                <dd class="col-sm-9">@(Transaction?.Counterparty ?? "-")</dd>
+
+                                <dt class="col-sm-3">Bedrag:</dt>
+                                <dd class="col-sm-9">
+                                    <span class="@(Transaction?.Amount >= 0 ? "text-success" : "text-danger") fw-bold">
+                                        @Transaction?.Amount.ToString("C2")
+                                    </span>
+                                </dd>
+                            </dl>
+                        </div>
                     </div>
-                    <div class="modal-body">
-                        @if (!string.IsNullOrEmpty(errorMessage))
-                        {
-                            <div class="alert alert-danger" role="alert">
-                                <i class="bi bi-exclamation-triangle"></i> @errorMessage
-                            </div>
-                        }
 
-                        <!-- Transaction Details -->
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <h6 class="card-subtitle mb-2 text-muted">Transactie details</h6>
-                                <dl class="row mb-0">
-                                    <dt class="col-sm-3">Datum:</dt>
-                                    <dd class="col-sm-9">@Transaction?.Date.ToString("dd-MM-yyyy")</dd>
-
-                                    <dt class="col-sm-3">Beschrijving:</dt>
-                                    <dd class="col-sm-9">@Transaction?.Description</dd>
-
-                                    <dt class="col-sm-3">Tegenpartij:</dt>
-                                    <dd class="col-sm-9">@(Transaction?.Counterparty ?? "-")</dd>
-
-                                    <dt class="col-sm-3">Bedrag:</dt>
-                                    <dd class="col-sm-9">
-                                        <span class="@(Transaction?.Amount >= 0 ? "text-success" : "text-danger") fw-bold">
-                                            @Transaction?.Amount.ToString("C2")
-                                        </span>
-                                    </dd>
-                                </dl>
-                            </div>
-                        </div>
-
-                        <!-- Current Assignment Status -->
-                        @if (Transaction?.Splits?.Any() == true)
-                        {
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i>
-                                Deze transactie is al toegewezen aan:
-                                <ul class="mb-0 mt-2">
-                                    @foreach (var split in Transaction.Splits)
-                                    {
-                                        <li>
-                                            <strong>@split.BudgetLineName</strong>
-                                            @if (!string.IsNullOrEmpty(split.Note))
-                                            {
-                                                <span class="text-muted"> - @split.Note</span>
-                                            }
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-
-                        <!-- Recent Categories Pills -->
-                        @if (recentBudgetLines != null && recentBudgetLines.Any())
-                        {
-                            <div class="mb-3">
-                                <label class="form-label">
-                                    <i class="bi bi-clock-history"></i> Recent gebruikt
-                                </label>
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach (var budgetLine in recentBudgetLines)
-                                    {
-                                        <button type="button"
-                                                class="btn btn-sm @(selectedBudgetLineId == budgetLine.Id.ToString() ? "btn-primary" : "btn-outline-primary")"
-                                                @onclick="() => SelectBudgetLine(budgetLine.Id.ToString())" @onclick:stopPropagation>
-                                            @budgetLine.CategoryName
-                                        </button>
-                                    }
-                                </div>
-                            </div>
-                        }
-
-                        <!-- Budget Line Selection -->
-                        <div class="mb-3">
-                            <label for="budgetLineSelect" class="form-label">Budgetlijn <span
-                                class="text-danger">*</span></label>
-                                @if (budgetLines == null)
+                    <!-- Current Assignment Status -->
+                    @if (Transaction?.Splits?.Any() == true)
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            Deze transactie is al toegewezen aan:
+                            <ul class="mb-0 mt-2">
+                                @foreach (var split in Transaction.Splits)
                                 {
-                                    <select id="budgetLineSelect" class="form-select" disabled>
-                                        <option>Laden...</option>
-                                    </select>
-                                }
-                                else if (budgetLines.Count == 0)
-                                {
-                                    <div class="alert alert-warning">
-                                        <i class="bi bi-exclamation-triangle"></i>
-                                        Geen budgetlijnen gevonden voor deze rekening. Maak eerst budgetlijnen aan.
-                                    </div>
-                                }
-                                else
-                                {
-                                    <select id="budgetLineSelect" class="form-select" @bind="selectedBudgetLineId"
-                                            @ref="budgetLineSelectRef">
-                                        <option value="">-- Selecteer een budgetlijn --</option>
-                                        @foreach (var budgetLine in budgetLines)
+                                    <li>
+                                        <strong>@split.BudgetLineName</strong>
+                                        @if (!string.IsNullOrEmpty(split.Note))
                                         {
-                                            <option value="@budgetLine.Id">@budgetLine.CategoryName</option>
+                                            <span class="text-muted"> - @split.Note</span>
                                         }
-                                    </select>
+                                    </li>
                                 }
-                            </div>
+                            </ul>
+                        </div>
+                    }
 
-                            <!-- Optional Note -->
-                            <div class="mb-3">
-                                <label for="noteInput" class="form-label">Notitie (optioneel)</label>
-                                <textarea id="noteInput" class="form-control" rows="2" maxlength="500" @bind="note"
-                                          placeholder="Voeg een notitie toe..."></textarea>
-                                <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
+                    <!-- Recent Budget Lines Pills -->
+                    @if (recentBudgetLines != null && recentBudgetLines.Any())
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-clock-history"></i> Recent gebruikt
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var budgetLine in recentBudgetLines)
+                                {
+                                    <button type="button"
+                                            class="btn btn-sm @(selectedBudgetLineId == budgetLine.Id.ToString() ? "btn-primary" : "btn-outline-primary")"
+                                            @onclick="() => SelectBudgetLine(budgetLine.Id.ToString())" @onclick:stopPropagation>
+                                        @budgetLine.CategoryName
+                                    </button>
+                                }
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" @onclick="Close" disabled="@isSubmitting">
-                                Annuleren
-                            </button>
-                            <button id="assignSaveButton" type="button" class="btn btn-primary" @onclick="AssignTransaction"
-                                    disabled="@(!CanAssign || isSubmitting)">
-                                @if (isSubmitting)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                }
-                                Toewijzen
-                            </button>
+                    }
+
+                    <!-- Budget Line Selection -->
+                    <div class="mb-3">
+                        <label for="budgetLineSelect" class="form-label">Budgetlijn <span
+                            class="text-danger">*</span></label>
+                            @if (budgetLines == null)
+                            {
+                                <select id="budgetLineSelect" class="form-select" disabled>
+                                    <option>Laden...</option>
+                                </select>
+                            }
+                            else if (budgetLines.Count == 0)
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Geen budgetlijnen gevonden voor deze rekening. Maak eerst budgetlijnen aan.
+                                </div>
+                            }
+                            else
+                            {
+                                <select id="budgetLineSelect" class="form-select" @bind="selectedBudgetLineId"
+                                        @ref="budgetLineSelectRef">
+                                    <option value="">-- Selecteer een budgetlijn --</option>
+                                    @foreach (var budgetLine in budgetLines)
+                                    {
+                                        <option value="@budgetLine.Id">@budgetLine.CategoryName</option>
+                                    }
+                                </select>
+                            }
                         </div>
+
+                        <!-- Optional Note -->
+                        <div class="mb-3">
+                            <label for="noteInput" class="form-label">Notitie (optioneel)</label>
+                            <textarea id="noteInput" class="form-control" rows="2" maxlength="500" @bind="note"
+                                      placeholder="Voeg een notitie toe..."></textarea>
+                            <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="assignCancelButton" type="button" class="btn btn-secondary" @onclick="Close" disabled="@isSubmitting">
+                            Annuleren
+                        </button>
+                        <button id="assignSaveButton" type="button" class="btn btn-primary" @onclick="AssignTransaction"
+                                disabled="@(!CanAssign || isSubmitting)">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            }
+                            Toewijzen
+                        </button>
                     </div>
                 </div>
             </div>
-        }
+        </div>
+    }
 
 @code {
     [Parameter]
@@ -178,12 +176,17 @@
     private ElementReference modalContainerRef;
     private ElementReference budgetLineSelectRef;
 
+    private string TransactionYearSuffix => Transaction?.Date.Year > 0
+        ? $" ({Transaction.Date.Year})"
+        : string.Empty;
+
     private bool CanAssign => !string.IsNullOrEmpty(selectedBudgetLineId) && budgetLines?.Count > 0;
 
     protected override async Task OnParametersSetAsync()
     {
         if (!IsVisible)
         {
+            await ReleaseFocusTrapAsync();
             isInitialFocusSet = false;
             wasVisible = false;
         }

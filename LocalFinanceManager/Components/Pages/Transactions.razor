@@ -294,10 +294,41 @@ else
             showShortcutHelp = true;
             StateHasChanged();
         }
-        else if (key == "Escape" && showShortcutHelp)
+        else if (key == "Escape")
         {
-            showShortcutHelp = false;
-            StateHasChanged();
+            if (showAssignModal)
+            {
+                CloseAssignModal();
+                StateHasChanged();
+                return Task.CompletedTask;
+            }
+
+            if (showBulkAssignModal)
+            {
+                CloseBulkAssignModal();
+                StateHasChanged();
+                return Task.CompletedTask;
+            }
+
+            if (showSplitEditor)
+            {
+                CloseSplitEditor();
+                StateHasChanged();
+                return Task.CompletedTask;
+            }
+
+            if (showAuditTrail)
+            {
+                CloseAuditTrail();
+                StateHasChanged();
+                return Task.CompletedTask;
+            }
+
+            if (showShortcutHelp)
+            {
+                showShortcutHelp = false;
+                StateHasChanged();
+            }
         }
 
         return Task.CompletedTask;
