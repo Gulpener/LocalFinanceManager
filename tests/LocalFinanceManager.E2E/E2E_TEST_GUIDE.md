@@ -173,10 +173,10 @@ Validates cross-feature data flow:
 ## CI notes
 
 - Chromium-only execution is recommended for speed and deterministic results.
-- All E2E tests run in a single CI job.
+- All E2E tests run in a single CI workflow, split into three sequential phases (Phase 1–3).
 - Parallel execution groups can be configured using NUnit's `--worker` flag or `filter` options.
 - Automatic migrations run during test host startup (no manual migration command needed).
-- CI timeout: 15 minutes (allows for <10 min test execution + overhead).
+- CI timeouts: each phase has `timeout-minutes: 10` (effective upper bound ~30 minutes wall-clock; expected total runtime remains <15 minutes including overhead).
 
 ## Naming convention
 
