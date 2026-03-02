@@ -151,21 +151,17 @@ public class TransactionsPageModel : PageObjectBase
                         return false;
                     }
 
-                    // Require at least one row before considering the table stable,
-                    // so a transient empty table during reload does not prematurely satisfy the wait.
-                    if (rows.length === 0)
-                    {
-                        return false;
-                    }
-
                     // If the table contents have changed compared to the initial signature,
                     // and rows match the filter, we can consider the update completed.
-                    if (hasTableChanged)
+                    // Require at least one row here so a transient empty table during reload
+                    // does not prematurely satisfy the wait; stable empty tables are handled
+                    // by the stability window logic below.
+                    if (hasTableChanged && rows.length > 0)
                     {
                         return true;
                     }
 
-                    // Fallback: no detected table change yet. Use a small stability window
+                    // Fallback: no detected table change yet (or empty table). Use a small stability window
                     // tracked on window[arg.stateKey] to avoid flakiness.
                     const state = window[arg.stateKey] || (window[arg.stateKey] = {});
 
