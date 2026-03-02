@@ -10,7 +10,7 @@
 **Status Overview:**
 
 - ✅ **18 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10) - Archived
-- ✅ **4 stories ready** for immediate implementation (UserStory-10.1, UserStory-10.2, US-11, US-17)
+- ✅ **3 stories ready** for immediate implementation (UserStory-10.2, US-11, US-17)
 - 🔴 **5 stories need refinement** (US-12, US-13, US-14, US-15, US-16) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
@@ -37,6 +37,7 @@
 - UserStory-9.1 (Keyboard Shortcuts) - ✅ **COMPLETED & ARCHIVED**
 - UserStory-9.2 (Quick Filters & Performance) - ✅ **COMPLETED & ARCHIVED** - Performance optimizations and quick filter UI
 - UserStory-10 (E2E Tests - Phase 1 Foundation) - ✅ **COMPLETED & ARCHIVED** - 20 tests implemented and validated
+- UserStory-10.1 (E2E Tests - Phase 2 Advanced) - ✅ **COMPLETED & ARCHIVED** - 19 tests implemented (9 split + 9 bulk + 1 integration workflow)
 
 ---
 
@@ -83,26 +84,18 @@
 
 **UserStory-10.1: E2E Tests - Phase 2 Advanced**
 
-**File:** [docs/Userstories/UserStory-10.1-Advanced-Assignment-Tests.md](docs/Userstories/UserStory-10.1-Advanced-Assignment-Tests.md)
+**File:** [docs/Userstories/Archive/UserStory-10.1-Advanced-Assignment-Tests.md](docs/Userstories/Archive/UserStory-10.1-Advanced-Assignment-Tests.md)
 
-**Status:** ✅ **Ready** - Phase 2 Advanced tests (19 tests, 4 days). **UserStory-10 dependency completed.**
+**Status:** ✅ **Completed & Archived** (implemented on 2026-03-02)
 
-**Key Features:**
+**Delivered:**
 
-- Split assignment tests (9): Split editor, sum validation (±0.01 tolerance), row management, audit trail
-- Bulk assignment tests (9): Checkbox selection, progress tracking, partial failures, pagination persistence
-- Integration workflow test (1): Cross-feature validation (import → basic → bulk → split)
-- CI parallel execution configuration (3 groups)
-
-**Technical Debt Addressed:**
-
-- US-6 active: 18 split/bulk tests not yet implemented
-
-**Combined Coverage:** UserStory-10 + UserStory-10.1 = 39 tests achieving 80% critical path coverage
-
-**Estimated Effort:** 4 days
-
-**Dependencies:** UserStory-10 ✅ completed
+- 19 E2E tests implemented (9 split assignment + 9 bulk assignment + 1 integration workflow)
+- Split editor sum validation (±0.01 tolerance), row management, re-split support
+- Bulk assignment: progress tracking, all-fail service-level path, error accordion (year-mismatch trigger)
+- Integration workflow: complete assign → bulk assign → split pipeline (35 transactions, 0 unassigned)
+- CI split into 3 sequential phases (`timeout-minutes: 10` each)
+- E2E_TEST_GUIDE.md updated with Phase 2 organization and per-phase timeout info
 
 ---
 
@@ -1159,8 +1152,8 @@ Use this structure for all new stories:
 15. ~~UserStory-8~~ (ML Suggestion & Auto-Apply) - ✅ **COMPLETED & ARCHIVED**
 16. ✅ ~~UserStory-9.1~~ (Keyboard Shortcuts) - **COMPLETED & ARCHIVED**
 17. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation
-18. **UserStory-10** (Integration Workflow Tests) - Ready for implementation
-19. **UserStory-10.1** (Advanced Assignment Tests) - Ready for implementation
+18. ✅ ~~**UserStory-10**~~ (Integration Workflow Tests) - **COMPLETED & ARCHIVED**
+19. ✅ ~~**UserStory-10.1**~~ (Advanced Assignment Tests) - **COMPLETED & ARCHIVED**
 20. **UserStory-10.2** (ML Tests) - Ready for implementation (US-8 completed)
 21. **UserStory-11** (Multi-User Auth) - Ready for implementation
 22. UserStory-12 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
