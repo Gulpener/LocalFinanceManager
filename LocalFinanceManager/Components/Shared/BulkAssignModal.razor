@@ -36,7 +36,7 @@
                              role="alert">
                             <i class="bi @(bulkResult.Success ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")"></i>
                             @bulkResult.Message
-                            <span aria-hidden="true"><span data-testid="success-count">@bulkResult.AssignedCount</span> <span data-testid="failure-count">@bulkResult.FailedCount</span></span>
+                            <span class="visually-hidden" aria-hidden="true"><span data-testid="success-count">@bulkResult.AssignedCount</span> <span data-testid="failure-count">@bulkResult.FailedCount</span></span>
                             <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
                         </div>
 
