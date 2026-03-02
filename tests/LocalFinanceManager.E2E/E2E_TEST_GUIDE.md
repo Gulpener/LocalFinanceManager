@@ -28,8 +28,8 @@ Alternative (using a local .NET tool manifest so no global tool is required):
 
 ```powershell
 dotnet new tool-manifest            # creates .config/dotnet-tools.json if not present
-dotnet tool install Microsoft.Playwright.CLI
-dotnet tool run playwright install chromium
+dotnet tool install Microsoft.Playwright.CLI --version 1.57.0
+dotnet tool run playwright install chromium --project tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj
 ```
 
 ## Run tests
