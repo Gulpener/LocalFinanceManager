@@ -358,11 +358,14 @@
             progressMessage = "Voltooid!";
             StateHasChanged();
 
-            // Wait a moment to show completion
+            // Wait a moment to show completion.
+            // Do NOT pass cancellationToken here: the service call already completed and assignments
+            // were applied, so the UI should always surface the result and trigger the parent refresh
+            // regardless of whether the user requested cancellation after the fact.
             var completionMessageVisibleMilliseconds = Math.Max(0, uiOptions.CompletionMessageVisibleMilliseconds);
             if (completionMessageVisibleMilliseconds > 0)
             {
-                await Task.Delay(completionMessageVisibleMilliseconds, cancellationToken);
+                await Task.Delay(completionMessageVisibleMilliseconds);
             }
 
             var applyMinimumVisibleDuration = !uiOptions.ApplyMinimumVisibleDurationOnlyInDevelopment
@@ -375,18 +378,10 @@
                 var remainingMilliseconds = minimumProcessingVisibleMilliseconds - elapsedMilliseconds;
                 if (remainingMilliseconds > 0)
                 {
-                    await Task.Delay(remainingMilliseconds, cancellationToken);
+                    await Task.Delay(remainingMilliseconds);
                 }
             }
 
-            if (cancellationToken.IsCancellationRequested)
-            {
-                progressMessage = "Bulk toewijzing geannuleerd.";
-                bulkResult = null;
-                return;
-            }
-
-            cancellationToken.ThrowIfCancellationRequested();
             await OnBulkAssigned.InvokeAsync();
         }
         catch (OperationCanceledException)
