@@ -151,18 +151,46 @@ public class TransactionsPageModel : PageObjectBase
                         return false;
                     }
 
+                    // Require at least one row before considering the table stable,
+                    // so a transient empty table during reload does not prematurely satisfy the wait.
+                    if (rows.length === 0)
+                    {
+                        return false;
+                    }
+
+                    // If the table contents have changed compared to the initial signature,
+                    // and rows match the filter, we can consider the update completed.
                     if (hasTableChanged)
                     {
                         return true;
                     }
 
-                    if (arg.expectedStatusMode === 'all')
+                    // Fallback: no detected table change yet. Use a small stability window
+                    // tracked on window[arg.stateKey] to avoid flakiness.
+                    const state = window[arg.stateKey] || (window[arg.stateKey] = {});
+
+                    if (state.currentValue !== arg.value)
                     {
-                        const startedAt = window[arg.stateKey]?.startedAt ?? Date.now();
-                        return arg.previousValue === arg.value || Date.now() - startedAt >= arg.minStableMs;
+                        state.currentValue = arg.value;
+                        state.startedAt = Date.now();
                     }
 
-                    return true;
+                    const startedAt = state.startedAt ?? Date.now();
+                    const elapsed = Date.now() - startedAt;
+
+                    if (arg.expectedStatusMode === 'all')
+                    {
+                        // If the filter value did not change, we don't need to wait for stability.
+                        if (arg.previousValue === arg.value)
+                        {
+                            return true;
+                        }
+
+                        return elapsed >= arg.minStableMs;
+                    }
+
+                    // For 'assigned' and 'unassigned', also require a minimum stable duration.
+                    return elapsed >= arg.minStableMs;
                 }",
                 new
                 {
