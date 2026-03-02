@@ -24,10 +24,12 @@ Then install Playwright browsers (Chromium only):
 pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install chromium
 ```
 
-Alternative (works even if you do not want to call the generated script directly):
+Alternative (using a local .NET tool manifest so no global tool is required):
 
 ```powershell
-dotnet tool run playwright install chromium --project tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj
+dotnet new tool-manifest            # creates .config/dotnet-tools.json if not present
+dotnet tool install Microsoft.Playwright.CLI
+dotnet tool run playwright install chromium
 ```
 
 ## Run tests
