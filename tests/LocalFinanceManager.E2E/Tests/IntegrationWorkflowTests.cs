@@ -141,7 +141,7 @@ public class IntegrationWorkflowTests : E2ETestBase
         var splitBadges = await Page.Locator("tr[data-testid='transaction-row'] .badge.bg-info[aria-label='Gesplitst']").CountAsync();
         Assert.That(splitBadges, Is.GreaterThanOrEqualTo(5), "At least 5 split badges should be visible");
 
-        // === VERIFY TOTALS: 15 unassigned remaining (but our seed added 35 and we assigned all 35) ===
+        // === VERIFY TOTALS: All 35 transactions assigned (10 basic + 20 bulk + 5 split) ===
         await transactionsPage.NavigateAsync();
         await transactionsPage.SelectAccountFilterAsync(accountId);
         await transactionsPage.SelectFilterAsync("Uncategorized");

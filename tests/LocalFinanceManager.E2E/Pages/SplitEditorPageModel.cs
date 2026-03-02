@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Playwright;
 
 namespace LocalFinanceManager.E2E.Pages;
@@ -108,7 +109,7 @@ public class SplitEditorPageModel : PageObjectBase
             throw new InvalidOperationException($"Amount input not found for split row {index}.");
         }
 
-        await amountInput.FillAsync(amount.ToString("0.00"));
+        await amountInput.FillAsync(amount.ToString("0.00", CultureInfo.InvariantCulture));
         // Press Tab to blur the input, triggering Blazor's @bind:event="onchange" binding
         // and the subsequent @bind:after="RecalculateSum" callback for live sum validation.
         await amountInput.PressAsync("Tab");

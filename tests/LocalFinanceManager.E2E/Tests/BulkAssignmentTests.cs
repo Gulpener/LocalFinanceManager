@@ -104,7 +104,7 @@ public class BulkAssignmentTests : E2ETestBase
     }
 
     [Test]
-    public async Task BulkAssign_PartialFailure_ShowsMixedResults()
+    public async Task BulkAssign_AllFail_ServiceLevel_ReturnsAllFailed()
     {
         Guid foreignBudgetLineId;
 
@@ -116,7 +116,7 @@ public class BulkAssignmentTests : E2ETestBase
             foreignBudgetLineId = (await SeedDataHelper.SeedBudgetLineAsync(context, otherAccount.CurrentBudgetPlanId!.Value, otherCategories[0].Id, 300m)).Id;
         }
 
-        // Perform bulk assign using the service directly to verify partial failure behavior
+        // Perform bulk assign using the service directly to verify all-fail behavior
         using var serviceScope = Factory!.CreateDbScope();
         var assignmentService = serviceScope.ServiceProvider.GetRequiredService<LocalFinanceManager.Services.ITransactionAssignmentService>();
 
@@ -126,42 +126,51 @@ public class BulkAssignmentTests : E2ETestBase
             BudgetLineId = foreignBudgetLineId // Wrong budget plan → all should fail
         });
 
-        Assert.That(result.FailedCount, Is.GreaterThan(0));
+        Assert.That(result.FailedCount, Is.EqualTo(5));
+        Assert.That(result.AssignedCount, Is.EqualTo(0));
         Assert.That(result.TotalCount, Is.EqualTo(5));
     }
 
     [Test]
     public async Task ExpandErrorDetails_ShowsFailureList()
     {
-        Guid foreignBudgetLineId;
+        // Seed transactions from a prior year — assigning them to the current-year budget plan
+        // will fail with "year mismatch" validation, while _budgetLineFood is still selectable.
+        var priorYearDate = new DateTime(DateTime.UtcNow.Year - 1, 6, 15);
+        var priorYearTxIds = new List<Guid>();
 
         using (var scope = Factory!.CreateDbScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var otherAccount = await SeedDataHelper.SeedAccountAsync(context, "Other Bulk Account2", "NL91ABNA0417164302", 500m);
-            var otherCategories = await SeedDataHelper.SeedCategoriesAsync(context, otherAccount.CurrentBudgetPlanId!.Value, "Other2");
-            foreignBudgetLineId = (await SeedDataHelper.SeedBudgetLineAsync(context, otherAccount.CurrentBudgetPlanId!.Value, otherCategories[0].Id, 300m)).Id;
+            for (int i = 0; i < 3; i++)
+            {
+                var tx = await SeedDataHelper.SeedTransactionAsync(
+                    context, _accountId, -30m, priorYearDate, $"Prior year transaction {i + 1}");
+                priorYearTxIds.Add(tx.Id);
+            }
         }
 
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_accountId);
 
-        // Select 3 transactions
-        for (int i = 0; i < 3; i++)
+        // Select the 3 prior-year transactions
+        foreach (var txId in priorYearTxIds)
         {
-            await _transactionsPage.SelectTransactionAsync(_transactionIds[i]);
+            await _transactionsPage.SelectTransactionAsync(txId);
         }
+
         await _transactionsPage.ClickBulkAssignAsync();
         await _bulkModal.WaitForModalAsync();
 
-        // Select foreign budget line (will fail all)
-        await Page.SelectOptionAsync("#bulkBudgetLineSelect", foreignBudgetLineId.ToString());
+        // _budgetLineFood is in the dropdown (same account) but its budget plan year is current year
+        // → prior-year transactions will fail year-mismatch validation
+        await Page.SelectOptionAsync("#bulkBudgetLineSelect", _budgetLineFood.ToString());
         await Page.ClickAsync("#bulkAssignButton");
 
         // Wait for completion
         await _bulkModal.WaitForCompletionAsync(timeoutMs: 30000);
 
-        // Should show some failures; expand error accordion
+        // Should show failures; expand error accordion
         var failureCount = await _bulkModal.GetFailureCountAsync();
         Assert.That(failureCount, Is.GreaterThan(0));
 
