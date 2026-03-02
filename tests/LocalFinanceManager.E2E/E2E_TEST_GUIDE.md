@@ -24,10 +24,11 @@ Then install Playwright browsers (Chromium only):
 pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install chromium
 ```
 
-Alternative (using a local .NET tool manifest so no global tool is required):
+Alternative (using a local .NET tool manifest so no global tool is required).
+Run the following commands from the **repo root**. The resulting `.config/dotnet-tools.json` file should be committed so all contributors share the same tool version:
 
 ```powershell
-dotnet new tool-manifest            # creates .config/dotnet-tools.json if not present
+dotnet new tool-manifest            # creates .config/dotnet-tools.json (commit this file)
 dotnet tool install Microsoft.Playwright.CLI --version 1.57.0
 dotnet tool run playwright install chromium --project tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj
 ```
