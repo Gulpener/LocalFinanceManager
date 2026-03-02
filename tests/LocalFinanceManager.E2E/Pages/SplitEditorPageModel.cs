@@ -113,6 +113,9 @@ public class SplitEditorPageModel : PageObjectBase
         // Press Tab to blur the input, triggering Blazor's @bind:event="onchange" binding
         // and the subsequent @bind:after="RecalculateSum" callback for live sum validation.
         await amountInput.PressAsync("Tab");
+        // Wait for Blazor Server to process the onchange event and push the updated DOM
+        // back to the browser over SignalR before any caller reads validation state.
+        await Page.WaitForTimeoutAsync(150);
     }
 
     /// <summary>
