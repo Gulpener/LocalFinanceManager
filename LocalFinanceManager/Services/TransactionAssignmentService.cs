@@ -62,7 +62,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         {
             await ValidateBudgetLineAssignmentAsync(transaction, request.BudgetLineId);
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
             await RecordAuditAsync(
                 transactionId,
@@ -116,7 +116,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
                 await ValidateBudgetLineAssignmentAsync(transaction, budgetLineId);
             }
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
             try
             {
