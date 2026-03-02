@@ -13,7 +13,7 @@ public class AssignmentModalPageModel : PageObjectBase
     private const string BudgetLineSelectSelector = "#budgetLineSelect";
     private const string NoteInputSelector = "#noteInput";
     private const string AssignButtonSelector = "#assignSaveButton";
-    private const string CancelButtonSelector = "button:has-text('Annuleren')";
+    private const string CancelButtonSelector = "#assignCancelButton";
 
     /// <summary>
     /// Initializes a new instance of the AssignmentModalPageModel class.
