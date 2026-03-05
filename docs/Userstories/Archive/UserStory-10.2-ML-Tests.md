@@ -15,9 +15,9 @@ Implement ML-related E2E tests (estimated 25 tests) covering ML suggestions, aut
 
 ## Status
 
-**Deferred - Pending UserStory-8 Completion**
+**Completed - Implemented in UserStory-10.2**
 
-This user story serves as a placeholder for Phase 3 E2E tests. Detailed implementation tasks, test scenarios, and acceptance criteria will be added during story refinement after US-7 ML features are production-ready.
+> *Note: The initial estimate of 25 tests (8 ML + 8 config + 9 monitoring) was refined during implementation. The final count is 28 tests (9 ML + 9 config + 10 monitoring), reflecting additional edge-case coverage added during development. See `E2E_TEST_GUIDE.md` for the definitive test inventory.*
 
 ## Implementation Tasks (Placeholder)
 
