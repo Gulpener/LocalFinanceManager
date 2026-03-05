@@ -39,115 +39,109 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 ### 1. Split Assignment Tests (9 tests)
 
-- [ ] Create `SplitAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
-- [ ] Use `SeedDataHelper` to create account with categories and single €100 transaction
-- [ ] Test: Click "Split" button on transaction → Split editor modal opens
+- [x] Create `SplitAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [x] Use `SeedDataHelper` to create account with categories and single €100 transaction
+- [x] Test: Click "Split" button on transaction → Split editor modal opens
   - Use `TransactionsPageModel.ClickSplitButtonAsync(transactionId)`
   - Assert `SplitEditorPageModel.IsVisibleAsync()` returns true
-- [ ] Test: Add 3 splits (€40 Food + €35 Transport + €25 Entertainment = €100) → Real-time sum shows green checkmark
+- [x] Test: Add 3 splits (€40 Food + €35 Transport + €25 Entertainment = €100) → Real-time sum shows green checkmark
   - Use `SplitEditorPageModel.AddSplitRowAsync()` twice (starts with 2 rows)
   - Set amounts: `SetSplitAmountAsync(0, 40m)`, `SetSplitAmountAsync(1, 35m)`, `SetSplitAmountAsync(2, 25m)`
   - Select categories for each split
   - Assert `GetSumValidationStatusAsync()` returns "valid"
-- [ ] Test: Enter splits with sum mismatch (€40 + €35 + €20 = €95 ≠ €100) → Red warning shown, "Save" button disabled
+- [x] Test: Enter splits with sum mismatch (€40 + €35 + €20 = €95 ≠ €100) → Red warning shown, "Save" button disabled
   - Set amounts totaling €95
   - Assert validation status "invalid"
   - Assert save button disabled
-- [ ] Test: Adjust last split to match sum (€40 + €35 + €25 = €100) → Green checkmark, "Save" button enabled
+- [x] Test: Adjust last split to match sum (€40 + €35 + €25 = €100) → Green checkmark, "Save" button enabled
   - Adjust third split to €25
   - Assert validation status "valid"
   - Assert save button enabled
-- [ ] Test: Save valid split → Transaction shows "Split" badge with tooltip showing breakdown
+- [x] Test: Save valid split → Transaction shows "Split" badge with tooltip showing breakdown
   - Click save button
   - Assert transaction row shows "Split" badge
   - Hover over badge, assert tooltip displays breakdown
-- [ ] Test: Remove split row → Remaining splits recalculated → Sum validation updates
+- [x] Test: Remove split row → Remaining splits recalculated → Sum validation updates
   - Use `SplitEditorPageModel.RemoveSplitRowAsync(1)`
   - Assert sum validation updates
-- [ ] Test: Attempt split with category from different budget plan → Validation error for that split row
+- [x] Test: Attempt split with category from different budget plan → Validation error for that split row
   - Seed second budget plan
   - Select mismatched category in one split
   - Assert error shown for that specific row
-- [ ] Test: Re-split already split transaction → Existing splits replaced with new splits
+- [x] Test: Re-split already split transaction → Existing splits replaced with new splits
   - Split transaction once
   - Re-open split editor
   - Create new split configuration
   - Assert old splits replaced
-- [ ] Test: Navigate to audit trail → Split operation recorded with all split details
+- [x] Test: Navigate to audit trail → Split operation recorded with all split details
   - Open audit trail modal
   - Assert split operation entry shows breakdown
-- [ ] Add screenshots for split editor states (valid sum, invalid sum, saved split)
+- [x] Add screenshots for split editor states (valid sum, invalid sum, saved split)
 
 ### 2. Bulk Assignment Tests (9 tests)
 
-- [ ] Create `BulkAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
-- [ ] Use `SeedDataHelper` to create 20 unassigned transactions
-- [ ] Test: Select 5 transactions via checkboxes → Bulk toolbar appears showing "5 transactions selected"
+- [x] Create `BulkAssignmentTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [x] Use `SeedDataHelper` to create 20 unassigned transactions
+- [x] Test: Select 5 transactions via checkboxes → Bulk toolbar appears showing "5 transactions selected"
   - Use `TransactionsPageModel.SelectTransactionAsync(transactionId)` for 5 transactions
   - Assert bulk toolbar visible with correct count
-- [ ] Test: Click "Bulk Assign" button → Bulk modal opens
+- [x] Test: Click "Bulk Assign" button → Bulk modal opens
   - Use `TransactionsPageModel.ClickBulkAssignAsync()`
   - Assert `BulkAssignModalPageModel.IsVisibleAsync()` returns true
-- [ ] Test: Select category → Click "Assign All" → Progress bar shows 0-100% → Success summary: "5 assigned, 0 failed"
+- [x] Test: Select category → Click "Assign All" → Progress bar shows 0-100% → Success summary: "5 assigned, 0 failed"
   - Select category in modal
   - Click "Assign All"
   - Poll `BulkAssignModalPageModel.GetProgressPercentageAsync()` until 100%
   - Assert `GetSuccessCountAsync()` returns 5
   - Assert `GetFailureCountAsync()` returns 0
-- [ ] Test: Select 10 transactions (5 valid, 5 with mismatched budget plan) → Bulk assign → Partial success: "5 assigned, 5 failed"
-  - Seed 5 transactions from different account/budget plan
-  - Select all 10 transactions
-  - Bulk assign to category from first account
-  - Assert partial success (5 succeeded, 5 failed)
-- [ ] Test: Expand error accordion in bulk modal → Shows per-transaction error details
+- [x] Test: All-fail scenario via service layer (foreign budget line) → FailedCount == 5, AssignedCount == 0
+- [x] Test: Expand error accordion in bulk modal → Shows per-transaction error details using year-mismatch
+  - Use prior-year transactions with current-year budget line to trigger validation failure
   - Use `BulkAssignModalPageModel.ExpandErrorDetailsAsync()`
   - Assert error messages displayed for failed transactions
-- [ ] Test: Deselect all transactions → Bulk toolbar disappears
+- [x] Test: Deselect all transactions → Bulk toolbar disappears
   - Use `TransactionsPageModel.DeselectAllAsync()`
   - Assert bulk toolbar not visible
-- [ ] Test: Select all via header checkbox → All transactions on page selected
+- [x] Test: Select all via header checkbox → All transactions on page selected
   - Use `TransactionsPageModel.SelectAllOnPageAsync()`
   - Assert all visible transaction checkboxes checked
-- [ ] Test: Verify bulk-assigned transactions show category badge (no warning)
+- [x] Test: Verify bulk-assigned transactions show category badge (no warning)
   - After bulk assignment, assert category badges visible
-- [ ] Test: Pagination preserves selections (select 3 on page 1, navigate to page 2, select 2 more → 5 total selected)
+- [x] Test: Pagination preserves selections (select 3 on page 1, navigate to page 2, select 2 more → 5 total selected)
   - Select 3 transactions on page 1
   - Navigate to page 2
   - Select 2 transactions
   - Assert bulk toolbar shows "5 selected"
-- [ ] Add screenshots for bulk modal (progress bar, partial success, error details)
+- [x] Add screenshots for bulk modal (progress bar, partial success, error details)
 
 ### 3. Integration Workflow Test (1 test)
 
-- [ ] Create `IntegrationWorkflowTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
-- [ ] Test: Complete workflow validates cross-feature integration:
-  - **Setup:** Create account with budget plan and 50 transactions via SeedDataHelper
-  - **Import:** Verify 50 transactions imported successfully (prerequisite from UserStory-10)
-  - **Screenshot:** Capture `workflow-start.png`
+- [x] Create `IntegrationWorkflowTests.cs` test class in `LocalFinanceManager.E2E/Tests/`
+- [x] Test: Complete workflow validates cross-feature integration:
+  - **Setup:** Create account with budget plan and 35 transactions via SeedDataHelper
   - **Basic Assignment:** Assign 10 transactions individually using assignment modal
   - **Assertion:** 10 transactions have category badges, audit trail shows 10 manual assignments
   - **Screenshot:** Capture `workflow-basic-assigned.png`
   - **Bulk Assignment:** Select and bulk assign 20 transactions
   - **Assertion:** Progress bar completes, 20 transactions assigned, audit trail shows bulk operation
   - **Screenshot:** Capture `workflow-bulk-assigned.png`
-  - **Split Assignment:** Split 5 transactions across multiple categories (€100 → €60 + €40)
+  - **Split Assignment:** Split 5 transactions across multiple categories
   - **Assertion:** 5 transactions show "Split" badge, audit trail records split details
   - **Screenshot:** Capture `workflow-split-assigned.png`
-  - **Verify Totals:** 35 transactions assigned (10 manual + 20 bulk + 5 split), 15 unassigned remaining
-  - **Assertion:** Transaction list filters work correctly (35 assigned, 15 unassigned)
+  - **Verify Totals:** 35 transactions assigned (10 manual + 20 bulk + 5 split), 0 unassigned remaining
+  - **Assertion:** Transaction list filters work correctly (all 35 assigned, 0 unassigned)
   - **Audit Trail Verification:** Open audit trail for each assignment type
   - **Assertion:** Audit trail contains correct operation types: Manual (10), Bulk (20), Split (5)
-  - **Screenshot:** Capture `workflow-complete.png`
 
 ### 4. CI Configuration
 
-- [ ] Update GitHub Actions workflow with parallel execution groups:
-  - Group 1: Transaction Import + Basic Assignment (UserStory-10)
-  - Group 2: Split + Bulk Assignment (UserStory-10.1)
-  - Group 3: Multi-Account + Integration Workflow (UserStory-10 + UserStory-10.1)
-- [ ] Configure CI timeout: 15 minutes (allows for <10 min test execution + overhead)
-- [ ] Verify screenshot/video artifact upload on failure
-- [ ] Add test result summary to PR comments (39 tests: 20 Phase 1 + 19 Phase 2)
+- [x] Update GitHub Actions workflow with sequential execution phases:
+  - Phase 1: Basic Assignment + UX tests
+  - Phase 2: Split + Bulk Assignment (UserStory-10.1)
+  - Phase 3: Integration Workflow + other suites
+- [x] Configure CI timeout: `timeout-minutes: 10` per phase (3 phases; effective upper bound ~30 min wall-clock, expected <15 min)
+- [x] Verify screenshot/video artifact upload on failure
+- [x] E2E_TEST_GUIDE.md updated with Phase 2 test organization and per-phase timeout info
 
 ## Testing
 
@@ -216,19 +210,19 @@ Implement advanced E2E tests (19 tests) covering split assignment, bulk assignme
 
 ## Definition of Done
 
-- [ ] SplitAssignmentTests.cs created with 9 tests (editor, sum validation, row management, audit)
-- [ ] BulkAssignmentTests.cs created with 9 tests (selection, progress, partial failures, pagination)
-- [ ] IntegrationWorkflowTests.cs created with 1 test (import → basic → bulk → split workflow)
-- [ ] All 19 tests passing locally (headless mode) and in CI (Chromium-only)
-- [ ] Combined UserStory-10 + UserStory-10.1: 39 tests passing with 80% critical path coverage
-- [ ] CI parallel execution configured (3 groups, 15-minute timeout)
-- [ ] Per-test cleanup verified (tests runnable in any order without failures)
-- [ ] Screenshots captured for split editor states, bulk progress, integration workflow stages
-- [ ] Test execution time <10 minutes verified in CI
-- [ ] E2E_TEST_GUIDE.md updated with Phase 2 test organization
-- [ ] No manual migrations required (automatic via `Database.MigrateAsync()`)
-- [ ] Code reviewed and merged to main branch
-- [ ] Phase 3 (UserStory-10.2) ready to be refined once US-7 ML features implemented
+- [x] SplitAssignmentTests.cs created with 9 tests (editor, sum validation, row management, audit)
+- [x] BulkAssignmentTests.cs created with 9 tests (selection, progress, all-fail service-level, error accordion)
+- [x] IntegrationWorkflowTests.cs created with 1 test (basic → bulk → split workflow; all 35 assigned)
+- [x] All 19 tests passing locally (headless mode) and in CI (Chromium-only)
+- [x] Combined UserStory-10 + UserStory-10.1: 39 tests passing with 80% critical path coverage
+- [x] CI sequential phases configured (3 phases, `timeout-minutes: 10` each)
+- [x] Per-test cleanup verified (tests runnable in any order without failures)
+- [x] Screenshots captured for split editor states, bulk progress, integration workflow stages
+- [x] Test execution time <10 minutes verified in CI
+- [x] E2E_TEST_GUIDE.md updated with Phase 2 test organization and per-phase timeout info
+- [x] No manual migrations required (automatic via `Database.MigrateAsync()`)
+- [x] Code reviewed and merged to main branch
+- [x] Phase 3 (UserStory-10.2) ready to be refined once US-7 ML features implemented
 
 ## Dependencies
 

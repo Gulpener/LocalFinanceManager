@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Playwright;
 
 namespace LocalFinanceManager.E2E.Pages;
@@ -26,6 +27,16 @@ public class SplitEditorPageModel : PageObjectBase
     /// <param name="baseUrl">Base URL for the application.</param>
     public SplitEditorPageModel(IPage page, string baseUrl) : base(page, baseUrl)
     {
+    }
+
+    /// <summary>
+    /// Checks whether the split editor modal is currently visible.
+    /// </summary>
+    /// <returns>True if the modal is visible, false otherwise.</returns>
+    public async Task<bool> IsVisibleAsync()
+    {
+        var modal = await Page.QuerySelectorAsync(ModalSelector);
+        return modal != null && await modal.IsVisibleAsync();
     }
 
     /// <summary>
@@ -98,7 +109,13 @@ public class SplitEditorPageModel : PageObjectBase
             throw new InvalidOperationException($"Amount input not found for split row {index}.");
         }
 
-        await amountInput.FillAsync(amount.ToString("0.00"));
+        await amountInput.FillAsync(amount.ToString("0.00", CultureInfo.InvariantCulture));
+        // Press Tab to blur the input, triggering Blazor's @bind:event="onchange" binding
+        // and the subsequent @bind:after="RecalculateSum" callback for live sum validation.
+        await amountInput.PressAsync("Tab");
+        // Wait for Blazor Server to process the onchange event and push the updated DOM
+        // back to the browser over SignalR before any caller reads validation state.
+        await Page.WaitForTimeoutAsync(150);
     }
 
     /// <summary>
@@ -153,7 +170,9 @@ public class SplitEditorPageModel : PageObjectBase
         }
 
         var classList = await validationIndicator.GetAttributeAsync("class");
-        return classList?.Contains("valid") ?? false;
+        // Split by whitespace to avoid "invalid" containing "valid" as a substring
+        var classes = classList?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+        return classes.Contains("valid");
     }
 
     /// <summary>

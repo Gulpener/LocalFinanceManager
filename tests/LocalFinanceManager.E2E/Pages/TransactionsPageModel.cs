@@ -16,6 +16,7 @@ public class TransactionsPageModel : PageObjectBase
     private const string AccountFilterSelector = "#account-filter";
     private const string AssignmentStatusFilterSelector = "#assignmentStatusFilter";
     private const string TransactionTableSelector = "table[data-testid='transactions-table']";
+    private const string NoTransactionsSelector = "[data-testid='no-transactions-message']";
     private const string TransactionRowSelector = "tbody tr[data-testid='transaction-row']";
     private const string TransactionRowByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}']";
     private const string TransactionCheckboxByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}'] input[type='checkbox']";
@@ -28,6 +29,8 @@ public class TransactionsPageModel : PageObjectBase
     private const string PageButtonSelector = ".pagination button[data-page='{0}']";
     private const string NextPageButtonSelector = ".pagination button[aria-label='Next']";
     private const string PreviousPageButtonSelector = ".pagination button[aria-label='Previous']";
+
+    private const string SplitButtonInRowSelector = "button[title='Splits transactie']";
 
     /// <summary>
     /// Initializes a new instance of the TransactionsPageModel class.
@@ -53,7 +56,9 @@ public class TransactionsPageModel : PageObjectBase
     public async Task SelectAccountFilterAsync(Guid accountId)
     {
         await Page.SelectOptionAsync(AccountFilterSelector, accountId.ToString());
-        await WaitForSelectorAsync(TransactionRowSelector); // Wait for table to reload
+        // Wait for either the transactions table (rows present) or the empty-state message
+        // (zero rows). Both indicate Blazor has finished re-rendering after the filter change.
+        await WaitForSelectorAsync($"{TransactionTableSelector}, {NoTransactionsSelector}");
     }
 
     /// <summary>
@@ -335,6 +340,20 @@ public class TransactionsPageModel : PageObjectBase
     public async Task ClickBulkAssignAsync()
     {
         await Page.Locator(BulkAssignButtonSelector).First.ClickAsync();
+    }
+
+    /// <summary>
+    /// Clicks the "Split" button for a specific transaction row by transaction ID.
+    /// </summary>
+    /// <param name="transactionId">ID of the transaction to open split editor for.</param>
+    public async Task ClickSplitButtonAsync(Guid transactionId)
+    {
+        var rowSelector = string.Format(TransactionRowByIdSelector, transactionId);
+        var row = Page.Locator(rowSelector);
+        await row.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+
+        var splitButton = row.Locator(SplitButtonInRowSelector).First;
+        await splitButton.ClickAsync();
     }
 
     /// <summary>
