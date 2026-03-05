@@ -51,7 +51,7 @@
 }
 else if (filteredTransactions.Count == 0)
 {
-    <div class="alert alert-info">
+    <div class="alert alert-info" data-testid="no-transactions-message">
         Geen transacties gevonden. @(selectedAccountId.HasValue ? "Selecteer een andere rekening of " : "")
         <a href="/transactions/import">Importeer transacties</a> om te beginnen.
     </div>

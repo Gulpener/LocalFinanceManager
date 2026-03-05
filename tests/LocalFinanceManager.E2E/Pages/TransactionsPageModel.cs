@@ -16,6 +16,7 @@ public class TransactionsPageModel : PageObjectBase
     private const string AccountFilterSelector = "#account-filter";
     private const string AssignmentStatusFilterSelector = "#assignmentStatusFilter";
     private const string TransactionTableSelector = "table[data-testid='transactions-table']";
+    private const string NoTransactionsSelector = "[data-testid='no-transactions-message']";
     private const string TransactionRowSelector = "tbody tr[data-testid='transaction-row']";
     private const string TransactionRowByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}']";
     private const string TransactionCheckboxByIdSelector = "tbody tr[data-testid='transaction-row'][data-transaction-id='{0}'] input[type='checkbox']";
@@ -55,7 +56,9 @@ public class TransactionsPageModel : PageObjectBase
     public async Task SelectAccountFilterAsync(Guid accountId)
     {
         await Page.SelectOptionAsync(AccountFilterSelector, accountId.ToString());
-        await WaitForSelectorAsync(TransactionRowSelector); // Wait for table to reload
+        // Wait for either the transactions table (rows present) or the empty-state message
+        // (zero rows). Both indicate Blazor has finished re-rendering after the filter change.
+        await WaitForSelectorAsync($"{TransactionTableSelector}, {NoTransactionsSelector}");
     }
 
     /// <summary>
