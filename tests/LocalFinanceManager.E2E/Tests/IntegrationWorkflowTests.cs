@@ -150,8 +150,12 @@ public class IntegrationWorkflowTests : E2ETestBase
 
         // === AUDIT TRAIL VERIFICATION ===
         // Check audit trail for one basic-assigned transaction
+        // Switch to "Assigned" filter first: the persisted "Uncategorized" filter from the
+        // previous step would hide all assigned transactions, causing ClickAuditTrailAsync
+        // to time out waiting for the specific row to be visible.
         await transactionsPage.NavigateAsync();
         await transactionsPage.SelectAccountFilterAsync(accountId);
+        await transactionsPage.SelectFilterAsync("Assigned");
         await transactionsPage.ClickAuditTrailAsync(basicAssignIds[0]);
         await Expect(Page.Locator("#auditTrailModalTitle")).ToBeVisibleAsync();
         var basicAuditText = await Page.Locator(".modal.show").TextContentAsync();
