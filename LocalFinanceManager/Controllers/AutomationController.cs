@@ -58,23 +58,8 @@ public class AutomationController : ControllerBase
     {
         _logger.LogInformation("Manual auto-apply trigger requested");
 
-        // Load current settings (database-first, then appsettings fallback)
-        var dbSettings = await _dbContext.AppSettings
-            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        var runtimeSettings = new AutoApplyRuntimeSettings
-        {
-            Enabled = dbSettings?.AutoApplyEnabled ?? _automationOptions.AutoApplyEnabled,
-            MinimumConfidence = dbSettings?.MinimumConfidence ?? (float)_automationOptions.ConfidenceThreshold,
-            IntervalMinutes = dbSettings?.IntervalMinutes ?? 15,
-            AccountIds = dbSettings?.AccountIdsJson is not null
-                ? System.Text.Json.JsonSerializer.Deserialize<List<Guid>>(dbSettings.AccountIdsJson) ?? new()
-                : new(),
-            ExcludedCategoryIds = dbSettings?.ExcludedCategoryIdsJson is not null
-                ? System.Text.Json.JsonSerializer.Deserialize<HashSet<Guid>>(dbSettings.ExcludedCategoryIdsJson) ?? new()
-                : new()
-        };
+        // Delegate to the shared settings provider (handles DB-first, config fallback, and caching)
+        var runtimeSettings = await _settingsProvider.GetSettingsAsync(cancellationToken);
 
         if (!runtimeSettings.Enabled)
         {

@@ -132,11 +132,15 @@ public class AutoApplyJobService : IAutoApplyJobService
 
         var beforeState = JsonSerializer.Serialize(new { transaction.AssignedParts });
 
+        // TODO: This uses CategoryId as BudgetLineId which is a temporary workaround.
+        // In production, we need to resolve the proper BudgetLine for the category within the relevant BudgetPlan.
+        // This requires determining which BudgetPlan is active for the transaction's account and date,
+        // then finding the BudgetLine that matches the predicted CategoryId.
         var split = new TransactionSplit
         {
             Id = Guid.NewGuid(),
             TransactionId = transaction.Id,
-            BudgetLineId = prediction.CategoryId, // MVP proxy — CategoryId used as BudgetLineId
+            BudgetLineId = prediction.CategoryId, // Using CategoryId as BudgetLineId proxy for MVP
             Amount = transaction.Amount,
             Note = $"Auto-applied by ML (confidence: {prediction.Confidence:F4})",
             IsArchived = false
