@@ -101,10 +101,12 @@ public class AutomationControllerConcurrencyIntegrationTests
         var settingsProvider = new Mock<IAutoApplySettingsProvider>();
         IValidator<AutoApplySettingsDto> validator = new AutoApplySettingsValidator();
         var logger = new Mock<ILogger<AutomationController>>().Object;
+        var jobService = new Mock<IAutoApplyJobService>().Object;
 
         var controller = new AutomationController(
             undoService,
             monitoringService,
+            jobService,
             staleContext,
             options,
             validator,

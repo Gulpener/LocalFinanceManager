@@ -1,6 +1,7 @@
 using LocalFinanceManager.Data;
 using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
+using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -250,22 +251,44 @@ public class AutoApplyTests : E2ETestBase
     [Category("AutoApply")]
     public async Task AutoApply_ManualTrigger_TransactionsAutoAssigned()
     {
-        // Arrange - Enable auto-apply with 80% confidence threshold
+        // Arrange - Enable auto-apply with 70% confidence threshold (lower to increase hit rate)
         await _settingsPage.NavigateAsync();
         await _settingsPage.SetEnableToggleAsync(true);
-        await _settingsPage.SetConfidenceThresholdAsync(0.80);
+        await _settingsPage.SetConfidenceThresholdAsync(0.70);
         await _settingsPage.SaveSettingsAsync();
 
-        // Seed labeled examples for ML predictions
-        using var scopeBefore = Factory!.Services.CreateScope();
-        var contextBefore = scopeBefore.ServiceProvider.GetRequiredService<AppDbContext>();
-        await SeedDataHelper.SeedMLDataAsync(contextBefore, _testAccount1.Id, 50);
+        // Seed labeled examples and train ML model so auto-apply has predictions to work with
+        using (var scopeSetup = Factory!.Services.CreateScope())
+        {
+            var contextSetup = scopeSetup.ServiceProvider.GetRequiredService<AppDbContext>();
+            await SeedDataHelper.SeedMLDataAsync(contextSetup, _testAccount1.Id, 50);
 
-        // Note: Manual trigger endpoint /api/automation/run-now not required for MVP
-        // In production, background job would run on schedule
-        // For E2E testing, we can verify settings are saved and would be used by job
+            var mlService = scopeSetup.ServiceProvider.GetRequiredService<IMLService>();
+            await mlService.TrainModelAsync(70);
 
-        Assert.Ignore("Manual trigger endpoint not implemented in MVP - background job runs on schedule");
+            // Flush WAL so the trained model is visible to subsequent DB connections (web server)
+            await contextSetup.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
+        }
+
+        // Act - Trigger auto-apply via the run-now endpoint
+        var response = await Page.APIRequest.PostAsync($"{BaseUrl}/api/automation/run-now");
+        Assert.That(response.Status, Is.EqualTo(200), "run-now endpoint should return 200 OK");
+
+        var json = await response.JsonAsync();
+        Assert.That(json?.GetProperty("success").GetBoolean(), Is.True, "run-now response should indicate success");
+
+        var appliedCount = json?.GetProperty("appliedCount").GetInt32() ?? 0;
+        Assert.That(appliedCount, Is.GreaterThan(0),
+            "At least one transaction should have been auto-assigned by the ML model");
+
+        // Assert - Verify auto-apply audit entries were created
+        using var scopeAfter = Factory!.Services.CreateScope();
+        var contextAfter = scopeAfter.ServiceProvider.GetRequiredService<AppDbContext>();
+        var autoApplyAuditCount = await contextAfter.TransactionAudits
+            .CountAsync(a => a.IsAutoApplied && !a.IsArchived);
+
+        Assert.That(autoApplyAuditCount, Is.GreaterThan(0),
+            "Auto-apply audit entries should have been created in the database");
     }
 
     [Test]

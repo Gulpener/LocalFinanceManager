@@ -264,36 +264,43 @@ public class MLSuggestionTests : E2ETestBase
     [Test]
     [Category("E2E")]
     [Category("ML")]
-    [Ignore("'Has Suggestion' filter not implemented in Transactions UI")]
     public async Task TransactionList_FilterBySuggestion_ShowsOnlyTransactionsWithSuggestions()
     {
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        var filterSelector = "select[id='suggestion-filter']";
-        await Page.SelectOptionAsync(filterSelector, "has-suggestion");
-        await Task.Delay(500);
+        // Wait for ML badges to load before applying the suggestion filter
+        await Page.WaitForSelectorAsync(AnyBadgeSelector, new() { Timeout = 10_000 });
+
+        // Apply "has suggestion" filter
+        await Page.SelectOptionAsync("select[id='suggestion-filter']", "has-suggestion");
+        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
         var rows = await _transactionsPage.GetTransactionRowsAsync();
-        Assert.That(rows.Count, Is.GreaterThan(0));
+        Assert.That(rows.Count, Is.GreaterThan(0), "Filtering to 'has-suggestion' should show unassigned rows with badges");
         foreach (var row in rows)
         {
             var rowBadge = await row.QuerySelectorAsync(MLBadgeSelector);
-            Assert.That(rowBadge, Is.Not.Null);
+            Assert.That(rowBadge, Is.Not.Null, "All rows shown after 'has-suggestion' filter should have an ML badge");
         }
     }
 
     [Test]
     [Category("E2E")]
     [Category("ML")]
-    [Ignore("Sort-by-confidence option not implemented in Transactions UI")]
     public async Task TransactionList_SortByConfidence_OrdersCorrectly()
     {
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
+        // Wait for all ML badges to load their confidence values
+        await Page.WaitForSelectorAsync(AnyBadgeSelector, new() { Timeout = 10_000 });
+        // Allow all async badge API calls to complete
+        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
+
+        // Apply confidence sort — Blazor re-orders rows based on stored confidence values
         await Page.SelectOptionAsync("select[id='sort-by']", "confidence-desc");
-        await Task.Delay(500);
+        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
         var rows = await _transactionsPage.GetTransactionRowsAsync();
         var confidenceValues = new List<double>();
@@ -303,12 +310,16 @@ public class MLSuggestionTests : E2ETestBase
             if (rowBadge != null)
             {
                 var confidenceText = await rowBadge.GetAttributeAsync("data-confidence");
-                if (double.TryParse(confidenceText, out var confidence))
+                if (double.TryParse(confidenceText, System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out var confidence))
                     confidenceValues.Add(confidence);
             }
         }
+
+        Assert.That(confidenceValues.Count, Is.GreaterThan(0), "Should have at least one badge with a confidence value");
         for (int i = 1; i < confidenceValues.Count; i++)
-            Assert.That(confidenceValues[i], Is.LessThanOrEqualTo(confidenceValues[i - 1]));
+            Assert.That(confidenceValues[i], Is.LessThanOrEqualTo(confidenceValues[i - 1]),
+                $"Row {i} confidence ({confidenceValues[i]}) should be <= row {i - 1} ({confidenceValues[i - 1]}) for descending order");
     }
 
     [Test]

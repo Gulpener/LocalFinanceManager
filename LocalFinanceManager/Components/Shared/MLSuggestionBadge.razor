@@ -89,6 +89,13 @@ else if (_suggestion != null && !_isHidden)
     [Parameter]
     public bool IsAutoApplied { get; set; }
 
+    /// <summary>
+    /// Called after the suggestion loads (including "no model" case).
+    /// Reports the confidence (0 when no model is available).
+    /// </summary>
+    [Parameter]
+    public EventCallback<float> OnConfidenceLoaded { get; set; }
+
     private SuggestionDto? _suggestion;
     private bool _isLoading = true;
     private bool _isProcessing = false;
@@ -129,6 +136,10 @@ else if (_suggestion != null && !_isHidden)
         finally
         {
             _isLoading = false;
+            if (OnConfidenceLoaded.HasDelegate)
+            {
+                await OnConfidenceLoaded.InvokeAsync(_suggestion?.Confidence ?? 0f);
+            }
         }
     }
 
