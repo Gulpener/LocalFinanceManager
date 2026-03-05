@@ -154,7 +154,8 @@ else if (_suggestion != null && !_isHidden)
 
             if (response.IsSuccessStatusCode)
             {
-                // Show success toast (feedback recorded)
+                // Feedback recorded — hide the badge so the user sees the suggestion was fulfilled
+                _isHidden = true;
                 await ShowToastAsync("Suggestion accepted", "success");
             }
             else

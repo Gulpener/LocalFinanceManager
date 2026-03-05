@@ -156,7 +156,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["SkipDatabaseMigrations"] = "true", // Migrations are applied in InitializeDatabaseAsync() before host startup
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
                 ["AutomationOptions:MonitoringRefreshIntervalSeconds"] = "2", // Speed up monitoring auto-refresh tests
-                ["ML:EnableAutoSuggestions"] = "false" // Disable ML during tests unless explicitly enabled
+                // ML training overrides: smaller trees for fast test training
+                ["MLOptions:NumberOfTrees"] = "5",
+                ["MLOptions:NumberOfLeaves"] = "5",
+                ["MLOptions:MinimumExampleCountPerLeaf"] = "2"
             });
         });
 

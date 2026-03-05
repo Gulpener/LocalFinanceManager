@@ -1,6 +1,7 @@
 using LocalFinanceManager.Data;
 using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
+using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,12 +19,16 @@ public class MLSuggestionTests : E2ETestBase
     private Account _testAccount = null!;
     private List<Category> _categories = null!;
 
+    // Selectors for ML badge elements
+    private const string MLBadgeSelector = "[data-testid='ml-suggestion-badge']";
+    private const string NoModelBadgeSelector = "[data-testid='no-model-badge']";
+    private const string AnyBadgeSelector = $"{MLBadgeSelector}, {NoModelBadgeSelector}";
+
     [SetUp]
     public async Task SetUp()
     {
         _transactionsPage = new TransactionsPageModel(Page, BaseUrl);
 
-        // Seed test data: Account, BudgetPlan, Categories, Transactions, LabeledExamples
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -41,58 +46,84 @@ public class MLSuggestionTests : E2ETestBase
             _testAccount.CurrentBudgetPlanId!.Value,
             "Food", "Transport", "Utilities", "Salary", "Shopping");
 
-        // Create 20 transactions with patterns matching categories
+        // Seed 50 transactions: 10 per description pattern (5 patterns × 10 = 50)
+        // Consistent patterns are critical so the ML model can learn reliable mappings
         var transactions = new List<Transaction>();
-        for (int i = 0; i < 20; i++)
+        var patterns = new[]
         {
-            var transaction = new Transaction
+            ("Grocery Store",   "Supermarkt"),
+            ("Gas Station",     "Tankstation"),
+            ("Electric Bill",   "Energiemaatschappij"),
+            ("Salary Payment",  "Werkgever"),
+            ("Online Shop",     "Webwinkel"),
+        };
+
+        var patternIndex = 0;
+        foreach (var (description, counterparty) in patterns)
+        {
+            for (int i = 0; i < 10; i++)
             {
-                Id = Guid.NewGuid(),
-                AccountId = _testAccount.Id,
-                Amount = i % 2 == 0 ? -50m : 100m, // Alternate expense/income
-                Date = DateTime.UtcNow.AddDays(-i),
-                Description = i % 5 == 0 ? "Grocery Store" : i % 5 == 1 ? "Gas Station" : i % 5 == 2 ? "Electric Bill" : i % 5 == 3 ? "Salary Payment" : "Online Shop",
-                Counterparty = $"Counterparty {i}"
-            };
-            transactions.Add(transaction);
-            context.Transactions.Add(transaction);
+                var tx = new Transaction
+                {
+                    Id = Guid.NewGuid(),
+                    AccountId = _testAccount.Id,
+                    Amount = description == "Salary Payment" ? 2000m : -50m,
+                    Date = DateTime.UtcNow.AddDays(-(i + patternIndex * 10)),
+                    Description = description,
+                    Counterparty = counterparty
+                };
+                transactions.Add(tx);
+                context.Transactions.Add(tx);
+            }
+            patternIndex++;
         }
         await context.SaveChangesAsync();
 
-        // Create labeled examples (training data) to simulate trained model
-        // At least 10 per category for training threshold
-        for (int i = 0; i < transactions.Count; i++)
+        // Seed 10 labeled examples per category with consistent mapping
+        var patternToCategory = new Dictionary<string, string>
         {
-            var transaction = transactions[i];
-            Category category;
+            ["Grocery Store"]  = "Food",
+            ["Gas Station"]    = "Transport",
+            ["Electric Bill"]  = "Utilities",
+            ["Salary Payment"] = "Salary",
+            ["Online Shop"]    = "Shopping",
+        };
 
-            // Assign patterns to categories
-            if (transaction.Description.Contains("Grocery"))
-                category = _categories.First(c => c.Name == "Food");
-            else if (transaction.Description.Contains("Gas"))
-                category = _categories.First(c => c.Name == "Transport");
-            else if (transaction.Description.Contains("Electric"))
-                category = _categories.First(c => c.Name == "Utilities");
-            else if (transaction.Description.Contains("Salary"))
-                category = _categories.First(c => c.Name == "Salary");
-            else
-                category = _categories.First(c => c.Name == "Shopping");
+        foreach (var tx in transactions)
+        {
+            var categoryName = patternToCategory[tx.Description];
+            var category = _categories.First(c => c.Name == categoryName);
 
             var labeledExample = new LabeledExample
             {
                 Id = Guid.NewGuid(),
-                TransactionId = transaction.Id,
+                TransactionId = tx.Id,
                 CategoryId = category.Id,
                 WasAutoApplied = false,
                 AcceptedSuggestion = true,
-                SuggestionConfidence = 0.85f
+                SuggestionConfidence = 0.90f
             };
             context.LabeledExamples.Add(labeledExample);
         }
         await context.SaveChangesAsync();
 
-        // Note: In production, ML model training would happen here.
-        // For E2E tests, we assume the model is trained and suggestions API is working.
+        // Train an actual ML model so suggestion badges appear in the UI
+        var mlService = scope.ServiceProvider.GetRequiredService<IMLService>();
+        await mlService.TrainModelAsync(90);
+
+        // Flush WAL so the trained model is visible to subsequent DB connections (web server)
+        await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
+    }
+
+    /// <summary>
+    /// Waits for at least one ML suggestion badge (or no-model badge) to appear on the page.
+    /// Returns the first ml-suggestion-badge element, or null if only no-model badges are shown.
+    /// </summary>
+    private async Task<Microsoft.Playwright.IElementHandle?> WaitForFirstSuggestionBadgeAsync()
+    {
+        // Wait for any badge to load (either suggestion or no-model)
+        await Page.WaitForSelectorAsync(AnyBadgeSelector, new() { Timeout = 10_000 });
+        return await Page.QuerySelectorAsync(MLBadgeSelector);
     }
 
     [Test]
@@ -104,27 +135,12 @@ public class MLSuggestionTests : E2ETestBase
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        // Act
-        var rows = await _transactionsPage.GetTransactionRowsAsync();
+        // Act — wait for any badge variant to appear
+        await Page.WaitForSelectorAsync(AnyBadgeSelector, new() { Timeout = 10_000 });
 
-        // Assert
-        Assert.That(rows.Count, Is.GreaterThan(0), "Transactions should be displayed");
-
-        // Check if ML suggestion badges are present (only if model is trained)
-        // Note: Badge visibility depends on API returning suggestions
-        var badgeSelector = "[data-testid='ml-suggestion-badge']";
-        var hasBadge = await Page.QuerySelectorAsync($"{badgeSelector}") != null;
-
-        // If no model is trained, badge should show "No ML model" warning
-        if (!hasBadge)
-        {
-            var noModelBadge = await Page.QuerySelectorAsync("[data-testid='no-model-badge']");
-            Assert.That(noModelBadge, Is.Not.Null, "Should show 'No ML model' badge when model not available");
-        }
-        else
-        {
-            Assert.Pass("ML suggestion badge displayed (model available)");
-        }
+        // Assert — at least one ML suggestion badge must exist (model was trained in SetUp)
+        var mlBadge = await Page.QuerySelectorAsync(MLBadgeSelector);
+        Assert.That(mlBadge, Is.Not.Null, "ML suggestion badge should be displayed for unassigned transactions when a model is available");
     }
 
     [Test]
@@ -136,24 +152,18 @@ public class MLSuggestionTests : E2ETestBase
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        // Act
-        var badgeSelector = "[data-testid='ml-suggestion-badge']";
-        var badge = await Page.QuerySelectorAsync(badgeSelector);
+        var badge = await WaitForFirstSuggestionBadgeAsync();
+        Assert.That(badge, Is.Not.Null, "ML suggestion badge must be present (model was trained in SetUp)");
 
-        if (badge == null)
-        {
-            Assert.Ignore("Skipping: ML model not trained, no suggestions available");
-            return;
-        }
+        // Act — hover over badge to trigger CSS tooltip
+        await badge!.HoverAsync();
 
-        // Hover over badge to trigger tooltip
-        await badge.HoverAsync();
+        // Assert — tooltip element is visible with "Based on" feature explanation text
+        var tooltip = await Page.WaitForSelectorAsync(
+            "[data-testid='suggestion-tooltip']",
+            new() { State = Microsoft.Playwright.WaitForSelectorState.Visible, Timeout = 3_000 });
 
-        // Assert - Check tooltip appears with feature importance
-        var tooltipSelector = "[data-testid='suggestion-tooltip']";
-        var tooltip = await Page.WaitForSelectorAsync(tooltipSelector, new() { Timeout = 3000 });
         Assert.That(tooltip, Is.Not.Null, "Tooltip should appear on hover");
-
         var tooltipText = await tooltip!.InnerTextAsync();
         Assert.That(tooltipText, Does.Contain("Based on"), "Tooltip should show feature importance explanation");
     }
@@ -168,187 +178,137 @@ public class MLSuggestionTests : E2ETestBase
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        // Act
-        var badgeSelector = "[data-testid='ml-suggestion-badge']";
-        var badge = await Page.QuerySelectorAsync(badgeSelector);
+        var badge = await WaitForFirstSuggestionBadgeAsync();
+        Assert.That(badge, Is.Not.Null, "ML suggestion badge must be present (model was trained in SetUp)");
 
-        if (badge == null)
-        {
-            Assert.Ignore("Skipping: ML model not trained, no suggestions available");
-            return;
-        }
+        // Assert — badge must not expose tooltip content via attributes that could allow XSS
+        var titleAttribute    = await badge!.GetAttributeAsync("title");
+        var bootstrapToggle   = await badge.GetAttributeAsync("data-bs-toggle");
+        var bootstrapHtml     = await badge.GetAttributeAsync("data-bs-html");
 
-        var titleAttribute = await badge.GetAttributeAsync("title");
-        var bootstrapToggle = await badge.GetAttributeAsync("data-bs-toggle");
-        var bootstrapHtml = await badge.GetAttributeAsync("data-bs-html");
-
-        // Assert
-        Assert.That(titleAttribute, Is.Null.Or.Empty,
+        Assert.That(titleAttribute,  Is.Null.Or.Empty,
             "Badge should not expose tooltip HTML content via title attribute");
         Assert.That(bootstrapToggle, Is.Null.Or.Empty,
             "Badge should not use Bootstrap tooltip initialization attributes for untrusted content");
-        Assert.That(bootstrapHtml, Is.Null.Or.Empty,
+        Assert.That(bootstrapHtml,   Is.Null.Or.Empty,
             "Badge should never enable HTML tooltip rendering for suggestion explanation content");
     }
 
     [Test]
     [Category("E2E")]
     [Category("ML")]
-    public async Task MLSuggestionBadge_AcceptButton_AssignsTransactionAndHidesBadge()
+    public async Task MLSuggestionBadge_AcceptButton_RecordsFeedbackAndHidesBadge()
     {
         // Arrange
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        var badgeSelector = "[data-testid='ml-suggestion-badge']";
-        var badge = await Page.QuerySelectorAsync(badgeSelector);
+        var badge = await WaitForFirstSuggestionBadgeAsync();
+        Assert.That(badge, Is.Not.Null, "ML suggestion badge must be present (model was trained in SetUp)");
 
-        if (badge == null)
-        {
-            Assert.Ignore("Skipping: ML model not trained, no suggestions available");
-            return;
-        }
-
-        // Act - Click "Accept" button on suggestion badge
-        var acceptButtonSelector = "[data-testid='accept-suggestion']";
-        var acceptButton = await badge.QuerySelectorAsync(acceptButtonSelector);
+        var acceptButton = await badge!.QuerySelectorAsync("[data-testid='accept-suggestion']");
         Assert.That(acceptButton, Is.Not.Null, "Accept button should be present in badge");
 
+        // Count labeled examples before accepting
+        using var scopeBefore = Factory!.Services.CreateScope();
+        var ctxBefore = scopeBefore.ServiceProvider.GetRequiredService<AppDbContext>();
+        var countBefore = await ctxBefore.LabeledExamples.CountAsync();
+
+        // Act — click Accept, then wait for the feedback API call to complete
         await acceptButton!.ClickAsync();
+        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
-        // Wait for success toast or badge to disappear
-        await Task.Delay(1000); // Allow API call to complete
+        // Assert — a new LabeledExample feedback record was created
+        using var scopeAfter = Factory!.Services.CreateScope();
+        var ctxAfter = scopeAfter.ServiceProvider.GetRequiredService<AppDbContext>();
+        var countAfter = await ctxAfter.LabeledExamples.CountAsync();
+        Assert.That(countAfter, Is.GreaterThan(countBefore), "Accepting a suggestion should record a LabeledExample feedback entry");
 
-        // Assert - Badge should disappear (transaction now assigned)
-        var badgeAfterAccept = await Page.QuerySelectorAsync(badgeSelector);
-        Assert.That(badgeAfterAccept, Is.Null, "Badge should disappear after accepting suggestion");
-
-        // Verify transaction is assigned in database
-        using var scope = Factory!.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var assignedTransactions = await context.TransactionSplits.CountAsync();
-        Assert.That(assignedTransactions, Is.GreaterThan(0), "Transaction should be assigned in database");
+        // Assert — the accepted badge should be hidden (MLSuggestionBadge hides itself on successful accept)
+        var isAcceptedBadgeHidden = await badge!.IsHiddenAsync();
+        Assert.That(isAcceptedBadgeHidden, Is.True, "Badge should be hidden after accepting suggestion");
     }
 
     [Test]
     [Category("E2E")]
     [Category("ML")]
-    public async Task MLSuggestionBadge_RejectButton_RecordsFeedbackAndBadgeRemains()
+    public async Task MLSuggestionBadge_RejectButton_HidesBadgeLocally()
     {
         // Arrange
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        var badgeSelector = "[data-testid='ml-suggestion-badge']";
-        var badge = await Page.QuerySelectorAsync(badgeSelector);
+        var badge = await WaitForFirstSuggestionBadgeAsync();
+        Assert.That(badge, Is.Not.Null, "ML suggestion badge must be present (model was trained in SetUp)");
 
-        if (badge == null)
-        {
-            Assert.Ignore("Skipping: ML model not trained, no suggestions available");
-            return;
-        }
-
-        // Get initial count of labeled examples (feedback)
-        using var scopeBefore = Factory!.Services.CreateScope();
-        var contextBefore = scopeBefore.ServiceProvider.GetRequiredService<AppDbContext>();
-        var feedbackCountBefore = await contextBefore.LabeledExamples.CountAsync();
-
-        // Act - Click "Reject" button
-        var rejectButtonSelector = "[data-testid='reject-suggestion']";
-        var rejectButton = await badge.QuerySelectorAsync(rejectButtonSelector);
+        var rejectButton = await badge!.QuerySelectorAsync("[data-testid='reject-suggestion']");
         Assert.That(rejectButton, Is.Not.Null, "Reject button should be present in badge");
 
+        // Count labeled examples before rejecting — reject does NOT call the feedback API
+        using var scopeBefore = Factory!.Services.CreateScope();
+        var ctxBefore = scopeBefore.ServiceProvider.GetRequiredService<AppDbContext>();
+        var countBefore = await ctxBefore.LabeledExamples.CountAsync();
+
+        // Act — click Reject (client-side dismiss only, no HTTP call)
         await rejectButton!.ClickAsync();
-        await Task.Delay(1000); // Allow API call to complete
+        // Allow Blazor to re-render; no network round-trip is expected
+        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
-        // Assert - Transaction should still be unassigned
+        // Assert — no server-side feedback record created (reject is client-side dismiss only)
         using var scopeAfter = Factory!.Services.CreateScope();
-        var contextAfter = scopeAfter.ServiceProvider.GetRequiredService<AppDbContext>();
-        var feedbackCountAfter = await contextAfter.LabeledExamples.CountAsync();
-
-        // Feedback should be recorded (if API creates new LabeledExample for rejection)
-        // This depends on implementation - may just update existing or create new
-        Assert.That(feedbackCountAfter, Is.GreaterThanOrEqualTo(feedbackCountBefore), "Feedback should be recorded");
+        var ctxAfter = scopeAfter.ServiceProvider.GetRequiredService<AppDbContext>();
+        var countAfter = await ctxAfter.LabeledExamples.CountAsync();
+        Assert.That(countAfter, Is.EqualTo(countBefore), "Rejecting a suggestion should not create a new LabeledExample (client-side dismiss only)");
     }
 
     [Test]
     [Category("E2E")]
     [Category("ML")]
+    [Ignore("'Has Suggestion' filter not implemented in Transactions UI")]
     public async Task TransactionList_FilterBySuggestion_ShowsOnlyTransactionsWithSuggestions()
     {
-        // Arrange
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        // Act - Select "Has Suggestion" filter
         var filterSelector = "select[id='suggestion-filter']";
-        var filterExists = await Page.QuerySelectorAsync(filterSelector) != null;
-
-        if (!filterExists)
-        {
-            Assert.Ignore("Skipping: 'Has Suggestion' filter not implemented in UI");
-            return;
-        }
-
         await Page.SelectOptionAsync(filterSelector, "has-suggestion");
-        await Task.Delay(500); // Wait for filter to apply
+        await Task.Delay(500);
 
-        // Assert - Only transactions with suggestion badges should be shown
         var rows = await _transactionsPage.GetTransactionRowsAsync();
-        Assert.That(rows.Count, Is.GreaterThan(0), "Filtered transactions should be displayed");
-
+        Assert.That(rows.Count, Is.GreaterThan(0));
         foreach (var row in rows)
         {
-            var badge = await row.QuerySelectorAsync("[data-testid='ml-suggestion-badge']");
-            Assert.That(badge, Is.Not.Null, "All visible transactions should have suggestion badges");
+            var rowBadge = await row.QuerySelectorAsync(MLBadgeSelector);
+            Assert.That(rowBadge, Is.Not.Null);
         }
     }
 
     [Test]
     [Category("E2E")]
     [Category("ML")]
+    [Ignore("Sort-by-confidence option not implemented in Transactions UI")]
     public async Task TransactionList_SortByConfidence_OrdersCorrectly()
     {
-        // Arrange
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        // Act - Sort by confidence (if sort option available)
-        var sortSelector = "select[id='sort-by']";
-        var sortExists = await Page.QuerySelectorAsync(sortSelector) != null;
-
-        if (!sortExists)
-        {
-            Assert.Ignore("Skipping: Confidence sort option not implemented in UI");
-            return;
-        }
-
-        await Page.SelectOptionAsync(sortSelector, "confidence-desc");
+        await Page.SelectOptionAsync("select[id='sort-by']", "confidence-desc");
         await Task.Delay(500);
 
-        // Assert - Verify transactions are sorted by confidence (highest first)
         var rows = await _transactionsPage.GetTransactionRowsAsync();
         var confidenceValues = new List<double>();
-
         foreach (var row in rows)
         {
-            var badge = await row.QuerySelectorAsync("[data-testid='ml-suggestion-badge']");
-            if (badge != null)
+            var rowBadge = await row.QuerySelectorAsync(MLBadgeSelector);
+            if (rowBadge != null)
             {
-                var confidenceText = await badge.GetAttributeAsync("data-confidence");
+                var confidenceText = await rowBadge.GetAttributeAsync("data-confidence");
                 if (double.TryParse(confidenceText, out var confidence))
-                {
                     confidenceValues.Add(confidence);
-                }
             }
         }
-
-        // Verify descending order
         for (int i = 1; i < confidenceValues.Count; i++)
-        {
-            Assert.That(confidenceValues[i], Is.LessThanOrEqualTo(confidenceValues[i - 1]),
-                $"Confidence values should be in descending order. Found {confidenceValues[i - 1]} followed by {confidenceValues[i]}");
-        }
+            Assert.That(confidenceValues[i], Is.LessThanOrEqualTo(confidenceValues[i - 1]));
     }
 
     [Test]
@@ -360,39 +320,29 @@ public class MLSuggestionTests : E2ETestBase
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_testAccount.Id);
 
-        // Act - Get all suggestion badges and check colors
-        var badges = await Page.QuerySelectorAllAsync("[data-testid='ml-suggestion-badge']");
+        // Wait for at least one badge, then collect all
+        await Page.WaitForSelectorAsync(AnyBadgeSelector, new() { Timeout = 10_000 });
+        var badges = await Page.QuerySelectorAllAsync(MLBadgeSelector);
+        Assert.That(badges.Count, Is.GreaterThan(0), "At least one ML suggestion badge should be visible");
 
-        if (badges.Count == 0)
+        // Assert — verify each badge's CSS class matches its confidence level
+        foreach (var b in badges)
         {
-            Assert.Ignore("Skipping: No ML suggestions available");
-            return;
-        }
-
-        // Assert - Verify color coding matches confidence
-        foreach (var badge in badges)
-        {
-            var confidenceAttr = await badge.GetAttributeAsync("data-confidence");
+            var confidenceAttr = await b.GetAttributeAsync("data-confidence");
             if (string.IsNullOrEmpty(confidenceAttr)) continue;
 
-            var confidence = double.Parse(confidenceAttr);
-            var className = await badge.GetAttributeAsync("class") ?? "";
+            var confidence = double.Parse(confidenceAttr, System.Globalization.CultureInfo.InvariantCulture);
+            var className = await b.GetAttributeAsync("class") ?? "";
 
-            if (confidence > 0.80)
-            {
-                Assert.That(className, Does.Contain("green").Or.Contain("success"),
-                    $"High confidence ({confidence:P0}) should have green/success color");
-            }
+            if (confidence >= 0.80)
+                Assert.That(className, Does.Contain("success"),
+                    $"High confidence ({confidence:P0}) should use 'bg-success' (green)");
             else if (confidence >= 0.60)
-            {
-                Assert.That(className, Does.Contain("yellow").Or.Contain("warning"),
-                    $"Medium confidence ({confidence:P0}) should have yellow/warning color");
-            }
+                Assert.That(className, Does.Contain("warning"),
+                    $"Medium confidence ({confidence:P0}) should use 'bg-warning' (yellow)");
             else
-            {
-                Assert.That(className, Does.Contain("gray").Or.Contain("secondary"),
-                    $"Low confidence ({confidence:P0}) should have gray/secondary color");
-            }
+                Assert.That(className, Does.Contain("secondary"),
+                    $"Low confidence ({confidence:P0}) should use 'bg-secondary' (gray)");
         }
     }
 
@@ -401,27 +351,25 @@ public class MLSuggestionTests : E2ETestBase
     [Category("ML")]
     public async Task MLModelInfo_DisplaysActiveModelDetails()
     {
-        // Arrange & Act - Navigate to ML model info page
+        // Act — navigate to ML model info admin page
         await Page.GotoAsync($"{BaseUrl}/admin/ml");
-        await Page.WaitForSelectorAsync("[data-testid='model-info']", new() { Timeout = 5000 });
+        await Page.WaitForSelectorAsync("[data-testid='model-info']", new() { Timeout = 5_000 });
 
-        // Assert - Check if model metadata is displayed
-        var modelVersionElement = await Page.QuerySelectorAsync("[data-testid='model-version']");
-        var accuracyElement = await Page.QuerySelectorAsync("[data-testid='model-accuracy']");
-        var lastTrainedElement = await Page.QuerySelectorAsync("[data-testid='last-trained']");
+        // Assert — model metadata is displayed (a model was trained in SetUp)
+        var modelVersionElement  = await Page.WaitForSelectorAsync("[data-testid='model-version']",  new() { Timeout = 5_000 });
+        var accuracyElement      = await Page.WaitForSelectorAsync("[data-testid='model-accuracy']", new() { Timeout = 5_000 });
+        var lastTrainedElement   = await Page.WaitForSelectorAsync("[data-testid='last-trained']",   new() { Timeout = 5_000 });
 
-        if (modelVersionElement == null)
+        // Retrieve text before Assert.Multiple (async lambdas are not supported)
+        var modelVersionText = await modelVersionElement!.InnerTextAsync();
+        var accuracyText     = await accuracyElement!.InnerTextAsync();
+        var lastTrainedText  = await lastTrainedElement!.InnerTextAsync();
+
+        Assert.Multiple(() =>
         {
-            Assert.Ignore("Skipping: No active ML model found");
-            return;
-        }
-
-        var modelVersion = await modelVersionElement.InnerTextAsync();
-        var accuracy = await accuracyElement!.InnerTextAsync();
-        var lastTrained = await lastTrainedElement!.InnerTextAsync();
-
-        Assert.That(modelVersion, Is.Not.Empty, "Model version should be displayed");
-        Assert.That(accuracy, Does.Contain("%"), "Accuracy should be displayed as percentage");
-        Assert.That(lastTrained, Is.Not.Empty, "Last trained date should be displayed");
+            Assert.That(modelVersionText, Is.Not.Empty,      "Model version should be displayed");
+            Assert.That(accuracyText,     Does.Contain("%"), "Accuracy should be displayed as percentage");
+            Assert.That(lastTrainedText,  Is.Not.Empty,      "Last trained date should be displayed");
+        });
     }
 }

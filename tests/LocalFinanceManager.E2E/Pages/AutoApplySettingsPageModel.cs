@@ -30,11 +30,14 @@ public class AutoApplySettingsPageModel : PageObjectBase
     }
 
     /// <summary>
-    /// Navigates to the Auto-Apply Settings page.
+    /// Navigates to the Auto-Apply Settings page and waits for the settings to load.
     /// </summary>
     public async Task NavigateAsync()
     {
         await NavigateToAsync("/admin/autoapply");
+        // Wait for the loading spinner to disappear (settings loaded from API)
+        await Page.WaitForSelectorAsync(".spinner-border",
+            new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 5000 });
     }
 
     /// <summary>
