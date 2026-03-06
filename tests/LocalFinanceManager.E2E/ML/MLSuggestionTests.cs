@@ -107,12 +107,17 @@ public class MLSuggestionTests : E2ETestBase
         }
         await context.SaveChangesAsync();
 
-        // Train an actual ML model so suggestion badges appear in the UI
-        var mlService = scope.ServiceProvider.GetRequiredService<IMLService>();
-        await mlService.TrainModelAsync(90);
-
-        // Flush WAL so the trained model is visible to subsequent DB connections (web server)
+        // Train an actual ML model using the real Kestrel host's DI scope so the host's
+        // singleton IMLModelCache is populated immediately. This prevents badge API calls from
+        // deserializing the model from the database on every request (which is slow when many
+        // badges load concurrently as the test fixture accumulates transactions over multiple SetUps).
+        // Note: data was seeded above via dummyHost's scope; WAL-checkpoint ensures it is
+        // visible to the real host's new connection before training.
         await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
+
+        using var hostScope = Factory!.HostServices.CreateScope();
+        var hostMlService = hostScope.ServiceProvider.GetRequiredService<IMLService>();
+        await hostMlService.TrainModelAsync(90);
     }
 
     /// <summary>

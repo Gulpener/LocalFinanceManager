@@ -31,6 +31,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     public string ServerAddress { get; private set; }
     public string TestDatabasePath => _testDatabasePath;
 
+    /// <summary>
+    /// The real Kestrel host's service provider.
+    /// Use this instead of <see cref="WebApplicationFactory{TEntryPoint}.Services"/> when you need
+    /// to access singletons that live in the actual web server (e.g. IAutoApplySettingsProvider,
+    /// IMLModelCache), because WebApplicationFactory.Services resolves from a separate dummy host.
+    /// </summary>
+    public IServiceProvider HostServices => _host?.Services
+        ?? throw new InvalidOperationException("Real host has not been started. Call EnsureServerStarted() first.");
+
     public TestWebApplicationFactory(string fixtureId)
     {
         // Use fixture ID to create one database per test fixture (enables parallel execution)
@@ -40,10 +49,13 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         ServerAddress = "http://127.0.0.1:0";
     }
     /// <summary>
-    /// Gets the connection string for the test database with WAL mode enabled.
-    /// WAL (Write-Ahead Logging) mode enables better concurrent access performance.
+    /// Gets the connection string for the test database.
+    /// Pooling=False prevents SQLite shared-cache stale read issues: with connection pooling
+    /// enabled, a pooled connection that was opened before a write may still see the old page-cache
+    /// state even after the writer commits, causing the Kestrel host and the test's dummy host
+    /// to disagree on the database contents.
     /// </summary>
-    private string GetConnectionString() => $"Data Source={_testDatabasePath};Cache=Shared";
+    private string GetConnectionString() => $"Data Source={_testDatabasePath};Pooling=False";
 
     private static string SanitizeTestName(string testName)
     {

@@ -3,6 +3,7 @@ using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
 using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services.Background;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
@@ -251,11 +252,26 @@ public class AutoApplyTests : E2ETestBase
     [Category("AutoApply")]
     public async Task AutoApply_ManualTrigger_TransactionsAutoAssigned()
     {
-        // Arrange - Enable auto-apply with 70% confidence threshold (lower to increase hit rate)
-        await _settingsPage.NavigateAsync();
-        await _settingsPage.SetEnableToggleAsync(true);
-        await _settingsPage.SetConfidenceThresholdAsync(0.70);
-        await _settingsPage.SaveSettingsAsync();
+        // Arrange - Enable auto-apply via HTTP so the real server's DbContext writes the row,
+        // making it immediately visible to all subsequent HTTP requests on the same host.
+        // In-process DI writes use a separate SQLite connection that may be isolated from the
+        // Kestrel host's connections due to WAL reader-snapshot differences.
+        var settingsPayload = new
+        {
+            enabled = true,
+            minimumConfidence = 0.70f,
+            intervalMinutes = 15,
+            accountIds = Array.Empty<Guid>(),
+            excludedCategoryIds = Array.Empty<Guid>()
+        };
+        var enableResponse = await Page.APIRequest.PostAsync(
+            $"{BaseUrl}/api/automation/settings",
+            new Microsoft.Playwright.APIRequestContextOptions
+            {
+                DataObject = settingsPayload,
+                Headers = new Dictionary<string, string> { ["Content-Type"] = "application/json" }
+            });
+        Assert.That(enableResponse.Status, Is.EqualTo(200), "Auto-apply settings should be saved");
 
         // Seed labeled examples and train ML model so auto-apply has predictions to work with
         using (var scopeSetup = Factory!.Services.CreateScope())
@@ -263,10 +279,15 @@ public class AutoApplyTests : E2ETestBase
             var contextSetup = scopeSetup.ServiceProvider.GetRequiredService<AppDbContext>();
             await SeedDataHelper.SeedMLDataAsync(contextSetup, _testAccount1.Id, 50);
 
-            var mlService = scopeSetup.ServiceProvider.GetRequiredService<IMLService>();
-            await mlService.TrainModelAsync(70);
+            // Checkpoint so the host's connections can see the seeded labeled examples
+            await contextSetup.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
 
-            // Flush WAL so the trained model is visible to subsequent DB connections (web server)
+            // Train via the REAL host's IMLService so its IMLModelCache is warmed up immediately
+            using var hostScopeML = Factory!.HostServices.CreateScope();
+            var hostMlService = hostScopeML.ServiceProvider.GetRequiredService<IMLService>();
+            await hostMlService.TrainModelAsync(70);
+
+            // Flush WAL so the trained model bytes are visible to subsequent HTTP requests
             await contextSetup.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
 

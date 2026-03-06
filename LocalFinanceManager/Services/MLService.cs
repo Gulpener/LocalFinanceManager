@@ -22,15 +22,15 @@ public class MLService : IMLService
     private readonly AppDbContext _dbContext;
     private readonly ILabeledExampleRepository _labeledExampleRepo;
     private readonly IFeatureExtractor _featureExtractor;
+    private readonly IMLModelCache _modelCache;
     private readonly MLOptions _options;
     private readonly ILogger<MLService> _logger;
-    private ITransformer? _cachedModel;
-    private int? _cachedModelVersion;
 
     public MLService(
         AppDbContext dbContext,
         ILabeledExampleRepository labeledExampleRepo,
         IFeatureExtractor featureExtractor,
+        IMLModelCache modelCache,
         IOptions<MLOptions> options,
         ILogger<MLService> logger)
     {
@@ -38,6 +38,7 @@ public class MLService : IMLService
         _dbContext = dbContext;
         _labeledExampleRepo = labeledExampleRepo;
         _featureExtractor = featureExtractor;
+        _modelCache = modelCache;
         _options = options.Value;
         _logger = logger;
     }
@@ -227,8 +228,14 @@ public class MLService : IMLService
             return null;
         }
 
-        // Load model into memory if not cached
-        if (_cachedModel == null || _cachedModelVersion != activeModel.Version)
+        // Load model into memory if not already in the singleton cross-request cache
+        var (cachedTransformer, cachedVersion) = _modelCache.GetCached();
+        ITransformer modelTransformer;
+        if (cachedTransformer != null && cachedVersion == activeModel.Version)
+        {
+            modelTransformer = cachedTransformer;
+        }
+        else
         {
             var modelEntity = await _dbContext.MLModels
                 .FirstOrDefaultAsync(m => m.Version == activeModel.Version && !m.IsArchived);
@@ -239,8 +246,8 @@ public class MLService : IMLService
                 return null;
             }
 
-            _cachedModel = DeserializeModel(modelEntity.ModelBytes);
-            _cachedModelVersion = activeModel.Version;
+            modelTransformer = DeserializeModel(modelEntity.ModelBytes);
+            _modelCache.Set(activeModel.Version, modelTransformer);
         }
 
         // Extract features
@@ -256,7 +263,7 @@ public class MLService : IMLService
         var input = _featureExtractor.ToMLInput(features);
 
         // Make prediction
-        var predictionEngine = _mlContext.Model.CreatePredictionEngine<CategoryPredictionInput, CategoryPredictionOutput>(_cachedModel);
+        var predictionEngine = _mlContext.Model.CreatePredictionEngine<CategoryPredictionInput, CategoryPredictionOutput>(modelTransformer);
         var prediction = predictionEngine.Predict(input);
 
         // Parse predicted category ID
@@ -327,8 +334,8 @@ public class MLService : IMLService
 
     private async Task ActivateModelInternalAsync(MLModel model, ITransformer transformer)
     {
-        _cachedModel = transformer;
-        _cachedModelVersion = model.Version;
+        // Update the singleton cross-request model cache so subsequent predictions skip the DB read
+        _modelCache.Set(model.Version, transformer);
 
         // In a real system, we might mark the model as "active" in the database
         // For now, we just cache it in memory (latest non-archived is active)
