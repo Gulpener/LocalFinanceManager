@@ -65,15 +65,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             // Placeholder mode: accept any token (development without Supabase configured)
             // WARNING: This disables all JWT validation. Ensure proper Supabase credentials are set in production.
-            var logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
-            if (!builder.Environment.IsDevelopment())
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
             {
-                logger.LogError("JWT validation is disabled (placeholder mode). Configure Supabase__JwtSecret in production!");
-            }
-            else
-            {
-                logger.LogWarning("JWT validation is in PLACEHOLDER MODE (no Supabase credentials configured). This is only safe in Development.");
-            }
+                OnMessageReceived = ctx =>
+                {
+                    var isProduction = !ctx.HttpContext.RequestServices
+                        .GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>()
+                        .IsDevelopment();
+                    var log = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    if (isProduction)
+                        log.LogError("JWT validation is disabled (placeholder mode). Configure Supabase__JwtSecret in production!");
+                    else
+                        log.LogWarning("JWT validation is in PLACEHOLDER MODE (no Supabase credentials configured). This is only safe in Development.");
+                    return Task.CompletedTask;
+                }
+            };
 
             options.TokenValidationParameters = new TokenValidationParameters
             {
