@@ -1,4 +1,5 @@
 @page "/login"
+@attribute [AllowAnonymous]
 @using LocalFinanceManager.Services
 @inject IAuthService AuthService
 @inject CustomAuthenticationStateProvider AuthStateProvider
@@ -63,6 +64,9 @@
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
+
     private LoginModel loginModel = new();
     private string? errorMessage;
     private bool showResendVerification;
@@ -84,7 +88,8 @@
             if (result.Success && !string.IsNullOrEmpty(result.AccessToken))
             {
                 await AuthStateProvider.NotifyUserLoggedInAsync(result.AccessToken);
-                Navigation.NavigateTo("/");
+                var destination = GetSafeReturnUrl();
+                Navigation.NavigateTo(destination);
             }
             else if (result.EmailVerified == false)
             {
@@ -115,6 +120,19 @@
         {
             isResending = false;
         }
+    }
+
+    private string GetSafeReturnUrl()
+    {
+        // Only allow local paths (starts with / but not //) to prevent open redirect
+        if (!string.IsNullOrEmpty(ReturnUrl)
+            && ReturnUrl.StartsWith('/')
+            && !ReturnUrl.StartsWith("//"))
+        {
+            return ReturnUrl;
+        }
+
+        return "/";
     }
 
     private sealed class LoginModel
