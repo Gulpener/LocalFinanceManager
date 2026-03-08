@@ -58,7 +58,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Sign-up failed for {Email}", RedactEmail(email));
+            _logger.LogWarning(ex, "Sign-up failed.");
             return new AuthResponse { Success = false, ErrorMessage = ex.Message };
         }
     }
@@ -119,7 +119,7 @@ public class AuthService : IAuthService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Sign-in failed for {Email}", RedactEmail(email));
+            _logger.LogWarning(ex, "Sign-in failed.");
             return new AuthResponse { Success = false, ErrorMessage = ex.Message };
         }
     }
@@ -143,16 +143,16 @@ public class AuthService : IAuthService
             if (!response.IsSuccessStatusCode)
             {
                 var error = await ReadErrorAsync(response);
-                _logger.LogWarning("Password reset request failed for {Email}: {Error}", RedactEmail(email), error);
+                _logger.LogWarning("Password reset request failed: {Error}", error);
             }
             else
             {
-                _logger.LogInformation("Password reset email requested for {Email}", RedactEmail(email));
+                _logger.LogInformation("Password reset email requested.");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Password reset request failed for {Email}", RedactEmail(email));
+            _logger.LogWarning(ex, "Password reset request failed.");
         }
     }
 
@@ -166,16 +166,16 @@ public class AuthService : IAuthService
             if (!response.IsSuccessStatusCode)
             {
                 var error = await ReadErrorAsync(response);
-                _logger.LogWarning("Resend verification failed for {Email}: {Error}", RedactEmail(email), error);
+                _logger.LogWarning("Resend verification failed: {Error}", error);
             }
             else
             {
-                _logger.LogInformation("Verification email resent for {Email}", RedactEmail(email));
+                _logger.LogInformation("Verification email resent.");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Resend verification failed for {Email}", RedactEmail(email));
+            _logger.LogWarning(ex, "Resend verification failed.");
         }
     }
 
@@ -221,7 +221,7 @@ public class AuthService : IAuthService
                 EmailConfirmed = supabaseUser.EmailConfirmedAt.HasValue
             };
             _context.Users.Add(newUser);
-            _logger.LogInformation("Created local user for {Email}", RedactEmail(email));
+            _logger.LogInformation("Created local user record.");
         }
         else
         {
@@ -230,25 +230,6 @@ public class AuthService : IAuthService
         }
 
         await _context.SaveChangesAsync();
-    }
-
-    /// <summary>
-    /// Returns a redacted version of the email address for safe logging, e.g. "j***@example.com".
-    /// </summary>
-    private static string RedactEmail(string email)
-    {
-        if (string.IsNullOrEmpty(email))
-        {
-            return "[redacted]";
-        }
-
-        var atIndex = email.IndexOf('@');
-        if (atIndex <= 1)
-        {
-            return "[redacted]";
-        }
-
-        return email[0] + "***" + email[atIndex..];
     }
 
     // DTOs for Supabase Auth REST responses
