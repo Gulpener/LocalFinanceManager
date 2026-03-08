@@ -64,6 +64,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         else
         {
             // Placeholder mode: accept any token (development without Supabase configured)
+            // WARNING: This disables all JWT validation. Ensure proper Supabase credentials are set in production.
+            var logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+            if (!builder.Environment.IsDevelopment())
+            {
+                logger.LogError("JWT validation is disabled (placeholder mode). Configure Supabase__JwtSecret in production!");
+            }
+            else
+            {
+                logger.LogWarning("JWT validation is in PLACEHOLDER MODE (no Supabase credentials configured). This is only safe in Development.");
+            }
+
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = false,

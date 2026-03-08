@@ -184,7 +184,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             // Replace IUserContext with a test implementation that always returns the seed user ID
             services.RemoveAll<IUserContext>();
-            services.AddScoped<IUserContext, TestUserContext>();
+            services.AddScoped<IUserContext, E2ETestUserContext>();
         });
 
         // Configure logging to output to test console
@@ -407,10 +407,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Test user context that always returns the seed user ID.
+    /// E2E test user context that always returns the seed user ID.
     /// This allows existing E2E tests to run without requiring real Supabase authentication.
     /// </summary>
-    private sealed class TestUserContext : IUserContext
+    private sealed class E2ETestUserContext : IUserContext
     {
         public Guid GetCurrentUserId() => AppDbContext.SeedUserId;
         public string GetCurrentUserEmail() => "dev@localfinancemanager.local";

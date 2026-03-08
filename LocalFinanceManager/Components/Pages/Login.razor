@@ -86,7 +86,7 @@
                 await AuthStateProvider.NotifyUserLoggedInAsync(result.AccessToken);
                 Navigation.NavigateTo("/");
             }
-            else if (!result.EmailVerified && result.ErrorMessage?.Contains("not verified", StringComparison.OrdinalIgnoreCase) == true)
+            else if (result.EmailVerified == false)
             {
                 errorMessage = "Email not verified. Please check your inbox and verify your email address.";
                 showResendVerification = true;

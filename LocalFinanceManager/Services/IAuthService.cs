@@ -8,7 +8,10 @@ public class AuthResponse
     public bool Success { get; set; }
     public string? AccessToken { get; set; }
     public string? ErrorMessage { get; set; }
-    public bool EmailVerified { get; set; }
+    /// <summary>
+    /// Whether the user's email is verified. Null when email verification status is unknown.
+    /// </summary>
+    public bool? EmailVerified { get; set; }
 }
 
 /// <summary>
