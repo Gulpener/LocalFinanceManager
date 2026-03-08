@@ -143,6 +143,7 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<AuthTokenStore>();
         // Register concrete type so pages can inject CustomAuthenticationStateProvider directly.
         // The abstract base delegates to the same scoped instance so Blazor's CascadingAuthState works.
         services.AddScoped<CustomAuthenticationStateProvider>();

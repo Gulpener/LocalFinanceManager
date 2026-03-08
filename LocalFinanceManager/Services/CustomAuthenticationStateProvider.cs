@@ -15,30 +15,50 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
 
     private readonly IJSRuntime _jsRuntime;
     private readonly ILogger<CustomAuthenticationStateProvider> _logger;
+    private readonly AuthTokenStore _tokenStore;
 
     private static readonly AuthenticationState AnonymousState =
         new(new ClaimsPrincipal(new ClaimsIdentity()));
 
-    public CustomAuthenticationStateProvider(IJSRuntime jsRuntime, ILogger<CustomAuthenticationStateProvider> logger)
+    public CustomAuthenticationStateProvider(
+        IJSRuntime jsRuntime,
+        ILogger<CustomAuthenticationStateProvider> logger,
+        AuthTokenStore tokenStore)
     {
         _jsRuntime = jsRuntime;
         _logger = logger;
+        _tokenStore = tokenStore;
     }
 
     /// <inheritdoc />
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
+        if (!string.IsNullOrWhiteSpace(_tokenStore.AccessToken))
+        {
+            var cachedPrincipal = BuildClaimsPrincipal(_tokenStore.AccessToken);
+            if (cachedPrincipal != null)
+            {
+                return new AuthenticationState(cachedPrincipal);
+            }
+
+            _tokenStore.AccessToken = null;
+        }
+
         try
         {
             var token = await _jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", SessionStorageKey);
             if (string.IsNullOrEmpty(token))
             {
+                _tokenStore.AccessToken = null;
                 return AnonymousState;
             }
+
+            _tokenStore.AccessToken = token;
 
             var principal = BuildClaimsPrincipal(token);
             if (principal == null)
             {
+                _tokenStore.AccessToken = null;
                 return AnonymousState;
             }
 
@@ -57,6 +77,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     /// </summary>
     public async Task NotifyUserLoggedInAsync(string token)
     {
+        _tokenStore.AccessToken = token;
         await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", SessionStorageKey, token);
 
         var principal = BuildClaimsPrincipal(token);
@@ -72,6 +93,7 @@ public class CustomAuthenticationStateProvider : AuthenticationStateProvider
     /// </summary>
     public async Task NotifyUserLoggedOutAsync()
     {
+        _tokenStore.AccessToken = null;
         await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", SessionStorageKey);
         NotifyAuthenticationStateChanged(Task.FromResult(AnonymousState));
     }

@@ -2,6 +2,7 @@ using LocalFinanceManager.Components;
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
+using LocalFinanceManager.Services;
 using LocalFinanceManager.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components;
@@ -101,11 +102,17 @@ builder.Services.AddAuthorization();
 // Register HttpClientFactory (used by AuthService)
 builder.Services.AddHttpClient();
 
-// Register HttpClient for Blazor components
+// Register HttpClient for Blazor components with automatic JWT Bearer forwarding.
+builder.Services.AddScoped<AuthTokenHandler>();
+builder.Services.AddHttpClient("AuthorizedApiClient")
+    .AddHttpMessageHandler<AuthTokenHandler>();
+
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
-    return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+    var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient("AuthorizedApiClient");
+    client.BaseAddress = new Uri(navigationManager.BaseUri);
+    return client;
 });
 
 // Add controllers for API endpoints
