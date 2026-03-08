@@ -77,11 +77,11 @@ dotnet user-secrets set "Supabase:JwtSecret" "<jwt-secret>" --project LocalFinan
 dotnet user-secrets list --project LocalFinanceManager
 ```
 
-- [ ] Configure GitHub repository secrets
-  - [ ] Open GitHub repository → **Settings → Secrets and variables → Actions**.
-  - [ ] Create secret `SUPABASE_URL`.
-  - [ ] Create secret `SUPABASE_KEY`.
-  - [ ] Create secret `JWT_SECRET`.
+- [x] Configure GitHub repository secrets
+  - [x] Open GitHub repository → **Settings → Secrets and variables → Actions**.
+  - [x] Create secret `SUPABASE_URL`.
+  - [x] Create secret `SUPABASE_KEY`.
+  - [x] Create secret `JWT_SECRET`.
 
 - [ ] Validate configuration locally
   - [ ] Start app and verify config resolves without startup errors:
