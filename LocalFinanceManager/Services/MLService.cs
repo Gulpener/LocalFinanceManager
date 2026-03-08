@@ -290,7 +290,7 @@ public class MLService : IMLService
         {
             CategoryId = predictedCategoryId,
             CategoryName = category.Name,
-            Confidence = prediction.Score,
+            Confidence = prediction.Score.Length > 0 ? prediction.Score.Max() : 0f,
             TopFeatures = topFeatures,
             ModelVersion = activeModel.Version
         };

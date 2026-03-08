@@ -58,10 +58,17 @@ public class AutomationController : ControllerBase
     {
         _logger.LogInformation("Manual auto-apply trigger requested");
 
-        // Delegate to the shared settings provider (handles DB-first, config fallback, and caching)
-        var runtimeSettings = await _settingsProvider.GetSettingsAsync(cancellationToken);
+        // Read settings directly from the database (bypasses the in-memory cache) so that
+        // a manual trigger always reflects the latest persisted state without racing against
+        // the background service's cache population.
+        var dbSettings = await _dbContext.AppSettings
+            .AsNoTracking()
+            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!runtimeSettings.Enabled)
+        bool enabled = dbSettings?.AutoApplyEnabled ?? _automationOptions.AutoApplyEnabled;
+
+        if (!enabled)
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new
             {
@@ -71,6 +78,23 @@ public class AutomationController : ControllerBase
                 detail = "Auto-apply is currently disabled. Enable it in settings before triggering manually."
             });
         }
+
+        // Build runtime settings from the fresh DB row (falling back to config defaults)
+        var runtimeSettings = dbSettings != null
+            ? new AutoApplyRuntimeSettings
+            {
+                Enabled = dbSettings.AutoApplyEnabled,
+                MinimumConfidence = dbSettings.MinimumConfidence,
+                IntervalMinutes = dbSettings.IntervalMinutes,
+                AccountIds = AutoApplySettingsProvider.DeserializeGuidList(dbSettings.AccountIdsJson),
+                ExcludedCategoryIds = AutoApplySettingsProvider.DeserializeGuidList(dbSettings.ExcludedCategoryIdsJson).ToHashSet()
+            }
+            : new AutoApplyRuntimeSettings
+            {
+                Enabled = true,
+                MinimumConfidence = (float)_automationOptions.ConfidenceThreshold,
+                IntervalMinutes = 15
+            };
 
         var result = await _jobService.ExecuteJobAsync(runtimeSettings, cancellationToken);
 

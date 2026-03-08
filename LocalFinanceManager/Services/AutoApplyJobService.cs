@@ -130,17 +130,46 @@ public class AutoApplyJobService : IAutoApplyJobService
         if (settings.ExcludedCategoryIds.Contains(prediction.CategoryId))
             return null;
 
-        var beforeState = JsonSerializer.Serialize(new { transaction.AssignedParts });
+        // Resolve the BudgetLine for the predicted category in the account's active budget plan.
+        var account = await _dbContext.Accounts
+            .AsNoTracking()
+            .Where(a => a.Id == transaction.AccountId && !a.IsArchived)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        // TODO: This uses CategoryId as BudgetLineId which is a temporary workaround.
-        // In production, we need to resolve the proper BudgetLine for the category within the relevant BudgetPlan.
-        // This requires determining which BudgetPlan is active for the transaction's account and date,
-        // then finding the BudgetLine that matches the predicted CategoryId.
+        if (account?.CurrentBudgetPlanId == null)
+        {
+            _logger.LogWarning("Transaction {TransactionId} skipped: account has no active budget plan", transaction.Id);
+            return null;
+        }
+
+        var budgetLine = await _dbContext.BudgetLines
+            .AsNoTracking()
+            .Where(bl => bl.BudgetPlanId == account.CurrentBudgetPlanId.Value
+                         && bl.CategoryId == prediction.CategoryId
+                         && !bl.IsArchived)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (budgetLine == null)
+        {
+            _logger.LogWarning(
+                "Transaction {TransactionId} skipped: no budget line for category {CategoryId} in active plan",
+                transaction.Id, prediction.CategoryId);
+            return null;
+        }
+
+        var beforeState = JsonSerializer.Serialize(new
+        {
+            transactionId = transaction.Id,
+            amount = transaction.Amount,
+            // Transactions are pre-filtered to be unassigned, so assigned parts are always empty here
+            assignedPartsCount = 0
+        });
+
         var split = new TransactionSplit
         {
             Id = Guid.NewGuid(),
             TransactionId = transaction.Id,
-            BudgetLineId = prediction.CategoryId, // Using CategoryId as BudgetLineId proxy for MVP
+            BudgetLineId = budgetLine.Id,
             Amount = transaction.Amount,
             Note = $"Auto-applied by ML (confidence: {prediction.Confidence:F4})",
             IsArchived = false
@@ -148,7 +177,11 @@ public class AutoApplyJobService : IAutoApplyJobService
 
         _dbContext.TransactionSplits.Add(split);
 
-        var afterState = JsonSerializer.Serialize(new { AssignedParts = new[] { split } });
+        var afterState = JsonSerializer.Serialize(new
+        {
+            isAssigned = true,
+            assignedParts = new[] { new { split.BudgetLineId, split.Amount, split.Note } }
+        });
 
         var audit = new TransactionAudit
         {

@@ -5,6 +5,7 @@ using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Playwright;
 
 namespace LocalFinanceManager.E2E.ML;
 
@@ -219,9 +220,15 @@ public class MLSuggestionTests : E2ETestBase
         var ctxBefore = scopeBefore.ServiceProvider.GetRequiredService<AppDbContext>();
         var countBefore = await ctxBefore.LabeledExamples.CountAsync();
 
-        // Act — click Accept, then wait for the feedback API call to complete
+        // Act — click Accept, then poll until this specific badge element is detached from the DOM.
+        // The badge removes itself only after the server-side feedback POST completes successfully,
+        // so the badge being hidden proves the DB write happened before we read the count.
         await acceptButton!.ClickAsync();
-        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (await badge!.IsVisibleAsync() && sw.Elapsed.TotalSeconds < 10)
+        {
+            await Task.Delay(100);
+        }
 
         // Assert — a new LabeledExample feedback record was created
         using var scopeAfter = Factory!.Services.CreateScope();

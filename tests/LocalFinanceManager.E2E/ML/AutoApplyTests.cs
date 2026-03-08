@@ -3,7 +3,6 @@ using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
 using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
-using LocalFinanceManager.Services.Background;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
@@ -252,34 +251,88 @@ public class AutoApplyTests : E2ETestBase
     [Category("AutoApply")]
     public async Task AutoApply_ManualTrigger_TransactionsAutoAssigned()
     {
-        // Arrange - Enable auto-apply via HTTP so the real server's DbContext writes the row,
-        // making it immediately visible to all subsequent HTTP requests on the same host.
-        // In-process DI writes use a separate SQLite connection that may be isolated from the
-        // Kestrel host's connections due to WAL reader-snapshot differences.
-        var settingsPayload = new
-        {
-            enabled = true,
-            minimumConfidence = 0.70f,
-            intervalMinutes = 15,
-            accountIds = Array.Empty<Guid>(),
-            excludedCategoryIds = Array.Empty<Guid>()
-        };
+        // Arrange - Enable auto-apply via HTTP POST so the real server's DbContext writes the row.
+        // run-now now reads directly from _dbContext (no cache), so it sees this committed value.
+        // Use 0.60 (minimum allowed when enabled) as the confidence threshold.
         var enableResponse = await Page.APIRequest.PostAsync(
             $"{BaseUrl}/api/automation/settings",
             new Microsoft.Playwright.APIRequestContextOptions
             {
-                DataObject = settingsPayload,
+                DataObject = new
+                {
+                    enabled = true,
+                    minimumConfidence = 0.60f,
+                    intervalMinutes = 15,
+                    accountIds = Array.Empty<Guid>(),
+                    excludedCategoryIds = Array.Empty<Guid>()
+                },
                 Headers = new Dictionary<string, string> { ["Content-Type"] = "application/json" }
             });
         Assert.That(enableResponse.Status, Is.EqualTo(200), "Auto-apply settings should be saved");
 
-        // Seed labeled examples and train ML model so auto-apply has predictions to work with
+        // Seed patterned transactions + labeled examples so the ML model can learn reliable
+        // category mappings and predict with confidence >= 0.60 on the training examples.
         using (var scopeSetup = Factory!.Services.CreateScope())
         {
             var contextSetup = scopeSetup.ServiceProvider.GetRequiredService<AppDbContext>();
-            await SeedDataHelper.SeedMLDataAsync(contextSetup, _testAccount1.Id, 50);
 
-            // Checkpoint so the host's connections can see the seeded labeled examples
+            // Seed BudgetLines for every category so TryApplyAsync can create TransactionSplits
+            foreach (var category in _categories)
+            {
+                await SeedDataHelper.SeedBudgetLineAsync(
+                    contextSetup,
+                    _testAccount1.CurrentBudgetPlanId!.Value,
+                    category.Id,
+                    1200m);
+            }
+
+            // Seed 40 patterned transactions (10 per category) with consistent descriptions.
+            // Consistent patterns allow the model to learn a reliable description→category mapping.
+            var patternToCategory = new Dictionary<string, Category>
+            {
+                ["Grocery Store Payment"] = _categories.First(c => c.Name == "Food"),
+                ["Fuel Station Charge"] = _categories.First(c => c.Name == "Transport"),
+                ["Electricity Bill"] = _categories.First(c => c.Name == "Utilities"),
+                ["Cinema Ticket"] = _categories.First(c => c.Name == "Entertainment"),
+            };
+
+            var patterned = new List<Transaction>();
+            foreach (var (description, _) in patternToCategory)
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    var tx = new Transaction
+                    {
+                        Id = Guid.NewGuid(),
+                        AccountId = _testAccount1.Id,
+                        Amount = -50m,
+                        Date = DateTime.UtcNow.AddDays(-(i + 1)),
+                        Description = description,
+                        Counterparty = $"Auto-apply Test Counterparty {i}"
+                    };
+                    patterned.Add(tx);
+                    contextSetup.Transactions.Add(tx);
+                }
+            }
+            await contextSetup.SaveChangesAsync();
+
+            // Seed labeled examples mapping each patterned description to its category
+            foreach (var tx in patterned)
+            {
+                var category = patternToCategory[tx.Description];
+                contextSetup.LabeledExamples.Add(new LabeledExample
+                {
+                    Id = Guid.NewGuid(),
+                    TransactionId = tx.Id,
+                    CategoryId = category.Id,
+                    WasAutoApplied = false,
+                    AcceptedSuggestion = true,
+                    SuggestionConfidence = 0.90f
+                });
+            }
+            await contextSetup.SaveChangesAsync();
+
+            // Checkpoint so the host's connections can see all seeded data
             await contextSetup.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
 
             // Train via the REAL host's IMLService so its IMLModelCache is warmed up immediately
