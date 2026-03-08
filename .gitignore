@@ -384,3 +384,4 @@ FodyWeavers.xsd
 # Explicitly exclude build artifacts that might be tracked with backslash paths
 LocalFinanceManager/bin/
 LocalFinanceManager/obj/
+LocalFinanceManager/bin\
