@@ -292,6 +292,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         await using var context = new AppDbContext(options);
         await context.Database.MigrateAsync();
+        await context.SeedAsync();
     }
 
     /// <summary>
