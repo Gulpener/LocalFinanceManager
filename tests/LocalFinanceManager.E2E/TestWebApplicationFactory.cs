@@ -26,6 +26,14 @@ namespace LocalFinanceManager.E2E;
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
+    /// <summary>
+    /// Cookie name used by E2EAuthBypassStartupFilter to authenticate test requests at the
+    /// HTTP level. Must be added to the Playwright browser context (via Context.AddCookiesAsync)
+    /// in E2ETestBase.BaseSetUp for every test that navigates to protected pages.
+    /// Tests that verify unauthenticated behaviour should create a fresh browser context
+    /// (Browser.NewContextAsync) to avoid carrying this cookie.
+    /// </summary>
+    internal const string E2EAuthCookieName = "e2e-auth-token";
     private IHost? _host;
     private readonly string _testDatabasePath;
     private readonly string _fixtureId;
@@ -204,7 +212,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.AddScoped<IUserContext, E2ETestUserContext>();
 
             // Replace AuthenticationStateProvider so AuthorizeRouteView treats every Playwright
-            // request as authenticated (bypasses the /login redirect).
+            // request as authenticated (bypasses the /login redirect for the interactive circuit).
             // Also replace the concrete CustomAuthenticationStateProvider so Login/Logout pages
             // that inject it directly don't blow up during test warm-up.
             services.RemoveAll<AuthenticationStateProvider>();
@@ -214,6 +222,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 sp => sp.GetRequiredService<AlwaysAuthenticatedStateProvider>());
             services.AddScoped<AuthenticationStateProvider>(
                 sp => sp.GetRequiredService<AlwaysAuthenticatedStateProvider>());
+
+            // In Blazor 8 static SSR, AuthorizeRouteView reads HttpContext.User (set by ASP.NET Core
+            // auth middleware) rather than calling AuthenticationStateProvider. Register a startup
+            // filter so that requests carrying the "e2e-auth-token" cookie have HttpContext.User set
+            // to an authenticated principal before any other middleware runs.
+            // Tests that verify unauthenticated behaviour create a fresh browser context without
+            // this cookie, so those requests still see an anonymous HttpContext.User.
+            services.AddSingleton<IStartupFilter>(new E2EAuthBypassStartupFilter());
         });
 
         // Configure logging to output to test console
@@ -445,7 +461,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     {
         private static readonly AuthenticationState AuthenticatedState = new(
             new ClaimsPrincipal(new ClaimsIdentity(
-                new[] { new Claim(ClaimTypes.Name, "dev@localfinancemanager.local") },
+                new[] { new Claim(ClaimTypes.Name, AppDbContext.SeedUserEmail) },
                 authenticationType: "E2ETest")));
 
         public AlwaysAuthenticatedStateProvider(
@@ -458,13 +474,47 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
+    /// Inserts HTTP middleware at the start of the request pipeline that sets HttpContext.User
+    /// to an authenticated principal when the "e2e-auth-token" cookie is present.
+    /// This is required for Blazor 8 static-SSR pages: AuthorizeRouteView reads HttpContext.User
+    /// (set by ASP.NET Core auth middleware) rather than calling AuthenticationStateProvider,
+    /// so AlwaysAuthenticatedStateProvider alone is insufficient to bypass the /login redirect.
+    /// Tests that verify unauthenticated behaviour create fresh browser contexts without this
+    /// cookie, keeping those requests anonymous so AuthorizeRouteView still redirects them.
+    /// </summary>
+    private sealed class E2EAuthBypassStartupFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+        {
+            return app =>
+            {
+                app.Use(async (httpContext, nextMiddleware) =>
+                {
+                    if (httpContext.Request.Cookies.ContainsKey(E2EAuthCookieName))
+                    {
+                        var claims = new[]
+                        {
+                            new Claim(ClaimTypes.Name, AppDbContext.SeedUserEmail),
+                            new Claim(ClaimTypes.NameIdentifier, AppDbContext.SeedUserId.ToString()),
+                        };
+                        var identity = new ClaimsIdentity(claims, "E2ETest");
+                        httpContext.User = new ClaimsPrincipal(identity);
+                    }
+                    await nextMiddleware(httpContext);
+                });
+                next(app);
+            };
+        }
+    }
+
+    /// <summary>
     /// E2E test user context that always returns the seed user ID.
     /// This allows existing E2E tests to run without requiring real Supabase authentication.
     /// </summary>
     private sealed class E2ETestUserContext : IUserContext
     {
         public Guid GetCurrentUserId() => AppDbContext.SeedUserId;
-        public string GetCurrentUserEmail() => "dev@localfinancemanager.local";
+        public string GetCurrentUserEmail() => AppDbContext.SeedUserEmail;
         public bool IsAuthenticated() => true;
     }
 }

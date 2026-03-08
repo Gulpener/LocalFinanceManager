@@ -88,6 +88,24 @@ public abstract class E2ETestBase : PageTest
 
         Directory.CreateDirectory(Path.Combine("test-results", "screenshots"));
 
+        // Inject the E2E auth-bypass cookie into the current browser context so that
+        // the test server's E2EAuthBypassStartupFilter middleware sets HttpContext.User
+        // to an authenticated principal for Blazor 8 static-SSR AuthorizeRouteView checks.
+        // Tests that intentionally verify unauthenticated behaviour (UnauthenticatedBrowser_*)
+        // create a fresh browser context with Browser.NewContextAsync(), which does NOT carry
+        // this cookie, so those requests still see an anonymous user and get redirected.
+        var baseUri = new Uri(BaseUrl);
+        await Context.AddCookiesAsync(new[]
+        {
+            new Cookie
+            {
+                Name = TestWebApplicationFactory.E2EAuthCookieName,
+                Value = "bypass",
+                Domain = baseUri.Host,
+                Path = "/"
+            }
+        });
+
         // Optional: Uncomment if your tests need clean database state
         // Most tests can share state within a worker for better performance
         // await Factory!.TruncateTablesAsync();
