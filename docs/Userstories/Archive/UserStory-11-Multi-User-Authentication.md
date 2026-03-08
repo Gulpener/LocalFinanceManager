@@ -31,14 +31,14 @@ This story is the identity and tenancy foundation for later stories and must be 
 
 ## Prerequisites (User Manual Setup Required)
 
-- [ ] **(User Manual)** Create **one** Supabase project via https://app.supabase.com:
+- [x] **(User Manual)** Create **one** Supabase project via https://app.supabase.com:
   - Authentication → Providers → Email
   - Enable Email provider
   - Enable **Confirm email**
   - Verify email templates (confirmation + password reset)
   - Copy URL, anon key, JWT secret
-- [ ] **(User Manual)** Configure local User Secrets (single project credentials)
-- [ ] **(User Manual)** Configure GitHub Secrets:
+- [x] **(User Manual)** Configure local User Secrets (single project credentials)
+- [x] **(User Manual)** Configure GitHub Secrets:
   - `SUPABASE_URL`
   - `SUPABASE_KEY`
   - `JWT_SECRET`
@@ -91,7 +91,7 @@ dotnet build LocalFinanceManager.sln
 dotnet test tests/LocalFinanceManager.Tests/
 ```
 
-- [ ] Confirm E2E auth is configured to run in mocked mode by default for this story.
+- [x] Confirm E2E auth is configured to run in mocked mode by default for this story.
 
 ## Dependencies
 
