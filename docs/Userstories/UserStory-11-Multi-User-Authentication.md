@@ -45,36 +45,29 @@ This story is the identity and tenancy foundation for later stories and must be 
 
 ### Step-by-step setup guide (single Supabase project)
 
-1. Create one Supabase project
+- [x] Create one Supabase project
+  - [x] Open https://app.supabase.com and create a new project.
+  - [x] Wait until project provisioning is complete.
 
-- Open https://app.supabase.com and create a new project.
-- Wait until project provisioning is complete.
+- [x] Enable email authentication + verification
+  - [x] Go to **Authentication → Providers → Email**.
+  - [x] Enable **Email** provider.
+  - [x] Enable **Confirm email**.
+  - [x] Save changes.
 
-2. Enable email authentication + verification
+- [ ] Verify auth templates
+  - [ ] Go to **Authentication → Email Templates**.
+  - [ ] Confirm template exists for **Confirm signup**.
+  - [ ] Confirm template exists for **Reset password**.
 
-- Go to **Authentication → Providers → Email**.
-- Enable **Email** provider.
-- Enable **Confirm email**.
-- Save changes.
+- [ ] Copy required API values
+  - [ ] Go to **Settings → API**.
+  - [ ] Copy **Project URL**.
+  - [ ] Copy **anon/public key**.
+  - [ ] Copy **JWT secret**.
 
-3. Verify auth templates
-
-- Go to **Authentication → Email Templates**.
-- Confirm templates exist for:
-  - Confirm signup
-  - Reset password
-
-4. Copy required API values
-
-- Go to **Settings → API**.
-- Copy:
-  - Project URL
-  - anon/public key
-  - JWT secret
-
-5. Configure local user-secrets for this repo
-
-- Run from repository root:
+- [ ] Configure local user-secrets for this repo
+  - [ ] Run from repository root:
 
 ```powershell
 dotnet user-secrets init --project LocalFinanceManager
@@ -84,24 +77,21 @@ dotnet user-secrets set "Supabase:JwtSecret" "<jwt-secret>" --project LocalFinan
 dotnet user-secrets list --project LocalFinanceManager
 ```
 
-6. Configure GitHub repository secrets
+- [ ] Configure GitHub repository secrets
+  - [ ] Open GitHub repository → **Settings → Secrets and variables → Actions**.
+  - [ ] Create secret `SUPABASE_URL`.
+  - [ ] Create secret `SUPABASE_KEY`.
+  - [ ] Create secret `JWT_SECRET`.
 
-- Open GitHub repository → **Settings → Secrets and variables → Actions**.
-- Create these secrets:
-  - `SUPABASE_URL`
-  - `SUPABASE_KEY`
-  - `JWT_SECRET`
-
-7. Validate configuration locally
-
-- Start app and verify config resolves without startup errors:
+- [ ] Validate configuration locally
+  - [ ] Start app and verify config resolves without startup errors:
 
 ```powershell
 dotnet build LocalFinanceManager.sln
 dotnet test tests/LocalFinanceManager.Tests/
 ```
 
-- Note: E2E auth runs in mocked mode by default for this story.
+- [ ] Confirm E2E auth is configured to run in mocked mode by default for this story.
 
 ## Dependencies
 
