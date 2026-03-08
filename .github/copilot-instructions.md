@@ -25,6 +25,17 @@ Git & Version Control Regels (KRITIEK)
 - **Commit alleen source code:** Alleen `.cs`, `.razor`, `.csproj`, `.json`, `.md`, `.yml`, en andere configuration/documentation files mogen gecommit worden.
 - **Database files:** De `.gitignore` exclude `*.db` files. Commit NOOIT `localfinancemanager.db` of andere runtime database files.
 
+Branch Management Regels (KRITIEK)
+
+- **Eén branch per User Story:** Elke User Story heeft precies één feature branch. Maak NOOIT meerdere branches aan voor dezelfde User Story.
+- **Branch naamgeving:** Gebruik het format `feature/UserStory-[N]-[short-description]` (bijv. `feature/UserStory-11-multi-user-auth`). Dit koppelt de branch expliciet aan de User Story.
+- **Controleer bestaande branches eerst:** Voordat je een nieuwe branch aanmaakt, voer altijd `git branch -a` uit om te controleren of er al een branch bestaat voor de User Story. Als die bestaat, gebruik die bestaande branch in plaats van een nieuwe aan te maken.
+- **Meerdere branches consolideren:** Als er meerdere branches bestaan voor dezelfde User Story (bijv. door eerdere agent-sessies), consolideer deze in één branch:
+  1. Controleer welke branch de meest recente/complete wijzigingen bevat.
+  2. Cherry-pick ontbrekende commits van andere branches naar de primaire branch: `git cherry-pick <commit-sha>`.
+  3. Verwijder de overbodig geworden branches na consolidatie.
+- **Branch levenscyclus:** Maak de branch aan bij start van de User Story implementatie, gebruik deze gedurende de hele implementatie, en verwijder deze na merge naar `main`.
+
 Project Structuur
 
 - `LocalFinanceManager/` — Main Blazor Server app + API controllers + services
