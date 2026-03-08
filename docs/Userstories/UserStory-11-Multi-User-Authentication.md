@@ -60,11 +60,11 @@ This story is the identity and tenancy foundation for later stories and must be 
   - [x] Confirm template exists for **Confirm signup**.
   - [x] Confirm template exists for **Reset password**.
 
-- [ ] Copy required API values
-  - [ ] Go to **Settings → API**.
-  - [ ] Copy **Project URL**.
-  - [ ] Copy **anon/public key**.
-  - [ ] Copy **JWT secret**.
+- [x] Copy required API values
+  - [x] Go to **Settings → API**.
+  - [x] Copy **Project URL**.
+  - [x] Copy **anon/public key**.
+  - [x] Copy **JWT secret**.
 
 - [ ] Configure local user-secrets for this repo
   - [ ] Run from repository root:
