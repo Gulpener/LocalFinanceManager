@@ -55,10 +55,10 @@ This story is the identity and tenancy foundation for later stories and must be 
   - [x] Enable **Confirm email**.
   - [x] Save changes.
 
-- [ ] Verify auth templates
-  - [ ] Go to **Authentication → Email Templates**.
-  - [ ] Confirm template exists for **Confirm signup**.
-  - [ ] Confirm template exists for **Reset password**.
+- [x] Verify auth templates
+  - [x] Go to **Authentication → Email Templates**.
+  - [x] Confirm template exists for **Confirm signup**.
+  - [x] Confirm template exists for **Reset password**.
 
 - [ ] Copy required API values
   - [ ] Go to **Settings → API**.
