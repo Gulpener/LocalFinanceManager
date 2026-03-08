@@ -9,8 +9,8 @@
 
 **Status Overview:**
 
-- ✅ **18 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10) - Archived
-- ✅ **3 stories ready** for immediate implementation (UserStory-10.2, US-11, US-17)
+- ✅ **19 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2) - Archived
+- ✅ **2 stories ready** for immediate implementation (US-11, US-17)
 - 🔴 **5 stories need refinement** (US-12, US-13, US-14, US-15, US-16) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
@@ -116,34 +116,36 @@
 
 ---
 
-### � Stories Deferred (Pending Dependencies)
+### 🟡 Stories Deferred (Pending Dependencies)
 
-#### UserStory-10.2: E2E Tests - Phase 3 ML
+#### ~~UserStory-10.2: E2E Tests - Phase 3 ML~~ ✅ COMPLETED & ARCHIVED
 
-**File:** [docs/Userstories/UserStory-10.2-ML-Tests.md](docs/Userstories/UserStory-10.2-ML-Tests.md)
+**File:** [docs/Userstories/Archive/UserStory-10.2-ML-Tests.md](docs/Userstories/Archive/UserStory-10.2-ML-Tests.md)
 
-**Status:** ✅ **Ready** - UserStory-8 completed, ready for implementation
+**Status:** ✅ **COMPLETED & ARCHIVED** — All E2E tests implemented and active
 
-**Planned Scope:**
+**Delivered:**
 
-- ML suggestions tests (~8): Badge display, confidence scoring, accept/reject, feedback, filtering
-- Auto-apply configuration tests (~8): Settings UI, threshold validation, account/category selection
-- Monitoring dashboard tests (~9): Stats display, undo actions, alert banners, auto-refresh
+- 9 ML suggestion tests (badge display, confidence scoring, accept, reject, filter by suggestion, sort by confidence, color coding)
+- 9 auto-apply settings tests (page load, toggle, confidence threshold, account selection, validation, manual trigger)
+- 10 monitoring dashboard tests (page load, low/high undo rate, metrics, undo button, confirm dialog, status indicator, auto-refresh, history rows)
 
-**Total:** ~25 tests (6/9 monitoring dashboard tests passing, 3 ignored due to UI timing complexity)
+**Total: 28 tests** (9 ML + 9 config + 10 monitoring). Combined coverage: UserStory-10 (20) + UserStory-10.1 (19) + UserStory-10.2 (28) = 67 tests.
 
-**Combined Coverage:** UserStory-10 (20) + UserStory-10.1 (19) + UserStory-10.2 (25) = 64 tests achieving >90% feature coverage
+**Previously-ignored tests now active (implemented in this PR):**
 
-**Note:** UserStory-8 E2E tests partially implemented:
+- ✅ `TransactionList_FilterBySuggestion` — `suggestion-filter` dropdown added to Transactions page
+- ✅ `TransactionList_SortByConfidence` — `sort-by` dropdown + `OnConfidenceLoaded` callback added
+- ✅ `MonitoringDashboard_HighUndoRate_AlertBannerShown` — uses `WaitForSelector` for reliable detection
+- ✅ `MonitoringDashboard_UndoButton_RevertsAutoAppliedTransaction` — custom Blazor confirm dialog
+- ✅ `MonitoringDashboard_ConfirmationDialog_AppearsBeforeUndo` — custom dialog replaces native `confirm()`
+- ✅ `AutoApply_ManualTrigger_TransactionsAutoAssigned` — `POST /api/automation/run-now` endpoint added
 
-- ✅ 6/9 monitoring dashboard tests passing
-- ⏭️ 3 complex integration tests ignored (alert timing, browser dialog handling)
-- ⏱️ 8 ML suggestion tests not yet run
-- ⏱️ 8 auto-apply settings tests not yet run (1 audit trail test requires UserStory-17)
+**Remaining deferred (1 test):**
 
-**Estimated Effort:** 2-3 days to complete remaining tests
+- ⏭️ `AutoApply_AuditTrail_ShowsAutoAppliedIndicator` — requires UserStory-17 (`/transactions/{id}/audit` page)
 
-**Dependencies:** ~~UserStory-8~~ ✅ **COMPLETED**, UserStory-10 (foundation), UserStory-10.1 (patterns), UserStory-17 (audit trail UI for 1 test)
+**Dependencies:** ~~UserStory-8~~ ✅, ~~UserStory-10~~ ✅, ~~UserStory-10.1~~ ✅, UserStory-17 (1 remaining test)
 
 ---
 
@@ -1154,7 +1156,7 @@ Use this structure for all new stories:
 17. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation
 18. ✅ ~~**UserStory-10**~~ (Integration Workflow Tests) - **COMPLETED & ARCHIVED**
 19. ✅ ~~**UserStory-10.1**~~ (Advanced Assignment Tests) - **COMPLETED & ARCHIVED**
-20. **UserStory-10.2** (ML Tests) - Ready for implementation (US-8 completed)
+20. ~~**UserStory-10.2**~~ (ML Tests) - ✅ **COMPLETED & ARCHIVED**
 21. **UserStory-11** (Multi-User Auth) - Ready for implementation
 22. UserStory-12 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
 23. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)

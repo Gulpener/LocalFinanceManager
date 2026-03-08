@@ -90,7 +90,7 @@ public sealed class AutoApplySettingsProvider : IAutoApplySettingsProvider
         _memoryCache.Remove(CacheKey);
     }
 
-    private List<Guid> DeserializeGuidList(string? json)
+    internal static List<Guid> DeserializeGuidList(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
@@ -101,9 +101,8 @@ public sealed class AutoApplySettingsProvider : IAutoApplySettingsProvider
         {
             return JsonSerializer.Deserialize<List<Guid>>(json) ?? new List<Guid>();
         }
-        catch (JsonException exception)
+        catch (JsonException)
         {
-            _logger.LogWarning(exception, "Invalid GUID list JSON detected in AppSettings; falling back to empty list");
             return new List<Guid>();
         }
     }

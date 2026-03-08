@@ -22,6 +22,7 @@ public class AutomationController : ControllerBase
 {
     private readonly IUndoService _undoService;
     private readonly IMonitoringService _monitoringService;
+    private readonly IAutoApplyJobService _jobService;
     private readonly AppDbContext _dbContext;
     private readonly AutomationOptions _automationOptions;
     private readonly IValidator<AutoApplySettingsDto> _settingsValidator;
@@ -31,6 +32,7 @@ public class AutomationController : ControllerBase
     public AutomationController(
         IUndoService undoService,
         IMonitoringService monitoringService,
+        IAutoApplyJobService jobService,
         AppDbContext dbContext,
         IOptions<AutomationOptions> automationOptions,
         IValidator<AutoApplySettingsDto> settingsValidator,
@@ -39,11 +41,70 @@ public class AutomationController : ControllerBase
     {
         _undoService = undoService;
         _monitoringService = monitoringService;
+        _jobService = jobService;
         _dbContext = dbContext;
         _automationOptions = automationOptions.Value;
         _settingsValidator = settingsValidator;
         _settingsProvider = settingsProvider;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Manually triggers the auto-apply job immediately (does not wait for scheduled interval).
+    /// Reads current persisted settings; returns a 503 if auto-apply is disabled.
+    /// </summary>
+    [HttpPost("run-now")]
+    public async Task<IActionResult> RunNow(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Manual auto-apply trigger requested");
+
+        // Read settings directly from the database (bypasses the in-memory cache) so that
+        // a manual trigger always reflects the latest persisted state without racing against
+        // the background service's cache population.
+        var dbSettings = await _dbContext.AppSettings
+            .AsNoTracking()
+            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        bool enabled = dbSettings?.AutoApplyEnabled ?? _automationOptions.AutoApplyEnabled;
+
+        if (!enabled)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                type = "https://tools.ietf.org/html/rfc7231#section-6.6.4",
+                title = "Service Unavailable",
+                status = 503,
+                detail = "Auto-apply is currently disabled. Enable it in settings before triggering manually."
+            });
+        }
+
+        // Build runtime settings from the fresh DB row (falling back to config defaults)
+        var runtimeSettings = dbSettings != null
+            ? new AutoApplyRuntimeSettings
+            {
+                Enabled = dbSettings.AutoApplyEnabled,
+                MinimumConfidence = dbSettings.MinimumConfidence,
+                IntervalMinutes = dbSettings.IntervalMinutes,
+                AccountIds = AutoApplySettingsProvider.DeserializeGuidList(dbSettings.AccountIdsJson),
+                ExcludedCategoryIds = AutoApplySettingsProvider.DeserializeGuidList(dbSettings.ExcludedCategoryIdsJson).ToHashSet()
+            }
+            : new AutoApplyRuntimeSettings
+            {
+                Enabled = true,
+                MinimumConfidence = (float)_automationOptions.ConfidenceThreshold,
+                IntervalMinutes = 15
+            };
+
+        var result = await _jobService.ExecuteJobAsync(runtimeSettings, cancellationToken);
+
+        return Ok(new
+        {
+            success = true,
+            appliedCount = result.AppliedCount,
+            skippedCount = result.SkippedCount,
+            averageConfidence = result.AverageConfidence
+        });
     }
 
     /// <summary>

@@ -53,10 +53,12 @@ public class AutomationControllerTests
         _settingsProviderMock = new Mock<IAutoApplySettingsProvider>();
         _logger = new Mock<ILogger<AutomationController>>().Object;
         var settingsValidator = new AutoApplySettingsValidator();
+        var jobService = new Mock<IAutoApplyJobService>().Object;
 
         _controller = new AutomationController(
             _undoService,
             _monitoringService,
+            jobService,
             _dbContext,
             _automationOptions,
             settingsValidator,
@@ -458,9 +460,11 @@ public class AutomationControllerTests
         conflictDbContext.SaveChanges();
 
         var settingsProviderMock = new Mock<IAutoApplySettingsProvider>();
+        var jobService = new Mock<IAutoApplyJobService>().Object;
         var controller = new AutomationController(
             _undoService,
             _monitoringService,
+            jobService,
             conflictDbContext,
             _automationOptions,
             new AutoApplySettingsValidator(),
