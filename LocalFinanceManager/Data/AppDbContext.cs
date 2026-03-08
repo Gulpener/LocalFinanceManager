@@ -14,6 +14,11 @@ public class AppDbContext : DbContext
     /// </summary>
     public static readonly Guid SeedUserId = new Guid("00000000-0000-0000-0000-000000000002");
 
+    /// <summary>
+    /// Email address for the seed user created in Development. Used by E2E test auth claims.
+    /// </summary>
+    public const string SeedUserEmail = "dev@localfinancemanager.local";
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
@@ -395,7 +400,7 @@ public class AppDbContext : DbContext
             {
                 Id = SeedUserId,
                 SupabaseUserId = "00000000-0000-0000-0000-000000000001",
-                Email = "dev@localfinancemanager.local",
+                Email = SeedUserEmail,
                 DisplayName = "Dev User",
                 EmailConfirmed = true,
                 IsArchived = false
