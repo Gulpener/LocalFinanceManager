@@ -146,47 +146,31 @@ public class MonitoringDashboardPageModel : PageObjectBase
     }
 
     /// <summary>
-    /// Confirms the undo action in the browser's confirmation dialog.
-    /// Sets up a one-shot handler that automatically accepts the next dialog
-    /// and then detaches itself to avoid handler accumulation.
+    /// Confirms the undo action using the custom Blazor confirm dialog.
     /// </summary>
     public async Task ConfirmUndoAsync()
     {
-        EventHandler<IDialog>? handler = null;
-        handler = (_, dialog) =>
-        {
-            _ = dialog.AcceptAsync();
-            Page.Dialog -= handler!;
-        };
-
-        Page.Dialog += handler;
-
-        // Ensure the handler is attached before the caller triggers the dialog.
-        await Task.CompletedTask;
+        await Page.WaitForSelectorAsync(ConfirmDialogSelector, new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await Page.ClickAsync(ConfirmYesButtonSelector);
+        await Page.WaitForSelectorAsync(ConfirmDialogSelector, new() { State = WaitForSelectorState.Hidden, Timeout = 5000 });
     }
 
     /// <summary>
-    /// Undoes an auto-applied transaction by clicking undo and confirming.
-    /// Waits for the next dialog event and accepts it.
+    /// Undoes an auto-applied transaction by clicking undo and confirming via the custom Blazor confirm dialog.
     /// </summary>
     /// <param name="rowIndex">Zero-based index of the history row.</param>
     public async Task UndoTransactionAsync(int rowIndex)
     {
-        var dialogTcs = new TaskCompletionSource<IDialog>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        EventHandler<IDialog>? handler = null;
-        handler = (_, dialog) =>
-        {
-            Page.Dialog -= handler!;
-            dialogTcs.TrySetResult(dialog);
-        };
-
-        Page.Dialog += handler;
         await ClickUndoButtonForRowAsync(rowIndex);
 
-        var dialog = await dialogTcs.Task;
+        // Wait for the custom confirm dialog to appear
+        await Page.WaitForSelectorAsync(ConfirmDialogSelector, new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
 
-        await dialog.AcceptAsync();
+        // Click the confirm-yes button
+        await Page.ClickAsync(ConfirmYesButtonSelector);
+
+        // Wait for the dialog to disappear (undo completed)
+        await Page.WaitForSelectorAsync(ConfirmDialogSelector, new() { State = WaitForSelectorState.Hidden, Timeout = 5000 });
     }
 
     /// <summary>

@@ -234,6 +234,32 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
         </div>
     </div>
 
+    <!-- Custom confirm dialog for undo (replaces native confirm() for test reliability) -->
+    @if (_showConfirmDialog)
+    {
+        <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5);"
+             data-testid="confirm-dialog" role="dialog" aria-labelledby="confirmDialogTitle" aria-modal="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmDialogTitle">Bevestiging</h5>
+                    </div>
+                    <div class="modal-body">
+                        Weet u zeker dat u deze automatische toewijzing ongedaan wilt maken?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-testid="confirm-no" @onclick="CancelUndo">
+                            Annuleren
+                        </button>
+                        <button type="button" class="btn btn-danger" data-testid="confirm-yes" @onclick="ConfirmUndoAsync">
+                            <i class="bi bi-arrow-counterclockwise"></i> Ongedaan maken
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Configuration Info -->
     <div class="row mt-5">
         <div class="col-md-12">
@@ -278,6 +304,8 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
     private string? errorMessage;
     private CancellationTokenSource? _refreshCancellationTokenSource;
     private Task? _refreshTask;
+    private bool _showConfirmDialog = false;
+    private Guid _pendingUndoTransactionId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -371,12 +399,24 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
         }
     }
 
-    private async Task UndoAutoApply(Guid transactionId)
+    private void UndoAutoApply(Guid transactionId)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm",
-        "Weet u zeker dat u deze automatische toewijzing ongedaan wilt maken?");
+        _pendingUndoTransactionId = transactionId;
+        _showConfirmDialog = true;
+    }
 
-        if (!confirmed) return;
+    private void CancelUndo()
+    {
+        _showConfirmDialog = false;
+        _pendingUndoTransactionId = Guid.Empty;
+    }
+
+    private async Task ConfirmUndoAsync()
+    {
+        _showConfirmDialog = false;
+
+        var transactionId = _pendingUndoTransactionId;
+        _pendingUndoTransactionId = Guid.Empty;
 
         try
         {

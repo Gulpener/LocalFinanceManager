@@ -37,6 +37,20 @@
             }
         </select>
     </div>
+    <div class="col-md-3">
+        <label for="suggestion-filter" class="form-label">ML suggestie:</label>
+        <select id="suggestion-filter" class="form-select" @bind="_suggestionFilter" @bind:after="ApplyFilters">
+            <option value="all">Alle transacties</option>
+            <option value="has-suggestion">Heeft suggestie</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="sort-by" class="form-label">Sorteren op:</label>
+        <select id="sort-by" class="form-select" @bind="_sortBy" @bind:after="ApplyFilters">
+            <option value="date-desc">Datum (nieuwste eerst)</option>
+            <option value="confidence-desc">Zekerheid (hoog → laag)</option>
+        </select>
+    </div>
 </div>
 
 <div class="mb-3">
@@ -79,7 +93,7 @@ else
             @for (var index = 0; index < filteredTransactions.Count; index++)
             {
                 var transaction = filteredTransactions[index];
-                <tr class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
+                <tr @key="transaction.Id" class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
                     data-testid="transaction-row" data-row-index="@index" data-transaction-id="@transaction.Id"
                     tabindex="@(focusedRowIndex == index ? 0 : -1)" @onfocus="() => SetFocusedRow(index)"
                     @onkeydown="HandleTableKeyDown">
@@ -140,7 +154,8 @@ else
                         else if (!transaction.IsAssigned)
                         {
                             <MLSuggestionBadge TransactionId="@transaction.Id"
-                                               OnSuggestionAccepted="@(async () => await OnSuggestionAccepted(transaction.Id))" />
+                                               OnSuggestionAccepted="@(async () => await OnSuggestionAccepted(transaction.Id))"
+                                               OnConfidenceLoaded="@((float conf) => HandleConfidenceLoaded(transaction.Id, conf))" />
                         }
                         else
                         {
@@ -228,6 +243,11 @@ else
     private decimal filteredTotalAmount = 0;
     private int unassignedCount = 0;
     private FilterState filterState = new();
+
+    // ML suggestion filter and sort state
+    private string _suggestionFilter = "all";
+    private string _sortBy = "date-desc";
+    private Dictionary<Guid, float> _suggestionConfidences = new();
 
     private bool showAssignModal = false;
     private TransactionDto? selectedTransaction = null;
@@ -377,6 +397,9 @@ else
             }).ToList()
         }).OrderByDescending(t => t.Date).ToList();
 
+        // Reset stored confidence scores when transaction list is refreshed
+        _suggestionConfidences.Clear();
+
         ApplyFilters();
         loading = false;
     }
@@ -431,7 +454,19 @@ else
             query = query.Where(t => t.AccountId == filterState.SelectedAccountId.Value);
         }
 
-        filteredTransactions = query.OrderByDescending(t => t.Date).ToList();
+        // Apply ML suggestion filter: show only unassigned transactions (where badge renders)
+        if (_suggestionFilter == "has-suggestion")
+        {
+            query = query.Where(t => !t.IsAssigned);
+        }
+
+        // Apply sort
+        IOrderedEnumerable<TransactionDto> ordered = _sortBy == "confidence-desc"
+            ? query.OrderByDescending(t => _suggestionConfidences.GetValueOrDefault(t.Id, 0f))
+                   .ThenByDescending(t => t.Date)
+            : query.OrderByDescending(t => t.Date);
+
+        filteredTransactions = ordered.ToList();
         filteredTotalAmount = filteredTransactions.Sum(t => t.Amount);
         unassignedCount = transactionDtos.Count(t => !t.IsAssigned);
 
@@ -689,6 +724,18 @@ else
         // Reload transactions to reflect the accepted suggestion
         await LoadTransactionsAsync();
         StateHasChanged();
+    }
+
+    private void HandleConfidenceLoaded(Guid transactionId, float confidence)
+    {
+        _suggestionConfidences[transactionId] = confidence;
+
+        // Re-apply filters so confidence-descending sort stays current as badges load
+        if (_sortBy == "confidence-desc")
+        {
+            ApplyFilters();
+            StateHasChanged();
+        }
     }
 
     public async ValueTask DisposeAsync()
