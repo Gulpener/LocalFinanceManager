@@ -4,6 +4,7 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services.Background;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,7 @@ namespace LocalFinanceManager.Controllers;
 /// <summary>
 /// API controller for automation operations: undo auto-applied assignments and monitoring.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/automation")]
 [IgnoreAntiforgeryToken]

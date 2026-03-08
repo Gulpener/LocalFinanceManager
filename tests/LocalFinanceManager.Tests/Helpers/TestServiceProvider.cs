@@ -2,6 +2,8 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services;
+using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -50,6 +52,7 @@ public sealed class TestServiceProvider : IDisposable
         // Register all application services using extension methods
         // Background services excluded (includeBackgroundServices: false) to prevent
         // auto-start interference with tests
+        services.AddScoped<IUserContext>(_ => new TestUserContext()); // No user filtering in tests
         services.AddDataAccess();
         services.AddValidation();
         services.AddCachingServices();

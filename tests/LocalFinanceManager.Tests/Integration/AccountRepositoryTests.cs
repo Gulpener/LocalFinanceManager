@@ -4,6 +4,7 @@ using LocalFinanceManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using LocalFinanceManager.Tests.Fixtures;
 
 namespace LocalFinanceManager.Tests.Integration;
 
@@ -26,7 +27,7 @@ public class AccountRepositoryTests
         _context.Database.EnsureCreated();
 
         _mockLogger = new Mock<ILogger<Repository<Account>>>();
-        _repository = new AccountRepository(_context, _mockLogger.Object);
+        _repository = new AccountRepository(_context, _mockLogger.Object, new TestUserContext());
     }
 
     [TearDown]

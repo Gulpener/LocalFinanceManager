@@ -181,6 +181,10 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IDeviceDetectionService>();
             services.AddScoped<IDeviceDetectionService, DesktopDeviceDetectionService>();
+
+            // Replace IUserContext with a test implementation that always returns the seed user ID
+            services.RemoveAll<IUserContext>();
+            services.AddScoped<IUserContext, TestUserContext>();
         });
 
         // Configure logging to output to test console
@@ -400,5 +404,16 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Task<bool> IsTouchDeviceAsync() => Task.FromResult(false);
 
         public Task<ClientOperatingSystem> GetOperatingSystemAsync() => Task.FromResult(ClientOperatingSystem.Windows);
+    }
+
+    /// <summary>
+    /// Test user context that always returns the seed user ID.
+    /// This allows existing E2E tests to run without requiring real Supabase authentication.
+    /// </summary>
+    private sealed class TestUserContext : IUserContext
+    {
+        public Guid GetCurrentUserId() => AppDbContext.SeedUserId;
+        public string GetCurrentUserEmail() => "dev@localfinancemanager.local";
+        public bool IsAuthenticated() => true;
     }
 }

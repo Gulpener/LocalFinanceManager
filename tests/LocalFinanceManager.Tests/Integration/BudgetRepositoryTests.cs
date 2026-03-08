@@ -4,6 +4,7 @@ using LocalFinanceManager.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using LocalFinanceManager.Tests.Fixtures;
 
 namespace LocalFinanceManager.Tests.Integration;
 
@@ -36,10 +37,10 @@ public class BudgetRepositoryTests
         _budgetLineLogger = new Mock<ILogger<Repository<BudgetLine>>>();
         _accountLogger = new Mock<ILogger<Repository<Account>>>();
 
-        _categoryRepository = new CategoryRepository(_context, _categoryLogger.Object);
-        _budgetPlanRepository = new BudgetPlanRepository(_context, _budgetPlanLogger.Object);
-        _budgetLineRepository = new BudgetLineRepository(_context, _budgetLineLogger.Object);
-        _accountRepository = new AccountRepository(_context, _accountLogger.Object);
+        _categoryRepository = new CategoryRepository(_context, _categoryLogger.Object, new TestUserContext());
+        _budgetPlanRepository = new BudgetPlanRepository(_context, _budgetPlanLogger.Object, new TestUserContext());
+        _budgetLineRepository = new BudgetLineRepository(_context, _budgetLineLogger.Object, new TestUserContext());
+        _accountRepository = new AccountRepository(_context, _accountLogger.Object, new TestUserContext());
     }
 
     [TearDown]

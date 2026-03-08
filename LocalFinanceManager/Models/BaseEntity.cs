@@ -32,4 +32,16 @@ public abstract class BaseEntity
     /// Archived entities are filtered out from normal queries.
     /// </summary>
     public bool IsArchived { get; set; }
+
+    /// <summary>
+    /// Owner of this entity for multi-user data isolation.
+    /// Null for system-level entities (AppSettings, MLModel, etc.) and in test contexts.
+    /// When set, repository queries filter results to only return data for this user.
+    /// </summary>
+    public Guid? UserId { get; set; }
+
+    /// <summary>
+    /// Navigation property to the owning user (configured only for user-owned entities).
+    /// </summary>
+    public User? User { get; set; }
 }

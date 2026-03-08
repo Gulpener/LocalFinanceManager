@@ -9,11 +9,17 @@ namespace LocalFinanceManager.Data;
 /// </summary>
 public class AppDbContext : DbContext
 {
+    /// <summary>
+    /// Fixed seed user ID used in Development seeding. Also used by E2E tests via TestUserContext.
+    /// </summary>
+    public static readonly Guid SeedUserId = new Guid("00000000-0000-0000-0000-000000000002");
+
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
 
     // Entity Sets
+    public DbSet<User> Users => Set<User>();
     public DbSet<MLModel> MLModels => Set<MLModel>();
     public DbSet<LabeledExample> LabeledExamples => Set<LabeledExample>();
     public DbSet<Account> Accounts => Set<Account>();
@@ -54,6 +60,57 @@ public class AppDbContext : DbContext
                     .HasIndex("IsArchived");
             }
         }
+
+        // Configure User entity
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasIndex(e => e.SupabaseUserId).IsUnique();
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.DisplayName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.SupabaseUserId).IsRequired().HasMaxLength(36);
+
+            // UserId on User itself is not meaningful (self-reference). Set default null.
+            entity.Property(e => e.UserId).HasDefaultValue(null);
+            entity.Ignore(e => e.User); // User does not own itself
+        });
+
+        // Configure optional FK relationships for user-owned entities
+        // Optional (nullable FK) allows system-level entities and test entities without a user
+        modelBuilder.Entity<Account>()
+            .HasOne(a => a.User)
+            .WithMany(u => u.Accounts)
+            .HasForeignKey(a => a.UserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BudgetPlan>()
+            .HasOne(bp => bp.User)
+            .WithMany(u => u.BudgetPlans)
+            .HasForeignKey(bp => bp.UserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Category>()
+            .HasOne(c => c.User)
+            .WithMany(u => u.Categories)
+            .HasForeignKey(c => c.UserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Transaction>()
+            .HasOne(t => t.User)
+            .WithMany(u => u.Transactions)
+            .HasForeignKey(t => t.UserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Entities without direct User ownership: ignore the User navigation property
+        modelBuilder.Entity<BudgetLine>().Ignore(e => e.User);
+        modelBuilder.Entity<TransactionSplit>().Ignore(e => e.User);
+        modelBuilder.Entity<TransactionAudit>().Ignore(e => e.User);
+        modelBuilder.Entity<MLModel>().Ignore(e => e.User);
+        modelBuilder.Entity<LabeledExample>().Ignore(e => e.User);
+        modelBuilder.Entity<AppSettings>().Ignore(e => e.User);
 
         // Configure Account entity
         modelBuilder.Entity<Account>(entity =>
@@ -274,9 +331,6 @@ public class AppDbContext : DbContext
         // Configure LabeledExample entity
         modelBuilder.Entity<LabeledExample>(entity =>
         {
-            entity.Property(le => le.UserId)
-                .HasMaxLength(100);
-
             entity.HasOne(le => le.Transaction)
                 .WithMany()
                 .HasForeignKey(le => le.TransactionId)
@@ -334,6 +388,22 @@ public class AppDbContext : DbContext
     /// </summary>
     public async Task SeedAsync()
     {
+        // Seed dev user if none exist
+        if (!await Users.AnyAsync())
+        {
+            var devUser = new User
+            {
+                Id = SeedUserId,
+                SupabaseUserId = "00000000-0000-0000-0000-000000000001",
+                Email = "dev@localfinancemanager.local",
+                DisplayName = "Dev User",
+                EmailConfirmed = true,
+                IsArchived = false
+            };
+            await Users.AddAsync(devUser);
+            await SaveChangesAsync();
+        }
+
         // Seed accounts if none exist
         if (!await Accounts.AnyAsync())
         {
@@ -342,6 +412,7 @@ public class AppDbContext : DbContext
                 new Account
                 {
                     Id = Guid.NewGuid(),
+                    UserId = SeedUserId,
                     Label = "Betaalrekening",
                     Type = AccountType.Checking,
                     IBAN = "NL91ABNA0417164300",
@@ -352,6 +423,7 @@ public class AppDbContext : DbContext
                 new Account
                 {
                     Id = Guid.NewGuid(),
+                    UserId = SeedUserId,
                     Label = "Spaarrekening",
                     Type = AccountType.Savings,
                     IBAN = "NL20INGB0001234567",
@@ -362,6 +434,7 @@ public class AppDbContext : DbContext
                 new Account
                 {
                     Id = Guid.NewGuid(),
+                    UserId = SeedUserId,
                     Label = "Credit Card",
                     Type = AccountType.Credit,
                     IBAN = "NL39RABO0300065264",
@@ -385,6 +458,7 @@ public class AppDbContext : DbContext
                 var budgetPlan = new BudgetPlan
                 {
                     Id = Guid.NewGuid(),
+                    UserId = SeedUserId,
                     AccountId = firstAccount.Id,
                     Year = DateTime.Now.Year,
                     Name = $"{DateTime.Now.Year} Household Budget",
@@ -401,6 +475,7 @@ public class AppDbContext : DbContext
                     Categories.Add(new Category
                     {
                         Id = Guid.NewGuid(),
+                        UserId = SeedUserId,
                         Name = name,
                         Type = type,
                         BudgetPlanId = budgetPlan.Id,
@@ -516,6 +591,7 @@ public class AppDbContext : DbContext
                     new Transaction
                     {
                         Id = Guid.NewGuid(),
+                        UserId = SeedUserId,
                         AccountId = firstAccount.Id,
                         Amount = -45.50m,
                         Date = DateTime.UtcNow.AddDays(-5),
@@ -527,6 +603,7 @@ public class AppDbContext : DbContext
                     new Transaction
                     {
                         Id = Guid.NewGuid(),
+                        UserId = SeedUserId,
                         AccountId = firstAccount.Id,
                         Amount = -12.30m,
                         Date = DateTime.UtcNow.AddDays(-4),
@@ -538,6 +615,7 @@ public class AppDbContext : DbContext
                     new Transaction
                     {
                         Id = Guid.NewGuid(),
+                        UserId = SeedUserId,
                         AccountId = firstAccount.Id,
                         Amount = 2500.00m,
                         Date = DateTime.UtcNow.AddDays(-3),
@@ -549,6 +627,7 @@ public class AppDbContext : DbContext
                     new Transaction
                     {
                         Id = Guid.NewGuid(),
+                        UserId = SeedUserId,
                         AccountId = firstAccount.Id,
                         Amount = -850.00m,
                         Date = DateTime.UtcNow.AddDays(-2),

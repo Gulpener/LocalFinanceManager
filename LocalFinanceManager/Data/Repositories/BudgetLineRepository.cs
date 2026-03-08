@@ -1,32 +1,50 @@
 using Microsoft.EntityFrameworkCore;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services;
 
 namespace LocalFinanceManager.Data.Repositories;
 
 /// <summary>
 /// Repository implementation for BudgetLine entities.
+/// BudgetLines are owned indirectly through BudgetPlan → Account → User.
 /// </summary>
 public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepository
 {
-    public BudgetLineRepository(AppDbContext context, ILogger<Repository<BudgetLine>> logger)
+    private readonly IUserContext _userContext;
+
+    public BudgetLineRepository(AppDbContext context, ILogger<Repository<BudgetLine>> logger, IUserContext userContext)
         : base(context, logger)
     {
+        _userContext = userContext;
     }
 
     public override async Task<BudgetLine?> GetByIdAsync(Guid id)
     {
-        return await _dbSet
+        var userId = _userContext.GetCurrentUserId();
+        var query = _dbSet.Where(bl => bl.Id == id && !bl.IsArchived);
+        if (userId != Guid.Empty)
+        {
+            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+        }
+
+        return await query
             .Include(bl => bl.BudgetPlan)
             .Include(bl => bl.Category)
-            .FirstOrDefaultAsync(bl => bl.Id == id && !bl.IsArchived);
+            .FirstOrDefaultAsync();
     }
 
     public async Task<List<BudgetLine>> GetByBudgetPlanIdAsync(Guid budgetPlanId)
     {
         _logger.LogInformation("Loading budget lines for BudgetPlanId: {BudgetPlanId}", budgetPlanId);
 
-        var budgetLines = await _dbSet
-            .Where(bl => !bl.IsArchived && bl.BudgetPlanId == budgetPlanId)
+        var userId = _userContext.GetCurrentUserId();
+        var query = _dbSet.Where(bl => !bl.IsArchived && bl.BudgetPlanId == budgetPlanId);
+        if (userId != Guid.Empty)
+        {
+            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+        }
+
+        var budgetLines = await query
             .Include(bl => bl.Category)
             .OrderBy(bl => bl.Category.Name)
             .ToListAsync();
@@ -39,18 +57,27 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
 
     public async Task<Guid?> GetAccountIdForBudgetLineAsync(Guid budgetLineId)
     {
-        return await _dbSet
-            .Where(bl => !bl.IsArchived && bl.Id == budgetLineId)
-            .Select(bl => bl.BudgetPlan.AccountId)
-            .FirstOrDefaultAsync();
+        var userId = _userContext.GetCurrentUserId();
+        var query = _dbSet.Where(bl => !bl.IsArchived && bl.Id == budgetLineId);
+        if (userId != Guid.Empty)
+        {
+            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+        }
+
+        return await query.Select(bl => bl.BudgetPlan.AccountId).FirstOrDefaultAsync();
     }
 
     public async Task<Dictionary<Guid, Guid>> GetAccountMappingsAsync(IEnumerable<Guid> budgetLineIds)
     {
         var budgetLineIdList = budgetLineIds.ToList();
+        var userId = _userContext.GetCurrentUserId();
+        var query = _dbSet.Where(bl => !bl.IsArchived && budgetLineIdList.Contains(bl.Id));
+        if (userId != Guid.Empty)
+        {
+            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+        }
 
-        return await _dbSet
-            .Where(bl => !bl.IsArchived && budgetLineIdList.Contains(bl.Id))
+        return await query
             .Select(bl => new { bl.Id, bl.BudgetPlan.AccountId })
             .ToDictionaryAsync(x => x.Id, x => x.AccountId);
     }

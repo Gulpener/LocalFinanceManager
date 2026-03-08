@@ -1,0 +1,129 @@
+@page "/login"
+@using LocalFinanceManager.Services
+@inject IAuthService AuthService
+@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Login</PageTitle>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <h2>Login</h2>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">
+                @errorMessage
+                @if (showResendVerification)
+                {
+                    <div class="mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                @onclick="ResendVerificationEmail"
+                                disabled="@isResending">
+                            @(isResending ? "Sending..." : "Resend verification email")
+                        </button>
+                        @if (!string.IsNullOrEmpty(resendMessage))
+                        {
+                            <div class="mt-1 text-success small">@resendMessage</div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" FormName="login">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <InputText id="email" class="form-control" @bind-Value="loginModel.Email"
+                           type="email" autocomplete="email" />
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <InputText id="password" class="form-control" @bind-Value="loginModel.Password"
+                           type="password" autocomplete="current-password" />
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
+                @(isSubmitting ? "Signing in..." : "Sign in")
+            </button>
+        </EditForm>
+
+        <hr />
+        <p class="text-center">
+            Don't have an account? <a href="/register">Register</a>
+        </p>
+        <p class="text-center">
+            <a href="/password-reset">Forgot password?</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string? errorMessage;
+    private bool showResendVerification;
+    private bool isSubmitting;
+    private bool isResending;
+    private string? resendMessage;
+
+    private async Task HandleLogin()
+    {
+        isSubmitting = true;
+        errorMessage = null;
+        showResendVerification = false;
+        resendMessage = null;
+
+        try
+        {
+            var result = await AuthService.SignInAsync(loginModel.Email, loginModel.Password);
+
+            if (result.Success && !string.IsNullOrEmpty(result.AccessToken))
+            {
+                await AuthStateProvider.NotifyUserLoggedInAsync(result.AccessToken);
+                Navigation.NavigateTo("/");
+            }
+            else if (!result.EmailVerified && result.ErrorMessage?.Contains("not verified", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                errorMessage = "Email not verified. Please check your inbox and verify your email address.";
+                showResendVerification = true;
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Login failed. Please check your credentials.";
+            }
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task ResendVerificationEmail()
+    {
+        isResending = true;
+        resendMessage = null;
+        try
+        {
+            await AuthService.ResendVerificationEmailAsync(loginModel.Email);
+            resendMessage = "Verification email sent. Please check your inbox.";
+        }
+        finally
+        {
+            isResending = false;
+        }
+    }
+
+    private sealed class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Password { get; set; } = string.Empty;
+    }
+}

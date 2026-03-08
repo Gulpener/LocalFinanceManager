@@ -3,8 +3,11 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
 using LocalFinanceManager.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +23,7 @@ builder.Services.Configure<MLOptions>(builder.Configuration.GetSection("MLOption
 builder.Services.Configure<AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
 builder.Services.Configure<BulkAssignUiOptions>(builder.Configuration.GetSection("BulkAssignUiOptions"));
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Caching"));
+builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection("Supabase"));
 
 // Register memory cache with size limits
 builder.Services.AddMemoryCache(options =>
@@ -36,6 +40,49 @@ builder.Services.AddDomainServices();       // Core domain services
 builder.Services.AddImportServices();       // CSV/JSON import
 builder.Services.AddMLServices();           // ML feature extraction & prediction
 builder.Services.AddAutomationServices();   // Automation & background workers
+builder.Services.AddAuthServices();         // Authentication & user context
+
+// Configure JWT Bearer authentication
+var supabaseOptions = builder.Configuration.GetSection("Supabase").Get<SupabaseOptions>() ?? new SupabaseOptions();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSecret = supabaseOptions.JwtSecret;
+        if (!string.IsNullOrEmpty(jwtSecret) && jwtSecret != "placeholder-jwt-secret")
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = supabaseOptions.Url,
+                ValidAudience = "authenticated",
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+            };
+        }
+        else
+        {
+            // Placeholder mode: accept any token (development without Supabase configured)
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false,
+                ValidateIssuerSigningKey = false,
+                SignatureValidator = (token, _) =>
+                {
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    return handler.ReadJwtToken(token);
+                }
+            };
+        }
+    });
+
+builder.Services.AddAuthorization();
+
+// Register HttpClientFactory (used by AuthService)
+builder.Services.AddHttpClient();
 
 // Register HttpClient for Blazor components
 builder.Services.AddScoped(sp =>
@@ -152,6 +199,9 @@ else
 
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 

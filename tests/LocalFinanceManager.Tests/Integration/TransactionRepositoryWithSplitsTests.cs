@@ -24,7 +24,7 @@ public class TransactionRepositoryWithSplitsTests
         _factory = new TestDbContextFactory();
         _context = _factory.CreateContext();
         var logger = NullLogger<TransactionRepository>.Instance;
-        _repository = new TransactionRepository(_context, logger);
+        _repository = new TransactionRepository(_context, logger, new TestUserContext());
     }
 
     [TearDown]

@@ -1,6 +1,7 @@
 using FluentValidation;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ namespace LocalFinanceManager.Controllers;
 /// <summary>
 /// API controller for account management.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/accounts")]
 public class AccountsController : ControllerBase

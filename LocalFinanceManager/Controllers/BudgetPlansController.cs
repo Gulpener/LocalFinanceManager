@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
@@ -9,6 +10,7 @@ namespace LocalFinanceManager.Controllers;
 /// <summary>
 /// API controller for managing budget plans and budget lines.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class BudgetPlansController : ControllerBase

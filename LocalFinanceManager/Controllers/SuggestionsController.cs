@@ -2,6 +2,7 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 
@@ -10,6 +11,7 @@ namespace LocalFinanceManager.Controllers;
 /// <summary>
 /// API controller for ML-based category suggestions.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SuggestionsController : ControllerBase
@@ -140,7 +142,7 @@ public class SuggestionsController : ControllerBase
                 Id = Guid.NewGuid(),
                 TransactionId = feedback.TransactionId,
                 CategoryId = feedback.FinalCategoryId,
-                UserId = null, // Single-user mode for now
+                // UserId defaults to Guid.Empty for system-level ML labeled examples
                 WasAutoApplied = false,
                 AcceptedSuggestion = feedback.Accepted,
                 SuggestionConfidence = feedback.SuggestionConfidence,

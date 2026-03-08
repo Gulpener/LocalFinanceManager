@@ -132,6 +132,23 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Registers authentication and user context services.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddAuthServices(this IServiceCollection services)
+    {
+        services.AddHttpContextAccessor();
+        services.AddScoped<IUserContext, UserContext>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider,
+            CustomAuthenticationStateProvider>();
+        services.AddCascadingAuthenticationState();
+
+        return services;
+    }
+
+    /// <summary>
     /// Registers FluentValidation validators for all DTOs and IbanNet validator.
     /// No dependencies - can be called at any point in the registration sequence.
     /// </summary>

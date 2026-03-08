@@ -1,0 +1,40 @@
+@page "/logout"
+@using LocalFinanceManager.Services
+@inject IAuthService AuthService
+@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Logout</PageTitle>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <h2>Logout</h2>
+        <p>Are you sure you want to logout?</p>
+
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-danger" @onclick="HandleLogout" disabled="@isLoggingOut">
+                @(isLoggingOut ? "Logging out..." : "Yes, logout")
+            </button>
+            <a href="/" class="btn btn-secondary">Cancel</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoggingOut;
+
+    private async Task HandleLogout()
+    {
+        isLoggingOut = true;
+        try
+        {
+            await AuthService.SignOutAsync();
+            await AuthStateProvider.NotifyUserLoggedOutAsync();
+            Navigation.NavigateTo("/login");
+        }
+        finally
+        {
+            isLoggingOut = false;
+        }
+    }
+}

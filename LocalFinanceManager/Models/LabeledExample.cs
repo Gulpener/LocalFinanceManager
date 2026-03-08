@@ -27,12 +27,6 @@ public class LabeledExample : BaseEntity
     public Category? Category { get; set; }
 
     /// <summary>
-    /// User identifier who made the assignment (for multi-user support later).
-    /// Nullable for now (single-user mode).
-    /// </summary>
-    public string? UserId { get; set; }
-
-    /// <summary>
     /// Indicates whether this label was auto-applied by ML or manually assigned.
     /// Used for tracking acceptance rate of ML suggestions.
     /// </summary>
