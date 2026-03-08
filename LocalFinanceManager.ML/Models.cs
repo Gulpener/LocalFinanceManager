@@ -144,12 +144,8 @@ public class CategoryPredictionOutput
     public string PredictedLabel { get; set; } = string.Empty;
 
     /// <summary>
-    /// Prediction score (confidence).
+    /// Scores for all possible categories (multiclass classification output).
+    /// The confidence is the maximum value in this vector.
     /// </summary>
-    public float Score { get; set; }
-
-    /// <summary>
-    /// Scores for all possible categories.
-    /// </summary>
-    public float[]? Scores { get; set; }
+    public float[] Score { get; set; } = Array.Empty<float>();
 }

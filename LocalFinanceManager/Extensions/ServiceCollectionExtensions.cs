@@ -82,6 +82,7 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddMLServices(this IServiceCollection services, bool includeBackgroundServices = true)
     {
+        services.AddSingleton<IMLModelCache, MLModelCache>();
         services.AddScoped<ML.IFeatureExtractor, ML.FeatureExtractor>();
         services.AddScoped<ML.IMLService, MLService>();
 
@@ -104,6 +105,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IMonitoringService, MonitoringService>();
         services.AddScoped<IUndoService, UndoService>();
+        services.AddScoped<IAutoApplyJobService, AutoApplyJobService>();
         services.AddSingleton<IAutoApplySettingsProvider, AutoApplySettingsProvider>();
 
         if (includeBackgroundServices)

@@ -53,7 +53,11 @@ jobs:
 
       - name: Run E2E tests - Phase 3 (Integration Workflow + UX + Other)
         timeout-minutes: 10
-        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests|FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests"
+        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests"
+
+      - name: Run E2E tests - Phase 4 (ML Suggestions + Auto-Apply + Monitoring)
+        timeout-minutes: 10
+        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests"
 
       - name: Upload test results
         if: always()

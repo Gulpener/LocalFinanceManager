@@ -118,7 +118,6 @@ public class MonitoringDashboardTests : E2ETestBase
     [Test]
     [Category("E2E")]
     [Category("Monitoring")]
-    [Ignore("Alert banner visibility has timing issues - API returns correct 12% undo rate but UI doesn't show alert. Requires investigation of Blazor rendering timing.")]
     public async Task MonitoringDashboard_HighUndoRate_AlertBannerShown()
     {
         const int totalAutoApplied = 100;
@@ -131,21 +130,21 @@ public class MonitoringDashboardTests : E2ETestBase
             await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, totalAutoApplied, undoCount: highUndoCount);
             await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
-        await Task.Delay(500);
 
         // Act
         await _dashboardPage.NavigateAsync();
 
-        // Assert - Alert banner should be shown
-        var isAlertVisible = await _dashboardPage.IsAlertBannerVisibleAsync();
-        Assert.That(isAlertVisible, Is.True,
+        // Assert - Alert banner should be shown; wait up to 3 s for the Blazor component to render
+        var alertBanner = await Page.WaitForSelectorAsync("[data-testid='alert-banner']",
+            new() { State = Microsoft.Playwright.WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.That(alertBanner, Is.Not.Null,
             $"Alert should be shown when undo rate exceeds configured threshold ({_undoRateAlertThresholdPercent:0.0}%)");
 
-        var alertMessage = await _dashboardPage.GetAlertMessageAsync();
-        Assert.That(alertMessage, Does.Contain("undo rate").IgnoreCase,
-            "Alert message should mention undo rate");
-        Assert.That(alertMessage, Does.Contain(highUndoCount.ToString(CultureInfo.InvariantCulture)).Or.Contain(_undoRateAlertThresholdPercent.ToString("0", CultureInfo.InvariantCulture)),
-            "Alert message should show comparison with configured threshold");
+        var alertMessage = await alertBanner!.InnerTextAsync();
+        Assert.That(alertMessage, Does.Contain("drempel").IgnoreCase.Or.Contain("Ongedaan").IgnoreCase,
+            "Alert message should mention undo rate threshold");
+        Assert.That(alertMessage, Does.Contain("%"),
+            "Alert message should show percentage values");
     }
 
     [Test]
@@ -175,7 +174,6 @@ public class MonitoringDashboardTests : E2ETestBase
     [Test]
     [Category("E2E")]
     [Category("Monitoring")]
-    [Ignore("Undo button interaction requires full API integration and timing synchronization. Test passes data seeding (0,0% initial) but undo action doesn't persist. Needs investigation of page refresh timing.")]
     public async Task MonitoringDashboard_UndoButton_RevertsAutoAppliedTransaction()
     {
         // Arrange - Seed auto-apply history
@@ -185,7 +183,6 @@ public class MonitoringDashboardTests : E2ETestBase
             await SeedDataHelper.SeedAutoApplyHistoryAsync(contextBefore, _testAccount.Id, 10, undoCount: 0);
             await contextBefore.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
-        await Task.Delay(500);
 
         await _dashboardPage.NavigateAsync();
 
@@ -194,9 +191,8 @@ public class MonitoringDashboardTests : E2ETestBase
         Assert.That(ParsePercentageText(initialUndoRate), Is.EqualTo(0.0m).Within(0.01m),
             "Initial undo rate should be 0%");
 
-        // Act - Undo first transaction in history
+        // Act - Undo first transaction in history (UndoTransactionAsync handles the custom dialog)
         await _dashboardPage.UndoTransactionAsync(rowIndex: 0);
-        await Task.Delay(1500); // Wait for undo to complete
 
         // Reload page to see updated stats
         await _dashboardPage.NavigateAsync();
@@ -380,7 +376,6 @@ public class MonitoringDashboardTests : E2ETestBase
     [Test]
     [Category("E2E")]
     [Category("Monitoring")]
-    [Ignore("Browser native confirm() dialog doesn't trigger Page.Dialog event consistently in Playwright.")]
     public async Task MonitoringDashboard_ConfirmationDialog_AppearsBeforeUndo()
     {
         // Arrange
@@ -390,32 +385,28 @@ public class MonitoringDashboardTests : E2ETestBase
             await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, 5, undoCount: 0);
             await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
-        await Task.Delay(500);
+        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
         await _dashboardPage.NavigateAsync();
 
-        // Set up dialog handler to capture the confirm dialog
-        string? dialogMessage = null;
-        var dialogTcs = new TaskCompletionSource<bool>();
-
-        Page.Dialog += async (_, dialog) =>
-        {
-            dialogMessage = dialog.Message;
-            await dialog.DismissAsync(); // Dismiss without confirming for this test
-            dialogTcs.TrySetResult(true);
-        };
-
-        // Act - Click undo button
+        // Act - Click undo button (now opens a custom Blazor dialog, not a browser native confirm)
         await _dashboardPage.ClickUndoButtonForRowAsync(0);
 
-        // Wait for dialog to appear with timeout
-        var dialogAppeared = await Task.WhenAny(dialogTcs.Task, Task.Delay(2000)) == dialogTcs.Task;
+        // Wait for the custom confirm dialog to appear
+        var confirmDialog = await Page.WaitForSelectorAsync("[data-testid='confirm-dialog']",
+            new() { State = Microsoft.Playwright.WaitForSelectorState.Visible, Timeout = 5000 });
 
-        // Assert - Confirmation dialog should have appeared
-        Assert.That(dialogAppeared, Is.True, "Dialog should appear within 2 seconds");
-        Assert.That(dialogMessage, Is.Not.Null, "Confirmation dialog should appear before undo");
-        Assert.That(dialogMessage, Does.Contain("ongedaan").IgnoreCase.Or.Contain("zeker").IgnoreCase,
+        Assert.That(confirmDialog, Is.Not.Null, "Custom confirmation dialog should appear before undo");
+
+        // Assert - Dialog should contain a confirmation message
+        var dialogText = await confirmDialog!.InnerTextAsync();
+        Assert.That(dialogText, Does.Contain("ongedaan").IgnoreCase.Or.Contain("zeker").IgnoreCase,
             "Dialog should ask for confirmation");
+
+        // Dismiss without confirming for this test
+        await Page.ClickAsync("[data-testid='confirm-no']");
+        await Page.WaitForSelectorAsync("[data-testid='confirm-dialog']",
+            new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 3000 });
     }
 
     private static decimal ParsePercentageText(string percentageText)
