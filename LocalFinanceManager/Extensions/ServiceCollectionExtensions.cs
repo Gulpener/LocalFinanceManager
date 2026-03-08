@@ -143,8 +143,11 @@ public static class ServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider,
-            CustomAuthenticationStateProvider>();
+        // Register concrete type so pages can inject CustomAuthenticationStateProvider directly.
+        // The abstract base delegates to the same scoped instance so Blazor's CascadingAuthState works.
+        services.AddScoped<CustomAuthenticationStateProvider>();
+        services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(
+            sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
         services.AddCascadingAuthenticationState();
 
         return services;

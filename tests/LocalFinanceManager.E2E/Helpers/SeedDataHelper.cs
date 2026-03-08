@@ -40,6 +40,7 @@ public static class SeedDataHelper
         var account = new Account
         {
             Id = Guid.NewGuid(),
+            UserId = AppDbContext.SeedUserId,
             Label = label,
             IBAN = iban,
             StartingBalance = initialBalance,
@@ -56,6 +57,7 @@ public static class SeedDataHelper
         var budgetPlan = new BudgetPlan
         {
             Id = Guid.NewGuid(),
+            UserId = AppDbContext.SeedUserId,
             Name = $"{label} Budget {DateTime.UtcNow.Year}",
             Year = DateTime.UtcNow.Year,
             AccountId = account.Id
@@ -91,6 +93,7 @@ public static class SeedDataHelper
             var category = new Category
             {
                 Id = Guid.NewGuid(),
+                UserId = AppDbContext.SeedUserId,
                 Name = $"Income {i}",
                 Type = CategoryType.Income,
                 BudgetPlanId = budgetPlanId
@@ -105,6 +108,7 @@ public static class SeedDataHelper
             var category = new Category
             {
                 Id = Guid.NewGuid(),
+                UserId = AppDbContext.SeedUserId,
                 Name = $"Expense {i}",
                 Type = CategoryType.Expense,
                 BudgetPlanId = budgetPlanId
@@ -133,6 +137,7 @@ public static class SeedDataHelper
             .Select(name => new Category
             {
                 Id = Guid.NewGuid(),
+                UserId = AppDbContext.SeedUserId,
                 Name = name,
                 Type = CategoryType.Expense,
                 BudgetPlanId = budgetPlanId
@@ -163,6 +168,7 @@ public static class SeedDataHelper
         var transaction = new Transaction
         {
             Id = Guid.NewGuid(),
+            UserId = AppDbContext.SeedUserId,
             AccountId = accountId,
             Amount = amount,
             Date = date,
@@ -210,6 +216,7 @@ public static class SeedDataHelper
             var transaction = new Transaction
             {
                 Id = Guid.NewGuid(),
+                UserId = AppDbContext.SeedUserId,
                 AccountId = accountId,
                 Amount = Math.Round(amount, 2),
                 Date = startDate.AddDays(daysOffset),

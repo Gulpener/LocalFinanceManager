@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Security.Claims;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -200,6 +202,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Replace IUserContext with a test implementation that always returns the seed user ID
             services.RemoveAll<IUserContext>();
             services.AddScoped<IUserContext, E2ETestUserContext>();
+
+            // Replace AuthenticationStateProvider so AuthorizeRouteView treats every Playwright
+            // request as authenticated (bypasses the /login redirect).
+            // Also replace the concrete CustomAuthenticationStateProvider so Login/Logout pages
+            // that inject it directly don't blow up during test warm-up.
+            services.RemoveAll<AuthenticationStateProvider>();
+            services.RemoveAll<CustomAuthenticationStateProvider>();
+            services.AddScoped<AlwaysAuthenticatedStateProvider>();
+            services.AddScoped<CustomAuthenticationStateProvider>(
+                sp => sp.GetRequiredService<AlwaysAuthenticatedStateProvider>());
+            services.AddScoped<AuthenticationStateProvider>(
+                sp => sp.GetRequiredService<AlwaysAuthenticatedStateProvider>());
         });
 
         // Configure logging to output to test console
@@ -419,6 +433,27 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Task<bool> IsTouchDeviceAsync() => Task.FromResult(false);
 
         public Task<ClientOperatingSystem> GetOperatingSystemAsync() => Task.FromResult(ClientOperatingSystem.Windows);
+    }
+
+    /// <summary>
+    /// Always returns an authenticated Blazor state so Playwright tests skip the /login redirect.
+    /// Inherits from CustomAuthenticationStateProvider so it can also satisfy injections of the
+    /// concrete type (Login.razor, Logout.razor use [Inject] CustomAuthenticationStateProvider).
+    /// </summary>
+    private sealed class AlwaysAuthenticatedStateProvider : CustomAuthenticationStateProvider
+    {
+        private static readonly AuthenticationState AuthenticatedState = new(
+            new ClaimsPrincipal(new ClaimsIdentity(
+                new[] { new Claim(ClaimTypes.Name, "dev@localfinancemanager.local") },
+                authenticationType: "E2ETest")));
+
+        public AlwaysAuthenticatedStateProvider(
+            Microsoft.JSInterop.IJSRuntime jsRuntime,
+            Microsoft.Extensions.Logging.ILogger<CustomAuthenticationStateProvider> logger)
+            : base(jsRuntime, logger) { }
+
+        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+            => Task.FromResult(AuthenticatedState);
     }
 
     /// <summary>
