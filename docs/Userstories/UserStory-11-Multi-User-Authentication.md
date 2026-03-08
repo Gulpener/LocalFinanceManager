@@ -66,8 +66,8 @@ This story is the identity and tenancy foundation for later stories and must be 
   - [x] Copy **anon/public key**.
   - [x] Copy **JWT secret**.
 
-- [ ] Configure local user-secrets for this repo
-  - [ ] Run from repository root:
+- [x] Configure local user-secrets for this repo
+  - [x] Run from repository root:
 
 ```powershell
 dotnet user-secrets init --project LocalFinanceManager
