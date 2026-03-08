@@ -83,8 +83,8 @@ dotnet user-secrets list --project LocalFinanceManager
   - [x] Create secret `SUPABASE_KEY`.
   - [x] Create secret `JWT_SECRET`.
 
-- [ ] Validate configuration locally
-  - [ ] Start app and verify config resolves without startup errors:
+- [x] Validate configuration locally
+  - [x] Start app and verify config resolves without startup errors:
 
 ```powershell
 dotnet build LocalFinanceManager.sln
