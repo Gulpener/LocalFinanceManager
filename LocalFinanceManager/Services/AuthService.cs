@@ -53,7 +53,7 @@ public class AuthService : IAuthService
                 return new AuthResponse { Success = false, ErrorMessage = error };
             }
 
-            _logger.LogInformation("User registered: {Email}", email);
+            _logger.LogInformation("User registered.");
             return new AuthResponse { Success = true };
         }
         catch (Exception ex)
