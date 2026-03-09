@@ -92,18 +92,24 @@ builder.Services.AddAuthentication(options =>
         {
             // Placeholder mode: accept any token (development without Supabase configured)
             // WARNING: This disables all JWT validation. Ensure proper Supabase credentials are set in production.
+
+            // Guard: refuse to start in non-Development environments with placeholder credentials.
+            // This prevents accidentally deploying with unset Supabase secrets.
+            var currentEnv = builder.Environment;
+            if (!currentEnv.IsDevelopment())
+            {
+                throw new InvalidOperationException(
+                    "Supabase:JwtSecret is not configured (or still set to the placeholder value). " +
+                    "This application refuses to start in non-Development environments without a valid JWT secret. " +
+                    "Set the ASPNETCORE_Supabase__JwtSecret environment variable to the real Supabase JWT secret.");
+            }
+
             options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
             {
                 OnMessageReceived = ctx =>
                 {
-                    var isProduction = !ctx.HttpContext.RequestServices
-                        .GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>()
-                        .IsDevelopment();
                     var log = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    if (isProduction)
-                        log.LogError("JWT validation is disabled (placeholder mode). Configure Supabase__JwtSecret in production!");
-                    else
-                        log.LogWarning("JWT validation is in PLACEHOLDER MODE (no Supabase credentials configured). This is only safe in Development.");
+                    log.LogWarning("JWT validation is in PLACEHOLDER MODE (no Supabase credentials configured). This is only safe in Development.");
                     return Task.CompletedTask;
                 }
             };

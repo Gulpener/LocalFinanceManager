@@ -5,7 +5,6 @@ using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -31,8 +30,8 @@ public sealed class TestServiceProvider : IDisposable
     {
         var services = new ServiceCollection();
 
-        context.ChangeTracker.Tracked += (_, args) => ApplyDefaultTestUserOwnership(args.Entry);
-        context.ChangeTracker.StateChanged += (_, args) => ApplyDefaultTestUserOwnership(args.Entry);
+        context.ChangeTracker.Tracked += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
+        context.ChangeTracker.StateChanged += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
 
         EnsureDefaultTestUserExists(context);
 
@@ -90,38 +89,6 @@ public sealed class TestServiceProvider : IDisposable
         });
 
         context.SaveChanges();
-    }
-
-    private static void ApplyDefaultTestUserOwnership(EntityEntry entry)
-    {
-        if (entry.State != EntityState.Added)
-        {
-            return;
-        }
-
-        var defaultUserId = TestUserContext.DefaultUserId;
-
-        switch (entry.Entity)
-        {
-            case Account account when account.UserId == null:
-                account.UserId = defaultUserId;
-                break;
-            case BudgetPlan budgetPlan when budgetPlan.UserId == null:
-                budgetPlan.UserId = defaultUserId;
-                break;
-            case Category category when category.UserId == null:
-                category.UserId = defaultUserId;
-                break;
-            case BudgetLine budgetLine when budgetLine.UserId == null:
-                budgetLine.UserId = defaultUserId;
-                break;
-            case Transaction transaction when transaction.UserId == null:
-                transaction.UserId = defaultUserId;
-                break;
-            case AppSettings appSettings when appSettings.UserId == null:
-                appSettings.UserId = defaultUserId;
-                break;
-        }
     }
 
     /// <summary>

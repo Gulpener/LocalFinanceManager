@@ -21,7 +21,7 @@ namespace LocalFinanceManager.Tests.Integration;
 [TestFixture]
 public class AutomationControllerConcurrencyIntegrationTests
 {
-    private static readonly Guid TestUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid TestUserId = TestUserContext.DefaultUserId;
     private SqliteConnection _connection = null!;
     private DbContextOptions<AppDbContext> _options = null!;
 

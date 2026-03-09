@@ -396,7 +396,7 @@ else
         }
 
         if (!float.TryParse(rawValue, System.Globalization.NumberStyles.Float,
-System.Globalization.CultureInfo.InvariantCulture, out var parsedConfidence) &&
+            System.Globalization.CultureInfo.InvariantCulture, out var parsedConfidence) &&
             !float.TryParse(rawValue, out parsedConfidence))
         {
             return;

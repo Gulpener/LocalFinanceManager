@@ -27,8 +27,8 @@ public class AccountRepositoryTests
         _context.Database.OpenConnection();
         _context.Database.EnsureCreated();
 
-        _context.ChangeTracker.Tracked += (_, args) => ApplyTestUserOwnership(args.Entry);
-        _context.ChangeTracker.StateChanged += (_, args) => ApplyTestUserOwnership(args.Entry);
+        _context.ChangeTracker.Tracked += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
+        _context.ChangeTracker.StateChanged += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
 
         if (!_context.Users.Any(u => u.Id == TestUserId))
         {
@@ -292,18 +292,5 @@ public class AccountRepositoryTests
         // - Or manual RowVersion management in the application
 
         await Task.CompletedTask;
-    }
-
-    private static void ApplyTestUserOwnership(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
-    {
-        if (entry.State != EntityState.Added)
-        {
-            return;
-        }
-
-        if (entry.Entity is Account account && account.UserId == null)
-        {
-            account.UserId = TestUserId;
-        }
     }
 }
