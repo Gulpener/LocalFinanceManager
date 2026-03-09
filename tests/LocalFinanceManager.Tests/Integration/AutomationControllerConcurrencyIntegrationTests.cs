@@ -7,6 +7,7 @@ using LocalFinanceManager.DTOs.Validators;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.Services.Background;
+using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -20,6 +21,7 @@ namespace LocalFinanceManager.Tests.Integration;
 [TestFixture]
 public class AutomationControllerConcurrencyIntegrationTests
 {
+    private static readonly Guid TestUserId = TestUserContext.DefaultUserId;
     private SqliteConnection _connection = null!;
     private DbContextOptions<AppDbContext> _options = null!;
 
@@ -38,7 +40,7 @@ public class AutomationControllerConcurrencyIntegrationTests
 
         setupContext.AppSettings.Add(new AppSettings
         {
-            Id = AppSettings.SingletonId,
+            UserId = TestUserId,
             AutoApplyEnabled = true,
             MinimumConfidence = 0.61f,
             IntervalMinutes = 15,
@@ -50,8 +52,8 @@ public class AutomationControllerConcurrencyIntegrationTests
 
         await setupContext.SaveChangesAsync();
         await setupContext.Database.ExecuteSqlRawAsync(
-            "UPDATE \"AppSettings\" SET \"RowVersion\" = X'01' WHERE \"Id\" = {0};",
-            AppSettings.SingletonId);
+            "UPDATE \"AppSettings\" SET \"RowVersion\" = X'01' WHERE \"UserId\" = {0};",
+            TestUserId);
     }
 
     [TearDown]
@@ -84,9 +86,9 @@ public class AutomationControllerConcurrencyIntegrationTests
                     "UpdatedBy" = 'concurrent-writer',
                     "UpdatedAt" = datetime('now'),
                     "RowVersion" = X'02'
-                WHERE "Id" = {0};
+                WHERE "UserId" = {0};
                 """,
-                AppSettings.SingletonId);
+                TestUserId);
         }
 
         await using var staleContext = new ConcurrencyInjectingAppDbContext(_options, ForceConcurrentUpdateAsync);
@@ -111,6 +113,7 @@ public class AutomationControllerConcurrencyIntegrationTests
             options,
             validator,
             settingsProvider.Object,
+            new TestUserContext(TestUserId),
             logger)
         {
             ControllerContext = new ControllerContext
@@ -152,7 +155,7 @@ public class AutomationControllerConcurrencyIntegrationTests
         Assert.That(dto.MinimumConfidence, Is.EqualTo(0.33f).Within(0.001f));
         Assert.That(dto.IntervalMinutes, Is.EqualTo(45));
 
-        settingsProvider.Verify(p => p.Invalidate(), Times.Never);
+        settingsProvider.Verify(p => p.Invalidate(TestUserId), Times.Never);
     }
 
     private sealed class ConcurrencyInjectingAppDbContext : AppDbContext

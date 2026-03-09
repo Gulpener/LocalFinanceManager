@@ -65,6 +65,9 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CurrentBudgetPlanId")
@@ -74,12 +77,15 @@ namespace LocalFinanceManager.Migrations
 
                     b.HasIndex("Label");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("Accounts");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.AppSettings", b =>
                 {
                     b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("AccountIdsJson")
@@ -119,14 +125,17 @@ namespace LocalFinanceManager.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IsArchived");
 
-                    b.ToTable("AppSettings", t =>
-                        {
-                            t.HasCheckConstraint("CK_AppSettings_SingletonId", "lower(Id) = '6fba7d31-3d45-4e1f-bcba-6eb433be34df'");
-                        });
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("AppSettings");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.BudgetLine", b =>
@@ -171,6 +180,9 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BudgetPlanId");
@@ -214,12 +226,17 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Year")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
                     b.HasIndex("IsArchived");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("AccountId", "Year");
 
@@ -263,9 +280,14 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("IsArchived");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("BudgetPlanId", "Name");
 
@@ -311,8 +333,7 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
-                    b.Property<string>("UserId")
-                        .HasMaxLength(100)
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("WasAutoApplied")
@@ -371,6 +392,9 @@ namespace LocalFinanceManager.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
                         .HasColumnType("INTEGER");
@@ -441,6 +465,9 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AccountId");
@@ -450,6 +477,8 @@ namespace LocalFinanceManager.Migrations
                     b.HasIndex("ImportBatchId");
 
                     b.HasIndex("IsArchived");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("Date", "Amount", "ExternalId");
 
@@ -521,6 +550,9 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ActionType");
@@ -571,6 +603,9 @@ namespace LocalFinanceManager.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("datetime('now')");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BudgetLineId");
@@ -582,6 +617,61 @@ namespace LocalFinanceManager.Migrations
                     b.ToTable("TransactionSplits");
                 });
 
+            modelBuilder.Entity("LocalFinanceManager.Models.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("datetime('now')");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("SupabaseUserId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("datetime('now')");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsArchived");
+
+                    b.HasIndex("SupabaseUserId")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("LocalFinanceManager.Models.Account", b =>
                 {
                     b.HasOne("LocalFinanceManager.Models.BudgetPlan", "CurrentBudgetPlan")
@@ -589,7 +679,14 @@ namespace LocalFinanceManager.Migrations
                         .HasForeignKey("LocalFinanceManager.Models.Account", "CurrentBudgetPlanId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("LocalFinanceManager.Models.User", "User")
+                        .WithMany("Accounts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("CurrentBudgetPlan");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.BudgetLine", b =>
@@ -619,7 +716,14 @@ namespace LocalFinanceManager.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LocalFinanceManager.Models.User", "User")
+                        .WithMany("BudgetPlans")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("Account");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.Category", b =>
@@ -630,7 +734,14 @@ namespace LocalFinanceManager.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LocalFinanceManager.Models.User", "User")
+                        .WithMany("Categories")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("BudgetPlan");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.LabeledExample", b =>
@@ -660,7 +771,14 @@ namespace LocalFinanceManager.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("LocalFinanceManager.Models.User", "User")
+                        .WithMany("Transactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("Account");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("LocalFinanceManager.Models.TransactionAudit", b =>
@@ -703,6 +821,17 @@ namespace LocalFinanceManager.Migrations
             modelBuilder.Entity("LocalFinanceManager.Models.Transaction", b =>
                 {
                     b.Navigation("AssignedParts");
+                });
+
+            modelBuilder.Entity("LocalFinanceManager.Models.User", b =>
+                {
+                    b.Navigation("Accounts");
+
+                    b.Navigation("BudgetPlans");
+
+                    b.Navigation("Categories");
+
+                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }

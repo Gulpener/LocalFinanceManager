@@ -67,6 +67,7 @@ public class MLSuggestionTests : E2ETestBase
                 var tx = new Transaction
                 {
                     Id = Guid.NewGuid(),
+                    UserId = AppDbContext.SeedUserId,
                     AccountId = _testAccount.Id,
                     Amount = description == "Salary Payment" ? 2000m : -50m,
                     Date = DateTime.UtcNow.AddDays(-(i + patternIndex * 10)),
@@ -83,11 +84,11 @@ public class MLSuggestionTests : E2ETestBase
         // Seed 10 labeled examples per category with consistent mapping
         var patternToCategory = new Dictionary<string, string>
         {
-            ["Grocery Store"]  = "Food",
-            ["Gas Station"]    = "Transport",
-            ["Electric Bill"]  = "Utilities",
+            ["Grocery Store"] = "Food",
+            ["Gas Station"] = "Transport",
+            ["Electric Bill"] = "Utilities",
             ["Salary Payment"] = "Salary",
-            ["Online Shop"]    = "Shopping",
+            ["Online Shop"] = "Shopping",
         };
 
         foreach (var tx in transactions)
@@ -98,6 +99,7 @@ public class MLSuggestionTests : E2ETestBase
             var labeledExample = new LabeledExample
             {
                 Id = Guid.NewGuid(),
+                UserId = AppDbContext.SeedUserId,
                 TransactionId = tx.Id,
                 CategoryId = category.Id,
                 WasAutoApplied = false,
@@ -188,15 +190,15 @@ public class MLSuggestionTests : E2ETestBase
         Assert.That(badge, Is.Not.Null, "ML suggestion badge must be present (model was trained in SetUp)");
 
         // Assert — badge must not expose tooltip content via attributes that could allow XSS
-        var titleAttribute    = await badge!.GetAttributeAsync("title");
-        var bootstrapToggle   = await badge.GetAttributeAsync("data-bs-toggle");
-        var bootstrapHtml     = await badge.GetAttributeAsync("data-bs-html");
+        var titleAttribute = await badge!.GetAttributeAsync("title");
+        var bootstrapToggle = await badge.GetAttributeAsync("data-bs-toggle");
+        var bootstrapHtml = await badge.GetAttributeAsync("data-bs-html");
 
-        Assert.That(titleAttribute,  Is.Null.Or.Empty,
+        Assert.That(titleAttribute, Is.Null.Or.Empty,
             "Badge should not expose tooltip HTML content via title attribute");
         Assert.That(bootstrapToggle, Is.Null.Or.Empty,
             "Badge should not use Bootstrap tooltip initialization attributes for untrusted content");
-        Assert.That(bootstrapHtml,   Is.Null.Or.Empty,
+        Assert.That(bootstrapHtml, Is.Null.Or.Empty,
             "Badge should never enable HTML tooltip rendering for suggestion explanation content");
     }
 
@@ -313,6 +315,11 @@ public class MLSuggestionTests : E2ETestBase
         // Apply confidence sort — Blazor re-orders rows based on stored confidence values
         await Page.SelectOptionAsync("select[id='sort-by']", "confidence-desc");
         await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
+        await Page.WaitForTimeoutAsync(500);
+
+        // Re-apply sort once more after confidence hydration to avoid race conditions
+        await Page.SelectOptionAsync("select[id='sort-by']", "confidence-desc");
+        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
         var rows = await _transactionsPage.GetTransactionRowsAsync();
         var confidenceValues = new List<double>();
@@ -379,20 +386,20 @@ public class MLSuggestionTests : E2ETestBase
         await Page.WaitForSelectorAsync("[data-testid='model-info']", new() { Timeout = 5_000 });
 
         // Assert — model metadata is displayed (a model was trained in SetUp)
-        var modelVersionElement  = await Page.WaitForSelectorAsync("[data-testid='model-version']",  new() { Timeout = 5_000 });
-        var accuracyElement      = await Page.WaitForSelectorAsync("[data-testid='model-accuracy']", new() { Timeout = 5_000 });
-        var lastTrainedElement   = await Page.WaitForSelectorAsync("[data-testid='last-trained']",   new() { Timeout = 5_000 });
+        var modelVersionElement = await Page.WaitForSelectorAsync("[data-testid='model-version']", new() { Timeout = 5_000 });
+        var accuracyElement = await Page.WaitForSelectorAsync("[data-testid='model-accuracy']", new() { Timeout = 5_000 });
+        var lastTrainedElement = await Page.WaitForSelectorAsync("[data-testid='last-trained']", new() { Timeout = 5_000 });
 
         // Retrieve text before Assert.Multiple (async lambdas are not supported)
         var modelVersionText = await modelVersionElement!.InnerTextAsync();
-        var accuracyText     = await accuracyElement!.InnerTextAsync();
-        var lastTrainedText  = await lastTrainedElement!.InnerTextAsync();
+        var accuracyText = await accuracyElement!.InnerTextAsync();
+        var lastTrainedText = await lastTrainedElement!.InnerTextAsync();
 
         Assert.Multiple(() =>
         {
-            Assert.That(modelVersionText, Is.Not.Empty,      "Model version should be displayed");
-            Assert.That(accuracyText,     Does.Contain("%"), "Accuracy should be displayed as percentage");
-            Assert.That(lastTrainedText,  Is.Not.Empty,      "Last trained date should be displayed");
+            Assert.That(modelVersionText, Is.Not.Empty, "Model version should be displayed");
+            Assert.That(accuracyText, Does.Contain("%"), "Accuracy should be displayed as percentage");
+            Assert.That(lastTrainedText, Is.Not.Empty, "Last trained date should be displayed");
         });
     }
 }

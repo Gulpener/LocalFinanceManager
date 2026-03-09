@@ -2,24 +2,11 @@ namespace LocalFinanceManager.Models;
 
 /// <summary>
 /// Application settings stored in database for runtime configuration.
-/// Singleton entity - only one record should exist.
+/// User-scoped entity - one active record per user.
 /// </summary>
 public class AppSettings
     : BaseEntity
 {
-    /// <summary>
-    /// Deterministic singleton ID for the single persisted settings record.
-    /// </summary>
-    public static readonly Guid SingletonId = Guid.Parse("6FBA7D31-3D45-4E1F-BCBA-6EB433BE34DF");
-
-    /// <summary>
-    /// Creates app settings with deterministic singleton ID.
-    /// </summary>
-    public AppSettings()
-    {
-        Id = SingletonId;
-    }
-
     /// <summary>
     /// Auto-apply enabled flag.
     /// </summary>

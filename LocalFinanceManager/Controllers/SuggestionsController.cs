@@ -2,6 +2,8 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.ML;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 
@@ -10,23 +12,27 @@ namespace LocalFinanceManager.Controllers;
 /// <summary>
 /// API controller for ML-based category suggestions.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class SuggestionsController : ControllerBase
 {
     private readonly IMLService _mlService;
     private readonly ILabeledExampleRepository _labeledExampleRepo;
+    private readonly IUserContext _userContext;
     private readonly IValidator<SuggestionFeedbackDto> _feedbackValidator;
     private readonly ILogger<SuggestionsController> _logger;
 
     public SuggestionsController(
         IMLService mlService,
         ILabeledExampleRepository labeledExampleRepo,
+        IUserContext userContext,
         IValidator<SuggestionFeedbackDto> feedbackValidator,
         ILogger<SuggestionsController> logger)
     {
         _mlService = mlService;
         _labeledExampleRepo = labeledExampleRepo;
+        _userContext = userContext;
         _feedbackValidator = feedbackValidator;
         _logger = logger;
     }
@@ -135,12 +141,13 @@ public class SuggestionsController : ControllerBase
 
         try
         {
+            var userId = _userContext.GetCurrentUserId();
             var labeledExample = new LabeledExample
             {
                 Id = Guid.NewGuid(),
                 TransactionId = feedback.TransactionId,
                 CategoryId = feedback.FinalCategoryId,
-                UserId = null, // Single-user mode for now
+                UserId = userId != Guid.Empty ? userId : null,
                 WasAutoApplied = false,
                 AcceptedSuggestion = feedback.Accepted,
                 SuggestionConfidence = feedback.SuggestionConfidence,

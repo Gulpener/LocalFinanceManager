@@ -14,6 +14,7 @@ namespace LocalFinanceManager.Tests.Integration;
 [TestFixture]
 public class TransactionRepositoryWithSplitsTests
 {
+    private static readonly Guid TestUserId = TestUserContext.DefaultUserId;
     private TestDbContextFactory _factory = null!;
     private AppDbContext _context = null!;
     private TransactionRepository _repository = null!;
@@ -23,8 +24,26 @@ public class TransactionRepositoryWithSplitsTests
     {
         _factory = new TestDbContextFactory();
         _context = _factory.CreateContext();
+
+        _context.ChangeTracker.Tracked += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
+        _context.ChangeTracker.StateChanged += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
+
+        if (!_context.Users.Any(u => u.Id == TestUserId))
+        {
+            _context.Users.Add(new User
+            {
+                Id = TestUserId,
+                SupabaseUserId = TestUserId.ToString(),
+                Email = "test@localfinancemanager.local",
+                DisplayName = "Test User",
+                EmailConfirmed = true,
+                IsArchived = false
+            });
+            _context.SaveChanges();
+        }
+
         var logger = NullLogger<TransactionRepository>.Instance;
-        _repository = new TransactionRepository(_context, logger);
+        _repository = new TransactionRepository(_context, logger, new TestUserContext(TestUserId));
     }
 
     [TearDown]
@@ -302,3 +321,4 @@ public class TransactionRepositoryWithSplitsTests
         Assert.That(categories, Is.EqualTo(new[] { "Groceries", "Transport" }));
     }
 }
+

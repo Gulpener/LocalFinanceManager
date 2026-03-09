@@ -78,6 +78,66 @@ The database will be automatically created and migrations applied on first run. 
 
 ### Configuration
 
+#### Supabase & User Secrets Setup (Single Project)
+
+Use one Supabase project for the application. E2E tests run with mocked auth by default, so a second Supabase test project is not required.
+
+1. Create Supabase project
+
+- Open https://app.supabase.com and create a project.
+- Wait until provisioning completes.
+
+2. Enable email authentication
+
+- Go to **Authentication → Providers → Email**.
+- Enable **Email** provider.
+- Enable **Confirm email**.
+- Save changes.
+
+3. Verify email templates
+
+- Go to **Authentication → Email Templates**.
+- Confirm templates exist for **Confirm signup** and **Reset password**.
+
+4. Copy API values
+
+- Go to **Settings → API**.
+- Copy:
+  - Project URL
+  - anon/public key
+  - JWT secret
+
+5. Configure local user secrets
+
+```powershell
+dotnet user-secrets init --project LocalFinanceManager
+dotnet user-secrets set "Supabase:Url" "https://<project-ref>.supabase.co" --project LocalFinanceManager
+dotnet user-secrets set "Supabase:Key" "<anon-key>" --project LocalFinanceManager
+dotnet user-secrets set "Supabase:JwtSecret" "<jwt-secret>" --project LocalFinanceManager
+dotnet user-secrets list --project LocalFinanceManager
+```
+
+6. Configure GitHub Actions secrets
+
+- Repository → **Settings → Secrets and variables → Actions**.
+- Add:
+  - `SUPABASE_URL`
+  - `SUPABASE_KEY`
+  - `JWT_SECRET`
+
+7. Validate local setup
+
+```powershell
+dotnet build LocalFinanceManager.sln
+dotnet test tests/LocalFinanceManager.Tests/
+```
+
+If auth-related configuration fails, verify the secret names and values with:
+
+```powershell
+dotnet user-secrets list --project LocalFinanceManager
+```
+
 #### Database Configuration
 
 The application uses SQLite with separate databases for Development and Production environments.
@@ -202,6 +262,7 @@ dotnet test --collect:"XPlat Code Coverage"
 E2E tests use NUnit + Playwright and test against a running instance:
 
 - For E2E database initialization and migration behavior, see [tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md](tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md#database-migration-strategy-e2e).
+- For metrics/stat cards that update asynchronously after user actions, avoid immediate single-shot assertions. Prefer a short polling wait (e.g., up to 5s with 100ms interval) and assert once the expected value appears.
 
 ```bash
 # First time: Install Playwright browsers

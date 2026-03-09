@@ -1,6 +1,6 @@
 @page "/admin/monitoring"
 @page "/settings/monitoring"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs.ML
 @using LocalFinanceManager.Configuration
@@ -13,7 +13,7 @@
 @inject IOptions<AutomationOptions> AutomationOptions
 @implements IAsyncDisposable
 
-<PageTitle>Auto-Apply Monitoring</PageTitle>
+<PageTitle>Monitoring Dashboard</PageTitle>
 
 <Breadcrumb
 Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Monitoring") })" />
@@ -73,40 +73,41 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
                     <div class="card h-100">
                         <div class="card-body text-center">
                             <h6 class="card-subtitle mb-2 text-muted">Geaccepteerd</h6>
-                            <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied - stats.UndoCount)</p>
+                            <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied -
+                                                                                            stats.UndoCount)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle mb-2 text-muted">Ongedaan gemaakt</h6>
+                                <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "")">
+                                    @stats.UndoCount
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card h-100 @(stats.IsUndoRateAboveThreshold ? "border-danger" : "border-success")">
+                            <div class="card-body text-center">
+                                <h6 class="card-subtitle mb-2 text-muted">Ongedaan maken %</h6>
+                                <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "text-success")"
+                                       data-testid="undo-rate">
+                                    @FormatPercent(stats.UndoRate)
+                                </p>
+                                @if (stats.IsUndoRateAboveThreshold)
+                                {
+                                    <span class="badge bg-danger">Boven drempel</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success" data-testid="status-indicator">OK</span>
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card h-100">
-                        <div class="card-body text-center">
-                            <h6 class="card-subtitle mb-2 text-muted">Ongedaan gemaakt</h6>
-                            <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "")">
-                                @stats.UndoCount
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card h-100 @(stats.IsUndoRateAboveThreshold ? "border-danger" : "border-success")">
-                        <div class="card-body text-center">
-                            <h6 class="card-subtitle mb-2 text-muted">Ongedaan maken %</h6>
-                            <p class="display-4 mb-0 @(stats.IsUndoRateAboveThreshold ? "text-danger" : "text-success")"
-                               data-testid="undo-rate">
-                                @FormatPercent(stats.UndoRate)
-                            </p>
-                            @if (stats.IsUndoRateAboveThreshold)
-                            {
-                                <span class="badge bg-danger">Boven drempel</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-success" data-testid="status-indicator">OK</span>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
 
                 @if (stats.AverageConfidence > 0)
                 {
@@ -237,8 +238,8 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
     <!-- Custom confirm dialog for undo (replaces native confirm() for test reliability) -->
     @if (_showConfirmDialog)
     {
-        <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5);"
-             data-testid="confirm-dialog" role="dialog" aria-labelledby="confirmDialogTitle" aria-modal="true">
+        <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,.5);" data-testid="confirm-dialog"
+             role="dialog" aria-labelledby="confirmDialogTitle" aria-modal="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">

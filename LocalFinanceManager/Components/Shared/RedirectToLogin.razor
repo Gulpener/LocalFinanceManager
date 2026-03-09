@@ -1,0 +1,18 @@
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        var returnPath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        // Ensure the path is local to prevent open redirect
+        var safeReturnUrl = !string.IsNullOrEmpty(returnPath) && returnPath != "login"
+            ? "/" + returnPath
+            : null;
+
+        var destination = string.IsNullOrEmpty(safeReturnUrl)
+            ? "/login"
+            : $"/login?returnUrl={Uri.EscapeDataString(safeReturnUrl)}";
+
+        Navigation.NavigateTo(destination);
+    }
+}

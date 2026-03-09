@@ -2,6 +2,7 @@ using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.Services.Import;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ namespace LocalFinanceManager.Controllers;
 /// <summary>
 /// API controller for transaction operations.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class TransactionsController : ControllerBase

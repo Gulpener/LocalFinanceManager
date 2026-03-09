@@ -134,6 +134,31 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Registers authentication and user context services.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddAuthServices(this IServiceCollection services)
+    {
+        services.AddHttpContextAccessor();
+        services.AddScoped<IUserContext, UserContext>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IDevelopmentUserSeedService, DevelopmentUserSeedService>();
+        services.AddScoped<AuthTokenStore>();
+        // Register the concrete provider once and expose it as both its base type (required by Blazor's
+        // CascadingAuthState) and the IAuthStateNotifier interface (used by Login/Logout pages) so that
+        // those pages remain decoupled from the concrete class.
+        services.AddScoped<CustomAuthenticationStateProvider>();
+        services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(
+            sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
+        services.AddScoped<IAuthStateNotifier>(
+            sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
+        services.AddCascadingAuthenticationState();
+
+        return services;
+    }
+
+    /// <summary>
     /// Registers FluentValidation validators for all DTOs and IbanNet validator.
     /// No dependencies - can be called at any point in the registration sequence.
     /// </summary>

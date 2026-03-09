@@ -2,6 +2,9 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services;
+using LocalFinanceManager.Tests.Fixtures;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -27,6 +30,11 @@ public sealed class TestServiceProvider : IDisposable
     {
         var services = new ServiceCollection();
 
+        context.ChangeTracker.Tracked += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
+        context.ChangeTracker.StateChanged += (_, args) => TestEntityOwnershipHelper.Apply(args.Entry);
+
+        EnsureDefaultTestUserExists(context);
+
         // Register the test database context as singleton (one instance per test)
         services.AddSingleton(context);
 
@@ -50,6 +58,7 @@ public sealed class TestServiceProvider : IDisposable
         // Register all application services using extension methods
         // Background services excluded (includeBackgroundServices: false) to prevent
         // auto-start interference with tests
+        services.AddScoped<IUserContext>(_ => new TestUserContext(TestUserContext.DefaultUserId));
         services.AddDataAccess();
         services.AddValidation();
         services.AddCachingServices();
@@ -59,6 +68,27 @@ public sealed class TestServiceProvider : IDisposable
         services.AddAutomationServices(includeBackgroundServices: false);
 
         _serviceProvider = services.BuildServiceProvider();
+    }
+
+    private static void EnsureDefaultTestUserExists(AppDbContext context)
+    {
+        var defaultUserId = TestUserContext.DefaultUserId;
+        if (context.Users.Any(u => u.Id == defaultUserId))
+        {
+            return;
+        }
+
+        context.Users.Add(new User
+        {
+            Id = defaultUserId,
+            SupabaseUserId = defaultUserId.ToString(),
+            Email = "test@localfinancemanager.local",
+            DisplayName = "Test User",
+            EmailConfirmed = true,
+            IsArchived = false
+        });
+
+        context.SaveChanges();
     }
 
     /// <summary>

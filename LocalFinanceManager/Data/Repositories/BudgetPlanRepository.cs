@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services;
 
 namespace LocalFinanceManager.Data.Repositories;
 
@@ -8,15 +9,25 @@ namespace LocalFinanceManager.Data.Repositories;
 /// </summary>
 public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepository
 {
-    public BudgetPlanRepository(AppDbContext context, ILogger<Repository<BudgetPlan>> logger)
+    private readonly IUserContext _userContext;
+
+    public BudgetPlanRepository(AppDbContext context, ILogger<Repository<BudgetPlan>> logger, IUserContext userContext)
         : base(context, logger)
     {
+        _userContext = userContext;
     }
 
     public async Task<List<BudgetPlan>> GetByAccountIdAsync(Guid accountId)
     {
-        return await _dbSet
-            .Where(bp => !bp.IsArchived && bp.AccountId == accountId)
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<BudgetPlan>();
+        }
+
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.UserId == userId);
+
+        return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
             .OrderByDescending(bp => bp.Year)
@@ -25,8 +36,15 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
 
     public async Task<BudgetPlan?> GetByIdWithLinesAsync(Guid id)
     {
-        return await _dbSet
-            .Where(bp => !bp.IsArchived && bp.Id == id)
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.Id == id && bp.UserId == userId);
+
+        return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
             .FirstOrDefaultAsync();
@@ -34,8 +52,15 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
 
     public async Task<BudgetPlan?> GetByAccountAndYearAsync(Guid accountId, int year)
     {
-        return await _dbSet
-            .Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.Year == year)
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.Year == year && bp.UserId == userId);
+
+        return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
             .FirstOrDefaultAsync();

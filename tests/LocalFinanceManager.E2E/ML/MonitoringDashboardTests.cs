@@ -68,9 +68,9 @@ public class MonitoringDashboardTests : E2ETestBase
         await _dashboardPage.NavigateAsync();
 
         // Assert - Page should load successfully
-        var pageTitle = await Page.TitleAsync();
-        Assert.That(pageTitle, Does.Contain("Monitoring").Or.Contain("Dashboard"),
-            "Page title should indicate Monitoring Dashboard");
+        var pageHeading = await Page.Locator("h1").First.InnerTextAsync();
+        Assert.That(pageHeading, Does.Contain("Monitoring").Or.Contain("Dashboard"),
+            "Page heading should indicate Monitoring Dashboard");
 
         // Metrics cards should be visible
         var totalCount = await _dashboardPage.GetTotalAutoAppliedCountAsync();
@@ -198,8 +198,8 @@ public class MonitoringDashboardTests : E2ETestBase
         await _dashboardPage.NavigateAsync();
 
         // Assert - Undo rate should increase to 10% (1 out of 10)
-        var newUndoRate = await _dashboardPage.GetUndoRateAsync();
-        Assert.That(ParsePercentageText(newUndoRate), Is.EqualTo(10.0m).Within(0.01m),
+        var updatedUndoRate = await WaitForUndoRateAsync(expectedUndoRatePercent: 10.0m, timeoutMs: 5000);
+        Assert.That(updatedUndoRate, Is.EqualTo(10.0m).Within(0.01m),
             "Undo rate should be 10% after undoing 1 of 10 transactions");
 
         // Verify in database
@@ -419,6 +419,29 @@ public class MonitoringDashboardTests : E2ETestBase
             .Replace(',', '.');
 
         return decimal.Parse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture);
+    }
+
+    private async Task<decimal> WaitForUndoRateAsync(decimal expectedUndoRatePercent, int timeoutMs)
+    {
+        const int pollIntervalMs = 100;
+        var elapsedMs = 0;
+        var lastObservedRate = 0m;
+
+        while (elapsedMs <= timeoutMs)
+        {
+            var undoRateText = await _dashboardPage.GetUndoRateAsync();
+            lastObservedRate = ParsePercentageText(undoRateText);
+
+            if (Math.Abs(lastObservedRate - expectedUndoRatePercent) <= 0.01m)
+            {
+                return lastObservedRate;
+            }
+
+            await Page.WaitForTimeoutAsync(pollIntervalMs);
+            elapsedMs += pollIntervalMs;
+        }
+
+        return lastObservedRate;
     }
 
     private static int GetUndoCountBelowThreshold(decimal thresholdPercent, int totalCount)

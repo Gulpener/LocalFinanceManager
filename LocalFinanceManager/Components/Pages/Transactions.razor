@@ -7,8 +7,9 @@
 @inject IDeviceDetectionService DeviceDetectionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject ILogger<Transactions> Logger
 @implements IAsyncDisposable
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Transacties</PageTitle>
 
@@ -19,6 +20,11 @@
         <i class="bi bi-question-circle"></i>
     </button>
 </h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
 
 <ShortcutHelp IsVisible="showShortcutHelp" IsTouchDevice="isTouchDevice" IsMacOs="isMacOs"
               OnClose="@(() => showShortcutHelp = false)" />
@@ -93,7 +99,8 @@ else
             @for (var index = 0; index < filteredTransactions.Count; index++)
             {
                 var transaction = filteredTransactions[index];
-                <tr @key="transaction.Id" class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
+                <tr @key="transaction.Id"
+                    class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
                     data-testid="transaction-row" data-row-index="@index" data-transaction-id="@transaction.Id"
                     tabindex="@(focusedRowIndex == index ? 0 : -1)" @onfocus="() => SetFocusedRow(index)"
                     @onkeydown="HandleTableKeyDown">
@@ -216,7 +223,8 @@ else
 
 @if (selectedTransactionIds.Any())
 {
-    <div class="position-fixed bottom-0 start-50 translate-middle-x mb-3" data-testid="bulk-action-bar" style="z-index: 1050;">
+    <div class="position-fixed bottom-0 start-50 translate-middle-x mb-3" data-testid="bulk-action-bar"
+         style="z-index: 1050;">
         <div class="card shadow-lg">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center gap-3">
@@ -264,6 +272,7 @@ else
     private bool showShortcutHelp;
     private bool isTouchDevice;
     private bool isMacOs;
+    private string? errorMessage;
     private int focusedRowIndex;
     private bool touchDeviceDetected;
     private DotNetObjectReference<Transactions>? dotNetRef;
@@ -271,8 +280,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAccountsAsync();
-        await LoadTransactionsAsync();
+        try
+        {
+            await LoadAccountsAsync();
+            await LoadTransactionsAsync();
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize Transactions page");
+            errorMessage = "Kon transacties niet laden. Vernieuw de pagina of probeer opnieuw in te loggen.";
+            loading = false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -362,46 +381,61 @@ else
     private async Task LoadTransactionsAsync()
     {
         loading = true;
-
-        List<LocalFinanceManager.Models.Transaction> transactions;
-        if (selectedAccountId.HasValue)
+        try
         {
-            transactions = await TransactionRepository.GetByAccountIdWithSplitsAsync(selectedAccountId.Value);
-        }
-        else
-        {
-            transactions = await TransactionRepository.GetAllWithSplitsAsync();
-        }
-
-        // Convert to DTOs
-        transactionDtos = transactions.Select(t => new TransactionDto
-        {
-            Id = t.Id,
-            Amount = t.Amount,
-            Date = t.Date,
-            Description = t.Description,
-            Counterparty = t.Counterparty,
-            AccountId = t.AccountId,
-            ExternalId = t.ExternalId,
-            SourceFileName = t.SourceFileName,
-            ImportedAt = t.ImportedAt,
-            RowVersion = t.RowVersion,
-            AccountBudgetPlanId = t.Account?.CurrentBudgetPlanId,
-            Splits = t.AssignedParts?.Select(s => new TransactionSplitDetailDto
+            List<LocalFinanceManager.Models.Transaction> transactions;
+            if (selectedAccountId.HasValue)
             {
-                Id = s.Id,
-                BudgetLineId = s.BudgetLineId,
-                BudgetLineName = s.BudgetLine?.Category?.Name ?? "Onbekend",
-                Amount = s.Amount,
-                Note = s.Note
-            }).ToList()
-        }).OrderByDescending(t => t.Date).ToList();
+                transactions = await TransactionRepository.GetByAccountIdWithSplitsAsync(selectedAccountId.Value);
+            }
+            else
+            {
+                transactions = await TransactionRepository.GetAllWithSplitsAsync();
+            }
 
-        // Reset stored confidence scores when transaction list is refreshed
-        _suggestionConfidences.Clear();
+            // Convert to DTOs
+            transactionDtos = transactions.Select(t => new TransactionDto
+            {
+                Id = t.Id,
+                Amount = t.Amount,
+                Date = t.Date,
+                Description = t.Description,
+                Counterparty = t.Counterparty,
+                AccountId = t.AccountId,
+                ExternalId = t.ExternalId,
+                SourceFileName = t.SourceFileName,
+                ImportedAt = t.ImportedAt,
+                RowVersion = t.RowVersion,
+                AccountBudgetPlanId = t.Account?.CurrentBudgetPlanId,
+                Splits = t.AssignedParts?.Select(s => new TransactionSplitDetailDto
+                {
+                    Id = s.Id,
+                    BudgetLineId = s.BudgetLineId,
+                    BudgetLineName = s.BudgetLine?.Category?.Name ?? "Onbekend",
+                    Amount = s.Amount,
+                    Note = s.Note
+                }).ToList()
+            }).OrderByDescending(t => t.Date).ToList();
 
-        ApplyFilters();
-        loading = false;
+            // Reset stored confidence scores when transaction list is refreshed
+            _suggestionConfidences.Clear();
+
+            ApplyFilters();
+            errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load transactions for account filter {AccountId}", selectedAccountId);
+            transactionDtos = new List<TransactionDto>();
+            filteredTransactions = new List<TransactionDto>();
+            filteredTotalAmount = 0;
+            unassignedCount = 0;
+            errorMessage = "Transacties laden is mislukt. Probeer opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private void ApplyFilters()

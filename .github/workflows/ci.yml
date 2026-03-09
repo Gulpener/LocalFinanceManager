@@ -46,18 +46,34 @@ jobs:
       - name: Run E2E tests - Phase 1 (Import + Basic Assignment)
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~TransactionImportTests|FullyQualifiedName~BasicAssignmentTests|FullyQualifiedName~MultiAccountValidationTests"
+        env:
+          Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
+          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Run E2E tests - Phase 2 (Split + Bulk Assignment)
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~SplitAssignmentTests|FullyQualifiedName~BulkAssignmentTests"
+        env:
+          Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
+          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Run E2E tests - Phase 3 (Integration Workflow + UX + Other)
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests"
+        env:
+          Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
+          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Run E2E tests - Phase 4 (ML Suggestions + Auto-Apply + Monitoring)
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests"
+        env:
+          Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
+          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Upload test results
         if: always()

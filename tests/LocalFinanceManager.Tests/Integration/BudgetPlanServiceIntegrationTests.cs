@@ -225,18 +225,35 @@ public class BudgetPlanServiceIntegrationTests
     [Test]
     public async Task SeedAsync_CreatesPersonalTemplateCategories()
     {
-        // Note: This tests that the seed data in AppDbContext uses the Personal template
-        // The seed should already have been run in Setup via EnsureCreated
+        // Arrange
+        var seedService = new DevelopmentUserSeedService(_context);
+        if (!await _context.Users.AnyAsync(u => u.Id == AppDbContext.SeedUserId))
+        {
+            await _context.Users.AddAsync(new User
+            {
+                Id = AppDbContext.SeedUserId,
+                SupabaseUserId = "00000000-0000-0000-0000-000000000001",
+                Email = AppDbContext.SeedUserEmail,
+                DisplayName = "Dev User",
+                EmailConfirmed = true,
+                IsArchived = false
+            });
+            await _context.SaveChangesAsync();
+        }
 
         // Act
-        await _context.SeedAsync();
+        await seedService.SeedForUserAsync(AppDbContext.SeedUserId);
 
         // Assert
-        var budgetPlans = await _context.BudgetPlans.ToListAsync();
+        var budgetPlans = await _context.BudgetPlans
+            .Where(bp => bp.UserId == AppDbContext.SeedUserId && !bp.IsArchived)
+            .ToListAsync();
         Assert.That(budgetPlans, Has.Count.GreaterThanOrEqualTo(1), "Seed should create at least one budget plan");
 
         var firstBudgetPlan = budgetPlans.First();
-        var categories = await _categoryRepository.GetByBudgetPlanAsync(firstBudgetPlan.Id);
+        var categories = await _context.Categories
+            .Where(c => c.BudgetPlanId == firstBudgetPlan.Id && !c.IsArchived)
+            .ToListAsync();
 
         // Verify Personal template was applied (6 categories)
         Assert.That(categories, Has.Count.EqualTo(6), "Seed data should use Personal template with 6 categories");

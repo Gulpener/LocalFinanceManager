@@ -10,8 +10,8 @@
 **Status Overview:**
 
 - ✅ **19 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2) - Archived
-- ✅ **2 stories ready** for immediate implementation (US-11, US-17)
-- 🔴 **5 stories need refinement** (US-12, US-13, US-14, US-15, US-16) - Post-MVP features
+- ✅ **3 stories ready** for immediate implementation (US-11, US-12, US-17)
+- 🔴 **4 stories need refinement** (US-13, US-14, US-15, US-16) - Post-MVP features
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
@@ -149,154 +149,27 @@
 
 ---
 
-### �🔴 Needs Major Refinement
+### 🔴 Refinement Backlog (US-12 Updated)
 
 #### UserStory-12: Supabase PostgreSQL Migration
 
 **File:** [docs/Userstories/UserStory-12-Supabase-PostgreSQL.md](docs/Userstories/UserStory-12-Supabase-PostgreSQL.md)
 
-**Issues:**
+**Status:** ✅ **Refined and Ready**
 
-1. **Missing test strategy** - Should tests remain SQLite in-memory or migrate to PostgreSQL?
-2. **No rollback plan** - If migration fails, how to revert to SQLite?
-3. **Data migration strategy undefined** - How to migrate existing SQLite data to PostgreSQL?
-4. **Health check implementation incomplete** - Need detailed health check logic
-5. **No performance benchmarks** - Should include before/after performance comparison
+**Refinement Outcome:**
 
-**Required Refinements:**
+1. **Provider matrix fixed** - Unit tests remain SQLite; integration/E2E/runtime use PostgreSQL
+2. **Tenant isolation clarified** - Repository-level `IUserContext` filtering retained in this story
+3. **Migration scope clarified** - One-time greenfield PostgreSQL go-live; **no SQLite data migration**
+4. **Post-go-live policy clarified** - No production database recreate/drop; forward-only migrations
+5. **CI approach fixed** - Ephemeral PostgreSQL service container for integration/E2E
+6. **Implementation quality improved** - Added concrete local-dev, JSON mapping, and health check requirements
+7. **Operational safety added** - Release guardrails checklist for post-go-live migrations (forward-only, no recreate)
 
-Add the following sections:
+**Note:** Any SQLite-to-PostgreSQL data import/export belongs in a separate future story if ever needed.
 
-#### Test Strategy
-
-**Decision Required:**
-
-1. **Option A:** Keep unit/integration tests with in-memory SQLite, only E2E tests use PostgreSQL
-   - **Pros:** Fast test execution, no external dependencies
-   - **Cons:** Doesn't catch PostgreSQL-specific issues in unit tests
-
-2. **Option B:** Migrate all tests to PostgreSQL test database
-   - **Pros:** Tests match production environment
-   - **Cons:** Slower execution, requires test database setup
-
-**Recommendation:** Option A (SQLite for unit tests, PostgreSQL for E2E)
-
-#### Rollback Plan
-
-**Pre-Migration Backup:**
-
-- [ ] Create SQLite backup file before migration
-- [ ] Store backup in `backups/` directory with timestamp
-- [ ] Document connection string for rollback
-
-**Rollback Steps:**
-
-1. Restore SQLite backup file
-2. Revert `AppDbContext` to use SQLite provider
-3. Update `Program.cs` to use SQLite connection
-4. Run application with `--skip-migration` flag
-
-**Rollback Trigger Criteria:**
-
-- Migration fails with data integrity errors
-- Performance degradation >50% in critical queries
-- PostgreSQL connection issues persist >24 hours
-
-#### Data Migration Strategy
-
-**Approach: Export/Import with Validation**
-
-1. **Export SQLite data:**
-   - [ ] Create `MigrationService` with `ExportSqliteDataAsync()` method
-   - [ ] Export all entities to JSON format (reuse backup format from US-13)
-   - [ ] Validate data integrity (foreign keys, constraints)
-
-2. **PostgreSQL schema creation:**
-   - [ ] Apply migrations to empty PostgreSQL database
-   - [ ] Verify schema matches SQLite structure
-
-3. **Import data:**
-   - [ ] Create `MigrationService.ImportPostgresDataAsync(jsonData)` method
-   - [ ] Import in dependency order (Accounts → BudgetPlans → Categories → Transactions)
-   - [ ] Validate relationships after import
-
-4. **Verification:**
-   - [ ] Compare row counts between SQLite and PostgreSQL
-   - [ ] Run smoke tests on imported data
-
-**Estimated Migration Time:** 2-3 hours for typical dataset (<10,000 transactions)
-
-#### Health Check Implementation
-
-**Detailed Health Check Logic:**
-
-```csharp
-[HttpGet("/health")]
-public async Task<IActionResult> Health()
-{
-    var health = new HealthStatus
-    {
-        Status = "Healthy",
-        Checks = new List<Check>()
-    };
-
-    // Database connectivity check
-    try
-    {
-        await _context.Database.CanConnectAsync();
-        health.Checks.Add(new Check { Name = "Database", Status = "Healthy" });
-    }
-    catch (Exception ex)
-    {
-        health.Checks.Add(new Check { Name = "Database", Status = "Unhealthy", Error = ex.Message });
-        health.Status = "Unhealthy";
-    }
-
-    // Query performance check (should complete <1s)
-    var stopwatch = Stopwatch.StartNew();
-    try
-    {
-        await _context.Accounts.CountAsync();
-        stopwatch.Stop();
-        var queryTime = stopwatch.ElapsedMilliseconds;
-        health.Checks.Add(new Check
-        {
-            Name = "Query Performance",
-            Status = queryTime < 1000 ? "Healthy" : "Degraded",
-            Metadata = new { QueryTimeMs = queryTime }
-        });
-    }
-    catch (Exception ex)
-    {
-        health.Checks.Add(new Check { Name = "Query Performance", Status = "Unhealthy", Error = ex.Message });
-        health.Status = "Unhealthy";
-    }
-
-    return health.Status == "Healthy" ? Ok(health) : StatusCode(503, health);
-}
-```
-
-#### Performance Benchmarks
-
-**Benchmark Scenarios:**
-
-1. **Account List Query (100 accounts):**
-   - SQLite baseline: Target <50ms
-   - PostgreSQL target: <30ms (20% improvement expected)
-
-2. **Transaction Assignment (1000 transactions):**
-   - SQLite baseline: Target <200ms
-   - PostgreSQL target: <150ms (25% improvement expected)
-
-3. **Budget Line Lookup (cached):**
-   - SQLite baseline: Target <10ms
-   - PostgreSQL target: <10ms (no change expected, cache dominant)
-
-**Measurement Tool:** BenchmarkDotNet in `LocalFinanceManager.Tests/Benchmarks/`
-
-**Estimated Refinement Time:** 2-3 hours
-
-**Estimated Implementation Effort After Refinement:** 3-4 days
+**Estimated Implementation Effort:** 3-4 days
 
 ---
 
@@ -1033,7 +906,7 @@ public async Task RunWeeklyBackup(TimerInfo timer)
 ### Phase 5: Multi-User & Post-MVP (Weeks 11+)
 
 13. **UserStory-11** (Multi-User Auth) - Ready (5-7 days)
-14. 🔴 **UserStory-12** (Supabase PostgreSQL) - After US-11 + refinement (3-4 days)
+14. ✅ **UserStory-12** (Supabase PostgreSQL) - Ready after US-11 (3-4 days)
 15. 🔴 **UserStory-13** (Sharing System) - After US-12 + refinement (5-7 days)
 16. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
 17. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
@@ -1131,9 +1004,9 @@ Use this structure for all new stories:
 
 1. **Immediate:** Start implementing UserStory-7 (Copilot Agents) - production-ready
 2. **This Week:** Continue with UserStory-10.x E2E expansion and UserStory-17 (Transaction Audit Trail UI)
-3. **Future:** Expand UserStory-12, 13, 14, 15, 16 with implementation tasks (10-12 hours total)
+3. **Future:** Expand UserStory-13, 14, 15, 16 with implementation tasks (8-9 hours total)
 
-**Total Refinement Effort Remaining:** ~10-12 hours across 5 remaining stories
+**Total Refinement Effort Remaining:** ~8-9 hours across 4 remaining stories
 
 **Priority Order:**
 
@@ -1158,7 +1031,7 @@ Use this structure for all new stories:
 19. ✅ ~~**UserStory-10.1**~~ (Advanced Assignment Tests) - **COMPLETED & ARCHIVED**
 20. ~~**UserStory-10.2**~~ (ML Tests) - ✅ **COMPLETED & ARCHIVED**
 21. **UserStory-11** (Multi-User Auth) - Ready for implementation
-22. UserStory-12 (Supabase PostgreSQL) - Needs refinement (test strategy, rollback plan)
+22. UserStory-12 (Supabase PostgreSQL) - Ready (one-time greenfield go-live, then forward-only migrations)
 23. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)
 24. UserStory-14 (Backup & Restore) - Needs refinement (security/encryption, versioning)
 25. UserStory-15 (Application Flow) - Needs refinement (onboarding tracking)

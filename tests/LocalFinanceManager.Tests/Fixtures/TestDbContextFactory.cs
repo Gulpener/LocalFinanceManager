@@ -7,6 +7,7 @@ namespace LocalFinanceManager.Tests.Fixtures;
 /// <summary>
 /// Factory for creating fresh in-memory SQLite database contexts for isolated tests.
 /// Uses :memory: mode to ensure each test has a clean database state.
+/// A system user (Id = Guid.Empty) is seeded via EF Core model data so that FK constraints on UserId are satisfied.
 /// </summary>
 public class TestDbContextFactory : IDisposable
 {
@@ -21,7 +22,7 @@ public class TestDbContextFactory : IDisposable
 
     /// <summary>
     /// Creates a new AppDbContext instance connected to the in-memory database.
-    /// Automatically applies migrations.
+    /// Automatically applies model and seeds the system user via EnsureCreated.
     /// </summary>
     public AppDbContext CreateContext()
     {

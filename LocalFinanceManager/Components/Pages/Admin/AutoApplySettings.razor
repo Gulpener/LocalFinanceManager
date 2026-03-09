@@ -8,7 +8,7 @@
 @inject IAccountRepository AccountRepository
 @inject ICategoryRepository CategoryRepository
 @inject IJSRuntime JS
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 @implements IDisposable
 
 <script>
@@ -48,7 +48,7 @@
     };
 </script>
 
-<PageTitle>Auto-Apply instellingen</PageTitle>
+<PageTitle>Auto-Apply settings</PageTitle>
 
 <Breadcrumb
 Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Auto-Apply") })" />
@@ -91,11 +91,11 @@ else
                         <div class="mb-3">
                             <label for="confidence-threshold" class="form-label">
                                 Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence *
-                                                                                                                                                                                            100).ToString("F0"))%</strong>
+                                                                                                                                                                                                                                                            100).ToString("F0"))%</strong>
                             </label>
                             <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
-                                value="@_settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                @oninput="OnConfidenceInputAsync">
+                                   value="@_settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                   @oninput="OnConfidenceInputAsync">
                                 <small class="text-muted d-block">
                                     Hoger = nauwkeuriger maar minder automatische toewijzingen.
                                     Aanbevolen: 75-85%
@@ -131,7 +131,7 @@ else
                                 <p class="text-muted">Selecteer welke rekeningen moeten worden gebruikt voor automatische toewijzing
                                     (laat leeg voor alle rekeningen).</p>
 
-                                    <select class="form-select" id="account-ids" multiple size="5"                                       @bind="SelectedAccountIds">
+                                    <select class="form-select" id="account-ids" multiple size="5" @bind="SelectedAccountIds">
                                         @foreach (var account in _accounts)
                                         {
                                             <option value="@account.Id">
@@ -395,7 +395,8 @@ else
             return;
         }
 
-        if (!float.TryParse(rawValue, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedConfidence) &&
+        if (!float.TryParse(rawValue, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var parsedConfidence) &&
             !float.TryParse(rawValue, out parsedConfidence))
         {
             return;

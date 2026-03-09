@@ -1,6 +1,47 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)"
+        OnNavigateAsync="HandleNavigateAsync">
     <Found Context="routeData">
         <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    private static readonly HashSet<string> AnonymousRoutes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "",
+        "login",
+        "register",
+        "logout",
+        "password-reset",
+        "not-found"
+    };
+
+    private async Task HandleNavigateAsync(NavigationContext context)
+    {
+        var targetPath = context.Path.Trim('/');
+
+        if (AnonymousRoutes.Contains(targetPath))
+        {
+            return;
+        }
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            return;
+        }
+
+        var returnUrl = string.IsNullOrWhiteSpace(context.Path)
+            ? "/"
+            : $"/{context.Path}";
+
+        Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: false);
+    }
+}

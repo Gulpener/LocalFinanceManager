@@ -2,6 +2,7 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data.Repositories;
 using LocalFinanceManager.DTOs.ML;
 using LocalFinanceManager.ML;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -10,6 +11,7 @@ namespace LocalFinanceManager.Controllers;
 /// <summary>
 /// API controller for ML model training and management.
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/ml")]
 public class MLController : ControllerBase

@@ -381,3 +381,7 @@ FodyWeavers.xsd
 !tests/LocalFinanceManager.E2E/
 !tests/LocalFinanceManager.E2E/*.cs
 !tests/LocalFinanceManager.E2E/*.csproj
+# Explicitly exclude build artifacts that might be tracked with backslash paths
+LocalFinanceManager/bin/
+LocalFinanceManager/obj/
+LocalFinanceManager/bin\

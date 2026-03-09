@@ -6,6 +6,7 @@ using LocalFinanceManager.Services.Background;
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.Extensions.Options;
@@ -29,6 +30,7 @@ public class AutomationControllerTests
     private IOptions<AutomationOptions> _automationOptions = null!;
     private Mock<IAutoApplySettingsProvider> _settingsProviderMock = null!;
     private ILogger<AutomationController> _logger = null!;
+    private Guid _currentUserId;
 
     [SetUp]
     public void Setup()
@@ -54,6 +56,8 @@ public class AutomationControllerTests
         _logger = new Mock<ILogger<AutomationController>>().Object;
         var settingsValidator = new AutoApplySettingsValidator();
         var jobService = new Mock<IAutoApplyJobService>().Object;
+        _currentUserId = Guid.NewGuid();
+        var userContext = new TestUserContext(_currentUserId);
 
         _controller = new AutomationController(
             _undoService,
@@ -63,6 +67,7 @@ public class AutomationControllerTests
             _automationOptions,
             settingsValidator,
             _settingsProviderMock.Object,
+            userContext,
             _logger)
         {
             ControllerContext = new ControllerContext
@@ -125,6 +130,7 @@ public class AutomationControllerTests
         // Arrange
         _dbContext.AppSettings.Add(new AppSettings
         {
+            UserId = _currentUserId,
             AutoApplyEnabled = true,
             MinimumConfidence = 0.77f,
             IntervalMinutes = 25,
@@ -172,14 +178,14 @@ public class AutomationControllerTests
 
         // Verify database persistence
         var dbSettings = await _dbContext.AppSettings
-            .FirstOrDefaultAsync(s => !s.IsArchived);
+            .FirstOrDefaultAsync(s => !s.IsArchived && s.UserId == _currentUserId);
         Assert.That(dbSettings, Is.Not.Null);
         Assert.That(dbSettings!.AutoApplyEnabled, Is.True);
         Assert.That(dbSettings.MinimumConfidence, Is.EqualTo(0.75f));
         Assert.That(dbSettings.IntervalMinutes, Is.EqualTo(30));
         Assert.That(dbSettings.AccountIdsJson, Is.Not.Null);
         Assert.That(dbSettings.ExcludedCategoryIdsJson, Is.Not.Null);
-        _settingsProviderMock.Verify(provider => provider.Invalidate(), Times.Once);
+        _settingsProviderMock.Verify(provider => provider.Invalidate(_currentUserId), Times.Once);
     }
 
     [Test]
@@ -429,7 +435,7 @@ public class AutomationControllerTests
 
         // Assert
         var dbSettings = await _dbContext.AppSettings
-            .FirstOrDefaultAsync(s => !s.IsArchived);
+            .FirstOrDefaultAsync(s => !s.IsArchived && s.UserId == _currentUserId);
         Assert.That(dbSettings, Is.Not.Null);
         Assert.That(dbSettings!.AccountIdsJson, Is.Null);
         Assert.That(dbSettings.ExcludedCategoryIdsJson, Is.Null);
@@ -449,6 +455,7 @@ public class AutomationControllerTests
 
         conflictDbContext.AppSettings.Add(new AppSettings
         {
+            UserId = _currentUserId,
             AutoApplyEnabled = true,
             MinimumConfidence = 0.91f,
             IntervalMinutes = 33,
@@ -469,6 +476,7 @@ public class AutomationControllerTests
             _automationOptions,
             new AutoApplySettingsValidator(),
             settingsProviderMock.Object,
+            new TestUserContext(_currentUserId),
             _logger)
         {
             ControllerContext = new ControllerContext
@@ -507,7 +515,7 @@ public class AutomationControllerTests
         Assert.That(currentState.GetProperty("AccountIds").GetArrayLength(), Is.EqualTo(0));
         Assert.That(currentState.GetProperty("ExcludedCategoryIds").GetArrayLength(), Is.EqualTo(0));
 
-        settingsProviderMock.Verify(provider => provider.Invalidate(), Times.Never);
+        settingsProviderMock.Verify(provider => provider.Invalidate(_currentUserId), Times.Never);
     }
 
     private sealed class ConcurrencyThrowingAppDbContext : AppDbContext

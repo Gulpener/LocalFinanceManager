@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Services;
 
 namespace LocalFinanceManager.Data.Repositories;
 
@@ -9,18 +10,28 @@ namespace LocalFinanceManager.Data.Repositories;
 /// </summary>
 public class TransactionRepository : Repository<Transaction>, ITransactionRepository
 {
-    public TransactionRepository(AppDbContext context, ILogger<TransactionRepository> logger)
+    private readonly IUserContext _userContext;
+
+    public TransactionRepository(AppDbContext context, ILogger<TransactionRepository> logger, IUserContext userContext)
         : base(context, logger)
     {
+        _userContext = userContext;
     }
 
     /// <summary>
-    /// Override GetActiveAsync to include proper ordering by date.
+    /// Override GetActiveAsync to include proper ordering by date and user filtering.
     /// </summary>
     public new async Task<List<Transaction>> GetActiveAsync()
     {
-        return await _dbSet
-            .Where(t => !t.IsArchived)
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var query = _dbSet.Where(t => !t.IsArchived && t.UserId == userId);
+
+        return await query
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.CreatedAt)
             .ToListAsync();
@@ -28,8 +39,15 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
 
     public async Task<List<Transaction>> GetByAccountIdAsync(Guid accountId)
     {
-        return await _dbSet
-            .Where(t => !t.IsArchived && t.AccountId == accountId)
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var query = _dbSet.Where(t => !t.IsArchived && t.AccountId == accountId && t.UserId == userId);
+
+        return await query
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.CreatedAt)
             .ToListAsync();
@@ -37,8 +55,13 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
 
     public async Task<List<Transaction>> FindExactMatchesAsync(DateTime date, decimal amount, string? externalId)
     {
-        var query = _dbSet
-            .Where(t => !t.IsArchived && t.Date == date && t.Amount == amount);
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var query = _dbSet.Where(t => !t.IsArchived && t.Date == date && t.Amount == amount && t.UserId == userId);
 
         if (!string.IsNullOrEmpty(externalId))
         {
@@ -52,28 +75,48 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
     {
         var startDate = date.AddDays(-daysTolerance);
         var endDate = date.AddDays(daysTolerance);
+        var userId = _userContext.GetCurrentUserId();
 
-        return await _dbSet
-            .Where(t => !t.IsArchived
-                && t.Date >= startDate
-                && t.Date <= endDate
-                && t.Amount == amount)
-            .ToListAsync();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var query = _dbSet.Where(t => !t.IsArchived
+            && t.Date >= startDate
+            && t.Date <= endDate
+            && t.Amount == amount
+            && t.UserId == userId);
+
+        return await query.ToListAsync();
     }
 
     public async Task<List<Transaction>> GetByImportBatchIdAsync(Guid importBatchId)
     {
-        return await _dbSet
-            .Where(t => !t.IsArchived && t.ImportBatchId == importBatchId)
-            .OrderBy(t => t.Date)
-            .ToListAsync();
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var query = _dbSet.Where(t => !t.IsArchived && t.ImportBatchId == importBatchId && t.UserId == userId);
+
+        return await query.OrderBy(t => t.Date).ToListAsync();
     }
 
     public async Task AddRangeAsync(IEnumerable<Transaction> transactions)
     {
+        var userId = _userContext.GetCurrentUserId();
+
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot add transactions without an authenticated user context.");
+        }
+
         foreach (var transaction in transactions)
         {
             transaction.Id = Guid.NewGuid();
+            transaction.UserId = userId;
         }
 
         await _dbSet.AddRangeAsync(transactions);
@@ -84,15 +127,28 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
 
     public async Task<Transaction?> GetByIdWithAccountAsync(Guid id)
     {
-        return await _dbSet
-            .Include(t => t.Account)
-            .FirstOrDefaultAsync(t => t.Id == id && !t.IsArchived);
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var query = _dbSet.Include(t => t.Account).Where(t => t.Id == id && !t.IsArchived && t.UserId == userId);
+
+        return await query.FirstOrDefaultAsync();
     }
 
     public async Task<List<Transaction>> GetAllWithSplitsAsync()
     {
-        return await _dbSet
-            .Where(t => !t.IsArchived)
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var query = _dbSet.Where(t => !t.IsArchived && t.UserId == userId);
+
+        return await query
             .Include(t => t.Account)
             .Include(t => t.AssignedParts!)
                 .ThenInclude(s => s.BudgetLine)
@@ -104,8 +160,15 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
 
     public async Task<List<Transaction>> GetByAccountIdWithSplitsAsync(Guid accountId)
     {
-        return await _dbSet
-            .Where(t => !t.IsArchived && t.AccountId == accountId)
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var query = _dbSet.Where(t => !t.IsArchived && t.AccountId == accountId && t.UserId == userId);
+
+        return await query
             .Include(t => t.Account)
             .Include(t => t.AssignedParts!)
                 .ThenInclude(s => s.BudgetLine)

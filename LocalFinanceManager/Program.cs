@@ -2,9 +2,17 @@ using LocalFinanceManager.Components;
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
+using LocalFinanceManager.Services;
 using LocalFinanceManager.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
+using System.Text.Encodings.Web;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +28,7 @@ builder.Services.Configure<MLOptions>(builder.Configuration.GetSection("MLOption
 builder.Services.Configure<AutomationOptions>(builder.Configuration.GetSection("AutomationOptions"));
 builder.Services.Configure<BulkAssignUiOptions>(builder.Configuration.GetSection("BulkAssignUiOptions"));
 builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Caching"));
+builder.Services.Configure<SupabaseOptions>(builder.Configuration.GetSection("Supabase"));
 
 // Register memory cache with size limits
 builder.Services.AddMemoryCache(options =>
@@ -36,12 +45,106 @@ builder.Services.AddDomainServices();       // Core domain services
 builder.Services.AddImportServices();       // CSV/JSON import
 builder.Services.AddMLServices();           // ML feature extraction & prediction
 builder.Services.AddAutomationServices();   // Automation & background workers
+builder.Services.AddAuthServices();         // Authentication & user context
 
-// Register HttpClient for Blazor components
+// Configure JWT Bearer authentication
+var supabaseOptions = builder.Configuration.GetSection("Supabase").Get<SupabaseOptions>() ?? new SupabaseOptions();
+var enableDevSmokeAuth = builder.Configuration.GetValue<bool>("EnableDevSmokeAuth");
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "SmartAuth";
+    options.DefaultAuthenticateScheme = "SmartAuth";
+    options.DefaultChallengeScheme = "SmartAuth";
+})
+    .AddPolicyScheme("SmartAuth", "Smart auth selector", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+            if (env.IsDevelopment()
+                && enableDevSmokeAuth
+                && context.Request.Headers.ContainsKey("X-Dev-Smoke-UserId"))
+            {
+                return "DevSmoke";
+            }
+
+            return JwtBearerDefaults.AuthenticationScheme;
+        };
+    })
+    .AddScheme<AuthenticationSchemeOptions, DevSmokeAuthenticationHandler>("DevSmoke", _ => { })
+    .AddJwtBearer(options =>
+    {
+        var jwtSecret = supabaseOptions.JwtSecret;
+        if (!string.IsNullOrEmpty(jwtSecret) && jwtSecret != "placeholder-jwt-secret")
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = supabaseOptions.Url,
+                ValidAudience = "authenticated",
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+            };
+        }
+        else
+        {
+            // Placeholder mode: accept any token (development without Supabase configured)
+            // WARNING: This disables all JWT validation. Ensure proper Supabase credentials are set in production.
+
+            // Guard: refuse to start in non-Development environments with placeholder credentials.
+            // This prevents accidentally deploying with unset Supabase secrets.
+            var currentEnv = builder.Environment;
+            if (!currentEnv.IsDevelopment())
+            {
+                throw new InvalidOperationException(
+                    "Supabase:JwtSecret is not configured (or still set to the placeholder value). " +
+                    "This application refuses to start in non-Development environments without a valid JWT secret. " +
+                    "Set the ASPNETCORE_Supabase__JwtSecret environment variable to the real Supabase JWT secret.");
+            }
+
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnMessageReceived = ctx =>
+                {
+                    var log = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    log.LogWarning("JWT validation is in PLACEHOLDER MODE (no Supabase credentials configured). This is only safe in Development.");
+                    return Task.CompletedTask;
+                }
+            };
+
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = false,
+                ValidateIssuerSigningKey = false,
+                SignatureValidator = (token, _) =>
+                {
+                    var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                    return handler.ReadJwtToken(token);
+                }
+            };
+        }
+    });
+
+builder.Services.AddAuthorization();
+
+// Register HttpClientFactory (used by AuthService)
+builder.Services.AddHttpClient();
+
+// Register HttpClient for Blazor components with automatic JWT Bearer forwarding.
+builder.Services.AddScoped<AuthTokenHandler>();
+builder.Services.AddHttpClient("AuthorizedApiClient")
+    .AddHttpMessageHandler<AuthTokenHandler>();
+
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
-    return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+    var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient("AuthorizedApiClient");
+    client.BaseAddress = new Uri(navigationManager.BaseUri);
+    return client;
 });
 
 // Add controllers for API endpoints
@@ -81,12 +184,6 @@ using (var scope = app.Services.CreateScope())
     if (!skipDatabaseMigrations)
     {
         await context.Database.MigrateAsync();
-    }
-
-    // Seed only in Development
-    if (app.Environment.IsDevelopment() && !skipDatabaseMigrations)
-    {
-        await context.SeedAsync();
     }
 
     // Update accounts to reference their current budget plan (all environments)
@@ -153,6 +250,10 @@ else
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+
+app.UseAuthorization();
+
 app.UseAntiforgery();
 
 app.MapStaticAssets();
@@ -166,3 +267,54 @@ app.Run();
 
 // Make Program class accessible to test projects
 public partial class Program { }
+
+public sealed class DevSmokeAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+    public DevSmokeAuthenticationHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
+    {
+    }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var env = Context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var configuration = Context.RequestServices.GetRequiredService<IConfiguration>();
+        var enableDevSmokeAuth = configuration.GetValue<bool>("EnableDevSmokeAuth");
+
+        if (!env.IsDevelopment() || !enableDevSmokeAuth)
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        if (!Request.Headers.TryGetValue("X-Dev-Smoke-UserId", out var userIdHeader)
+            || !Guid.TryParse(userIdHeader.ToString(), out var userId)
+            || userId == Guid.Empty)
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        var sub = Request.Headers.TryGetValue("X-Dev-Smoke-Sub", out var subHeader)
+            ? subHeader.ToString()
+            : "00000000-0000-0000-0000-000000000001";
+
+        var email = Request.Headers.TryGetValue("X-Dev-Smoke-Email", out var emailHeader)
+            ? emailHeader.ToString()
+            : "dev-smoke@localfinancemanager.local";
+
+        var claims = new[]
+        {
+            new Claim("sub", sub),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Name, email),
+            new Claim(ClaimTypes.Email, email)
+        };
+
+        var identity = new ClaimsIdentity(claims, Scheme.Name);
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, Scheme.Name);
+        return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+}
