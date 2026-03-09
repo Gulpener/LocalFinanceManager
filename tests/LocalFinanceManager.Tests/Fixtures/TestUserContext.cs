@@ -9,16 +9,18 @@ namespace LocalFinanceManager.Tests.Fixtures;
 /// </summary>
 public sealed class TestUserContext : IUserContext
 {
+    public static readonly Guid DefaultUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
     /// <summary>
     /// The fixed user ID returned by this test context.
-    /// Defaults to Guid.Empty (no user filtering) for isolated unit/integration tests.
+    /// Defaults to a deterministic non-empty test user ID.
     /// </summary>
     public Guid UserId { get; }
 
     /// <summary>
-    /// Creates a TestUserContext with Guid.Empty (bypass user filtering).
+    /// Creates a TestUserContext with a deterministic non-empty test user ID.
     /// </summary>
-    public TestUserContext() : this(Guid.Empty)
+    public TestUserContext() : this(DefaultUserId)
     {
     }
 

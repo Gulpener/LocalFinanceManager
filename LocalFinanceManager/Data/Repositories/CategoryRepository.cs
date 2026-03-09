@@ -20,11 +20,12 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     public async Task<List<Category>> GetByBudgetPlanAsync(Guid budgetPlanId)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(c => !c.IsArchived && c.BudgetPlanId == budgetPlanId);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(c => c.UserId == userId);
+            return new List<Category>();
         }
+
+        var query = _dbSet.Where(c => !c.IsArchived && c.BudgetPlanId == budgetPlanId && c.UserId == userId);
 
         return await query.ToListAsync();
     }
@@ -32,11 +33,12 @@ public class CategoryRepository : Repository<Category>, ICategoryRepository
     public async Task<Category?> GetByNameAsync(Guid budgetPlanId, string name)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(c => !c.IsArchived && c.BudgetPlanId == budgetPlanId && c.Name == name);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(c => c.UserId == userId);
+            return null;
         }
+
+        var query = _dbSet.Where(c => !c.IsArchived && c.BudgetPlanId == budgetPlanId && c.Name == name && c.UserId == userId);
 
         return await query.FirstOrDefaultAsync();
     }

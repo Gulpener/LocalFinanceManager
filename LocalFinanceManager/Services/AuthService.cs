@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -19,6 +18,8 @@ public class AuthService : IAuthService
     private readonly SupabaseOptions _options;
     private readonly AppDbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IWebHostEnvironment _environment;
+    private readonly IDevelopmentUserSeedService _developmentUserSeedService;
     private readonly ILogger<AuthService> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -31,11 +32,15 @@ public class AuthService : IAuthService
         IOptions<SupabaseOptions> options,
         AppDbContext context,
         IHttpClientFactory httpClientFactory,
+        IWebHostEnvironment environment,
+        IDevelopmentUserSeedService developmentUserSeedService,
         ILogger<AuthService> logger)
     {
         _options = options.Value;
         _context = context;
         _httpClientFactory = httpClientFactory;
+        _environment = environment;
+        _developmentUserSeedService = developmentUserSeedService;
         _logger = logger;
     }
 
@@ -76,7 +81,6 @@ public class AuthService : IAuthService
             {
                 var error = await ReadErrorAsync(response, content);
 
-                // Detect email-not-verified Supabase error
                 if (content.Contains("Email not confirmed", StringComparison.OrdinalIgnoreCase) ||
                     content.Contains("email_not_confirmed", StringComparison.OrdinalIgnoreCase))
                 {
@@ -127,8 +131,6 @@ public class AuthService : IAuthService
     /// <inheritdoc />
     public async Task SignOutAsync()
     {
-        // Client-side only: JWT is cleared from sessionStorage by the Blazor auth state provider.
-        // No server-side call needed for JWT-based session invalidation in this implementation.
         await Task.CompletedTask;
         _logger.LogDebug("Sign-out called (JWT cleared client-side)");
     }
@@ -202,7 +204,10 @@ public class AuthService : IAuthService
             if (doc.RootElement.TryGetProperty("error_description", out var desc))
                 return desc.GetString() ?? "Unknown error";
         }
-        catch { }
+        catch
+        {
+        }
+
         return $"Request failed ({response.StatusCode})";
     }
 
@@ -220,19 +225,26 @@ public class AuthService : IAuthService
                 DisplayName = email.Split('@')[0],
                 EmailConfirmed = supabaseUser.EmailConfirmedAt.HasValue
             };
+
             _context.Users.Add(newUser);
+            await _context.SaveChangesAsync();
+
+            if (_environment.IsDevelopment())
+            {
+                await _developmentUserSeedService.SeedForUserAsync(newUser.Id);
+            }
+
             _logger.LogInformation("Created local user record.");
         }
         else
         {
             existingUser.EmailConfirmed = supabaseUser.EmailConfirmedAt.HasValue;
             existingUser.Email = email;
-        }
 
-        await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+        }
     }
 
-    // DTOs for Supabase Auth REST responses
     private sealed class SupabaseSession
     {
         [JsonPropertyName("access_token")]

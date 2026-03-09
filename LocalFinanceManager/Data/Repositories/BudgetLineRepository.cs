@@ -21,11 +21,12 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
     public override async Task<BudgetLine?> GetByIdAsync(Guid id)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(bl => bl.Id == id && !bl.IsArchived);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+            return null;
         }
+
+        var query = _dbSet.Where(bl => bl.Id == id && !bl.IsArchived && bl.BudgetPlan.UserId == userId);
 
         return await query
             .Include(bl => bl.BudgetPlan)
@@ -38,11 +39,12 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
         _logger.LogInformation("Loading budget lines for BudgetPlanId: {BudgetPlanId}", budgetPlanId);
 
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(bl => !bl.IsArchived && bl.BudgetPlanId == budgetPlanId);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+            return new List<BudgetLine>();
         }
+
+        var query = _dbSet.Where(bl => !bl.IsArchived && bl.BudgetPlanId == budgetPlanId && bl.BudgetPlan.UserId == userId);
 
         var budgetLines = await query
             .Include(bl => bl.Category)
@@ -58,11 +60,12 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
     public async Task<Guid?> GetAccountIdForBudgetLineAsync(Guid budgetLineId)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(bl => !bl.IsArchived && bl.Id == budgetLineId);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+            return null;
         }
+
+        var query = _dbSet.Where(bl => !bl.IsArchived && bl.Id == budgetLineId && bl.BudgetPlan.UserId == userId);
 
         return await query.Select(bl => bl.BudgetPlan.AccountId).FirstOrDefaultAsync();
     }
@@ -71,11 +74,12 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
     {
         var budgetLineIdList = budgetLineIds.ToList();
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(bl => !bl.IsArchived && budgetLineIdList.Contains(bl.Id));
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(bl => bl.BudgetPlan.UserId == userId);
+            return new Dictionary<Guid, Guid>();
         }
+
+        var query = _dbSet.Where(bl => !bl.IsArchived && budgetLineIdList.Contains(bl.Id) && bl.BudgetPlan.UserId == userId);
 
         return await query
             .Select(bl => new { bl.Id, bl.BudgetPlan.AccountId })

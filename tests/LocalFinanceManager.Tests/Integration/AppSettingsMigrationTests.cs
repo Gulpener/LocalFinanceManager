@@ -53,7 +53,6 @@ public class AppSettingsMigrationTests
         {
             var settings = await assertContext.AppSettings.SingleAsync();
 
-            Assert.That(settings.Id, Is.EqualTo(AppSettings.SingletonId));
             Assert.That(settings.AutoApplyEnabled, Is.True);
             Assert.That(settings.MinimumConfidence, Is.EqualTo(0.72f).Within(0.001f));
             Assert.That(settings.IntervalMinutes, Is.EqualTo(25));

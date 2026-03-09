@@ -62,6 +62,13 @@ public class UserContext : IUserContext
         if (localUser == null)
         {
             _logger.LogWarning("No local user found for Supabase UUID {SubClaim}", subClaim);
+
+            var nameIdentifier = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (Guid.TryParse(nameIdentifier, out var fallbackUserId) && fallbackUserId != Guid.Empty)
+            {
+                httpContext.Items[CacheKey] = fallbackUserId;
+                return fallbackUserId;
+            }
         }
 
         httpContext.Items[CacheKey] = resolvedId;

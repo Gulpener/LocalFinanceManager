@@ -228,7 +228,9 @@ public class BulkAssignmentTests : E2ETestBase
 
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_accountId);
-        await _transactionsPage.SelectFilterAsync("Assigned");
+        await Page.SelectOptionAsync("#assignmentStatusFilter", "assigned");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForTimeoutAsync(500);
 
         // Assigned rows should show Food badge
         var assignedRows = await Page.Locator("tr[data-testid='transaction-row']:has-text('Food')").CountAsync();

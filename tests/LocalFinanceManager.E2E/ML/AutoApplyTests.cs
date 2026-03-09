@@ -69,9 +69,9 @@ public class AutoApplyTests : E2ETestBase
         await _settingsPage.NavigateAsync();
 
         // Assert - Page should load successfully
-        var pageTitle = await Page.TitleAsync();
-        Assert.That(pageTitle, Does.Contain("Auto-Apply").Or.Contain("Settings"),
-            "Page title should indicate Auto-Apply settings");
+        var pageHeading = await Page.Locator("h1").First.InnerTextAsync();
+        Assert.That(pageHeading, Does.Contain("Auto-Apply"),
+            "Page heading should indicate Auto-Apply settings");
 
         // Settings should be loaded (default or saved values)
         await _settingsPage.IsEnabledAsync();
@@ -98,7 +98,7 @@ public class AutoApplyTests : E2ETestBase
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var settings = await context.AppSettings
-            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .Where(s => !s.IsArchived && s.UserId == AppDbContext.SeedUserId)
             .FirstOrDefaultAsync();
 
         Assert.That(settings, Is.Not.Null, "Settings should be saved to database");
@@ -144,7 +144,7 @@ public class AutoApplyTests : E2ETestBase
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var settings = await context.AppSettings
-            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .Where(s => !s.IsArchived && s.UserId == AppDbContext.SeedUserId)
             .FirstOrDefaultAsync();
 
         Assert.That(settings, Is.Not.Null, "Settings should be saved to database");
@@ -169,7 +169,7 @@ public class AutoApplyTests : E2ETestBase
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var settings = await context.AppSettings
-            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .Where(s => !s.IsArchived && s.UserId == AppDbContext.SeedUserId)
             .FirstOrDefaultAsync();
 
         Assert.That(settings, Is.Not.Null, "Settings should be saved");
@@ -234,7 +234,7 @@ public class AutoApplyTests : E2ETestBase
             using var scope = Factory!.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var settings = await context.AppSettings
-                .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+                .Where(s => !s.IsArchived && s.UserId == AppDbContext.SeedUserId)
                 .FirstOrDefaultAsync();
 
             Assert.That(settings, Is.Not.Null, "Settings should be persisted after saving");

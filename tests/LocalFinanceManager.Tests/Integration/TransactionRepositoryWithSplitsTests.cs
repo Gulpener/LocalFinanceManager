@@ -14,6 +14,7 @@ namespace LocalFinanceManager.Tests.Integration;
 [TestFixture]
 public class TransactionRepositoryWithSplitsTests
 {
+    private static readonly Guid TestUserId = TestUserContext.DefaultUserId;
     private TestDbContextFactory _factory = null!;
     private AppDbContext _context = null!;
     private TransactionRepository _repository = null!;
@@ -23,8 +24,26 @@ public class TransactionRepositoryWithSplitsTests
     {
         _factory = new TestDbContextFactory();
         _context = _factory.CreateContext();
+
+        _context.ChangeTracker.Tracked += (_, args) => ApplyTestUserOwnership(args.Entry);
+        _context.ChangeTracker.StateChanged += (_, args) => ApplyTestUserOwnership(args.Entry);
+
+        if (!_context.Users.Any(u => u.Id == TestUserId))
+        {
+            _context.Users.Add(new User
+            {
+                Id = TestUserId,
+                SupabaseUserId = TestUserId.ToString(),
+                Email = "test@localfinancemanager.local",
+                DisplayName = "Test User",
+                EmailConfirmed = true,
+                IsArchived = false
+            });
+            _context.SaveChanges();
+        }
+
         var logger = NullLogger<TransactionRepository>.Instance;
-        _repository = new TransactionRepository(_context, logger, new TestUserContext());
+        _repository = new TransactionRepository(_context, logger, new TestUserContext(TestUserId));
     }
 
     [TearDown]
@@ -300,5 +319,32 @@ public class TransactionRepositoryWithSplitsTests
             .ToList();
 
         Assert.That(categories, Is.EqualTo(new[] { "Groceries", "Transport" }));
+    }
+
+    private static void ApplyTestUserOwnership(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        if (entry.State != EntityState.Added)
+        {
+            return;
+        }
+
+        switch (entry.Entity)
+        {
+            case Account account when account.UserId == null:
+                account.UserId = TestUserId;
+                break;
+            case BudgetPlan budgetPlan when budgetPlan.UserId == null:
+                budgetPlan.UserId = TestUserId;
+                break;
+            case Category category when category.UserId == null:
+                category.UserId = TestUserId;
+                break;
+            case BudgetLine budgetLine when budgetLine.UserId == null:
+                budgetLine.UserId = TestUserId;
+                break;
+            case Transaction transaction when transaction.UserId == null:
+                transaction.UserId = TestUserId;
+                break;
+        }
     }
 }

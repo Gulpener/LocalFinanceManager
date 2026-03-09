@@ -19,17 +19,31 @@ public class AccountRepository : Repository<Account>, IAccountRepository
         _userContext = userContext;
     }
 
+    public override async Task<Account?> GetByIdAsync(Guid id)
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        return await _context.Set<Account>()
+            .Where(a => !a.IsArchived && a.Id == id && a.UserId == userId)
+            .FirstOrDefaultAsync();
+    }
+
     /// <summary>
     /// Get all active (non-archived) accounts for the current user.
     /// </summary>
     public async Task<List<Account>> GetAllActiveAsync()
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _context.Set<Account>().Where(a => !a.IsArchived);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(a => a.UserId == userId);
+            return new List<Account>();
         }
+
+        var query = _context.Set<Account>().Where(a => !a.IsArchived && a.UserId == userId);
 
         return await query.OrderBy(a => a.Label).ToListAsync();
     }
@@ -40,11 +54,12 @@ public class AccountRepository : Repository<Account>, IAccountRepository
     public async Task<bool> LabelExistsAsync(string label, Guid? excludeId = null)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _context.Set<Account>().Where(a => !a.IsArchived && a.Label == label);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(a => a.UserId == userId);
+            return false;
         }
+
+        var query = _context.Set<Account>().Where(a => !a.IsArchived && a.Label == label && a.UserId == userId);
 
         if (excludeId.HasValue)
         {

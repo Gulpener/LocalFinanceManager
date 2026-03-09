@@ -4,6 +4,8 @@ using LocalFinanceManager.Extensions;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.Tests.Fixtures;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -29,6 +31,11 @@ public sealed class TestServiceProvider : IDisposable
     {
         var services = new ServiceCollection();
 
+        context.ChangeTracker.Tracked += (_, args) => ApplyDefaultTestUserOwnership(args.Entry);
+        context.ChangeTracker.StateChanged += (_, args) => ApplyDefaultTestUserOwnership(args.Entry);
+
+        EnsureDefaultTestUserExists(context);
+
         // Register the test database context as singleton (one instance per test)
         services.AddSingleton(context);
 
@@ -52,7 +59,7 @@ public sealed class TestServiceProvider : IDisposable
         // Register all application services using extension methods
         // Background services excluded (includeBackgroundServices: false) to prevent
         // auto-start interference with tests
-        services.AddScoped<IUserContext>(_ => new TestUserContext()); // No user filtering in tests
+        services.AddScoped<IUserContext>(_ => new TestUserContext(TestUserContext.DefaultUserId));
         services.AddDataAccess();
         services.AddValidation();
         services.AddCachingServices();
@@ -62,6 +69,59 @@ public sealed class TestServiceProvider : IDisposable
         services.AddAutomationServices(includeBackgroundServices: false);
 
         _serviceProvider = services.BuildServiceProvider();
+    }
+
+    private static void EnsureDefaultTestUserExists(AppDbContext context)
+    {
+        var defaultUserId = TestUserContext.DefaultUserId;
+        if (context.Users.Any(u => u.Id == defaultUserId))
+        {
+            return;
+        }
+
+        context.Users.Add(new User
+        {
+            Id = defaultUserId,
+            SupabaseUserId = defaultUserId.ToString(),
+            Email = "test@localfinancemanager.local",
+            DisplayName = "Test User",
+            EmailConfirmed = true,
+            IsArchived = false
+        });
+
+        context.SaveChanges();
+    }
+
+    private static void ApplyDefaultTestUserOwnership(EntityEntry entry)
+    {
+        if (entry.State != EntityState.Added)
+        {
+            return;
+        }
+
+        var defaultUserId = TestUserContext.DefaultUserId;
+
+        switch (entry.Entity)
+        {
+            case Account account when account.UserId == null:
+                account.UserId = defaultUserId;
+                break;
+            case BudgetPlan budgetPlan when budgetPlan.UserId == null:
+                budgetPlan.UserId = defaultUserId;
+                break;
+            case Category category when category.UserId == null:
+                category.UserId = defaultUserId;
+                break;
+            case BudgetLine budgetLine when budgetLine.UserId == null:
+                budgetLine.UserId = defaultUserId;
+                break;
+            case Transaction transaction when transaction.UserId == null:
+                transaction.UserId = defaultUserId;
+                break;
+            case AppSettings appSettings when appSettings.UserId == null:
+                appSettings.UserId = defaultUserId;
+                break;
+        }
     }
 
     /// <summary>

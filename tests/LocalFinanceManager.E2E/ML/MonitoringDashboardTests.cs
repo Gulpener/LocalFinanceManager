@@ -68,9 +68,9 @@ public class MonitoringDashboardTests : E2ETestBase
         await _dashboardPage.NavigateAsync();
 
         // Assert - Page should load successfully
-        var pageTitle = await Page.TitleAsync();
-        Assert.That(pageTitle, Does.Contain("Monitoring").Or.Contain("Dashboard"),
-            "Page title should indicate Monitoring Dashboard");
+        var pageHeading = await Page.Locator("h1").First.InnerTextAsync();
+        Assert.That(pageHeading, Does.Contain("Monitoring").Or.Contain("Dashboard"),
+            "Page heading should indicate Monitoring Dashboard");
 
         // Metrics cards should be visible
         var totalCount = await _dashboardPage.GetTotalAutoAppliedCountAsync();

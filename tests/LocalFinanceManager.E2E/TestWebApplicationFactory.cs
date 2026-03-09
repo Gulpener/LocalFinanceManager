@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -174,6 +175,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Default"] = GetConnectionString(),
+                ["EnableDevSmokeAuth"] = "true",
                 ["RecreateDatabase"] = "false", // Database cleanup is handled by InitializeDatabaseAsync()
                 ["SkipDatabaseMigrations"] = "true", // Migrations are applied in InitializeDatabaseAsync() before host startup
                 ["Automation:Enabled"] = "false", // Disable background jobs during tests
@@ -211,17 +213,29 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.RemoveAll<IUserContext>();
             services.AddScoped<IUserContext, E2ETestUserContext>();
 
+            services.AddTransient<E2EDevSmokeHeaderHandler>();
+            services.AddHttpClient("AuthorizedApiClient")
+                .AddHttpMessageHandler<E2EDevSmokeHeaderHandler>();
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = "E2ECookie";
+                options.DefaultAuthenticateScheme = "E2ECookie";
+                options.DefaultChallengeScheme = "E2ECookie";
+            })
+            .AddScheme<AuthenticationSchemeOptions, E2ECookieAuthenticationHandler>("E2ECookie", _ => { });
+
             // Replace AuthenticationStateProvider so AuthorizeRouteView treats every Playwright
             // request as authenticated (bypasses the /login redirect for the interactive circuit).
             // Also replace the concrete CustomAuthenticationStateProvider so Login/Logout pages
             // that inject it directly don't blow up during test warm-up.
             services.RemoveAll<AuthenticationStateProvider>();
             services.RemoveAll<CustomAuthenticationStateProvider>();
-            services.AddScoped<AlwaysAuthenticatedStateProvider>();
+            services.AddScoped<CookieAwareAuthenticationStateProvider>();
             services.AddScoped<CustomAuthenticationStateProvider>(
-                sp => sp.GetRequiredService<AlwaysAuthenticatedStateProvider>());
+                sp => sp.GetRequiredService<CookieAwareAuthenticationStateProvider>());
             services.AddScoped<AuthenticationStateProvider>(
-                sp => sp.GetRequiredService<AlwaysAuthenticatedStateProvider>());
+                sp => sp.GetRequiredService<CookieAwareAuthenticationStateProvider>());
 
             // In Blazor 8 static SSR, AuthorizeRouteView reads HttpContext.User (set by ASP.NET Core
             // auth middleware) rather than calling AuthenticationStateProvider. Register a startup
@@ -308,7 +322,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         await using var context = new AppDbContext(options);
         await context.Database.MigrateAsync();
-        await context.SeedAsync();
+        var seedService = new DevelopmentUserSeedService(context);
+        await seedService.SeedAsync();
     }
 
     /// <summary>
@@ -453,24 +468,78 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Always returns an authenticated Blazor state so Playwright tests skip the /login redirect.
-    /// Inherits from CustomAuthenticationStateProvider so it can also satisfy injections of the
-    /// concrete type (Login.razor, Logout.razor use [Inject] CustomAuthenticationStateProvider).
+    /// Returns an authenticated Blazor state only when the E2E auth cookie is present.
+    /// This keeps authenticated and unauthenticated browser-context tests both valid.
     /// </summary>
-    private sealed class AlwaysAuthenticatedStateProvider : CustomAuthenticationStateProvider
+    private sealed class CookieAwareAuthenticationStateProvider : CustomAuthenticationStateProvider
     {
-        private static readonly AuthenticationState AuthenticatedState = new(
-            new ClaimsPrincipal(new ClaimsIdentity(
-                new[] { new Claim(ClaimTypes.Name, AppDbContext.SeedUserEmail) },
-                authenticationType: "E2ETest")));
+        private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor _httpContextAccessor;
 
-        public AlwaysAuthenticatedStateProvider(
+        public CookieAwareAuthenticationStateProvider(
             Microsoft.JSInterop.IJSRuntime jsRuntime,
-            Microsoft.Extensions.Logging.ILogger<CustomAuthenticationStateProvider> logger)
-            : base(jsRuntime, logger) { }
+            Microsoft.Extensions.Logging.ILogger<CustomAuthenticationStateProvider> logger,
+            AuthTokenStore tokenStore,
+            Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor)
+            : base(jsRuntime, logger, tokenStore)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
 
         public override Task<AuthenticationState> GetAuthenticationStateAsync()
-            => Task.FromResult(AuthenticatedState);
+        {
+            var hasCookie = _httpContextAccessor.HttpContext?.Request.Cookies.ContainsKey(E2EAuthCookieName) == true;
+            if (!hasCookie)
+            {
+                return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
+            }
+
+            var claims = new[]
+            {
+                new Claim("sub", "00000000-0000-0000-0000-000000000001"),
+                new Claim(ClaimTypes.NameIdentifier, AppDbContext.SeedUserId.ToString()),
+                new Claim(ClaimTypes.Name, AppDbContext.SeedUserEmail),
+                new Claim(ClaimTypes.Email, AppDbContext.SeedUserEmail)
+            };
+
+            var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "E2ECookie"));
+            return Task.FromResult(new AuthenticationState(principal));
+        }
+    }
+
+    private sealed class E2ECookieAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    {
+        public E2ECookieAuthenticationHandler(
+            Microsoft.Extensions.Options.IOptionsMonitor<AuthenticationSchemeOptions> options,
+            ILoggerFactory logger,
+            System.Text.Encodings.Web.UrlEncoder encoder)
+            : base(options, logger, encoder)
+        {
+        }
+
+        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+        {
+            var hasBypassCookie = Request.Cookies.ContainsKey(E2EAuthCookieName);
+            var isInternalE2ERequest = Request.Headers.TryGetValue("X-E2E-Internal", out var marker)
+                && string.Equals(marker.ToString(), "1", StringComparison.Ordinal);
+
+            if (!hasBypassCookie && !isInternalE2ERequest)
+            {
+                return Task.FromResult(AuthenticateResult.NoResult());
+            }
+
+            var claims = new[]
+            {
+                new Claim("sub", "00000000-0000-0000-0000-000000000001"),
+                new Claim(ClaimTypes.NameIdentifier, AppDbContext.SeedUserId.ToString()),
+                new Claim(ClaimTypes.Name, AppDbContext.SeedUserEmail),
+                new Claim(ClaimTypes.Email, AppDbContext.SeedUserEmail)
+            };
+
+            var identity = new ClaimsIdentity(claims, Scheme.Name);
+            var principal = new ClaimsPrincipal(identity);
+            var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            return Task.FromResult(AuthenticateResult.Success(ticket));
+        }
     }
 
     /// <summary>
@@ -516,5 +585,23 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Guid GetCurrentUserId() => AppDbContext.SeedUserId;
         public string GetCurrentUserEmail() => AppDbContext.SeedUserEmail;
         public bool IsAuthenticated() => true;
+    }
+
+    private sealed class E2EDevSmokeHeaderHandler : DelegatingHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            request.Headers.Remove("X-E2E-Internal");
+            request.Headers.Remove("X-Dev-Smoke-UserId");
+            request.Headers.Remove("X-Dev-Smoke-Sub");
+            request.Headers.Remove("X-Dev-Smoke-Email");
+
+            request.Headers.Add("X-E2E-Internal", "1");
+            request.Headers.Add("X-Dev-Smoke-UserId", AppDbContext.SeedUserId.ToString());
+            request.Headers.Add("X-Dev-Smoke-Sub", "00000000-0000-0000-0000-000000000001");
+            request.Headers.Add("X-Dev-Smoke-Email", AppDbContext.SeedUserEmail);
+
+            return base.SendAsync(request, cancellationToken);
+        }
     }
 }

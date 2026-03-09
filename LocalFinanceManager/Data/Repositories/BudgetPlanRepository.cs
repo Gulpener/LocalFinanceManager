@@ -20,11 +20,12 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
     public async Task<List<BudgetPlan>> GetByAccountIdAsync(Guid accountId)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(bp => bp.UserId == userId);
+            return new List<BudgetPlan>();
         }
+
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.UserId == userId);
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
@@ -36,11 +37,12 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
     public async Task<BudgetPlan?> GetByIdWithLinesAsync(Guid id)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(bp => !bp.IsArchived && bp.Id == id);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(bp => bp.UserId == userId);
+            return null;
         }
+
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.Id == id && bp.UserId == userId);
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
@@ -51,11 +53,12 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
     public async Task<BudgetPlan?> GetByAccountAndYearAsync(Guid accountId, int year)
     {
         var userId = _userContext.GetCurrentUserId();
-        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.Year == year);
-        if (userId != Guid.Empty)
+        if (userId == Guid.Empty)
         {
-            query = query.Where(bp => bp.UserId == userId);
+            return null;
         }
+
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.Year == year && bp.UserId == userId);
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))

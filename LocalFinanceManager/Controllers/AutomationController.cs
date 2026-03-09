@@ -29,6 +29,7 @@ public class AutomationController : ControllerBase
     private readonly AutomationOptions _automationOptions;
     private readonly IValidator<AutoApplySettingsDto> _settingsValidator;
     private readonly IAutoApplySettingsProvider _settingsProvider;
+    private readonly IUserContext _userContext;
     private readonly ILogger<AutomationController> _logger;
 
     public AutomationController(
@@ -39,6 +40,7 @@ public class AutomationController : ControllerBase
         IOptions<AutomationOptions> automationOptions,
         IValidator<AutoApplySettingsDto> settingsValidator,
         IAutoApplySettingsProvider settingsProvider,
+        IUserContext userContext,
         ILogger<AutomationController> logger)
     {
         _undoService = undoService;
@@ -48,6 +50,7 @@ public class AutomationController : ControllerBase
         _automationOptions = automationOptions.Value;
         _settingsValidator = settingsValidator;
         _settingsProvider = settingsProvider;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -58,6 +61,12 @@ public class AutomationController : ControllerBase
     [HttpPost("run-now")]
     public async Task<IActionResult> RunNow(CancellationToken cancellationToken)
     {
+        var currentUserId = _userContext.GetCurrentUserId();
+        if (currentUserId == Guid.Empty)
+        {
+            return Unauthorized();
+        }
+
         _logger.LogInformation("Manual auto-apply trigger requested");
 
         // Read settings directly from the database (bypasses the in-memory cache) so that
@@ -65,7 +74,7 @@ public class AutomationController : ControllerBase
         // the background service's cache population.
         var dbSettings = await _dbContext.AppSettings
             .AsNoTracking()
-            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .Where(s => !s.IsArchived && s.UserId == currentUserId)
             .FirstOrDefaultAsync(cancellationToken);
 
         bool enabled = dbSettings?.AutoApplyEnabled ?? _automationOptions.AutoApplyEnabled;
@@ -211,9 +220,15 @@ public class AutomationController : ControllerBase
     [HttpGet("settings")]
     public async Task<IActionResult> GetSettings()
     {
+        var currentUserId = _userContext.GetCurrentUserId();
+        if (currentUserId == Guid.Empty)
+        {
+            return Unauthorized();
+        }
+
         // Try to load from database first, fallback to appsettings.json
         var dbSettings = await _dbContext.AppSettings
-            .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+            .Where(s => !s.IsArchived && s.UserId == currentUserId)
             .FirstOrDefaultAsync();
 
         if (dbSettings != null)
@@ -242,6 +257,12 @@ public class AutomationController : ControllerBase
     [HttpPost("settings")]
     public async Task<IActionResult> UpdateSettings([FromBody] AutoApplySettingsDto? settings)
     {
+        var currentUserId = _userContext.GetCurrentUserId();
+        if (currentUserId == Guid.Empty)
+        {
+            return Unauthorized();
+        }
+
         if (settings == null)
         {
             return ValidationProblem(new ValidationProblemDetails
@@ -281,11 +302,15 @@ public class AutomationController : ControllerBase
                 : null;
 
             var existingSettings = await _dbContext.AppSettings
-                .FirstOrDefaultAsync(s => s.Id == AppSettings.SingletonId);
+                .FirstOrDefaultAsync(s => !s.IsArchived && s.UserId == currentUserId);
 
             if (existingSettings == null)
             {
-                existingSettings = new AppSettings();
+                existingSettings = new AppSettings
+                {
+                    UserId = currentUserId,
+                    IsArchived = false
+                };
                 await _dbContext.AppSettings.AddAsync(existingSettings);
             }
 
@@ -294,12 +319,12 @@ public class AutomationController : ControllerBase
             existingSettings.IntervalMinutes = settings.IntervalMinutes;
             existingSettings.AccountIdsJson = accountIdsJson;
             existingSettings.ExcludedCategoryIdsJson = excludedCategoryIdsJson;
-            existingSettings.UpdatedBy = "System";
+            existingSettings.UpdatedBy = _userContext.GetCurrentUserEmail();
             existingSettings.IsArchived = false;
 
             await _dbContext.SaveChangesAsync();
 
-            _settingsProvider.Invalidate();
+            _settingsProvider.Invalidate(currentUserId);
 
             _logger.LogInformation(
                 "Auto-apply settings saved: Enabled={Enabled}, Confidence={Confidence}, Accounts={Accounts}, ExcludedCategories={ExcludedCategories}",
@@ -316,7 +341,7 @@ public class AutomationController : ControllerBase
 
             var currentSettings = await _dbContext.AppSettings
                 .AsNoTracking()
-                .Where(s => !s.IsArchived && s.Id == AppSettings.SingletonId)
+                .Where(s => !s.IsArchived && s.UserId == currentUserId)
                 .FirstOrDefaultAsync();
 
             var currentState = TryMapToDtoForConflict(currentSettings);

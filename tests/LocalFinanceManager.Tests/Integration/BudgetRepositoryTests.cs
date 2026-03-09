@@ -11,6 +11,7 @@ namespace LocalFinanceManager.Tests.Integration;
 [TestFixture]
 public class BudgetRepositoryTests
 {
+    private static readonly Guid TestUserId = TestUserContext.DefaultUserId;
     private AppDbContext _context = null!;
     private CategoryRepository _categoryRepository = null!;
     private BudgetPlanRepository _budgetPlanRepository = null!;
@@ -32,15 +33,32 @@ public class BudgetRepositoryTests
         _context.Database.OpenConnection();
         _context.Database.EnsureCreated();
 
+        _context.ChangeTracker.Tracked += (_, args) => ApplyTestUserOwnership(args.Entry);
+        _context.ChangeTracker.StateChanged += (_, args) => ApplyTestUserOwnership(args.Entry);
+
+        if (!_context.Users.Any(u => u.Id == TestUserId))
+        {
+            _context.Users.Add(new User
+            {
+                Id = TestUserId,
+                SupabaseUserId = TestUserId.ToString(),
+                Email = "test@localfinancemanager.local",
+                DisplayName = "Test User",
+                EmailConfirmed = true,
+                IsArchived = false
+            });
+            _context.SaveChanges();
+        }
+
         _categoryLogger = new Mock<ILogger<Repository<Category>>>();
         _budgetPlanLogger = new Mock<ILogger<Repository<BudgetPlan>>>();
         _budgetLineLogger = new Mock<ILogger<Repository<BudgetLine>>>();
         _accountLogger = new Mock<ILogger<Repository<Account>>>();
 
-        _categoryRepository = new CategoryRepository(_context, _categoryLogger.Object, new TestUserContext());
-        _budgetPlanRepository = new BudgetPlanRepository(_context, _budgetPlanLogger.Object, new TestUserContext());
-        _budgetLineRepository = new BudgetLineRepository(_context, _budgetLineLogger.Object, new TestUserContext());
-        _accountRepository = new AccountRepository(_context, _accountLogger.Object, new TestUserContext());
+        _categoryRepository = new CategoryRepository(_context, _categoryLogger.Object, new TestUserContext(TestUserId));
+        _budgetPlanRepository = new BudgetPlanRepository(_context, _budgetPlanLogger.Object, new TestUserContext(TestUserId));
+        _budgetLineRepository = new BudgetLineRepository(_context, _budgetLineLogger.Object, new TestUserContext(TestUserId));
+        _accountRepository = new AccountRepository(_context, _accountLogger.Object, new TestUserContext(TestUserId));
     }
 
     [TearDown]
@@ -608,5 +626,29 @@ public class BudgetRepositoryTests
         var updated = await _budgetLineRepository.GetByIdAsync(line.Id);
         Assert.That(updated, Is.Not.Null);
         Assert.That(updated!.CategoryId, Is.EqualTo(category2.Id));
+    }
+
+    private static void ApplyTestUserOwnership(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        if (entry.State != EntityState.Added)
+        {
+            return;
+        }
+
+        switch (entry.Entity)
+        {
+            case Account account when account.UserId == null:
+                account.UserId = TestUserId;
+                break;
+            case BudgetPlan budgetPlan when budgetPlan.UserId == null:
+                budgetPlan.UserId = TestUserId;
+                break;
+            case Category category when category.UserId == null:
+                category.UserId = TestUserId;
+                break;
+            case BudgetLine budgetLine when budgetLine.UserId == null:
+                budgetLine.UserId = TestUserId;
+                break;
+        }
     }
 }

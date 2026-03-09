@@ -4,10 +4,14 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
+using System.Text.Encodings.Web;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,7 +49,29 @@ builder.Services.AddAuthServices();         // Authentication & user context
 
 // Configure JWT Bearer authentication
 var supabaseOptions = builder.Configuration.GetSection("Supabase").Get<SupabaseOptions>() ?? new SupabaseOptions();
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+var enableDevSmokeAuth = builder.Configuration.GetValue<bool>("EnableDevSmokeAuth");
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "SmartAuth";
+    options.DefaultAuthenticateScheme = "SmartAuth";
+    options.DefaultChallengeScheme = "SmartAuth";
+})
+    .AddPolicyScheme("SmartAuth", "Smart auth selector", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+        {
+            var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+            if (env.IsDevelopment()
+                && enableDevSmokeAuth
+                && context.Request.Headers.ContainsKey("X-Dev-Smoke-UserId"))
+            {
+                return "DevSmoke";
+            }
+
+            return JwtBearerDefaults.AuthenticationScheme;
+        };
+    })
+    .AddScheme<AuthenticationSchemeOptions, DevSmokeAuthenticationHandler>("DevSmoke", _ => { })
     .AddJwtBearer(options =>
     {
         var jwtSecret = supabaseOptions.JwtSecret;
@@ -154,12 +180,6 @@ using (var scope = app.Services.CreateScope())
         await context.Database.MigrateAsync();
     }
 
-    // Seed only in Development
-    if (app.Environment.IsDevelopment() && !skipDatabaseMigrations)
-    {
-        await context.SeedAsync();
-    }
-
     // Update accounts to reference their current budget plan (all environments)
     await UpdateAccountBudgetPlanReferencesAsync(context);
 }
@@ -225,6 +245,7 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.UseAntiforgery();
@@ -240,3 +261,54 @@ app.Run();
 
 // Make Program class accessible to test projects
 public partial class Program { }
+
+public sealed class DevSmokeAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+    public DevSmokeAuthenticationHandler(
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
+        ILoggerFactory logger,
+        UrlEncoder encoder)
+        : base(options, logger, encoder)
+    {
+    }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var env = Context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var configuration = Context.RequestServices.GetRequiredService<IConfiguration>();
+        var enableDevSmokeAuth = configuration.GetValue<bool>("EnableDevSmokeAuth");
+
+        if (!env.IsDevelopment() || !enableDevSmokeAuth)
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        if (!Request.Headers.TryGetValue("X-Dev-Smoke-UserId", out var userIdHeader)
+            || !Guid.TryParse(userIdHeader.ToString(), out var userId)
+            || userId == Guid.Empty)
+        {
+            return Task.FromResult(AuthenticateResult.NoResult());
+        }
+
+        var sub = Request.Headers.TryGetValue("X-Dev-Smoke-Sub", out var subHeader)
+            ? subHeader.ToString()
+            : "00000000-0000-0000-0000-000000000001";
+
+        var email = Request.Headers.TryGetValue("X-Dev-Smoke-Email", out var emailHeader)
+            ? emailHeader.ToString()
+            : "dev-smoke@localfinancemanager.local";
+
+        var claims = new[]
+        {
+            new Claim("sub", sub),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Name, email),
+            new Claim(ClaimTypes.Email, email)
+        };
+
+        var identity = new ClaimsIdentity(claims, Scheme.Name);
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, Scheme.Name);
+        return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+}

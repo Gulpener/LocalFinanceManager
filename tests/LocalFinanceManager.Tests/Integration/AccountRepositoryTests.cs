@@ -11,6 +11,7 @@ namespace LocalFinanceManager.Tests.Integration;
 [TestFixture]
 public class AccountRepositoryTests
 {
+    private static readonly Guid TestUserId = TestUserContext.DefaultUserId;
     private AppDbContext _context = null!;
     private AccountRepository _repository = null!;
     private Mock<ILogger<Repository<Account>>> _mockLogger = null!;
@@ -26,8 +27,25 @@ public class AccountRepositoryTests
         _context.Database.OpenConnection();
         _context.Database.EnsureCreated();
 
+        _context.ChangeTracker.Tracked += (_, args) => ApplyTestUserOwnership(args.Entry);
+        _context.ChangeTracker.StateChanged += (_, args) => ApplyTestUserOwnership(args.Entry);
+
+        if (!_context.Users.Any(u => u.Id == TestUserId))
+        {
+            _context.Users.Add(new User
+            {
+                Id = TestUserId,
+                SupabaseUserId = TestUserId.ToString(),
+                Email = "test@localfinancemanager.local",
+                DisplayName = "Test User",
+                EmailConfirmed = true,
+                IsArchived = false
+            });
+            _context.SaveChanges();
+        }
+
         _mockLogger = new Mock<ILogger<Repository<Account>>>();
-        _repository = new AccountRepository(_context, _mockLogger.Object, new TestUserContext());
+        _repository = new AccountRepository(_context, _mockLogger.Object, new TestUserContext(TestUserId));
     }
 
     [TearDown]
@@ -274,5 +292,18 @@ public class AccountRepositoryTests
         // - Or manual RowVersion management in the application
 
         await Task.CompletedTask;
+    }
+
+    private static void ApplyTestUserOwnership(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        if (entry.State != EntityState.Added)
+        {
+            return;
+        }
+
+        if (entry.Entity is Account account && account.UserId == null)
+        {
+            account.UserId = TestUserId;
+        }
     }
 }

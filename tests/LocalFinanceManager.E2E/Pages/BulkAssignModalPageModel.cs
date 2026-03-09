@@ -149,19 +149,15 @@ public class BulkAssignModalPageModel : PageObjectBase
     /// <param name="timeoutMs">Timeout in milliseconds (default: 30000ms).</param>
     public async Task WaitForCompletionAsync(int timeoutMs = 30000)
     {
-        // Wait for progress bar to reach 100% using Playwright's built-in wait
-        var progressBar = Page.Locator(ProgressBarSelector);
-        await progressBar.WaitForAsync(new()
-        {
-            Timeout = timeoutMs,
-            State = WaitForSelectorState.Attached
-        });
-
-        // Wait for aria-valuenow attribute to equal 100
+        // Wait until either progress reaches 100% or the result state is visible (close button shown)
         await Page.WaitForFunctionAsync(
             @"() => {
-                const progressBar = document.querySelector('.progress-bar');
-                return progressBar && parseInt(progressBar.getAttribute('aria-valuenow')) >= 100;
+                const scopedProgressBar = document.querySelector('[data-testid=""bulk-progress-bar""] .progress-bar');
+                const progressDone = scopedProgressBar
+                    && parseInt(scopedProgressBar.getAttribute('aria-valuenow') ?? '0', 10) >= 100;
+
+                const closeButtonVisible = !!document.querySelector('button[data-action=""close-bulk-modal""]');
+                return progressDone || closeButtonVisible;
             }",
             new PageWaitForFunctionOptions { Timeout = timeoutMs });
     }
