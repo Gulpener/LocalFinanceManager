@@ -145,10 +145,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDevelopmentUserSeedService, DevelopmentUserSeedService>();
         services.AddScoped<AuthTokenStore>();
-        // Register concrete type so pages can inject CustomAuthenticationStateProvider directly.
-        // The abstract base delegates to the same scoped instance so Blazor's CascadingAuthState works.
+        // Register the concrete provider once and expose it as both its base type (required by Blazor's
+        // CascadingAuthState) and the IAuthStateNotifier interface (used by Login/Logout pages) so that
+        // those pages remain decoupled from the concrete class.
         services.AddScoped<CustomAuthenticationStateProvider>();
         services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider>(
+            sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
+        services.AddScoped<IAuthStateNotifier>(
             sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
         services.AddCascadingAuthenticationState();
 

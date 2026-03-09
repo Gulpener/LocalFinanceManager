@@ -227,14 +227,17 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
             // Replace AuthenticationStateProvider so AuthorizeRouteView treats every Playwright
             // request as authenticated (bypasses the /login redirect for the interactive circuit).
-            // Also replace the concrete CustomAuthenticationStateProvider so Login/Logout pages
-            // that inject it directly don't blow up during test warm-up.
+            // Also keep the concrete CustomAuthenticationStateProvider alias and add IAuthStateNotifier
+            // so the Login/Logout pages (which inject IAuthStateNotifier) resolve correctly.
             services.RemoveAll<AuthenticationStateProvider>();
             services.RemoveAll<CustomAuthenticationStateProvider>();
+            services.RemoveAll<IAuthStateNotifier>();
             services.AddScoped<CookieAwareAuthenticationStateProvider>();
             services.AddScoped<CustomAuthenticationStateProvider>(
                 sp => sp.GetRequiredService<CookieAwareAuthenticationStateProvider>());
             services.AddScoped<AuthenticationStateProvider>(
+                sp => sp.GetRequiredService<CookieAwareAuthenticationStateProvider>());
+            services.AddScoped<IAuthStateNotifier>(
                 sp => sp.GetRequiredService<CookieAwareAuthenticationStateProvider>());
 
             // In Blazor 8 static SSR, AuthorizeRouteView reads HttpContext.User (set by ASP.NET Core

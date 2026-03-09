@@ -2,7 +2,7 @@
 @attribute [AllowAnonymous]
 @using LocalFinanceManager.Services
 @inject IAuthService AuthService
-@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject IAuthStateNotifier AuthStateNotifier
 @inject NavigationManager Navigation
 
 <PageTitle>Logout</PageTitle>
@@ -30,7 +30,7 @@
         try
         {
             await AuthService.SignOutAsync();
-            await AuthStateProvider.NotifyUserLoggedOutAsync();
+            await AuthStateNotifier.NotifyUserLoggedOutAsync();
             Navigation.NavigateTo("/login");
         }
         finally

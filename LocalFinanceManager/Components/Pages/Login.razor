@@ -3,7 +3,7 @@
 @rendermode InteractiveServer
 @using LocalFinanceManager.Services
 @inject IAuthService AuthService
-@inject CustomAuthenticationStateProvider AuthStateProvider
+@inject IAuthStateNotifier AuthStateNotifier
 @inject NavigationManager Navigation
 
 <PageTitle>Login</PageTitle>
@@ -88,7 +88,7 @@
 
             if (result.Success && !string.IsNullOrEmpty(result.AccessToken))
             {
-                await AuthStateProvider.NotifyUserLoggedInAsync(result.AccessToken);
+                await AuthStateNotifier.NotifyUserLoggedInAsync(result.AccessToken);
                 var destination = GetSafeReturnUrl();
                 Navigation.NavigateTo(destination);
             }

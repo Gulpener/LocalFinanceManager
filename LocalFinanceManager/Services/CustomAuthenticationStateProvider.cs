@@ -9,7 +9,7 @@ namespace LocalFinanceManager.Services;
 /// Blazor authentication state provider that reads the JWT from sessionStorage.
 /// The JWT is stored by the Login page via JavaScript interop after successful sign-in.
 /// </summary>
-public class CustomAuthenticationStateProvider : AuthenticationStateProvider
+public class CustomAuthenticationStateProvider : AuthenticationStateProvider, IAuthStateNotifier
 {
     private const string SessionStorageKey = "auth_token";
 
