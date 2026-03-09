@@ -540,6 +540,18 @@ public async Task TestName()
 }
 ```
 
+    ### 6. Stabilize Async Metric Assertions
+
+    For dashboard/stat cards that refresh after background updates or user actions, avoid immediate single-shot assertions.
+    Use a short polling loop and assert once the expected value appears.
+
+    Suggested defaults:
+
+    - Timeout: 5 seconds
+    - Poll interval: 100 ms
+
+    This reduces suite-order flakes where isolated runs pass but full-suite runs fail due to slower UI refresh timing.
+
 ## Troubleshooting
 
 ### "Playwright browser not found"

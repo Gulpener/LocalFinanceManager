@@ -262,6 +262,7 @@ dotnet test --collect:"XPlat Code Coverage"
 E2E tests use NUnit + Playwright and test against a running instance:
 
 - For E2E database initialization and migration behavior, see [tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md](tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md#database-migration-strategy-e2e).
+- For metrics/stat cards that update asynchronously after user actions, avoid immediate single-shot assertions. Prefer a short polling wait (e.g., up to 5s with 100ms interval) and assert once the expected value appears.
 
 ```bash
 # First time: Install Playwright browsers
