@@ -500,7 +500,7 @@ await app.RunAsync();
 **Supabase-compatible format:**
 
 ```text
-Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<password>;SSL Mode=Require;Trust Server Certificate=true
+Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<password>;SSL Mode=Require
 ```
 
 **Test strategy note:** Integration tests remain on in-memory SQLite for speed and deterministic behavior.
