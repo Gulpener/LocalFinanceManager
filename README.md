@@ -175,10 +175,12 @@ Supabase-compatible format:
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true"
+    "Default": "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require"
   }
 }
 ```
+
+> **Note:** `Trust Server Certificate=true` bypasses TLS certificate validation and should **not** be used with Supabase or any host that presents a public CA certificate. Only use it for local/dev environments with self-signed certificates.
 
 **First-Time Supabase Database Provisioning (No Existing PostgreSQL Database):**
 
@@ -188,7 +190,7 @@ Supabase-compatible format:
 
 ```powershell
 dotnet user-secrets init --project LocalFinanceManager
-dotnet user-secrets set "ConnectionStrings:Default" "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true" --project LocalFinanceManager
+dotnet user-secrets set "ConnectionStrings:Default" "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require" --project LocalFinanceManager
 dotnet user-secrets list --project LocalFinanceManager
 ```
 

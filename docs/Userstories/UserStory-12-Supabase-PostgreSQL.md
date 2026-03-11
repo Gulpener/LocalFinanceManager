@@ -112,7 +112,7 @@ Supabase-compatible format:
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true"
+    "Default": "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require"
   }
 }
 ```
@@ -121,7 +121,7 @@ Supabase-compatible format:
 
 1. Create the Supabase production project and wait until the PostgreSQL instance reports ready.
 2. In Supabase Dashboard, open project database connection details and capture host, port, database, username, and password.
-3. Compose the runtime connection string using Supabase-compatible settings (`SSL Mode=Require;Trust Server Certificate=true`) and confirm it targets the correct project.
+3. Compose the runtime connection string using Supabase-compatible settings (`SSL Mode=Require`) and confirm it targets the correct project.
 4. Store the connection string in local developer secrets and in CI/host secret stores; do not place credentials in `appsettings*.json` committed to source control.
 5. Start the application with the configured secret so startup bootstrap runs `Database.MigrateAsync()` against the empty Supabase PostgreSQL database.
 6. Verify migration bootstrap completed by checking application logs and confirming expected schema objects/tables exist in Supabase.
@@ -187,7 +187,7 @@ dotnet ef database update --project LocalFinanceManager/LocalFinanceManager.cspr
 
 # Initialize and manage local development secrets
 dotnet user-secrets init --project LocalFinanceManager/LocalFinanceManager.csproj
-dotnet user-secrets set "ConnectionStrings:Default" "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true" --project LocalFinanceManager/LocalFinanceManager.csproj
+dotnet user-secrets set "ConnectionStrings:Default" "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require" --project LocalFinanceManager/LocalFinanceManager.csproj
 dotnet user-secrets list --project LocalFinanceManager/LocalFinanceManager.csproj
 
 # Optional PowerShell env var override (session-scoped)
