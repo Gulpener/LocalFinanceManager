@@ -17,7 +17,7 @@ This document specifies technical decisions for LocalFinanceManager development.
 | **CORS**              | Not needed                               | No cross-origin calls required (Blazor Server, same-origin) |
 | **Async Patterns**    | Async all the way                        | All I/O operations async/await                              |
 | **DI Conventions**    | Scoped services, I<Name> interfaces      | See conventions below                                       |
-| **Database**          | SQLite file                              | `localfinancemanager.db` in project root                    |
+| **Database**          | PostgreSQL (Supabase-compatible)         | Local PostgreSQL for dev/runtime; Supabase for production   |
 | **Validation Errors** | Standard RFC 7231 format                 | See error response examples below                           |
 | **Code Style**        | Nullable enabled, warnings not-as-errors | Modern C# safety features                                   |
 
@@ -455,14 +455,14 @@ public void TearDown()
 
 ---
 
-## Database (SQLite File)
+## Database (PostgreSQL)
 
 **Connection string:**
 
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Data Source=localfinancemanager.db"
+    "Default": "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres"
   }
 }
 ```
@@ -474,7 +474,7 @@ protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 {
     if (!optionsBuilder.IsConfigured)
     {
-        optionsBuilder.UseSqlite("Data Source=localfinancemanager.db");
+        optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres");
     }
 }
 ```
@@ -497,7 +497,13 @@ using (var scope = app.Services.CreateScope())
 await app.RunAsync();
 ```
 
-**Database file location:** `localfinancemanager.db` in project root (same directory as `.csproj`)
+**Supabase-compatible format:**
+
+```text
+Host=db.<project-ref>.supabase.co;Database=postgres;Username=postgres;Password=<password>;SSL Mode=Require;Trust Server Certificate=true
+```
+
+**Test strategy note:** Integration tests remain on in-memory SQLite for speed and deterministic behavior.
 
 ---
 

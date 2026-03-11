@@ -126,14 +126,14 @@ Security review and safe rendering/interop patterns are documented in [docs/Secu
 - **Configuration:** `appsettings.json` + environment-specific files with `IOptions<T>`
 - **Async Patterns:** Async all the way (all I/O operations use async/await)
 - **DI Conventions:** Scoped services with `I<Name>` interfaces
-- **Database:** SQLite file (`localfinancemanager.db`)
+- **Database:** PostgreSQL (Supabase-compatible)
 - **Code Style:** Nullable reference types enabled, warnings not-as-errors
 
 ### Testing Requirements
 
 - **Unit Tests:** Business logic, validation, edge cases
 - **Integration Tests:** Database operations, repositories, migrations (in-memory SQLite)
-- **E2E Tests:** User workflows with NUnit + Playwright
+- **E2E Tests:** User workflows with NUnit + Playwright on PostgreSQL-backed test host
 - **ML Tests:** Model training validation + fixture models
 
 For detailed examples and patterns, see [`docs/Implementation-Guidelines.md`](docs/Implementation-Guidelines.md).
@@ -191,9 +191,9 @@ dotnet test --collect:"XPlat Code Coverage"
 
 ### Database Configuration
 
-- **Development:** Uses `localfinancemanager.dev.db` with automatic seed data
-- **Production:** Uses `localfinancemanager.db` without seed data
-- **Recreate database:** Set `RecreateDatabase=true` in `appsettings.Development.json`
+- **Development:** Uses local PostgreSQL with automatic seed data
+- **Production:** Uses Supabase PostgreSQL without seed data
+- **Schema evolution:** Forward-only EF Core migrations (no production reset/recreate)
 - **Admin dashboard:** View database status at `/admin/settings`
 
 See [README.md](README.md#configuration) for detailed configuration options.
