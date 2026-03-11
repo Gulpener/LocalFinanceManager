@@ -33,7 +33,7 @@ On touch devices, keyboard shortcuts are disabled and the help modal shows touch
 ## Technologies
 
 - **.NET 10** (Blazor Server)
-- **Entity Framework Core** with SQLite
+- **Entity Framework Core** with PostgreSQL (Supabase-compatible)
 - **ML.NET** for machine learning
 - **FluentValidation** for input validation
 - **Playwright** for end-to-end testing
@@ -140,19 +140,18 @@ dotnet user-secrets list --project LocalFinanceManager
 
 #### Database Configuration
 
-The application uses SQLite with separate databases for Development and Production environments.
+The application targets PostgreSQL (Supabase-compatible) for runtime and production.
 
 **Development:**
 
-- Database: `localfinancemanager.dev.db` (project root)
-- Seed data: Automatically loaded on first run
-- Recreate database: Set `RecreateDatabase=true` in `appsettings.Development.json` or environment variable
+- Database: Local PostgreSQL instance (for example `localhost:5432`)
+- Seed data: Automatically loaded on first run in Development
 
 **Production:**
 
-- Database: `localfinancemanager.db` (project root or custom path via environment variable)
+- Database: Supabase PostgreSQL
 - Seed data: Not loaded (manual data entry or migration script)
-- Recreate database: Not allowed (safety measure)
+- Schema updates: Forward-only EF Core migrations (no production reset/recreate)
 
 **Admin Settings:**
 
@@ -161,25 +160,40 @@ The application uses SQLite with separate databases for Development and Producti
 
 **Connection String Configuration:**
 
-Database configuration is stored in `appsettings.json` (Production default):
+Database configuration is stored in `appsettings.json`:
 
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Data Source=localfinancemanager.db"
+    "Default": "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres"
   }
 }
 ```
 
-Development overrides in `appsettings.Development.json`:
+Supabase-compatible format:
 
 ```json
 {
   "ConnectionStrings": {
-    "Default": "Data Source=localfinancemanager.dev.db"
+    "Default": "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true"
   }
 }
 ```
+
+**First-Time Supabase Database Provisioning (No Existing PostgreSQL Database):**
+
+1. Create a new Supabase project and wait until the PostgreSQL instance is ready.
+2. In Supabase Dashboard, copy database host, port, database name, username, and password.
+3. Store runtime DB connection in user-secrets (never commit credentials):
+
+```powershell
+dotnet user-secrets init --project LocalFinanceManager
+dotnet user-secrets set "ConnectionStrings:Default" "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true" --project LocalFinanceManager
+dotnet user-secrets list --project LocalFinanceManager
+```
+
+4. Start the app once so startup migrations run against the empty Supabase database.
+5. Verify schema creation in Supabase and confirm health endpoint + login/account/transaction smoke flows.
 
 **Environment Variable Override:**
 
@@ -187,11 +201,11 @@ You can override the connection string with environment variables:
 
 ```powershell
 # PowerShell (Windows)
-$env:ASPNETCORE_ConnectionStrings__Default = "Data Source=C:\Data\myapp.db"
+$env:ASPNETCORE_ConnectionStrings__Default = "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres"
 dotnet run
 
 # Bash (Linux/macOS)
-export ASPNETCORE_ConnectionStrings__Default="Data Source=/var/data/myapp.db"
+export ASPNETCORE_ConnectionStrings__Default="Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres"
 dotnet run
 ```
 
@@ -212,33 +226,13 @@ $env:ASPNETCORE_ENVIRONMENT="Production"; dotnet run
 - Settings are cached in memory using `Caching` options (`AbsoluteExpirationMinutes` / `SlidingExpirationMinutes`) and cache is invalidated when settings are saved.
 - If no `AppSettings` record exists, the worker falls back to `AutomationOptions` defaults from configuration.
 
-**⚠️ Important:** Database files (`.db`, `.db-shm`, `.db-wal`) are excluded from version control. Never commit database files containing real data.
+**⚠️ Important:** Never commit secrets (database passwords, Supabase credentials) to source control.
 
-### Recreating the Database
+### Database Lifecycle
 
-By default, the database is persisted between runs. To recreate the database from scratch (Development only), use one of these methods:
-
-**Option 1: Environment variable**
-
-```bash
-cd LocalFinanceManager; $env:RecreateDatabase="true"; dotnet run
-```
-
-**Option 2: Add to appsettings.Development.json**
-
-```json
-{
-  "RecreateDatabase": true
-}
-```
-
-**Option 3: Command-line argument**
-
-```bash
-dotnet run --RecreateDatabase=true
-```
-
-This will delete the existing database, recreate the schema from migrations, and reseed with fresh development data.
+- Runtime schema changes are applied automatically at startup via EF Core migrations.
+- Development seeding runs only in Development environment.
+- Production resets/recreate workflows are out of bounds; use forward-only migrations.
 
 ## Running Tests
 
@@ -259,7 +253,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 ### End-to-End Tests
 
-E2E tests use NUnit + Playwright and test against a running instance:
+E2E tests use NUnit + Playwright against a PostgreSQL-backed application host:
 
 - For E2E database initialization and migration behavior, see [tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md](tests/LocalFinanceManager.E2E/E2E_INFRASTRUCTURE.md#database-migration-strategy-e2e).
 - For metrics/stat cards that update asynchronously after user actions, avoid immediate single-shot assertions. Prefer a short polling wait (e.g., up to 5s with 100ms interval) and assert once the expected value appears.
@@ -405,7 +399,7 @@ Entities use `RowVersion` for concurrency control. Update conflicts return HTTP 
 
 ## Troubleshooting
 
-### Wrong Database File
+### Wrong Database Connection
 
 If you're seeing unexpected data or an empty database:
 
@@ -417,31 +411,27 @@ If you're seeing unexpected data or an empty database:
 
 2. Navigate to `/admin/settings` to verify:
    - Current environment (Development/Production)
-   - Database file path in use
-   - Database file existence and size
-   - Seed data status
 
-3. Verify database file in use:
-   - Development: `localfinancemanager.dev.db`
-   - Production: `localfinancemanager.db`
+- Active database provider/connection information
+- Seed data status
+
+3. Verify connection string target:
+
+- Development: local PostgreSQL instance
+- Production: Supabase PostgreSQL
 
 4. Switch environment explicitly:
    ```powershell
    $env:ASPNETCORE_ENVIRONMENT="Development"; dotnet run
    ```
 
-### Database File Location
+### Database Target Validation
 
-Database files are stored in the project root by default:
+Confirm the resolved `ASPNETCORE_ConnectionStrings__Default` value and verify the target host/database match your intended environment.
 
-- `LocalFinanceManager/localfinancemanager.dev.db` (Development)
-- `LocalFinanceManager/localfinancemanager.db` (Production)
+### Database Connectivity Errors
 
-To verify the exact path, visit `/admin/settings` or set a custom location via environment variable (see Configuration section).
-
-### Database Locked Errors
-
-SQLite can have locking issues with concurrent access. Ensure only one instance is running.
+For local PostgreSQL failures, verify PostgreSQL is running and credentials in `ConnectionStrings:Default` are correct.
 
 ### Port Already in Use
 

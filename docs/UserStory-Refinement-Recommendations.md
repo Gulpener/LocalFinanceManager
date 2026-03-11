@@ -159,15 +159,19 @@
 
 **Refinement Outcome:**
 
-1. **Provider matrix fixed** - Unit tests remain SQLite; integration/E2E/runtime use PostgreSQL
+1. **Provider matrix fixed** - Unit/integration tests remain SQLite; E2E/runtime use PostgreSQL
 2. **Tenant isolation clarified** - Repository-level `IUserContext` filtering retained in this story
 3. **Migration scope clarified** - One-time greenfield PostgreSQL go-live; **no SQLite data migration**
 4. **Post-go-live policy clarified** - No production database recreate/drop; forward-only migrations
-5. **CI approach fixed** - Ephemeral PostgreSQL service container for integration/E2E
-6. **Implementation quality improved** - Added concrete local-dev, JSON mapping, and health check requirements
-7. **Operational safety added** - Release guardrails checklist for post-go-live migrations (forward-only, no recreate)
+5. **CI approach fixed** - Ephemeral PostgreSQL service container for E2E PostgreSQL-backed host validation
+6. **Environment model clarified** - Single Supabase environment (production) with explicit non-production test database targets
+7. **Implementation quality improved** - Added concrete local-dev, Supabase provisioning runbook, JSON mapping, and health check requirements
+8. **Ownership clarified** - Implementation tasks split into Copilot tasks vs User operational/configuration tasks
+9. **Operational safety added** - Release guardrails checklist for post-go-live migrations (forward-only, no recreate)
 
 **Note:** Any SQLite-to-PostgreSQL data import/export belongs in a separate future story if ever needed.
+
+**Additional Note:** Integration and E2E tests must never run against Supabase production credentials.
 
 **Estimated Implementation Effort:** 3-4 days
 
