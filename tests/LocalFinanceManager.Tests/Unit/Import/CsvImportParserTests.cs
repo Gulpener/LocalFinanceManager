@@ -474,7 +474,8 @@ public class CsvImportParserTests
 
         // Assert
         Assert.That(transactions, Has.Count.EqualTo(1));
-        Assert.That(transactions[0].OriginalImport, Is.EqualTo("2026-01-01,100.50,Test"));
+        // OriginalImport is stored as JSON-wrapped string for PostgreSQL jsonb compatibility.
+        Assert.That(transactions[0].OriginalImport, Is.EqualTo("{\"raw\":\"2026-01-01,100.50,Test\"}"));
     }
 
     #endregion
