@@ -47,6 +47,12 @@ On touch devices, keyboard shortcuts are disabled and the help modal shows touch
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - A code editor (Visual Studio 2022, VS Code, or Rider)
+- **PostgreSQL 14+** — required for runtime and E2E tests
+  - Local development: install [PostgreSQL](https://www.postgresql.org/download/) or run via Docker:
+    ```bash
+    docker run -d --name lfm-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16
+    ```
+  - Or use an existing PostgreSQL instance and update `ConnectionStrings:Default` via user-secrets.
 
 ## Getting Started
 
@@ -75,6 +81,18 @@ The application will start and be available at:
 - **http://localhost:5244**
 
 The database will be automatically created and migrations applied on first run. Seed data will be loaded in Development environment.
+
+> **Note:** Ensure a local PostgreSQL instance is running and `ConnectionStrings:Default` is configured (see below). The default `appsettings.Development.json` connects to `localhost:5432` with user `postgres` / password `postgres`.
+
+### Health Check
+
+Verify database connectivity at any time:
+
+```
+GET /health/db
+```
+
+Returns `Healthy` when the database connection is available.
 
 ### Configuration
 
@@ -140,83 +158,36 @@ dotnet user-secrets list --project LocalFinanceManager
 
 #### Database Configuration
 
-The application targets PostgreSQL (Supabase-compatible) for runtime and production.
+The application uses a local PostgreSQL instance for development. The production database connection is configured via environment variables at deploy time.
 
 **Development:**
 
-- Database: Local PostgreSQL instance (for example `localhost:5432`)
-- Seed data: Automatically loaded on first run in Development
+- Database: Local PostgreSQL instance (`localhost:5432`)
+- Seed data: Automatically loaded on first run in Development environment
+- Connection string: stored in user-secrets as `ConnectionStrings:Local`
 
 **Production:**
 
-- Database: Supabase PostgreSQL
-- Seed data: Not loaded (manual data entry or migration script)
-- Schema updates: Forward-only EF Core migrations (no production reset/recreate)
+- Connection string: set via the `ConnectionStrings__Local` environment variable at deploy time
+- Seed data: Not loaded
+- Schema updates: Forward-only EF Core migrations applied automatically at startup
 
 **Admin Settings:**
 
-- View current database configuration at `/admin/settings`
-- Shows environment, database path, file size, migrations, and seed data status
+- View current database status at `/admin/settings`
+- Shows connected host, database name, migration count, and connectivity check
 
-**Connection String Configuration:**
-
-Database configuration is stored in `appsettings.json`:
-
-```json
-{
-  "ConnectionStrings": {
-    "Default": "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres"
-  }
-}
-```
-
-Supabase-compatible format:
-
-```json
-{
-  "ConnectionStrings": {
-    "Default": "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true"
-  }
-}
-```
-
-**First-Time Supabase Database Provisioning (No Existing PostgreSQL Database):**
-
-1. Create a new Supabase project and wait until the PostgreSQL instance is ready.
-2. In Supabase Dashboard, copy database host, port, database name, username, and password.
-3. Store runtime DB connection in user-secrets (never commit credentials):
+**Local setup:**
 
 ```powershell
 dotnet user-secrets init --project LocalFinanceManager
-dotnet user-secrets set "ConnectionStrings:Default" "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true" --project LocalFinanceManager
-dotnet user-secrets list --project LocalFinanceManager
+dotnet user-secrets set "ConnectionStrings:Local" "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres" --project LocalFinanceManager
 ```
 
-4. Start the app once so startup migrations run against the empty Supabase database.
-5. Verify schema creation in Supabase and confirm health endpoint + login/account/transaction smoke flows.
-
-**Environment Variable Override:**
-
-You can override the connection string with environment variables:
+Then just run:
 
 ```powershell
-# PowerShell (Windows)
-$env:ASPNETCORE_ConnectionStrings__Default = "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres"
-dotnet run
-
-# Bash (Linux/macOS)
-export ASPNETCORE_ConnectionStrings__Default="Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres"
-dotnet run
-```
-
-**Switching Environments:**
-
-```powershell
-# Development (default)
-dotnet run
-
-# Production
-$env:ASPNETCORE_ENVIRONMENT="Production"; dotnet run
+dotnet run --project LocalFinanceManager
 ```
 
 #### Auto-Apply Runtime Settings

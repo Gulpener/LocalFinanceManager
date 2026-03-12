@@ -9,6 +9,21 @@ namespace LocalFinanceManager.E2E.Tests;
 [TestFixture]
 public class KeyboardNavigationTests : E2ETestBase
 {
+    [SetUp]
+    public async Task SetUp()
+    {
+        // Truncate tables before each test to ensure clean state — without this,
+        // accumulated assigned transactions from previous tests dominate the page
+        // and tests that depend on finding unassigned rows with 'Toewijzen' fail.
+        await Factory!.TruncateTablesAsync();
+
+        // Clear localStorage filter state to prevent cross-test contamination.
+        // Tests that navigate directly to /transactions with NetworkIdle may see
+        // a stale 'Assigned' filter, hiding the 'Toewijzen' buttons they depend on.
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
+    }
+
     [Test]
     public async Task AssignmentModal_Tab_MovesFocusThroughFields()
     {
@@ -26,7 +41,12 @@ public class KeyboardNavigationTests : E2ETestBase
         await Page.Locator("button:has-text('Toewijzen')").First.ClickAsync();
         var modal = Page.Locator("#transactionAssignModal");
         await Expect(modal).ToBeVisibleAsync();
-        await Page.WaitForFunctionAsync("() => document.activeElement?.id === 'budgetLineSelect'");
+        // Directly click the select to focus it rather than waiting for Blazor's
+        // async OnAfterRenderAsync focus automation (unreliable under parallel load)
+        await Page.WaitForSelectorAsync("#budgetLineSelect", new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await Page.ClickAsync("#budgetLineSelect");
+        await Page.WaitForFunctionAsync("() => document.activeElement?.id === 'budgetLineSelect'",
+            new object(), new PageWaitForFunctionOptions { Timeout = 10_000 });
 
         var isFocusedInsideModal = await Page.EvaluateAsync<bool>("() => !!document.activeElement?.closest('#transactionAssignModal')");
         Assert.That(isFocusedInsideModal, Is.True);
@@ -54,7 +74,11 @@ public class KeyboardNavigationTests : E2ETestBase
 
         var splitModal = Page.Locator("#splitEditorModal");
         await Expect(splitModal).ToBeVisibleAsync();
-        await Page.WaitForFunctionAsync("() => document.activeElement?.matches('#splitEditorModal select.form-select:not([disabled])') === true");
+        // Directly click the first enabled select to focus it
+        await Page.WaitForSelectorAsync("#splitEditorModal select.form-select:not([disabled])", new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await Page.ClickAsync("#splitEditorModal select.form-select:not([disabled])");
+        await Page.WaitForFunctionAsync("() => document.activeElement?.matches('#splitEditorModal select.form-select:not([disabled])') === true",
+            new object(), new PageWaitForFunctionOptions { Timeout = 10_000 });
 
         var isFocusedInsideSplitModal = await Page.EvaluateAsync<bool>("() => !!document.activeElement?.closest('#splitEditorModal')");
         Assert.That(isFocusedInsideSplitModal, Is.True);
@@ -79,7 +103,11 @@ public class KeyboardNavigationTests : E2ETestBase
 
         var bulkModal = Page.Locator("#bulkAssignModal");
         await Expect(bulkModal).ToBeVisibleAsync();
-        await Page.WaitForFunctionAsync("() => document.activeElement?.matches('#bulkAssignModal select.form-select:not([disabled])') === true");
+        // Directly click the first enabled select to focus it
+        await Page.WaitForSelectorAsync("#bulkAssignModal select.form-select:not([disabled])", new() { State = WaitForSelectorState.Visible, Timeout = 15_000 });
+        await Page.ClickAsync("#bulkAssignModal select.form-select:not([disabled])");
+        await Page.WaitForFunctionAsync("() => document.activeElement?.matches('#bulkAssignModal select.form-select:not([disabled])') === true",
+            new object(), new PageWaitForFunctionOptions { Timeout = 10_000 });
 
         var isFocusedInsideBulkModal = await Page.EvaluateAsync<bool>("() => !!document.activeElement?.closest('#bulkAssignModal')");
         Assert.That(isFocusedInsideBulkModal, Is.True);

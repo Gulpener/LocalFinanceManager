@@ -134,7 +134,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button id="assignCancelButton" type="button" class="btn btn-secondary" @onclick="Close" disabled="@isSubmitting">
+                        <button id="assignCancelButton" type="button" class="btn btn-secondary" @onclick="Close"
+                                disabled="@isSubmitting">
                             Annuleren
                         </button>
                         <button id="assignSaveButton" type="button" class="btn btn-primary" @onclick="AssignTransaction"
@@ -224,18 +225,22 @@
             return;
         }
 
-        isInitialFocusSet = true;
-
         try
         {
             if (budgetLineSelectRef.Context != null)
             {
+                // Budget lines are loaded — focus the select and mark as done
+                isInitialFocusSet = true;
                 await budgetLineSelectRef.FocusAsync();
             }
-            else
+            else if (budgetLines != null)
             {
+                // Budget lines loaded but no select available (e.g. empty list) — focus modal
+                isInitialFocusSet = true;
                 await modalContainerRef.FocusAsync();
             }
+            // else: budget lines not loaded yet — don't set isInitialFocusSet,
+            // so we retry after the next render when lines are populated
         }
         catch (Exception ex)
         {

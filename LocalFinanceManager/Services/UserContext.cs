@@ -13,12 +13,14 @@ public class UserContext : IUserContext
     private const string CacheKey = "UserContext:UserId";
 
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IBlazorCircuitUser _circuitUser;
     private readonly AppDbContext _context;
     private readonly ILogger<UserContext> _logger;
 
-    public UserContext(IHttpContextAccessor httpContextAccessor, AppDbContext context, ILogger<UserContext> logger)
+    public UserContext(IHttpContextAccessor httpContextAccessor, IBlazorCircuitUser circuitUser, AppDbContext context, ILogger<UserContext> logger)
     {
         _httpContextAccessor = httpContextAccessor;
+        _circuitUser = circuitUser;
         _context = context;
         _logger = logger;
     }
@@ -27,22 +29,20 @@ public class UserContext : IUserContext
     public Guid GetCurrentUserId()
     {
         var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext == null)
-        {
-            return Guid.Empty;
-        }
 
-        // Check cache first to avoid repeated DB lookups per request
-        if (httpContext.Items.TryGetValue(CacheKey, out var cached) && cached is Guid cachedId)
-        {
-            return cachedId;
-        }
-
-        var user = httpContext.User;
+        // In Blazor Server the HttpContext belongs to the SignalR hub connection and its
+        // User is anonymous (auth is done via sessionStorage JWT, not HTTP headers).
+        // Fall back to the circuit-scoped user that Routes.razor populates at circuit start.
+        var user = httpContext?.User;
         if (user == null || !(user.Identity?.IsAuthenticated ?? false))
         {
-            httpContext.Items[CacheKey] = Guid.Empty;
-            return Guid.Empty;
+            return _circuitUser.UserId;
+        }
+
+        // API/HTTP path: check cache first to avoid repeated DB lookups per request
+        if (httpContext!.Items.TryGetValue(CacheKey, out var cached) && cached is Guid cachedId)
+        {
+            return cachedId;
         }
 
         var subClaim = user.FindFirst("sub")?.Value;
@@ -79,12 +79,16 @@ public class UserContext : IUserContext
     public string GetCurrentUserEmail()
     {
         var user = _httpContextAccessor.HttpContext?.User;
-        return user?.FindFirst("email")?.Value ?? string.Empty;
+        if (user != null && (user.Identity?.IsAuthenticated ?? false))
+            return user.FindFirst("email")?.Value ?? string.Empty;
+        return _circuitUser.Email;
     }
 
     /// <inheritdoc />
     public bool IsAuthenticated()
     {
-        return _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+        if (_httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false)
+            return true;
+        return _circuitUser.IsInitialized && _circuitUser.UserId != Guid.Empty;
     }
 }

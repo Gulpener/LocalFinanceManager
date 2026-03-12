@@ -2,12 +2,20 @@
 @page "/settings/auto-apply"
 @using LocalFinanceManager.DTOs.ML
 @using LocalFinanceManager.Data.Repositories
-@using System.Net.Http.Json
-@inject HttpClient Http
+@using LocalFinanceManager.Data
+@using LocalFinanceManager.Services.Background
+@using FluentValidation
+@using System.Text.Json
+@using Microsoft.EntityFrameworkCore
 @inject ILogger<AutoApplySettings> Logger
 @inject IAccountRepository AccountRepository
 @inject ICategoryRepository CategoryRepository
 @inject IJSRuntime JS
+@inject AppDbContext DbContext
+@inject IUserContext UserContext
+@inject IAutoApplySettingsProvider SettingsProvider
+@inject IValidator<AutoApplySettingsDto> SettingsValidator
+@inject IMonitoringService MonitoringService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @implements IDisposable
 
@@ -91,7 +99,7 @@ else
                         <div class="mb-3">
                             <label for="confidence-threshold" class="form-label">
                                 Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence *
-                                                                                                                                                                                                                                                            100).ToString("F0"))%</strong>
+                                                                                                                                                                                                                                                                                            100).ToString("F0"))%</strong>
                             </label>
                             <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
                                    value="@_settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture)"
@@ -297,24 +305,24 @@ else
         {
             _errorMessage = null;
 
-            // Load settings from backend (or use defaults)
-            var response = await Http.GetAsync("/api/automation/settings");
+            var currentUserId = UserContext.GetCurrentUserId();
+            var dbSettings = await DbContext.AppSettings
+                .Where(s => !s.IsArchived && s.UserId == currentUserId)
+                .FirstOrDefaultAsync();
 
-            if (response.IsSuccessStatusCode)
+            if (dbSettings != null)
             {
-                var settings = await response.Content.ReadFromJsonAsync<AutoApplySettingsDto>();
-                if (settings != null)
+                _settings = new AutoApplySettingsDto
                 {
-                    _settings = settings;
-                }
+                    Enabled = dbSettings.AutoApplyEnabled,
+                    MinimumConfidence = dbSettings.MinimumConfidence,
+                    IntervalMinutes = dbSettings.IntervalMinutes,
+                    AccountIds = DeserializeGuidList(dbSettings.AccountIdsJson),
+                    ExcludedCategoryIds = DeserializeGuidList(dbSettings.ExcludedCategoryIdsJson)
+                };
             }
             else
             {
-                var errorContent = await ReadResponseBodyForLoggingAsync(response);
-                Logger.LogWarning("Loading auto-apply settings failed with status code {StatusCode}. Response: {ErrorContent}",
-                    response.StatusCode, errorContent);
-
-                // Use default settings
                 _settings = new AutoApplySettingsDto
                 {
                     Enabled = false,
@@ -323,8 +331,6 @@ else
                     AccountIds = new List<Guid>(),
                     ExcludedCategoryIds = new List<Guid>()
                 };
-
-                _errorMessage = SettingsLoadFallbackMessage;
             }
 
             await LoadPreviewStats();
@@ -341,24 +347,7 @@ else
     {
         try
         {
-            // Use InvariantCulture to ensure decimal point (not comma) in URL
-            var confidenceStr = _settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var response = await Http.GetAsync($"/api/automation/preview?confidence={confidenceStr}");
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, int>>();
-                if (result != null && result.TryGetValue("estimatedAutoApplyCount", out var estimatedCount))
-                {
-                    _previewStats = estimatedCount;
-                }
-            }
-            else
-            {
-                var errorContent = await ReadResponseBodyForLoggingAsync(response);
-                Logger.LogWarning("Loading auto-apply preview stats failed with status code {StatusCode}. Response: {ErrorContent}",
-                    response.StatusCode, errorContent);
-                _errorMessage ??= PreviewLoadErrorMessage;
-            }
+            _previewStats = await MonitoringService.EstimateAutoApplyCountAsync(_settings.MinimumConfidence);
         }
         catch (Exception ex)
         {
@@ -421,28 +410,52 @@ else
 
             await SyncSettingsFromDomAsync();
 
-            var response = await Http.PostAsJsonAsync("/api/automation/settings", _settings);
-
-            if (response.IsSuccessStatusCode)
+            var validationResult = await SettingsValidator.ValidateAsync(_settings);
+            if (!validationResult.IsValid)
             {
-                _successMessage = "Instellingen succesvol opgeslagen!";
+                _errorMessage = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
                 await InvokeAsync(StateHasChanged);
-                try
-                {
-                    await ShowToastAsync("Instellingen opgeslagen", "success");
-                }
-                catch
-                {
-                    // Ignore toast rendering failures; the in-page success message is the primary signal.
-                }
+                return;
             }
-            else
+
+            var currentUserId = UserContext.GetCurrentUserId();
+            var accountIds = _settings.AccountIds ?? new List<Guid>();
+            var excludedCategoryIds = _settings.ExcludedCategoryIds ?? new List<Guid>();
+
+            var existingSettings = await DbContext.AppSettings
+                .FirstOrDefaultAsync(s => !s.IsArchived && s.UserId == currentUserId);
+
+            if (existingSettings == null)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Logger.LogWarning("Saving auto-apply settings failed with status code {StatusCode}. Response: {ErrorContent}",
-response.StatusCode, errorContent);
-                _errorMessage = SettingsSaveErrorMessage;
-                await InvokeAsync(StateHasChanged);
+                existingSettings = new LocalFinanceManager.Models.AppSettings
+                {
+                    UserId = currentUserId,
+                    IsArchived = false
+                };
+                await DbContext.AppSettings.AddAsync(existingSettings);
+            }
+
+            existingSettings.AutoApplyEnabled = _settings.Enabled;
+            existingSettings.MinimumConfidence = _settings.MinimumConfidence;
+            existingSettings.IntervalMinutes = _settings.IntervalMinutes;
+            existingSettings.AccountIdsJson = accountIds.Any() ? JsonSerializer.Serialize(accountIds) : null;
+            existingSettings.ExcludedCategoryIdsJson = excludedCategoryIds.Any() ? JsonSerializer.Serialize(excludedCategoryIds) :
+null;
+            existingSettings.UpdatedBy = UserContext.GetCurrentUserEmail();
+            existingSettings.IsArchived = false;
+
+            await DbContext.SaveChangesAsync();
+            SettingsProvider.Invalidate(currentUserId);
+
+            _successMessage = "Instellingen succesvol opgeslagen!";
+            await InvokeAsync(StateHasChanged);
+            try
+            {
+                await ShowToastAsync("Instellingen opgeslagen", "success");
+            }
+            catch
+            {
+                // Ignore toast rendering failures; the in-page success message is the primary signal.
             }
         }
         catch (Exception ex)
@@ -499,16 +512,11 @@ response.StatusCode, errorContent);
         public string[]? ExcludedCategoryIds { get; set; }
     }
 
-    private static async Task<string> ReadResponseBodyForLoggingAsync(HttpResponseMessage response)
+    private static List<Guid> DeserializeGuidList(string? json)
     {
-        try
-        {
-            return await response.Content.ReadAsStringAsync();
-        }
-        catch
-        {
-            return "<response body unavailable>";
-        }
+        if (string.IsNullOrEmpty(json)) return new List<Guid>();
+        try { return JsonSerializer.Deserialize<List<Guid>>(json) ?? new List<Guid>(); }
+        catch (JsonException) { return new List<Guid>(); }
     }
 
     private ValueTask ShowToastAsync(string message, string type)

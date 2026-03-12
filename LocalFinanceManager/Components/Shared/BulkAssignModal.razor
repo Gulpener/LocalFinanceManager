@@ -13,8 +13,9 @@
 
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
 {
-    <div id="bulkAssignModal" data-testid="bulk-assign-modal" class="modal fade show" style="display: block;" tabindex="-1" role="dialog" aria-modal="true"
-         aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown" @ref="modalContainerRef">
+    <div id="bulkAssignModal" data-testid="bulk-assign-modal" class="modal fade show" style="display: block;" tabindex="-1"
+         role="dialog" aria-modal="true"   aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown"
+         @ref="modalContainerRef">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -36,140 +37,143 @@
                              role="alert">
                             <i class="bi @(bulkResult.Success ? "bi-check-circle-fill" : "bi-exclamation-circle-fill")"></i>
                             @bulkResult.Message
-                            <span class="visually-hidden" aria-hidden="true"><span data-testid="success-count">@bulkResult.AssignedCount</span> <span data-testid="failure-count">@bulkResult.FailedCount</span></span>
-                            <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
-                        </div>
-
-                        @if (!bulkResult.Success && bulkResult.FailedTransactionIds.Any())
-                        {
-                            <div class="card mb-3">
-                                <div class="card-body">
-                                    <h6 class="card-subtitle mb-2 text-muted">
-                                        Fouten details
-                                        <button class="btn btn-sm btn-link" data-testid="error-accordion" @onclick="ToggleErrorDetails">
-                                            @(showErrorDetails ? "Verbergen" : "Tonen")
-                                        </button>
-                                    </h6>
-                                    @if (showErrorDetails)
-                                    {
-                                        <ul class="list-group">
-                                            @foreach (var failedId in bulkResult.FailedTransactionIds)
-                                            {
-                                                <li class="list-group-item" data-testid="error-message">
-                                                    Transactie ID: @failedId
-                                                </li>
-                                            }
-                                        </ul>
-                                    }
-                                </div>
+                            <span class="visually-hidden" aria-hidden="true"><span
+                                data-testid="success-count">@bulkResult.AssignedCount</span> <span
+                                data-testid="failure-count">@bulkResult.FailedCount</span></span>
+                                <button type="button" class="btn-close" @onclick="() => bulkResult = null"></button>
                             </div>
-                        }
-                    }
 
-                    @if (!isProcessing)
-                    {
-                        <!-- Selection Summary -->
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>@TransactionIds.Count transactie(s)</strong> geselecteerd voor toewijzing.
-                        </div>
-
-                        <!-- Budget Line Selection -->
-                        <div class="mb-3">
-                            <label for="bulkBudgetLineSelect" class="form-label">
-                                Budgetlijn <span class="text-danger">*</span>
-                            </label>
-                            @if (budgetLines == null)
+                            @if (!bulkResult.Success && bulkResult.FailedTransactionIds.Any())
                             {
-                                <select id="bulkBudgetLineSelect" class="form-select" disabled>
-                                    <option>Laden...</option>
-                                </select>
-                            }
-                            else if (budgetLines.Count == 0)
-                            {
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                    Geen budgetlijnen gevonden. Maak eerst budgetlijnen aan.
-                                </div>
-                            }
-                            else
-                            {
-                                <select id="bulkBudgetLineSelect" class="form-select" @bind="selectedBudgetLineId" required>
-                                    <option value="">-- Selecteer een budgetlijn --</option>
-                                    @foreach (var budgetLine in budgetLines)
-                                    {
-                                        <option value="@budgetLine.Id">@budgetLine.CategoryName</option>
-                                    }
-                                </select>
-                            }
-                        </div>
-
-                        <!-- Optional Note -->
-                        <div class="mb-3">
-                            <label for="bulkNoteInput" class="form-label">Notitie (optioneel)</label>
-                            <textarea id="bulkNoteInput" class="form-control" rows="2" maxlength="500" @bind="note"
-                                      placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
-                            <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(selectedBudgetLineId))
-                        {
-                            var selectedBudgetLine = budgetLines?.FirstOrDefault(bl => bl.Id.ToString() == selectedBudgetLineId);
-                            @if (selectedBudgetLine != null)
-                            {
-                                <div class="alert alert-secondary">
-                                    <i class="bi bi-arrow-right-circle"></i>
-                                    Alle geselecteerde transacties worden toegewezen aan:
-                                    <strong>@selectedBudgetLine.CategoryName</strong>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">
+                                            Fouten details
+                                            <button class="btn btn-sm btn-link" data-testid="error-accordion"
+                                                    @onclick="ToggleErrorDetails">
+                                                @(showErrorDetails ? "Verbergen" : "Tonen")
+                                            </button>
+                                        </h6>
+                                        @if (showErrorDetails)
+                                        {
+                                            <ul class="list-group">
+                                                @foreach (var failedId in bulkResult.FailedTransactionIds)
+                                                {
+                                                    <li class="list-group-item" data-testid="error-message">
+                                                        Transactie ID: @failedId
+                                                    </li>
+                                                }
+                                            </ul>
+                                        }
+                                    </div>
                                 </div>
                             }
                         }
-                    }
-                    else
-                    {
-                        <!-- Progress Bar -->
-                        <div class="mb-3" data-testid="bulk-progress-bar">
-                            <label class="form-label">Voortgang</label>
-                            <div class="progress" style="height: 30px;">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
-                                     style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
-                                     aria-valuemax="100">
-                                    <span data-testid="progress-percentage">@progressPercentage%</span>
+
+                        @if (!isProcessing)
+                        {
+                            <!-- Selection Summary -->
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>@TransactionIds.Count transactie(s)</strong> geselecteerd voor toewijzing.
+                            </div>
+
+                            <!-- Budget Line Selection -->
+                            <div class="mb-3">
+                                <label for="bulkBudgetLineSelect" class="form-label">
+                                    Budgetlijn <span class="text-danger">*</span>
+                                </label>
+                                @if (budgetLines == null)
+                                {
+                                    <select id="bulkBudgetLineSelect" class="form-select" disabled>
+                                        <option>Laden...</option>
+                                    </select>
+                                }
+                                else if (budgetLines.Count == 0)
+                                {
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Geen budgetlijnen gevonden. Maak eerst budgetlijnen aan.
+                                    </div>
+                                }
+                                else
+                                {
+                                    <select id="bulkBudgetLineSelect" class="form-select" @bind="selectedBudgetLineId" required>
+                                        <option value="">-- Selecteer een budgetlijn --</option>
+                                        @foreach (var budgetLine in budgetLines)
+                                        {
+                                            <option value="@budgetLine.Id">@budgetLine.CategoryName</option>
+                                        }
+                                    </select>
+                                }
+                            </div>
+
+                            <!-- Optional Note -->
+                            <div class="mb-3">
+                                <label for="bulkNoteInput" class="form-label">Notitie (optioneel)</label>
+                                <textarea id="bulkNoteInput" class="form-control" rows="2" maxlength="500" @bind="note"
+                                          placeholder="Voeg een notitie toe voor alle geselecteerde transacties..."></textarea>
+                                <div class="form-text">@(note?.Length ?? 0)/500 karakters</div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(selectedBudgetLineId))
+                            {
+                                var selectedBudgetLine = budgetLines?.FirstOrDefault(bl => bl.Id.ToString() == selectedBudgetLineId);
+                                @if (selectedBudgetLine != null)
+                                {
+                                    <div class="alert alert-secondary">
+                                        <i class="bi bi-arrow-right-circle"></i>
+                                        Alle geselecteerde transacties worden toegewezen aan:
+                                        <strong>@selectedBudgetLine.CategoryName</strong>
+                                    </div>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <!-- Progress Bar -->
+                            <div class="mb-3" data-testid="bulk-progress-bar">
+                                <label class="form-label">Voortgang</label>
+                                <div class="progress" style="height: 30px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+                                         style="width: @progressPercentage%" aria-valuenow="@progressPercentage" aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        <span data-testid="progress-percentage">@progressPercentage%</span>
+                                    </div>
+                                </div>
+                                <div class="text-muted small mt-1" aria-live="polite">
+                                    @progressMessage
                                 </div>
                             </div>
-                            <div class="text-muted small mt-1" aria-live="polite">
-                                @progressMessage
-                            </div>
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    @if (bulkResult == null)
-                    {
-                        <button type="button" class="btn btn-secondary" @onclick="OnClose" disabled="@isProcessing">
-                            Annuleren
-                        </button>
-                        <button id="bulkAssignButton" type="button" class="btn btn-primary" @onclick="BulkAssign"
-                                disabled="@(!CanAssign || isProcessing)">
-                            @if (isProcessing)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                            }
-                            Alles toewijzen
-                        </button>
-                    }
-                    else
-                    {
-                        <button type="button" class="btn btn-primary" data-action="close-bulk-modal" @onclick="OnClose">
-                            Sluiten
-                        </button>
-                    }
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        @if (bulkResult == null)
+                        {
+                            <button type="button" class="btn btn-secondary" @onclick="OnClose" disabled="@isProcessing">
+                                Annuleren
+                            </button>
+                            <button id="bulkAssignButton" type="button" class="btn btn-primary" @onclick="BulkAssign"
+                                    disabled="@(!CanAssign || isProcessing)">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                }
+                                Alles toewijzen
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-primary" data-action="close-bulk-modal" @onclick="OnClose">
+                                Sluiten
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+        <div class="modal-backdrop fade show"></div>
+    }
 
 @code {
     [Parameter] public List<Guid>? TransactionIds { get; set; }
@@ -252,6 +256,12 @@
         if (isInitialFocusSet)
         {
             return;
+        }
+
+        // Wait until budget lines have loaded before focusing, so the non-disabled select is present
+        if (budgetLines == null)
+        {
+            return; // Don't set isInitialFocusSet — retry on next render after lines load
         }
 
         isInitialFocusSet = true;
@@ -413,7 +423,8 @@
 
     private void CancelInProgressBulkAssign()
     {
-        if (!isProcessing || bulkAssignCancellationTokenSource == null || bulkAssignCancellationTokenSource.IsCancellationRequested)
+        if (!isProcessing || bulkAssignCancellationTokenSource == null ||
+            bulkAssignCancellationTokenSource.IsCancellationRequested)
         {
             return;
         }

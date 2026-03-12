@@ -103,6 +103,8 @@ public class MultiAccountValidationTests : E2ETestBase
         // Open audit trail and verify assignment history is visible
         await Page.ClickAsync("tr[data-testid='transaction-row']:has-text('Account A Primary Tx') button[title='Bekijk toewijzingsgeschiedenis']");
         await Expect(Page.Locator("#auditTrailModalTitle")).ToBeVisibleAsync();
+        // Wait for loading spinner to disappear before reading modal content
+        await Expect(Page.Locator(".modal.show .spinner-border")).Not.ToBeVisibleAsync();
 
         var auditText = await Page.Locator(".modal.show").TextContentAsync();
         Assert.That(auditText, Does.Contain("Assign").Or.Contain("Toegewezen"));

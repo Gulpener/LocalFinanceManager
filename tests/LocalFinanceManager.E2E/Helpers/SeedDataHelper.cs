@@ -171,7 +171,7 @@ public static class SeedDataHelper
             UserId = AppDbContext.SeedUserId,
             AccountId = accountId,
             Amount = amount,
-            Date = date,
+            Date = DateTime.SpecifyKind(date, DateTimeKind.Utc),
             Description = description,
             Counterparty = "Test Counterparty"
         };
@@ -199,7 +199,7 @@ public static class SeedDataHelper
         decimal maxAmount)
     {
         var transactions = new List<Transaction>();
-        var currentYearStart = new DateTime(DateTime.UtcNow.Year, 1, 1);
+        var currentYearStart = new DateTime(DateTime.UtcNow.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var startDate = DateTime.UtcNow.AddDays(-90);
         if (startDate < currentYearStart)
         {

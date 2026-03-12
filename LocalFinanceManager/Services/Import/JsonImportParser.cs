@@ -24,7 +24,7 @@ public class JsonImportParser : IImportParser
         try
         {
             var jsonArray = JsonDocument.Parse(fileContent);
-            
+
             if (jsonArray.RootElement.ValueKind != JsonValueKind.Array)
             {
                 throw new InvalidOperationException("JSON root must be an array of transaction objects");
@@ -64,7 +64,7 @@ public class JsonImportParser : IImportParser
         try
         {
             var jsonArray = JsonDocument.Parse(fileContent);
-            
+
             if (jsonArray.RootElement.ValueKind != JsonValueKind.Array)
             {
                 return Task.FromResult(new List<string>());
@@ -99,40 +99,40 @@ public class JsonImportParser : IImportParser
             var lowerColumn = column.ToLowerInvariant();
 
             // Detect date column
-            if (mapping.DateColumn == null && 
-                (lowerColumn == "date" || lowerColumn == "transactiondate" || 
+            if (mapping.DateColumn == null &&
+                (lowerColumn == "date" || lowerColumn == "transactiondate" ||
                  lowerColumn == "datum" || lowerColumn == "transactiedatum"))
             {
                 mapping.DateColumn = column;
             }
 
             // Detect amount column
-            if (mapping.AmountColumn == null && 
-                (lowerColumn == "amount" || lowerColumn == "bedrag" || 
+            if (mapping.AmountColumn == null &&
+                (lowerColumn == "amount" || lowerColumn == "bedrag" ||
                  lowerColumn == "value" || lowerColumn == "debitcredit"))
             {
                 mapping.AmountColumn = column;
             }
 
             // Detect description column
-            if (mapping.DescriptionColumn == null && 
-                (lowerColumn == "description" || lowerColumn == "omschrijving" || 
+            if (mapping.DescriptionColumn == null &&
+                (lowerColumn == "description" || lowerColumn == "omschrijving" ||
                  lowerColumn == "memo" || lowerColumn == "details"))
             {
                 mapping.DescriptionColumn = column;
             }
 
             // Detect counterparty column
-            if (mapping.CounterpartyColumn == null && 
-                (lowerColumn == "counterparty" || lowerColumn == "tegenpartij" || 
+            if (mapping.CounterpartyColumn == null &&
+                (lowerColumn == "counterparty" || lowerColumn == "tegenpartij" ||
                  lowerColumn == "naam" || lowerColumn == "merchant"))
             {
                 mapping.CounterpartyColumn = column;
             }
 
             // Detect external ID column
-            if (mapping.ExternalIdColumn == null && 
-                (lowerColumn == "reference" || lowerColumn == "referentie" || 
+            if (mapping.ExternalIdColumn == null &&
+                (lowerColumn == "reference" || lowerColumn == "referentie" ||
                  lowerColumn == "transactionid" || lowerColumn == "id" || lowerColumn == "externalid"))
             {
                 mapping.ExternalIdColumn = column;
@@ -174,11 +174,11 @@ public class JsonImportParser : IImportParser
 
                     if (DateTime.TryParseExact(dateString, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                     {
-                        transaction.Date = date;
+                        transaction.Date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
                     }
                     else if (DateTime.TryParse(dateString, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
                     {
-                        transaction.Date = date;
+                        transaction.Date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
                     }
                     else
                     {

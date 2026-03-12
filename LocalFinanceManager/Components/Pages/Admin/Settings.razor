@@ -4,7 +4,7 @@
 @inject AppDbContext DbContext
 @using LocalFinanceManager.Data
 @using Microsoft.EntityFrameworkCore
-@using System.Text.RegularExpressions
+@using Npgsql
 
 <PageTitle>Admin Settings</PageTitle>
 
@@ -45,36 +45,29 @@
             <tbody>
                 <tr>
                     <th scope="row">Connection String:</th>
-                    <td><code>@_connectionString</code></td>
+                    <td><code>@_maskedConnectionString</code></td>
                 </tr>
                 <tr>
-                    <th scope="row">Database Pad:</th>
-                    <td><code>@_databasePath</code></td>
+                    <th scope="row">Database Host:</th>
+                    <td><code>@_databaseHost</code></td>
                 </tr>
                 <tr>
-                    <th scope="row">Database Bestaat:</th>
+                    <th scope="row">Database Name:</th>
+                    <td><code>@_databaseName</code></td>
+                </tr>
+                <tr>
+                    <th scope="row">Database Verbinding:</th>
                     <td>
                         @if (_databaseExists)
                         {
-                            <span class="badge bg-success" aria-label="Database bestaat">Ja</span>
+                            <span class="badge bg-success" aria-label="Database verbonden">Verbonden</span>
                         }
                         else
                         {
-                            <span class="badge bg-warning" aria-label="Database bestaat niet">Nee</span>
+                            <span class="badge bg-danger" aria-label="Database niet bereikbaar">Niet bereikbaar</span>
                         }
                     </td>
                 </tr>
-                @if (_databaseExists)
-                {
-                    <tr>
-                        <th scope="row">Bestandsgrootte:</th>
-                        <td>@_databaseSize</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Laatst Gewijzigd:</th>
-                        <td>@_lastModified?.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                    </tr>
-                }
                 <tr>
                     <th scope="row">Laatst Uitgevoerde Migratie:</th>
                     <td><code>@_lastMigration</code></td>
@@ -86,82 +79,79 @@
                         {
                             <span class="badge bg-warning" aria-label="Pending migrations">@_pendingMigrations.Count()
                                 pending</span>
-                            <ul class="mt-2">
-                                @foreach (var migration in _pendingMigrations)
-                                {
-                                    <li><code>@migration</code></li>
-                                }
-                            </ul>
-                        }
+                                <ul class="mt-2">
+                                    @foreach (var migration in _pendingMigrations)
+                                    {
+                                        <li><code>@migration</code></li>
+                                    }
+                                </ul>
+                            }
                         else
-                        {
-                            <span class="badge bg-success" aria-label="Geen pending migrations">Geen</span>
-                        }
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                            {
+                                <span class="badge bg-success" aria-label="Geen pending migrations">Geen</span>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-<div class="card mt-3">
-    <div class="card-header">
-        <h5>Seed Data Status</h5>
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Seed Data Status</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-borderless">
+                <tbody>
+                    <tr>
+                        <th scope="row">Accounts:</th>
+                        <td>@_accountCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Categories:</th>
+                        <td>@_categoryCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Budget Plans:</th>
+                        <td>@_budgetPlanCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Budget Lines:</th>
+                        <td>@_budgetLineCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Transactions:</th>
+                        <td>@_transactionCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Transaction Splits:</th>
+                        <td>@_transactionSplitCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Seed Data Geladen:</th>
+                        <td>
+                            @if (_seedDataLoaded)
+                            {
+                                <span class="badge bg-success" aria-label="Seed data geladen">Ja</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Nee (Production of handmatig geleegd)</span>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="card-body">
-        <table class="table table-borderless">
-            <tbody>
-                <tr>
-                    <th scope="row">Accounts:</th>
-                    <td>@_accountCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Categories:</th>
-                    <td>@_categoryCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Budget Plans:</th>
-                    <td>@_budgetPlanCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Budget Lines:</th>
-                    <td>@_budgetLineCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Transactions:</th>
-                    <td>@_transactionCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Transaction Splits:</th>
-                    <td>@_transactionSplitCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Seed Data Geladen:</th>
-                    <td>
-                        @if (_seedDataLoaded)
-                        {
-                            <span class="badge bg-success" aria-label="Seed data geladen">Ja</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">Nee (Production of handmatig geleegd)</span>
-                        }
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
 
 @code {
-    private static readonly Regex DataSourceRegex = new(@"Data Source=([^;]+)", RegexOptions.IgnoreCase |
-    RegexOptions.Compiled);
-
     private string? _connectionString;
-    private string? _databasePath;
+    private string? _maskedConnectionString;
+    private string? _databaseHost;
+    private string? _databaseName;
     private bool _databaseExists;
-    private string? _databaseSize;
-    private DateTime? _lastModified;
     private string? _lastMigration;
     private IEnumerable<string>? _pendingMigrations;
     private int _accountCount;
@@ -179,30 +169,28 @@
         _environmentBadgeClass = Environment.IsDevelopment() ? "bg-primary" : "bg-danger";
 
         // Connection string
-        _connectionString = Configuration.GetConnectionString("Default");
+        _connectionString = Configuration.GetConnectionString("Local");
 
-        // Parse database path from connection string
+        // Parse and mask PostgreSQL connection string details
         if (!string.IsNullOrEmpty(_connectionString))
         {
-            var match = DataSourceRegex.Match(_connectionString);
-
-            if (match.Success)
+            try
             {
-                var relativePath = match.Groups[1].Value;
-                _databasePath = Path.IsPathRooted(relativePath)
-                ? relativePath
-                : Path.Combine(Environment.ContentRootPath, relativePath);
-
-                // Check if database file exists
-                if (File.Exists(_databasePath))
-                {
-                    _databaseExists = true;
-                    var fileInfo = new FileInfo(_databasePath);
-                    _databaseSize = FormatBytes(fileInfo.Length);
-                    _lastModified = fileInfo.LastWriteTime;
-                }
+                var csb = new NpgsqlConnectionStringBuilder(_connectionString);
+                _databaseHost = csb.Host;
+                _databaseName = csb.Database;
+                // Mask password for display
+                csb.Password = string.IsNullOrEmpty(csb.Password) ? null : "***";
+                _maskedConnectionString = csb.ToString();
+            }
+            catch
+            {
+                _maskedConnectionString = _connectionString;
             }
         }
+
+        // Check database connectivity
+        _databaseExists = await DbContext.Database.CanConnectAsync();
 
         // Database migrations info
         var appliedMigrations = await DbContext.Database.GetAppliedMigrationsAsync();
@@ -217,18 +205,5 @@
         _transactionCount = await DbContext.Transactions.CountAsync();
         _transactionSplitCount = await DbContext.TransactionSplits.CountAsync();
         _seedDataLoaded = _accountCount > 0 && _categoryCount > 0;
-    }
-
-    private string FormatBytes(long bytes)
-    {
-        string[] sizes = { "B", "KB", "MB", "GB" };
-        double len = bytes;
-        int order = 0;
-        while (len >= 1024 && order < sizes.Length - 1)
-        {
-            order++;
-            len = len / 1024;
-        }
-        return $"{len:0.##} {sizes[order]}";
     }
 }
