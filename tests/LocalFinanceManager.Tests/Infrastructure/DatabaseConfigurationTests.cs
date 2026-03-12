@@ -14,7 +14,7 @@ public class DatabaseConfigurationTests
     public void DevelopmentConfiguration_UsesPostgreSQLConnectionString()
     {
         // Arrange
-        // Connection string is provided via environment variables at runtime (ConnectionStrings__Default).
+        // Connection string is provided via environment variables at runtime (ConnectionStrings__Local).
         // ConfigurationBuilder reads env vars so CI can inject the value; local dev may skip if not set.
         var configBuilder = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", optional: false)
@@ -24,11 +24,11 @@ public class DatabaseConfigurationTests
         var config = configBuilder.Build();
 
         // Act
-        var connectionString = config.GetConnectionString("Default");
+        var connectionString = config.GetConnectionString("Local");
 
         // Skip gracefully when not available (local dev without env var set).
         Assume.That(connectionString, Is.Not.Null.And.Not.Empty,
-            "Skipping: ConnectionStrings__Default env var not set (required in CI via postgres service)");
+            "Skipping: ConnectionStrings__Local env var not set (required in CI via postgres service)");
 
         Assert.That(connectionString, Does.Not.Contain("Data Source=").IgnoreCase,
             "Connection string must not use SQLite Data Source format");
@@ -82,18 +82,18 @@ public class DatabaseConfigurationTests
     public void EnvironmentVariableOverride_CanOverrideConnectionString()
     {
         // Arrange
-        var customConnectionString = "Data Source=/custom/path/mydb.db";
+        var customConnectionString = "Host=custom.db.example.com;Database=mydb;Username=user;Password=pass";
         var configBuilder = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", optional: false)
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Default"] = customConnectionString
+                ["ConnectionStrings:Local"] = customConnectionString
             });
 
         var config = configBuilder.Build();
 
         // Act
-        var connectionString = config.GetConnectionString("Default");
+        var connectionString = config.GetConnectionString("Local");
 
         // Assert
         Assert.That(connectionString, Is.EqualTo(customConnectionString),

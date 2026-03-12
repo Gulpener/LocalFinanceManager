@@ -52,14 +52,9 @@ public class AppDbContext : DbContext
                     .IsRowVersion()
                     .IsRequired(false);
 
-                // Configure timestamps with default values (PostgreSQL-compatible)
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property("CreatedAt")
-                    .HasDefaultValueSql("now()");
-
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property("UpdatedAt")
-                    .HasDefaultValueSql("now()");
+                // Note: CreatedAt/UpdatedAt are set by UpdateTimestamps() in SaveChanges/SaveChangesAsync.
+                // SQL-level defaults are intentionally omitted to stay provider-agnostic and avoid
+                // conflicts with in-memory SQLite used in integration tests.
 
                 // Add index for soft-delete filtering
                 modelBuilder.Entity(entityType.ClrType)
