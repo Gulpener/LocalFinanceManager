@@ -424,7 +424,7 @@
     private void CancelInProgressBulkAssign()
     {
         if (!isProcessing || bulkAssignCancellationTokenSource == null ||
-bulkAssignCancellationTokenSource.IsCancellationRequested)
+            bulkAssignCancellationTokenSource.IsCancellationRequested)
         {
             return;
         }
