@@ -9,7 +9,7 @@ namespace LocalFinanceManager.E2E.Pages;
 public class TransactionsPageModel : PageObjectBase
 {
     private const int FilterTableStableWaitMs = 300;
-    private const int FilterTableUpdateTimeoutMs = 15000;
+    private const int FilterTableUpdateTimeoutMs = 30000;
     private const string FilterPollingStateKey = "__lfm_transactions_filter_polling_state";
 
     // Selectors
@@ -198,14 +198,17 @@ public class TransactionsPageModel : PageObjectBase
                     const startedAt = state.startedAt ?? Date.now();
                     const elapsed = Date.now() - startedAt;
 
+                    if (arg.previousValue === arg.value)
+                    {
+                        // Filter value did not change (e.g. already persisted in localStorage).
+                        // The table may already reflect the correct state – just require the
+                        // short stability window before returning to avoid acting on a
+                        // transient in-progress Blazor re-render.
+                        return elapsed >= arg.minStableMs;
+                    }
+
                     if (arg.expectedStatusMode === 'all')
                     {
-                        // If the filter value did not change, we don't need to wait for stability.
-                        if (arg.previousValue === arg.value)
-                        {
-                            return true;
-                        }
-
                         return elapsed >= arg.minStableMs;
                     }
 

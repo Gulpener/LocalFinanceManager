@@ -261,7 +261,11 @@ else
     app.UseSwaggerUI();
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// Only apply status code pages for non-API requests; API controllers must return their own
+// error responses (e.g. 401, 404) without having them replaced by the Blazor HTML shell.
+app.UseWhen(
+    ctx => !ctx.Request.Path.StartsWithSegments("/api"),
+    b => b.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
