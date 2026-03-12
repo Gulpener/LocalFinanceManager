@@ -45,20 +45,21 @@ public class AppDbContext : DbContext
         {
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
             {
-                // Configure RowVersion for optimistic concurrency (nullable for SQLite compatibility)
+                // Configure RowVersion for optimistic concurrency.
+                // IsRequired(false) allows the column to be null (EF tracks version via token).
                 modelBuilder.Entity(entityType.ClrType)
                     .Property("RowVersion")
                     .IsRowVersion()
-                    .IsRequired(false); // SQLite doesn't auto-generate RowVersion like SQL Server
+                    .IsRequired(false);
 
-                // Configure timestamps with default values
+                // Configure timestamps with default values (PostgreSQL-compatible)
                 modelBuilder.Entity(entityType.ClrType)
                     .Property("CreatedAt")
-                    .HasDefaultValueSql("datetime('now')");
+                    .HasDefaultValueSql("now()");
 
                 modelBuilder.Entity(entityType.ClrType)
                     .Property("UpdatedAt")
-                    .HasDefaultValueSql("datetime('now')");
+                    .HasDefaultValueSql("now()");
 
                 // Add index for soft-delete filtering
                 modelBuilder.Entity(entityType.ClrType)
@@ -187,7 +188,7 @@ public class AppDbContext : DbContext
         {
             entity.Property(bl => bl.MonthlyAmountsJson)
                 .IsRequired()
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(bl => bl.Notes)
                 .HasMaxLength(500);
@@ -227,7 +228,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(100);
 
             entity.Property(t => t.OriginalImport)
-                .HasColumnType("TEXT"); // nvarchar(max) equivalent for SQLite
+                .HasColumnType("jsonb");
 
             entity.Property(t => t.SourceFileName)
                 .HasMaxLength(255);
@@ -285,10 +286,10 @@ public class AppDbContext : DbContext
                 .IsRequired();
 
             entity.Property(ta => ta.BeforeState)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(ta => ta.AfterState)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(ta => ta.Reason)
                 .HasMaxLength(500);
@@ -319,10 +320,10 @@ public class AppDbContext : DbContext
                 .HasMaxLength(100);
 
             entity.Property(s => s.AccountIdsJson)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(s => s.ExcludedCategoryIdsJson)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
         });
 
         // Configure LabeledExample entity

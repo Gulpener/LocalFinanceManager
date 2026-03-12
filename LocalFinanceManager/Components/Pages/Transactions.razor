@@ -71,14 +71,16 @@
 }
 else if (filteredTransactions.Count == 0)
 {
-    <div class="alert alert-info" data-testid="no-transactions-message">
+    <div class="alert alert-info" data-testid="no-transactions-message"
+         data-loaded-account="@(selectedAccountId?.ToString() ?? "all")">
         Geen transacties gevonden. @(selectedAccountId.HasValue ? "Selecteer een andere rekening of " : "")
         <a href="/transactions/import">Importeer transacties</a> om te beginnen.
     </div>
 }
 else
 {
-    <table class="table table-striped" data-testid="transactions-table">
+    <table class="table table-striped" data-testid="transactions-table"
+           data-loaded-account="@(selectedAccountId?.ToString() ?? "all")">
         <thead>
             <tr>
                 <th style="width: 40px;">

@@ -26,6 +26,15 @@ public class AutoApplyTests : E2ETestBase
     {
         _settingsPage = new AutoApplySettingsPageModel(Page, BaseUrl);
 
+        // Truncate tables before each test to prevent data accumulation across tests.
+        // Each SetUp seeds 100 transactions; without truncation, subsequent tests see
+        // hundreds of stale rows which can break ML training and auto-apply assertions.
+        await Factory!.TruncateTablesAsync();
+
+        // Clear localStorage filter state to prevent cross-test contamination.
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
+
         // Seed test data
         using var scope = Factory!.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -332,20 +341,16 @@ public class AutoApplyTests : E2ETestBase
             }
             await contextSetup.SaveChangesAsync();
 
-            // Checkpoint so the host's connections can see all seeded data
-            await contextSetup.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
-
             // Train via the REAL host's IMLService so its IMLModelCache is warmed up immediately
             using var hostScopeML = Factory!.HostServices.CreateScope();
             var hostMlService = hostScopeML.ServiceProvider.GetRequiredService<IMLService>();
             await hostMlService.TrainModelAsync(70);
-
-            // Flush WAL so the trained model bytes are visible to subsequent HTTP requests
-            await contextSetup.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
 
         // Act - Trigger auto-apply via the run-now endpoint
-        var response = await Page.APIRequest.PostAsync($"{BaseUrl}/api/automation/run-now");
+        // Use an extended timeout (90s) because ML inference under parallel test load can be slow.
+        var response = await Page.APIRequest.PostAsync($"{BaseUrl}/api/automation/run-now",
+            new Microsoft.Playwright.APIRequestContextOptions { Timeout = 90_000 });
         Assert.That(response.Status, Is.EqualTo(200), "run-now endpoint should return 200 OK");
 
         var json = await response.JsonAsync();

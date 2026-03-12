@@ -13,14 +13,28 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using System.Text;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DbContext with SQLite
-var connectionString = builder.Configuration.GetConnectionString("Default")
-    ?? "Data Source=localfinancemanager.db";
+// Add DbContext with PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("Local")
+    ?? "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres";
+
+// Guard: refuse to start in Production with a localhost connection string
+if (!builder.Environment.IsDevelopment() && connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:Default is still set to a localhost value. " +
+        "Set the real PostgreSQL connection string via environment variables before deploying.");
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseNpgsql(connectionString));
+
+// Add database health check
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("database");
 
 // Register configuration options
 builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
@@ -262,6 +276,9 @@ app.MapRazorComponents<App>()
 
 // Map API controllers
 app.MapControllers();
+
+// Database health check endpoint
+app.MapHealthChecks("/health/db");
 
 app.Run();
 

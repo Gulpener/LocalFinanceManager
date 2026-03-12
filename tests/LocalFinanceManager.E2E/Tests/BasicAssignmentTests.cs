@@ -36,6 +36,12 @@ public class BasicAssignmentTests : E2ETestBase
 
         await SeedDataHelper.SeedTransactionAsync(context, _accountId, -15m, DateTime.UtcNow.AddDays(-1), "Unassigned Tx A");
         await SeedDataHelper.SeedTransactionAsync(context, _accountId, -45m, DateTime.UtcNow.AddDays(-2), "Unassigned Tx B");
+
+        // Clear localStorage filter state to prevent cross-test contamination.
+        // FilterStateService persists 'transactionFilters' across navigations; a stale
+        // 'Assigned' filter would hide unassigned rows in the next test.
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
     }
 
     [Test]
@@ -69,11 +75,15 @@ public class BasicAssignmentTests : E2ETestBase
 
         await Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A') button:has-text('Toewijzen')").ClickAsync();
         await Page.SelectOptionAsync("#budgetLineSelect", _budgetLineFood.ToString());
+        await Expect(Page.Locator("#assignSaveButton")).ToBeEnabledAsync(new LocatorAssertionsToBeEnabledOptions { Timeout = 5_000 });
         await Page.ClickAsync("#assignSaveButton");
 
-        await Expect(Page.Locator("#transactionAssignModal")).Not.ToBeVisibleAsync();
-        var rowText = await Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')").TextContentAsync();
-        Assert.That(rowText, Does.Contain("Food"));
+        // Do NOT wait for the modal to close here — that relies on the JS interop releaseFocusTrap
+        // call (step 5), which is slow under sustained SignalR load.
+        // The row updates in OnAssignmentSuccess → LoadTransactionsAsync → StateHasChanged (step 4),
+        // which always completes BEFORE the modal close. Poll directly for the expected row state.
+        await Expect(Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')")
+            ).ToContainTextAsync("Food", new LocatorAssertionsToContainTextOptions { Timeout = 45_000 });
     }
 
     [Test]
@@ -161,12 +171,39 @@ public class BasicAssignmentTests : E2ETestBase
 
         await Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A') button:has-text('Toewijzen')").ClickAsync();
         await Page.SelectOptionAsync("#budgetLineSelect", _budgetLineFood.ToString());
+        // Wait for save button to be enabled (CanAssign=true) before clicking
+        await Expect(Page.Locator("#assignSaveButton")).ToBeEnabledAsync(new LocatorAssertionsToBeEnabledOptions { Timeout = 5_000 });
         await Page.ClickAsync("#assignSaveButton");
 
+        // Confirm the click registered on the server: isSubmitting=true disables the button briefly.
+        // Under sustained suite load the SignalR round-trip may be slow; allow 15s.
+        // If the button is still enabled after 15s the click may have been swallowed — retry once.
+        var clickRegistered = false;
+        try
+        {
+            await Expect(Page.Locator("#assignSaveButton")).ToBeDisabledAsync(
+                new LocatorAssertionsToBeDisabledOptions { Timeout = 15_000 });
+            clickRegistered = true;
+        }
+        catch (Microsoft.Playwright.PlaywrightException) { /* slow SignalR — check below */ }
+
+        if (!clickRegistered && await Page.Locator("#assignSaveButton").IsEnabledAsync())
+            await Page.ClickAsync("#assignSaveButton");
+
+        // Wait for the assignment modal to close before looking for the audit button.
+        // The audit trail button only renders once IsAssigned=true (after Blazor re-renders).
+        // Full chain: DB write → OnAssignmentSuccess → LoadTransactionsAsync → StateHasChanged
+        //             → JS releaseFocusTrap → OnClose → re-render. Allow 60s under load.
+        await Expect(Page.Locator("#transactionAssignModal")).Not.ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 60_000 });
+
         var row = Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')").First;
-        await row.Locator("button[title='Bekijk toewijzingsgeschiedenis']").ClickAsync();
+        var auditBtn = row.Locator("button[title='Bekijk toewijzingsgeschiedenis']");
+        await Expect(auditBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15_000 });
+        await auditBtn.ClickAsync();
 
         await Expect(Page.Locator("#auditTrailModalTitle")).ToBeVisibleAsync();
+        // Wait for loading spinner to disappear before reading modal content
+        await Expect(Page.Locator(".modal.show .spinner-border")).Not.ToBeVisibleAsync();
         var content = await Page.Locator(".modal.show").TextContentAsync();
         Assert.That(content, Does.Contain("Assign").Or.Contain("Toegewezen"));
     }

@@ -12,6 +12,22 @@ jobs:
     permissions:
       contents: read
 
+    # PostgreSQL service container for E2E tests
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,6 +63,7 @@ jobs:
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~TransactionImportTests|FullyQualifiedName~BasicAssignmentTests|FullyQualifiedName~MultiAccountValidationTests"
         env:
+          E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
           Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
@@ -55,6 +72,7 @@ jobs:
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~SplitAssignmentTests|FullyQualifiedName~BulkAssignmentTests"
         env:
+          E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
           Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
@@ -63,6 +81,7 @@ jobs:
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests"
         env:
+          E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
           Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
@@ -71,6 +90,7 @@ jobs:
         timeout-minutes: 10
         run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests"
         env:
+          E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
           Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}

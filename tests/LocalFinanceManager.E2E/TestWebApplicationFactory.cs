@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,13 +15,14 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Npgsql;
 
 namespace LocalFinanceManager.E2E;
 
 /// <summary>
 /// Web application factory for E2E tests using Playwright.
 /// Creates a REAL Kestrel server (not TestServer) that Playwright can connect to.
-/// Provides an isolated SQLite database per test fixture for parallel testing.
+/// Provides an isolated PostgreSQL database per test fixture for parallel testing.
 /// Uses dynamic port allocation to avoid port conflicts.
 /// </summary>
 public class TestWebApplicationFactory : WebApplicationFactory<Program>
@@ -36,11 +36,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     /// </summary>
     internal const string E2EAuthCookieName = "e2e-auth-token";
     private IHost? _host;
-    private readonly string _testDatabasePath;
     private readonly string _fixtureId;
 
     public string ServerAddress { get; private set; }
-    public string TestDatabasePath => _testDatabasePath;
+
+    /// <summary>PostgreSQL database name used for this test fixture.</summary>
+    public string TestDatabaseName { get; }
 
     /// <summary>
     /// The real Kestrel host's service provider.
@@ -53,26 +54,69 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
     public TestWebApplicationFactory(string fixtureId)
     {
-        // Use fixture ID to create one database per test fixture (enables parallel execution)
         _fixtureId = fixtureId;
-        _testDatabasePath = $"localfinancemanager.e2etest.fixture_{_fixtureId}.db";
+        TestDatabaseName = $"lfm_e2e_{fixtureId}".ToLowerInvariant();
         // Let Kestrel bind to an OS-assigned port to avoid race conditions in parallel test runs.
         ServerAddress = "http://127.0.0.1:0";
     }
-    /// <summary>
-    /// Gets the connection string for the test database.
-    /// Pooling=False prevents SQLite shared-cache stale read issues: with connection pooling
-    /// enabled, a pooled connection that was opened before a write may still see the old page-cache
-    /// state even after the writer commits, causing the Kestrel host and the test's dummy host
-    /// to disagree on the database contents.
-    /// </summary>
-    private string GetConnectionString() => $"Data Source={_testDatabasePath};Pooling=False";
 
-    private static string SanitizeTestName(string testName)
+    /// <summary>
+    /// Returns the base connection string (points to the admin 'postgres' database).
+    /// Resolution order:
+    ///   1. E2E_PG_CONNECTION environment variable (used in CI)
+    ///   2. ConnectionStrings:Local from the main app's user-secrets (local dev)
+    ///   3. Hardcoded localhost fallback
+    /// GUARD: fails if the connection string targets a *.supabase.co host to prevent
+    /// accidental test execution against the production Supabase database.
+    /// </summary>
+    private static string GetBaseConnectionString()
     {
-        // Remove invalid filename characters
-        var invalid = Path.GetInvalidFileNameChars();
-        return string.Join("_", testName.Split(invalid, StringSplitOptions.RemoveEmptyEntries));
+        var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddUserSecrets("3deee73f-9f3f-4e27-ae81-4b0a5b9dff24")
+            .Build();
+
+        var baseConn = Environment.GetEnvironmentVariable("E2E_PG_CONNECTION");
+
+        if (baseConn == null && config.GetConnectionString("Local") is { } localConn)
+        {
+            // Derive admin connection from the app's Local secret, pointing at the postgres admin DB
+            var b = new NpgsqlConnectionStringBuilder(localConn) { Database = "postgres" };
+            baseConn = b.ConnectionString;
+        }
+
+        baseConn ??= "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres";
+
+        if (baseConn.Contains(".supabase.co", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "E2E_PG_CONNECTION targets a Supabase production host (*.supabase.co). " +
+                "E2E tests must NEVER run against the production database. " +
+                "Use a local PostgreSQL instance or a dedicated CI service container.");
+        }
+
+        return baseConn;
+    }
+
+    /// <summary>
+    /// Returns a connection string for the PostgreSQL admin database (used to CREATE/DROP the test DB).
+    /// </summary>
+    private static string GetAdminConnectionString()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(GetBaseConnectionString());
+        builder.Database = "postgres";
+        builder.Pooling = false;
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// Returns a connection string targeting the fixture-specific test database.
+    /// </summary>
+    public string GetConnectionString()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(GetBaseConnectionString());
+        builder.Database = TestDatabaseName;
+        builder.Pooling = false;
+        return builder.ToString();
     }
 
     /// <summary>
@@ -171,7 +215,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
-            // Override connection string to use test database
+            // Override connection string to use the fixture-specific PostgreSQL test database
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Default"] = GetConnectionString(),
@@ -197,12 +241,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(descriptor);
             }
 
-            // Use file-based SQLite database for E2E testing with WAL mode
+            // Use the fixture-specific PostgreSQL database for E2E testing
             services.AddDbContext<AppDbContext>(options =>
             {
-                options.UseSqlite(GetConnectionString(), sqliteOptions =>
+                options.UseNpgsql(GetConnectionString(), npgsqlOptions =>
                 {
-                    sqliteOptions.CommandTimeout(60);
+                    npgsqlOptions.CommandTimeout(60);
                 });
             });
 
@@ -247,6 +291,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Tests that verify unauthenticated behaviour create a fresh browser context without
             // this cookie, so those requests still see an anonymous HttpContext.User.
             services.AddSingleton<IStartupFilter>(new E2EAuthBypassStartupFilter());
+
+            // Reduce Blazor Server circuit retention from 3 minutes (default) to 5 seconds.
+            // Each test navigation (SetUp GotoAsync + NavigateAsync) creates a new Blazor circuit.
+            // With 9+ tests per fixture, 30+ zombie circuits accumulate, each holding a scoped
+            // DbContext and DI services. The server's thread pool gets starved as it services
+            // reconnection attempts for circuits that will never reconnect.
+            // 5 seconds is enough for any in-flight render batch to settle; circuits that have
+            // genuinely disconnected (navigated away) are released almost immediately.
+            services.PostConfigure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
+            {
+                options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromSeconds(5);
+            });
         });
 
         // Configure logging to output to test console
@@ -254,90 +310,58 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         {
             logging.ClearProviders();
             logging.AddConsole();
-            logging.SetMinimumLevel(LogLevel.Warning); // Reduce noise in test output
+            logging.SetMinimumLevel(LogLevel.Warning);
         });
     }
 
     /// <summary>
-    /// Initializes database for the test fixture by deleting old files.
-    /// Should be called once per fixture (OneTimeSetUp), BEFORE server starts.
-    /// WAL mode should be enabled AFTER migrations complete.
+    /// Initializes the PostgreSQL test database for this fixture.
+    /// Drops the existing fixture database (if any), recreates it, applies migrations, and seeds data.
+    /// Should be called once per fixture (OneTimeSetUp), BEFORE the server starts.
     /// </summary>
     public async Task InitializeDatabaseAsync()
     {
-        // Clear all SQLite connection pools first to release file handles
-        SqliteConnection.ClearAllPools();
+        var adminConnString = GetAdminConnectionString();
+        var fixtureDb = TestDatabaseName;
 
-        // Give OS time to release handles
-        await Task.Delay(100);
-
-        // Delete database file and related SQLite files if they exist (do this before server starts)
-        var filesToDelete = new[]
+        // Drop and recreate the fixture database for a clean slate
+        await using (var adminConn = new NpgsqlConnection(adminConnString))
         {
-            _testDatabasePath,
-            _testDatabasePath + "-shm", // Shared memory file
-            _testDatabasePath + "-wal"  // Write-Ahead Log file
-        };
+            await adminConn.OpenAsync();
 
-        foreach (var file in filesToDelete)
-        {
-            if (!File.Exists(file)) continue;
-
-            // Try up to 3 times to delete the file
-            for (int attempt = 0; attempt < 3; attempt++)
+            // Terminate all existing connections to the test database before dropping
+            await using (var terminateCmd = adminConn.CreateCommand())
             {
-                try
-                {
-                    // Remove read-only attribute if set
-                    var attributes = File.GetAttributes(file);
-                    if ((attributes & FileAttributes.ReadOnly) == FileAttributes.ReadOnly)
-                    {
-                        File.SetAttributes(file, attributes & ~FileAttributes.ReadOnly);
-                    }
+                terminateCmd.CommandText = $"""
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE datname = '{fixtureDb}' AND pid <> pg_backend_pid();
+                    """;
+                await terminateCmd.ExecuteNonQueryAsync();
+            }
 
-                    File.Delete(file);
-                    break; // Success, exit retry loop
-                }
-                catch (IOException) when (attempt < 2)
-                {
-                    // File is locked, clear pools and wait before retry
-                    SqliteConnection.ClearAllPools();
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    await Task.Delay(200 * (attempt + 1)); // 200ms, then 400ms
-                }
-                catch
-                {
-                    // Different error or final attempt failed - just break
-                    break;
-                }
+            await using (var dropCmd = adminConn.CreateCommand())
+            {
+                dropCmd.CommandText = $"DROP DATABASE IF EXISTS \"{fixtureDb}\"";
+                await dropCmd.ExecuteNonQueryAsync();
+            }
+
+            await using (var createCmd = adminConn.CreateCommand())
+            {
+                createCmd.CommandText = $"CREATE DATABASE \"{fixtureDb}\"";
+                await createCmd.ExecuteNonQueryAsync();
             }
         }
 
-        // Final cleanup
-        SqliteConnection.ClearAllPools();
-
-        // Apply migrations before the web host starts.
-        // This avoids duplicate/concurrent migration execution paths during WebApplicationFactory host setup.
+        // Apply migrations before the web host starts to avoid concurrent migration during startup
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(GetConnectionString(), sqliteOptions => sqliteOptions.CommandTimeout(60))
+            .UseNpgsql(GetConnectionString(), npgsqlOptions => npgsqlOptions.CommandTimeout(60))
             .Options;
 
         await using var context = new AppDbContext(options);
         await context.Database.MigrateAsync();
         var seedService = new DevelopmentUserSeedService(context);
         await seedService.SeedAsync();
-    }
-
-    /// <summary>
-    /// Enables WAL mode for better concurrency.
-    /// Call this AFTER migrations complete (after server starts).
-    /// </summary>
-    public async Task EnableWALModeAsync()
-    {
-        using var scope = Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await context.Database.ExecuteSqlRawAsync("PRAGMA journal_mode=WAL;");
     }
 
     /// <summary>
@@ -350,27 +374,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        // Truncate all tables in reverse dependency order
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM TransactionSplits;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM TransactionAudits;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM LabeledExamples;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM Transactions;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM BudgetLines;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM Categories;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM BudgetPlans;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM Accounts;");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM MLModels;");
-
-        // Reset SQLite sequence counters (wrap in try-catch as table may not exist)
-        // Not strictly needed for GUID PKs but ensures clean state
-        try
-        {
-            await context.Database.ExecuteSqlRawAsync("DELETE FROM sqlite_sequence;");
-        }
-        catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.SqliteErrorCode == 1)
-        {
-            // Table doesn't exist, ignore
-        }
+        // Truncate all tables in reverse dependency order (PostgreSQL-compatible)
+        await context.Database.ExecuteSqlRawAsync(@"
+            TRUNCATE TABLE ""TransactionSplits"", ""TransactionAudits"", ""LabeledExamples"",
+                           ""Transactions"", ""BudgetLines"", ""Categories"",
+                           ""BudgetPlans"", ""Accounts"", ""MLModels"", ""AppSettings"" CASCADE;
+        ");
     }
 
     /// <summary>
@@ -384,8 +393,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     }
 
     /// <summary>
-    /// Closes all database connections to ensure file handles are released.
-    /// Call this before disposing the factory to prevent file lock issues.
+    /// Closes database connections and drops the fixture test database.
+    /// Call this before disposing the factory.
     /// </summary>
     public async Task CloseAllConnectionsAsync()
     {
@@ -394,71 +403,56 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             return;
         }
 
-        using var scope = Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        // Clear Npgsql connection pool for the fixture database
+        NpgsqlConnection.ClearPool(new NpgsqlConnection(GetConnectionString()));
 
-        // Close the connection if it's open
-        var connection = context.Database.GetDbConnection();
-        if (connection.State != System.Data.ConnectionState.Closed)
-        {
-            await connection.CloseAsync();
-        }
-
-        // Clear connection pools to release all file handles
-        SqliteConnection.ClearAllPools();
-
-        // Give the OS time to release file handles
+        // Give the pool time to drain
         await Task.Delay(50);
+
+        // Drop the fixture database to clean up
+        try
+        {
+            var adminConnString = GetAdminConnectionString();
+            var fixtureDb = TestDatabaseName;
+
+            await using var adminConn = new NpgsqlConnection(adminConnString);
+            await adminConn.OpenAsync();
+
+            await using (var terminateCmd = adminConn.CreateCommand())
+            {
+                terminateCmd.CommandText = $"""
+                    SELECT pg_terminate_backend(pid)
+                    FROM pg_stat_activity
+                    WHERE datname = '{fixtureDb}' AND pid <> pg_backend_pid();
+                    """;
+                await terminateCmd.ExecuteNonQueryAsync();
+            }
+
+            await using var dropCmd = adminConn.CreateCommand();
+            dropCmd.CommandText = $"DROP DATABASE IF EXISTS \"{fixtureDb}\"";
+            await dropCmd.ExecuteNonQueryAsync();
+        }
+        catch
+        {
+            // Best-effort: ignore errors during cleanup
+        }
     }
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            // WebApplicationFactory base class handles disposal of the host
-            // No need to manually dispose anything here
-        }
-
         // Call base disposal to ensure all WebApplicationFactory resources are disposed
         base.Dispose(disposing);
 
         if (disposing)
         {
-            // Clear SQLite connection pool to release all file handles
-            SqliteConnection.ClearAllPools();
-
-            // Force garbage collection to ensure finalizers run
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
-
-            // Wait longer for file handles to be fully released
-            Task.Delay(300);
-
-            // Clean up test database file with aggressive retry logic
-            if (File.Exists(_testDatabasePath))
+            // Clear Npgsql connection pools for the fixture database
+            try
             {
-                for (int i = 0; i < 10; i++)
-                {
-                    try
-                    {
-                        File.Delete(_testDatabasePath);
-                        break; // Success
-                    }
-                    catch (IOException) when (i < 9)
-                    {
-                        // File still locked, clear pools again and wait
-                        SqliteConnection.ClearAllPools();
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-                        Task.Delay(100 * (i + 1)); // Increasing backoff: 100ms, 200ms, 300ms...
-                    }
-                    catch
-                    {
-                        // Final attempt failed or different error, ignore
-                        break;
-                    }
-                }
+                NpgsqlConnection.ClearPool(new NpgsqlConnection(GetConnectionString()));
+            }
+            catch
+            {
+                // Best-effort
             }
         }
     }

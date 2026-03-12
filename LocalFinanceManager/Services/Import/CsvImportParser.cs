@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using LocalFinanceManager.DTOs;
 using Microsoft.Extensions.Logging;
 
@@ -286,7 +287,7 @@ public class CsvImportParser : IImportParser
             var transaction = new ParsedTransactionDto
             {
                 LineNumber = lineNumber,
-                OriginalImport = originalLine
+                OriginalImport = JsonSerializer.Serialize(new { raw = originalLine })
             };
 
             // Parse date (required)
@@ -378,14 +379,14 @@ public class CsvImportParser : IImportParser
         {
             if (DateTime.TryParseExact(value, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
             {
-                return date;
+                return DateTime.SpecifyKind(date, DateTimeKind.Utc);
             }
         }
 
         // Fallback to general parsing
         if (DateTime.TryParse(value, out var parsedDate))
         {
-            return parsedDate;
+            return DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
         }
 
         throw new FormatException($"Unable to parse date: {value}");

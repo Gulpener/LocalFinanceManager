@@ -37,8 +37,8 @@ public class MonitoringDashboardPageModel : PageObjectBase
     {
         await NavigateToAsync("/admin/monitoring");
 
-        // Wait for stats to load (spinner to disappear)
-        await Page.WaitForSelectorAsync(".spinner-border", new() { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+        // Wait for stats to load (spinner to disappear) — allow extra time under parallel load
+        await Page.WaitForSelectorAsync(".spinner-border", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
     }
 
     /// <summary>

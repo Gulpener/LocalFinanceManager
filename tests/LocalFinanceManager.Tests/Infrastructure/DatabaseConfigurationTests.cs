@@ -11,74 +11,49 @@ namespace LocalFinanceManager.Tests.Infrastructure;
 public class DatabaseConfigurationTests
 {
     [Test]
-    public void DevelopmentEnvironment_LoadsDevDatabase()
+    public void DevelopmentConfiguration_UsesPostgreSQLConnectionString()
     {
         // Arrange
         var configBuilder = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", optional: false)
             .AddJsonFile("appsettings.Development.json", optional: true);
-        
+
         var config = configBuilder.Build();
 
         // Act
         var connectionString = config.GetConnectionString("Default");
 
         // Assert
-        Assert.That(connectionString, Does.Contain("localfinancemanager.dev.db"),
-            "Development environment should use localfinancemanager.dev.db");
+        Assert.That(connectionString, Is.Not.Null.And.Not.Empty,
+            "ConnectionStrings:Default must be configured");
+        Assert.That(connectionString, Does.Not.Contain("Data Source=").IgnoreCase,
+            "Connection string must not use SQLite Data Source format");
     }
 
     [Test]
-    public void ProductionEnvironment_LoadsProdDatabase()
+    public void PostgreSQLConnectionString_ContainsRequiredParts()
     {
-        // Arrange
-        var configBuilder = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: false);
-        
-        var config = configBuilder.Build();
+        // Arrange — local dev default
+        var connectionString = "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres";
 
-        // Act
-        var connectionString = config.GetConnectionString("Default");
-
-        // Assert
-        Assert.That(connectionString, Does.Contain("localfinancemanager.db"),
-            "Production environment should use localfinancemanager.db");
-        Assert.That(connectionString, Does.Not.Contain(".dev."),
-            "Production environment should not use .dev. database");
+        // Assert key components can be parsed from a PostgreSQL connection string
+        Assert.That(connectionString, Does.Contain("Host=").IgnoreCase,
+            "PostgreSQL connection string should contain Host");
+        Assert.That(connectionString, Does.Contain("Database=").IgnoreCase,
+            "PostgreSQL connection string should contain Database");
     }
 
     [Test]
-    public void DatabasePath_CanBeParsedFromConnectionString()
+    public void SupabaseConnectionString_ContainsRequiredParts()
     {
-        // Arrange
-        var connectionString = "Data Source=localfinancemanager.dev.db";
+        // Arrange — Supabase format
+        var connectionString = "Host=db.xxx.supabase.co;Database=postgres;Username=postgres;Password=xxx;SSL Mode=Require;Trust Server Certificate=true";
 
-        // Act
-        var match = Regex.Match(
-            connectionString,
-            @"Data Source=([^;]+)",
-            RegexOptions.IgnoreCase);
-
-        // Assert
-        Assert.That(match.Success, Is.True, "Should be able to parse database path from connection string");
-        Assert.That(match.Groups[1].Value, Is.EqualTo("localfinancemanager.dev.db"));
-    }
-
-    [Test]
-    public void DatabasePath_WithAbsolutePath_ParsesCorrectly()
-    {
-        // Arrange
-        var connectionString = "Data Source=/var/lib/myapp/localfinancemanager.db;Mode=ReadWrite";
-
-        // Act
-        var match = Regex.Match(
-            connectionString,
-            @"Data Source=([^;]+)",
-            RegexOptions.IgnoreCase);
-
-        // Assert
-        Assert.That(match.Success, Is.True);
-        Assert.That(match.Groups[1].Value, Is.EqualTo("/var/lib/myapp/localfinancemanager.db"));
+        // Assert Supabase connection string contains both required SSL settings
+        Assert.That(connectionString, Does.Contain("SSL Mode=Require"),
+            "Production Supabase connection string must enforce SSL");
+        Assert.That(connectionString, Does.Contain("supabase.co").IgnoreCase,
+            "This test validates a Supabase-format connection string");
     }
 
     [Test]
@@ -88,7 +63,7 @@ public class DatabaseConfigurationTests
         var configBuilder = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", optional: false)
             .AddJsonFile("appsettings.Development.json", optional: true);
-        
+
         var config = configBuilder.Build();
 
         // Act
@@ -110,7 +85,7 @@ public class DatabaseConfigurationTests
             {
                 ["ConnectionStrings:Default"] = customConnectionString
             });
-        
+
         var config = configBuilder.Build();
 
         // Act

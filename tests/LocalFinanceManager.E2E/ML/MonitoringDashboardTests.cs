@@ -6,6 +6,7 @@ using LocalFinanceManager.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Playwright;
 using System.Globalization;
 
 namespace LocalFinanceManager.E2E.ML;
@@ -32,7 +33,9 @@ public class MonitoringDashboardTests : E2ETestBase
         _dashboardPage = new MonitoringDashboardPageModel(Page, BaseUrl);
 
         // Seed test data
-        using var scope = Factory!.Services.CreateScope();
+        // Use HostServices (real Kestrel host DI) so threshold matches the running server's config.
+        // Factory.Services is the test-host container and may resolve appsettings differently.
+        using var scope = Factory!.HostServices.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var options = scope.ServiceProvider.GetRequiredService<IOptions<AutomationOptions>>();
         _undoRateAlertThresholdPercent = options.Value.UndoRateAlertThreshold * 100m;
@@ -91,16 +94,15 @@ public class MonitoringDashboardTests : E2ETestBase
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, totalAutoApplied, undoCount: lowUndoCount);
 
-            // Ensure data is visible to other connections when using SQLite WAL
-            await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         } // Ensure scope is disposed and data is committed
         // Act
         await _dashboardPage.NavigateAsync();
 
-        // Assert - No alert should be shown
-        var isAlertVisible = await _dashboardPage.IsAlertBannerVisibleAsync();
-        Assert.That(isAlertVisible, Is.False,
-            $"No alert should be shown when undo rate is below configured threshold ({_undoRateAlertThresholdPercent:0.0}%)");
+        // Assert - No alert should be shown.
+        // Use Expect polling (not a snapshot) to account for the 2s auto-refresh cycle
+        // and Blazor render time. 8s covers one full refresh + 3× safety margin.
+        await Expect(Page.Locator("[data-testid='alert-banner']")
+            ).Not.ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 8_000 });
 
         // Status indicator should be green
         var statusClass = await _dashboardPage.GetStatusIndicatorClassAsync();
@@ -128,7 +130,6 @@ public class MonitoringDashboardTests : E2ETestBase
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, totalAutoApplied, undoCount: highUndoCount);
-            await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
 
         // Act
@@ -181,7 +182,6 @@ public class MonitoringDashboardTests : E2ETestBase
         {
             var contextBefore = scopeBefore.ServiceProvider.GetRequiredService<AppDbContext>();
             await SeedDataHelper.SeedAutoApplyHistoryAsync(contextBefore, _testAccount.Id, 10, undoCount: 0);
-            await contextBefore.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
 
         await _dashboardPage.NavigateAsync();
@@ -361,7 +361,6 @@ public class MonitoringDashboardTests : E2ETestBase
         using var scope2 = Factory!.Services.CreateScope();
         var context2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
         await SeedDataHelper.SeedAutoApplyHistoryAsync(context2, _testAccount.Id, 10, undoCount: 1);
-        await context2.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         await Task.Delay(300);
 
         // Wait for auto-refresh (2 seconds in test configuration)
@@ -383,7 +382,6 @@ public class MonitoringDashboardTests : E2ETestBase
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, 5, undoCount: 0);
-            await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE)");
         }
         await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 

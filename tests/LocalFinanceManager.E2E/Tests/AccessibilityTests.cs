@@ -9,6 +9,18 @@ namespace LocalFinanceManager.E2E.Tests;
 [TestFixture]
 public class AccessibilityTests : E2ETestBase
 {
+    [SetUp]
+    public async Task SetUp()
+    {
+        // Truncate tables before each test to ensure clean state — without this,
+        // accumulated assigned transactions from previous tests dominate the page.
+        await Factory!.TruncateTablesAsync();
+
+        // Clear localStorage filter state to prevent cross-test contamination.
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
+    }
+
     [Test]
     public async Task TransactionsPage_HasNoCriticalOrSeriousAxeViolations()
     {
@@ -76,9 +88,20 @@ public class AccessibilityTests : E2ETestBase
         await SeedDataHelper.SeedBudgetLineAsync(context, budgetPlanId, categories[0].Id, 500m);
         await SeedDataHelper.SeedTransactionAsync(context, account.Id, -33m, DateTime.UtcNow, "Tab Order Tx");
 
+        // Clear localStorage filter state so unassigned transactions (with 'Toewijzen' button) are visible
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
+
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await Page.Locator("button:has-text('Toewijzen')").First.ClickAsync();
-        await Page.WaitForFunctionAsync("() => document.activeElement?.id === 'budgetLineSelect'");
+
+        // Wait for the modal to open and the budgetLineSelect to be present in DOM.
+        // Then click/focus it directly instead of waiting for Blazor's OnAfterRenderAsync
+        // focus automation (which can take >60s under parallel CPU load).
+        await Page.WaitForSelectorAsync("#budgetLineSelect", new() { State = WaitForSelectorState.Visible, Timeout = 30_000 });
+        await Page.ClickAsync("#budgetLineSelect");
+        await Page.WaitForFunctionAsync("() => document.activeElement?.id === 'budgetLineSelect'",
+            new object(), new PageWaitForFunctionOptions { Timeout = 10_000 });
 
         var sequence = new List<string>();
         sequence.Add(await Page.EvaluateAsync<string>("() => document.activeElement?.id || ''"));

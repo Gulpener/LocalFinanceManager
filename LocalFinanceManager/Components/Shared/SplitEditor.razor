@@ -264,6 +264,12 @@
             return;
         }
 
+        // Wait until budget lines have loaded before focusing, so the non-disabled selects are present
+        if (budgetLines == null)
+        {
+            return; // Don't set isInitialFocusSet — retry on next render after lines load
+        }
+
         isInitialFocusSet = true;
 
         try

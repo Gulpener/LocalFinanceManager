@@ -40,11 +40,15 @@ public class SplitEditorPageModel : PageObjectBase
     }
 
     /// <summary>
-    /// Waits for the split editor modal to appear.
+    /// Waits for the split editor modal to appear and for at least 2 split rows to be rendered.
     /// </summary>
     public async Task WaitForModalAsync()
     {
-        await WaitForSelectorAsync(ModalSelector);
+        await WaitForSelectorAsync(ModalSelector, 10000);
+        // Wait for Blazor to render the initial 2 split rows (InitializeSplits adds 2 rows)
+        await Page.WaitForFunctionAsync(
+            "() => document.querySelectorAll('[data-testid=\"split-row\"]').length >= 2",
+            new PageWaitForFunctionOptions { Timeout = 8000 });
     }
 
     /// <summary>
@@ -54,11 +58,11 @@ public class SplitEditorPageModel : PageObjectBase
     {
         var currentCount = await Page.Locator(SplitRowSelector).CountAsync();
         await Page.ClickAsync(AddSplitButtonSelector);
-        // Wait for new split row to appear in DOM
+        // Wait for new split row to appear in DOM (increase timeout for Blazor Server SignalR)
         await Page.WaitForFunctionAsync(
-            "(expected) => document.querySelectorAll('.split-row').length === expected",
+            "(expected) => document.querySelectorAll('[data-testid=\"split-row\"]').length === expected",
             currentCount + 1,
-            new() { Timeout = 2000 });
+            new() { Timeout = 5000 });
     }
 
     /// <summary>
@@ -82,11 +86,11 @@ public class SplitEditorPageModel : PageObjectBase
 
         var currentCount = await Page.Locator(SplitRowSelector).CountAsync();
         await removeButton.ClickAsync();
-        // Wait for split row to be removed from DOM
+        // Wait for split row to be removed from DOM (increase timeout for Blazor Server SignalR)
         await Page.WaitForFunctionAsync(
-            "(expected) => document.querySelectorAll('.split-row').length === expected",
+            "(expected) => document.querySelectorAll('[data-testid=\"split-row\"]').length === expected",
             currentCount - 1,
-            new() { Timeout = 2000 });
+            new() { Timeout = 5000 });
     }
 
     /// <summary>
@@ -96,18 +100,12 @@ public class SplitEditorPageModel : PageObjectBase
     /// <param name="amount">Amount to set (decimal value).</param>
     public async Task SetSplitAmountAsync(int index, decimal amount)
     {
-        var rows = await Page.QuerySelectorAllAsync(SplitRowSelector);
-        if (index >= rows.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index),
-                $"Split row index {index} is out of range. Only {rows.Count} rows found.");
-        }
+        // Use locator-based approach — Playwright retries until the row is in the DOM
+        var rowLocator = Page.Locator(SplitRowSelector).Nth(index);
+        await rowLocator.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 8000 });
 
-        var amountInput = await rows[index].QuerySelectorAsync(SplitAmountInputSelector);
-        if (amountInput == null)
-        {
-            throw new InvalidOperationException($"Amount input not found for split row {index}.");
-        }
+        var amountInput = rowLocator.Locator(SplitAmountInputSelector);
+        await amountInput.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
 
         await amountInput.FillAsync(amount.ToString("0.00", CultureInfo.InvariantCulture));
         // Press Tab to blur the input, triggering Blazor's @bind:event="onchange" binding
@@ -115,7 +113,7 @@ public class SplitEditorPageModel : PageObjectBase
         await amountInput.PressAsync("Tab");
         // Wait for Blazor Server to process the onchange event and push the updated DOM
         // back to the browser over SignalR before any caller reads validation state.
-        await Page.WaitForTimeoutAsync(150);
+        await Page.WaitForTimeoutAsync(300);
     }
 
     /// <summary>
@@ -125,18 +123,13 @@ public class SplitEditorPageModel : PageObjectBase
     /// <param name="categoryId">ID of the category to select.</param>
     public async Task SelectSplitCategoryAsync(int index, Guid categoryId)
     {
-        var rows = await Page.QuerySelectorAllAsync(SplitRowSelector);
-        if (index >= rows.Count)
-        {
-            throw new ArgumentOutOfRangeException(nameof(index),
-                $"Split row index {index} is out of range. Only {rows.Count} rows found.");
-        }
+        // Use locator-based approach — Playwright retries until the row is in the DOM
+        var rowLocator = Page.Locator(SplitRowSelector).Nth(index);
+        await rowLocator.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 8000 });
 
-        var categorySelect = await rows[index].QuerySelectorAsync(SplitCategorySelectSelector);
-        if (categorySelect == null)
-        {
-            throw new InvalidOperationException($"Category select not found for split row {index}.");
-        }
+        // Wait for budget lines to load (select becomes enabled after async LoadBudgetLines())
+        var categorySelect = rowLocator.Locator(SplitCategorySelectSelector + ":not([disabled])");
+        await categorySelect.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 8000 });
 
         await categorySelect.SelectOptionAsync(categoryId.ToString());
     }

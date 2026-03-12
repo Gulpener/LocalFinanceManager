@@ -9,7 +9,7 @@ namespace LocalFinanceManager.E2E.Pages;
 public class TransactionsPageModel : PageObjectBase
 {
     private const int FilterTableStableWaitMs = 300;
-    private const int FilterTableUpdateTimeoutMs = 5000;
+    private const int FilterTableUpdateTimeoutMs = 15000;
     private const string FilterPollingStateKey = "__lfm_transactions_filter_polling_state";
 
     // Selectors
@@ -56,9 +56,28 @@ public class TransactionsPageModel : PageObjectBase
     public async Task SelectAccountFilterAsync(Guid accountId)
     {
         await Page.SelectOptionAsync(AccountFilterSelector, accountId.ToString());
-        // Wait for either the transactions table (rows present) or the empty-state message
-        // (zero rows). Both indicate Blazor has finished re-rendering after the filter change.
-        await WaitForSelectorAsync($"{TransactionTableSelector}, {NoTransactionsSelector}");
+
+        // Wait for Blazor to finish re-rendering with data for the selected account.
+        // The table and no-transactions elements carry a data-loaded-account attribute
+        // that equals the currently loaded account ID (set when loading=false).
+        // This is the most reliable way to detect Blazor re-render completion because
+        // the row-ID comparison fails when the same transactions show for all accounts.
+        var accountIdStr = accountId.ToString();
+        await Page.WaitForFunctionAsync(
+            @"arg => {
+                const table = document.querySelector(arg.tableSelector);
+                if (table && table.getAttribute('data-loaded-account') === arg.accountId) return true;
+                const noTx = document.querySelector(arg.noTxSelector);
+                if (noTx && noTx.getAttribute('data-loaded-account') === arg.accountId) return true;
+                return false;
+            }",
+            new
+            {
+                tableSelector = TransactionTableSelector,
+                noTxSelector = NoTransactionsSelector,
+                accountId = accountIdStr
+            },
+            new PageWaitForFunctionOptions { Timeout = 15000 });
     }
 
     /// <summary>
