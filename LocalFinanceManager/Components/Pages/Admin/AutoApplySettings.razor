@@ -99,7 +99,7 @@ else
                         <div class="mb-3">
                             <label for="confidence-threshold" class="form-label">
                                 Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence *
-                                                                                                                                                                                                                                                            100).ToString("F0"))%</strong>
+                                                                                                                                                                                                                                                                                            100).ToString("F0"))%</strong>
                             </label>
                             <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
                                    value="@_settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture)"
@@ -439,7 +439,8 @@ else
             existingSettings.MinimumConfidence = _settings.MinimumConfidence;
             existingSettings.IntervalMinutes = _settings.IntervalMinutes;
             existingSettings.AccountIdsJson = accountIds.Any() ? JsonSerializer.Serialize(accountIds) : null;
-            existingSettings.ExcludedCategoryIdsJson = excludedCategoryIds.Any() ? JsonSerializer.Serialize(excludedCategoryIds) : null;
+            existingSettings.ExcludedCategoryIdsJson = excludedCategoryIds.Any() ? JsonSerializer.Serialize(excludedCategoryIds) :
+null;
             existingSettings.UpdatedBy = UserContext.GetCurrentUserEmail();
             existingSettings.IsArchived = false;
 
