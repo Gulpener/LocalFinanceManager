@@ -414,8 +414,6 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
 
     private async Task ConfirmUndoAsync()
     {
-        _showConfirmDialog = false;
-
         var transactionId = _pendingUndoTransactionId;
         _pendingUndoTransactionId = Guid.Empty;
 
@@ -424,6 +422,10 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
             _undoingTransaction = true;
 
             var result = await UndoService.UndoAutoApplyAsync(transactionId);
+
+            // Hide the dialog only AFTER the undo completes so the browser reflects the
+            // committed state before Playwright (or any caller) sees the dialog disappear.
+            _showConfirmDialog = false;
 
             if (result.Success)
             {
@@ -442,6 +444,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to undo auto-apply for transaction {TransactionId}", transactionId);
+            _showConfirmDialog = false;
             await JS.InvokeVoidAsync("alert", "Fout bij ongedaan maken van de toewijzing.");
         }
         finally

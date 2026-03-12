@@ -4,6 +4,7 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -260,6 +261,23 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             services.AddTransient<E2EDevSmokeHeaderHandler>();
             services.AddHttpClient("AuthorizedApiClient")
                 .AddHttpMessageHandler<E2EDevSmokeHeaderHandler>();
+
+            // Override the scoped HttpClient (used by Blazor components such as MLSuggestionBadge)
+            // to add the X-E2E-Internal:1 header on every outgoing request.  The production
+            // registration uses AuthTokenHandler which forwards a Supabase JWT — unavailable in
+            // E2E tests — so requests from server-side Blazor components to the local API would
+            // otherwise arrive without credentials and receive 401 Unauthorized.
+            services.RemoveAll<HttpClient>();
+            services.AddScoped<HttpClient>(sp =>
+            {
+                var navigationManager = sp.GetRequiredService<NavigationManager>();
+                var handler = new E2EDevSmokeHeaderHandler();
+                handler.InnerHandler = new HttpClientHandler();
+                return new HttpClient(handler)
+                {
+                    BaseAddress = new Uri(navigationManager.BaseUri)
+                };
+            });
 
             services.AddAuthentication(options =>
             {
