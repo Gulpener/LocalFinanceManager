@@ -9,6 +9,19 @@
             "dotnet test": true,
             "dotnet build": true,
             "ForEach-Object": true
-        }
+        },
+        "sqltools.connections": [
+            {
+                "ssh": "Disabled",
+                "previewLimit": 50,
+                "server": "localhost",
+                "port": 5432,
+                "askForPassword": true,
+                "driver": "PostgreSQL",
+                "name": "localPostgress",
+                "database": "localfinancemanager",
+                "username": "postgres"
+            }
+        ]
     }
 }

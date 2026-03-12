@@ -1,16 +1,26 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.Data
+@using Microsoft.EntityFrameworkCore
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
+@inject IBlazorCircuitUser CircuitUser
+@inject AppDbContext DbContext
 
-<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)"
-        OnNavigateAsync="HandleNavigateAsync">
-    <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
-    </Found>
-</Router>
+@if (_circuitReady)
+{
+    <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)"
+            OnNavigateAsync="HandleNavigateAsync">
+        <Found Context="routeData">
+            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </Found>
+    </Router>
+}
 
 @code {
+    private bool _circuitReady;
+
     private static readonly HashSet<string> AnonymousRoutes = new(StringComparer.OrdinalIgnoreCase)
     {
         "",
@@ -20,6 +30,31 @@
         "password-reset",
         "not-found"
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!CircuitUser.IsInitialized)
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity?.IsAuthenticated ?? false)
+            {
+                var subClaim = user.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(subClaim))
+                {
+                    var localUser = await DbContext.Users
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.SupabaseUserId == subClaim);
+                    if (localUser != null)
+                    {
+                        var email = user.FindFirst("email")?.Value ?? localUser.Email;
+                        CircuitUser.Initialize(localUser.Id, email);
+                    }
+                }
+            }
+        }
+        _circuitReady = true;
+    }
 
     private async Task HandleNavigateAsync(NavigationContext context)
     {

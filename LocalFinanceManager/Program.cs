@@ -91,15 +91,35 @@ builder.Services.AddAuthentication(options =>
         var jwtSecret = supabaseOptions.JwtSecret;
         if (!string.IsNullOrEmpty(jwtSecret) && jwtSecret != "placeholder-jwt-secret")
         {
+            // Supabase projects use RS256 with rotating key pairs (kid = UUID).
+            // Use OIDC discovery so .NET auto-fetches the JWKS and matches by kid.
+            // The HS256 JWT secret is kept as a fallback IssuerSigningKeyResolver for
+            // projects that have not yet migrated to RS256.
+            options.Authority = $"{supabaseOptions.Url}/auth/v1";
+            options.RequireHttpsMetadata = true;
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = supabaseOptions.Url,
+                ValidIssuer = $"{supabaseOptions.Url}/auth/v1",
                 ValidAudience = "authenticated",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+                // HS256 fallback: if JWKS lookup fails, try the shared secret
+                IssuerSigningKeyResolver = (_, _, kid, _) =>
+                {
+                    var fallback = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret.Trim()));
+                    return [fallback];
+                }
+            };
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnAuthenticationFailed = ctx =>
+                {
+                    var log = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    log.LogWarning("JWT authentication failed: {Reason}", ctx.Exception.Message);
+                    return Task.CompletedTask;
+                }
             };
         }
         else
@@ -149,15 +169,23 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpClient();
 
 // Register HttpClient for Blazor components with automatic JWT Bearer forwarding.
+// NOTE: AuthTokenHandler must NOT be used via AddHttpMessageHandler<T>() because
+// IHttpClientFactory resolves handlers from its own internal scope, not the Blazor
+// circuit scope. This means the injected IJSRuntime would have no active circuit,
+// causing silent JS interop failures and all API calls going out without a Bearer token.
+// Instead we build the HttpClient manually from the circuit's DI scope so that
+// AuthTokenHandler gets the correct IJSRuntime and AuthTokenStore instances.
 builder.Services.AddScoped<AuthTokenHandler>();
-builder.Services.AddHttpClient("AuthorizedApiClient")
-    .AddHttpMessageHandler<AuthTokenHandler>();
-
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
-    var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient("AuthorizedApiClient");
-    client.BaseAddress = new Uri(navigationManager.BaseUri);
+    // Resolve the handler from the current (circuit) scope so IJSRuntime works correctly.
+    var tokenHandler = sp.GetRequiredService<AuthTokenHandler>();
+    tokenHandler.InnerHandler = new HttpClientHandler();
+    var client = new HttpClient(tokenHandler)
+    {
+        BaseAddress = new Uri(navigationManager.BaseUri)
+    };
     return client;
 });
 

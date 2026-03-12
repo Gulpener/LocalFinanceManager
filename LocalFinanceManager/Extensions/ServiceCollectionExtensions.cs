@@ -141,6 +141,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAuthServices(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
+        services.AddScoped<IBlazorCircuitUser, BlazorCircuitUser>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDevelopmentUserSeedService, DevelopmentUserSeedService>();
