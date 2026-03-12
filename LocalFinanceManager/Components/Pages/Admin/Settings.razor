@@ -79,72 +79,72 @@
                         {
                             <span class="badge bg-warning" aria-label="Pending migrations">@_pendingMigrations.Count()
                                 pending</span>
-                            <ul class="mt-2">
-                                @foreach (var migration in _pendingMigrations)
-                                {
-                                    <li><code>@migration</code></li>
-                                }
-                            </ul>
-                        }
+                                <ul class="mt-2">
+                                    @foreach (var migration in _pendingMigrations)
+                                    {
+                                        <li><code>@migration</code></li>
+                                    }
+                                </ul>
+                            }
                         else
-                        {
-                            <span class="badge bg-success" aria-label="Geen pending migrations">Geen</span>
-                        }
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+                            {
+                                <span class="badge bg-success" aria-label="Geen pending migrations">Geen</span>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
 
-<div class="card mt-3">
-    <div class="card-header">
-        <h5>Seed Data Status</h5>
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Seed Data Status</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-borderless">
+                <tbody>
+                    <tr>
+                        <th scope="row">Accounts:</th>
+                        <td>@_accountCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Categories:</th>
+                        <td>@_categoryCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Budget Plans:</th>
+                        <td>@_budgetPlanCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Budget Lines:</th>
+                        <td>@_budgetLineCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Transactions:</th>
+                        <td>@_transactionCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Transaction Splits:</th>
+                        <td>@_transactionSplitCount records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Seed Data Geladen:</th>
+                        <td>
+                            @if (_seedDataLoaded)
+                            {
+                                <span class="badge bg-success" aria-label="Seed data geladen">Ja</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Nee (Production of handmatig geleegd)</span>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="card-body">
-        <table class="table table-borderless">
-            <tbody>
-                <tr>
-                    <th scope="row">Accounts:</th>
-                    <td>@_accountCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Categories:</th>
-                    <td>@_categoryCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Budget Plans:</th>
-                    <td>@_budgetPlanCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Budget Lines:</th>
-                    <td>@_budgetLineCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Transactions:</th>
-                    <td>@_transactionCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Transaction Splits:</th>
-                    <td>@_transactionSplitCount records</td>
-                </tr>
-                <tr>
-                    <th scope="row">Seed Data Geladen:</th>
-                    <td>
-                        @if (_seedDataLoaded)
-                        {
-                            <span class="badge bg-success" aria-label="Seed data geladen">Ja</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">Nee (Production of handmatig geleegd)</span>
-                        }
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
 
 @code {
     private string? _connectionString;
