@@ -169,7 +169,7 @@
         _environmentBadgeClass = Environment.IsDevelopment() ? "bg-primary" : "bg-danger";
 
         // Connection string
-        _connectionString = Configuration.GetConnectionString("Default");
+        _connectionString = Configuration.GetConnectionString("Local");
 
         // Parse and mask PostgreSQL connection string details
         if (!string.IsNullOrEmpty(_connectionString))
