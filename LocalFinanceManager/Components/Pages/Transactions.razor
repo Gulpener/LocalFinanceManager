@@ -72,7 +72,8 @@
 else if (filteredTransactions.Count == 0)
 {
     <div class="alert alert-info" data-testid="no-transactions-message"
-         data-loaded-account="@(selectedAccountId?.ToString() ?? "all")">
+         data-loaded-account="@(selectedAccountId?.ToString() ?? "all")"
+         data-filter-assignment="@filterState.AssignmentStatus">
         Geen transacties gevonden. @(selectedAccountId.HasValue ? "Selecteer een andere rekening of " : "")
         <a href="/transactions/import">Importeer transacties</a> om te beginnen.
     </div>
@@ -80,7 +81,8 @@ else if (filteredTransactions.Count == 0)
 else
 {
     <table class="table table-striped" data-testid="transactions-table"
-           data-loaded-account="@(selectedAccountId?.ToString() ?? "all")">
+           data-loaded-account="@(selectedAccountId?.ToString() ?? "all")"
+           data-filter-assignment="@filterState.AssignmentStatus">
         <thead>
             <tr>
                 <th style="width: 40px;">

@@ -1,5 +1,4 @@
 @page "/admin/settings"
-@inject IConfiguration Configuration
 @inject IWebHostEnvironment Environment
 @inject AppDbContext DbContext
 @using LocalFinanceManager.Data
@@ -168,8 +167,9 @@
         // Environment badge color
         _environmentBadgeClass = Environment.IsDevelopment() ? "bg-primary" : "bg-danger";
 
-        // Connection string
-        _connectionString = Configuration.GetConnectionString("Local");
+        // Connection string - read from the actual runtime DbConnection so the displayed
+        // values always match what the app is actually using (not just what's in config).
+        _connectionString = DbContext.Database.GetDbConnection().ConnectionString;
 
         // Parse and mask PostgreSQL connection string details
         if (!string.IsNullOrEmpty(_connectionString))
@@ -185,7 +185,9 @@
             }
             catch
             {
-                _maskedConnectionString = _connectionString;
+                // Fallback: mask any Password= segment before displaying
+                _maskedConnectionString = System.Text.RegularExpressions.Regex.Replace(
+                    _connectionString, @"(?i)(password\s*=\s*)[^;]*", "$1***");
             }
         }
 

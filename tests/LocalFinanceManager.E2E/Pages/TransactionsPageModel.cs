@@ -8,9 +8,7 @@ namespace LocalFinanceManager.E2E.Pages;
 /// </summary>
 public class TransactionsPageModel : PageObjectBase
 {
-    private const int FilterTableStableWaitMs = 300;
     private const int FilterTableUpdateTimeoutMs = 30000;
-    private const string FilterPollingStateKey = "__lfm_transactions_filter_polling_state";
 
     // Selectors
     private const string AccountFilterSelector = "#account-filter";
@@ -104,140 +102,29 @@ public class TransactionsPageModel : PageObjectBase
                 "Unsupported filter type for SelectFilterAsync. Expected 'all', 'assigned', or 'uncategorized'.")
         };
 
-        var expectedStatusMode = value switch
-        {
-            "assigned" => "assigned",
-            "unassigned" => "unassigned",
-            _ => "all"
-        };
+        await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
 
-        var previousValue = await Page.EvaluateAsync<string>(
-            @"selector => {
-                const select = document.querySelector(selector);
-                return select ? select.value : '';
-            }",
-            AssignmentStatusFilterSelector);
-
-        var initialTableSignature = await Page.EvaluateAsync<string>(
-            @"selector => {
-                const rows = Array.from(document.querySelectorAll(selector));
-                return rows
-                    .map(row => {
-                        const id = row.getAttribute('data-transaction-id') ?? '';
-                        const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
-                        const status = isUnassigned ? 'unassigned' : 'assigned';
-                        return `${id}|${status}`;
-                    })
-                    .join(';');
-            }",
-            TransactionRowSelector);
-
-        await Page.EvaluateAsync(
+        // Wait for Blazor to re-render with the new filter applied.
+        // The table and no-transactions elements carry a data-filter-assignment attribute
+        // that equals the currently active assignment filter (set synchronously in OnFiltersChanged).
+        // This is the most reliable signal that Blazor has processed the filter change.
+        // Both elements are checked because only one is rendered at a time: the table when
+        // there are filtered results, or the no-transactions message when the result set is empty.
+        await Page.WaitForFunctionAsync(
             @"arg => {
-                window[arg.stateKey] = { startedAt: Date.now() };
+                const table = document.querySelector(arg.tableSelector);
+                if (table && table.getAttribute('data-filter-assignment') === arg.value) return true;
+                const noTx = document.querySelector(arg.noTxSelector);
+                if (noTx && noTx.getAttribute('data-filter-assignment') === arg.value) return true;
+                return false;
             }",
             new
             {
-                stateKey = FilterPollingStateKey,
-            });
-
-        try
-        {
-            await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
-            await Page.WaitForFunctionAsync(
-                @"arg => {
-                    const select = document.querySelector(arg.selector);
-                    return !!select && select.value === arg.value;
-                }",
-                new { selector = AssignmentStatusFilterSelector, value });
-
-            await Page.WaitForFunctionAsync(
-                @"arg => {
-                    const rows = Array.from(document.querySelectorAll(arg.rowSelector));
-                    const currentSignature = rows
-                        .map(row => {
-                            const id = row.getAttribute('data-transaction-id') ?? '';
-                            const isUnassigned = !!row.querySelector('[aria-label=""Niet toegewezen""]');
-                            const status = isUnassigned ? 'unassigned' : 'assigned';
-                            return `${id}|${status}`;
-                        })
-                        .join(';');
-
-                    const hasTableChanged = currentSignature !== arg.initialTableSignature;
-                    const rowsMatchFilter = arg.expectedStatusMode === 'unassigned'
-                        ? rows.every(row => !!row.querySelector('[aria-label=""Niet toegewezen""]'))
-                        : arg.expectedStatusMode === 'assigned'
-                            ? rows.every(row => !row.querySelector('[aria-label=""Niet toegewezen""]'))
-                            : true;
-
-                    if (!rowsMatchFilter)
-                    {
-                        return false;
-                    }
-
-                    // If the table contents have changed compared to the initial signature,
-                    // and rows match the filter, we can consider the update completed.
-                    // Require at least one row here so a transient empty table during reload
-                    // does not prematurely satisfy the wait; stable empty tables are handled
-                    // by the stability window logic below.
-                    if (hasTableChanged && rows.length > 0)
-                    {
-                        return true;
-                    }
-
-                    // Fallback: no detected table change yet (or empty table). Use a small stability window
-                    // tracked on window[arg.stateKey] to avoid flakiness.
-                    const state = window[arg.stateKey] || (window[arg.stateKey] = {});
-
-                    if (state.currentValue !== arg.value)
-                    {
-                        state.currentValue = arg.value;
-                        state.startedAt = Date.now();
-                    }
-
-                    const startedAt = state.startedAt ?? Date.now();
-                    const elapsed = Date.now() - startedAt;
-
-                    if (arg.previousValue === arg.value)
-                    {
-                        // Filter value did not change (e.g. already persisted in localStorage).
-                        // The table may already reflect the correct state – just require the
-                        // short stability window before returning to avoid acting on a
-                        // transient in-progress Blazor re-render.
-                        return elapsed >= arg.minStableMs;
-                    }
-
-                    if (arg.expectedStatusMode === 'all')
-                    {
-                        return elapsed >= arg.minStableMs;
-                    }
-
-                    // For 'assigned' and 'unassigned', also require a minimum stable duration.
-                    return elapsed >= arg.minStableMs;
-                }",
-                new
-                {
-                    rowSelector = TransactionRowSelector,
-                    initialTableSignature,
-                    expectedStatusMode,
-                    previousValue,
-                    value,
-                    stateKey = FilterPollingStateKey,
-                    minStableMs = FilterTableStableWaitMs,
-                },
-                new PageWaitForFunctionOptions
-                {
-                    Timeout = FilterTableUpdateTimeoutMs
-                });
-        }
-        finally
-        {
-            await Page.EvaluateAsync(
-                @"stateKey => {
-                    delete window[stateKey];
-                }",
-                FilterPollingStateKey);
-        }
+                tableSelector = TransactionTableSelector,
+                noTxSelector = NoTransactionsSelector,
+                value,
+            },
+            new PageWaitForFunctionOptions { Timeout = FilterTableUpdateTimeoutMs });
     }
 
     /// <summary>

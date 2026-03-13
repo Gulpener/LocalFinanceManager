@@ -219,7 +219,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             // Override connection string to use the fixture-specific PostgreSQL test database
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:Default"] = GetConnectionString(),
+                ["ConnectionStrings:Local"] = GetConnectionString(),
                 ["EnableDevSmokeAuth"] = "true",
                 ["RecreateDatabase"] = "false", // Database cleanup is handled by InitializeDatabaseAsync()
                 ["SkipDatabaseMigrations"] = "true", // Migrations are applied in InitializeDatabaseAsync() before host startup

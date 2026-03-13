@@ -187,8 +187,17 @@ public class BasicAssignmentTests : E2ETestBase
         }
         catch (Microsoft.Playwright.PlaywrightException) { /* slow SignalR — check below */ }
 
-        if (!clickRegistered && await Page.Locator("#assignSaveButton").IsEnabledAsync())
-            await Page.ClickAsync("#assignSaveButton");
+        if (!clickRegistered)
+        {
+            // Only retry if the modal is still open; if the modal already closed the assignment
+            // succeeded and the button is gone. Use a short timeout to avoid a 30s hang.
+            try
+            {
+                if (await Page.Locator("#assignSaveButton").IsEnabledAsync(new LocatorIsEnabledOptions { Timeout = 2_000 }))
+                    await Page.ClickAsync("#assignSaveButton");
+            }
+            catch (Microsoft.Playwright.PlaywrightException) { /* Button gone — modal already closed */ }
+        }
 
         // Wait for the assignment modal to close before looking for the audit button.
         // The audit trail button only renders once IsAssigned=true (after Blazor re-renders).
