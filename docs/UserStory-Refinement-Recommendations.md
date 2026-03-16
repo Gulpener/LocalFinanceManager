@@ -12,7 +12,7 @@
 - ✅ **19 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2) - Archived
 - ✅ **3 stories ready** for immediate implementation (US-11, US-12, US-17)
 - 🔴 **3 stories need refinement** (US-13, US-14, US-15) - Post-MVP features
-- 🔵 **1 story redefined** (US-16) - Azure replaced by Hetzner VPS deployment
+- 🔵 **1 story redefined** (US-16) - Azure F1 replaced by Azure App Service B1 (€50/mnd recurring credits)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
@@ -731,52 +731,21 @@ public class User
 
 ---
 
-#### UserStory-16: Hetzner VPS Deployment
+#### UserStory-16: Azure App Service B1 Deployment
 
-**File:** [docs/Userstories/UserStory-16-Hetzner-Deployment.md](docs/Userstories/UserStory-16-Hetzner-Deployment.md)
+**File:** [docs/Userstories/UserStory-16-Azure-B1-Deployment.md](docs/Userstories/UserStory-16-Azure-B1-Deployment.md)
 
-**Status:** 🔵 **Redefined** — Azure App Service F1 replaced by Hetzner CX22 VPS.
+**Status:** 🔵 **Redefined** — Azure F1 replaced by Azure App Service B1 using €50/mnd
+recurring Azure credits. B1 (~€13/mnd) is fully covered, leaving ~€37/mnd remaining.
 Azure F1 is incompatible with Blazor Server due to the permanent SignalR connection
 (WebSocket) and 60-minute daily CPU limit causing circuit disconnections.
 
-**Approach:** Docker + Nginx + Let's Encrypt on Hetzner CX22 (~€3.79/mnd), with
-Supabase PostgreSQL unchanged. CD via GitHub Actions → GHCR → SSH deploy.
+**Approach:** `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions. No Docker,
+Nginx, or server management needed. Always-on enabled. Supabase PostgreSQL unchanged.
 
 **No further refinement needed** — story is fully defined and ready for implementation.
 
-~~**Issues (Azure — superseded):**~~
-
-~~1. Missing cost estimation~~
-~~2. No monitoring/alerting strategy~~
-~~3. Database backup strategy undefined~~
-~~4. Environment variable management unclear~~
-~~5. Rollback strategy missing~~
-
-**Required Refinements:**
-
-Add the following sections:
-
-#### Azure Free Tier Limits & Cost Estimation
-
-**Free Tier (F1) Limits:**
-
-- 60 CPU minutes/day
-- 1 GB RAM
-- 1 GB storage
-- 10 GB bandwidth/month
-
-**Expected Usage:**
-
-- ~10 users × 30 requests/day = 300 requests/day
-- Average response time: 200ms
-- Daily CPU usage: ~60 seconds (well within limit)
-
-**Cost Escalation Plan:**
-
-- If CPU minutes exceeded → Upgrade to Basic (B1) tier ($13/month)
-- Monitor daily usage via Azure Portal metrics
-
-**Estimated Implementation Effort:** 2-3 days
+**Estimated Implementation Effort:** 1-2 days
 
 ---
 
@@ -818,7 +787,7 @@ Add the following sections:
 15. 🔴 **UserStory-13** (Sharing System) - After US-12 + refinement (5-7 days)
 16. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
 17. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
-18. � **UserStory-16** (Hetzner VPS Deployment) - Ready for implementation (2-3 days)
+18. 🔵 **UserStory-16** (Azure App Service B1 Deployment) - Ready for implementation (1-2 days)
 
 ---
 
@@ -943,4 +912,4 @@ Use this structure for all new stories:
 23. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)
 24. UserStory-14 (Backup & Restore) - Needs refinement (security/encryption, versioning)
 25. UserStory-15 (Application Flow) - Needs refinement (onboarding tracking)
-26. UserStory-16 (Hetzner VPS Deployment) - Ready (Dockerfile, Nginx, GitHub Actions CD)
+26. UserStory-16 (Azure App Service B1 Deployment) - Ready (dotnet publish, GitHub Actions CD)
