@@ -222,10 +222,21 @@ public class TransactionsPageModel : PageObjectBase
 
     /// <summary>
     /// Selects all currently visible transactions.
+    /// Waits for Blazor to complete the re-render so all row checkboxes reflect the checked state.
     /// </summary>
     public async Task SelectAllOnPageAsync()
     {
         await Page.Locator(SelectAllCheckboxSelector).CheckAsync();
+
+        // Wait for Blazor to re-render all row checkboxes as checked.
+        // CheckAsync() sends the event via SignalR; the DOM update is async.
+        await Page.WaitForFunctionAsync(
+            @"selector => {
+                const checkboxes = Array.from(document.querySelectorAll(selector));
+                return checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
+            }",
+            "tbody tr[data-testid='transaction-row'] input[type='checkbox']",
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
     }
 
     /// <summary>
