@@ -199,7 +199,7 @@ public class BasicAssignmentTests : E2ETestBase
                     await Page.ClickAsync("#assignSaveButton");
             }
             catch (Microsoft.Playwright.PlaywrightException) { /* Button gone — modal already closed */ }
-            catch (TimeoutException) { /* Button disappeared — modal already closed */ }
+            catch (System.TimeoutException) { /* Button disappeared — modal already closed */ }
         }
 
         // Wait for the assignment modal to close before looking for the audit button.
