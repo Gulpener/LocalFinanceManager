@@ -98,11 +98,12 @@ public class TransactionsPageModel : PageObjectBase
         };
 
         // Ensure the filter dropdown is visible (inside the always-expanded filter panel).
-        await Page.Locator(AssignmentStatusFilterSelector).WaitForAsync(
-            new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5_000 });
+        var filterLocator = Page.Locator(AssignmentStatusFilterSelector);
+        await filterLocator.WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = FilterTableUpdateTimeoutMs });
 
         // Use Locator API (handles element detachment from Blazor re-renders more reliably).
-        await Page.Locator(AssignmentStatusFilterSelector).SelectOptionAsync(value);
+        await filterLocator.SelectOptionAsync(value);
 
         // The transactions-list-container always exists in the DOM (regardless of loading state)
         // and carries data-filter-assignment equal to filterState.AssignmentStatus.
