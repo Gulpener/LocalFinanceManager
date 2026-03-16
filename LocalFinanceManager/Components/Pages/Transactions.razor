@@ -65,24 +65,24 @@
     </a>
 </div>
 
+<div data-testid="transactions-list-container"
+     data-filter-assignment="@filterState.AssignmentStatus"
+     data-loaded-account="@(selectedAccountId?.ToString() ?? "all")">
+
 @if (loading)
 {
     <TransactionListSkeleton RowCount="10" />
 }
 else if (filteredTransactions.Count == 0)
 {
-    <div class="alert alert-info" data-testid="no-transactions-message"
-         data-loaded-account="@(selectedAccountId?.ToString() ?? "all")"
-         data-filter-assignment="@filterState.AssignmentStatus">
+    <div class="alert alert-info" data-testid="no-transactions-message">
         Geen transacties gevonden. @(selectedAccountId.HasValue ? "Selecteer een andere rekening of " : "")
         <a href="/transactions/import">Importeer transacties</a> om te beginnen.
     </div>
 }
 else
 {
-    <table class="table table-striped" data-testid="transactions-table"
-           data-loaded-account="@(selectedAccountId?.ToString() ?? "all")"
-           data-filter-assignment="@filterState.AssignmentStatus">
+    <table class="table table-striped" data-testid="transactions-table">
         <thead>
             <tr>
                 <th style="width: 40px;">
@@ -212,6 +212,8 @@ else
         }
     </p>
 }
+
+</div>
 
 <TransactionAssignModal Transaction="@selectedTransaction" IsVisible="@showAssignModal" OnClose="@CloseAssignModal"
                         OnAssignmentSuccess="@OnAssignmentSuccess" />

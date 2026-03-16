@@ -13,6 +13,7 @@ public class TransactionsPageModel : PageObjectBase
     // Selectors
     private const string AccountFilterSelector = "#account-filter";
     private const string AssignmentStatusFilterSelector = "#assignmentStatusFilter";
+    private const string TransactionListContainerSelector = "[data-testid='transactions-list-container']";
     private const string TransactionTableSelector = "table[data-testid='transactions-table']";
     private const string NoTransactionsSelector = "[data-testid='no-transactions-message']";
     private const string TransactionRowSelector = "tbody tr[data-testid='transaction-row']";
@@ -56,23 +57,17 @@ public class TransactionsPageModel : PageObjectBase
         await Page.SelectOptionAsync(AccountFilterSelector, accountId.ToString());
 
         // Wait for Blazor to finish re-rendering with data for the selected account.
-        // The table and no-transactions elements carry a data-loaded-account attribute
-        // that equals the currently loaded account ID (set when loading=false).
-        // This is the most reliable way to detect Blazor re-render completion because
-        // the row-ID comparison fails when the same transactions show for all accounts.
+        // The transactions-list-container always exists and carries data-loaded-account
+        // that is updated when the account data finishes loading (loading=false).
         var accountIdStr = accountId.ToString();
         await Page.WaitForFunctionAsync(
             @"arg => {
-                const table = document.querySelector(arg.tableSelector);
-                if (table && table.getAttribute('data-loaded-account') === arg.accountId) return true;
-                const noTx = document.querySelector(arg.noTxSelector);
-                if (noTx && noTx.getAttribute('data-loaded-account') === arg.accountId) return true;
-                return false;
+                const container = document.querySelector(arg.containerSelector);
+                return !!container && container.getAttribute('data-loaded-account') === arg.accountId;
             }",
             new
             {
-                tableSelector = TransactionTableSelector,
-                noTxSelector = NoTransactionsSelector,
+                containerSelector = TransactionListContainerSelector,
                 accountId = accountIdStr
             },
             new PageWaitForFunctionOptions { Timeout = 15000 });
@@ -102,26 +97,26 @@ public class TransactionsPageModel : PageObjectBase
                 "Unsupported filter type for SelectFilterAsync. Expected 'all', 'assigned', or 'uncategorized'.")
         };
 
-        await Page.SelectOptionAsync(AssignmentStatusFilterSelector, value);
+        // Ensure the filter dropdown is visible (inside the always-expanded filter panel).
+        await Page.Locator(AssignmentStatusFilterSelector).WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5_000 });
 
-        // Wait for Blazor to re-render with the new filter applied.
-        // The table and no-transactions elements carry a data-filter-assignment attribute
-        // that equals the currently active assignment filter (set synchronously in OnFiltersChanged).
-        // This is the most reliable signal that Blazor has processed the filter change.
-        // Both elements are checked because only one is rendered at a time: the table when
-        // there are filtered results, or the no-transactions message when the result set is empty.
+        // Use Locator API (handles element detachment from Blazor re-renders more reliably).
+        await Page.Locator(AssignmentStatusFilterSelector).SelectOptionAsync(value);
+
+        // The transactions-list-container always exists in the DOM (regardless of loading state)
+        // and carries data-filter-assignment equal to filterState.AssignmentStatus.
+        // Blazor updates this attribute synchronously during OnFiltersChanged → StateHasChanged().
+        // Waiting on this stable container avoids the race where the skeleton (loading=true)
+        // hides the conditional table/no-tx elements during a concurrent LoadTransactionsAsync.
         await Page.WaitForFunctionAsync(
             @"arg => {
-                const table = document.querySelector(arg.tableSelector);
-                if (table && table.getAttribute('data-filter-assignment') === arg.value) return true;
-                const noTx = document.querySelector(arg.noTxSelector);
-                if (noTx && noTx.getAttribute('data-filter-assignment') === arg.value) return true;
-                return false;
+                const container = document.querySelector(arg.containerSelector);
+                return !!container && container.getAttribute('data-filter-assignment') === arg.value;
             }",
             new
             {
-                tableSelector = TransactionTableSelector,
-                noTxSelector = NoTransactionsSelector,
+                containerSelector = TransactionListContainerSelector,
                 value,
             },
             new PageWaitForFunctionOptions { Timeout = FilterTableUpdateTimeoutMs });
