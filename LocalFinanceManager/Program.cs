@@ -25,8 +25,8 @@ var connectionString = builder.Configuration.GetConnectionString("Local")
 if (!builder.Environment.IsDevelopment() && connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
 {
     throw new InvalidOperationException(
-        "ConnectionStrings:Default is still set to a localhost value. " +
-        "Set the real PostgreSQL connection string via environment variables before deploying.");
+        "ConnectionStrings:Local is still set to a localhost value. " +
+        "Set the real PostgreSQL connection string via the ConnectionStrings__Local environment variable before deploying.");
 }
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -171,15 +171,16 @@ builder.Services.AddHttpClient();
 // Register HttpClient for Blazor components with automatic JWT Bearer forwarding.
 // NOTE: AuthTokenHandler must NOT be used via AddHttpMessageHandler<T>() because
 // IHttpClientFactory resolves handlers from its own internal scope, not the Blazor
-// circuit scope. This means the injected IJSRuntime would have no active circuit,
-// causing silent JS interop failures and all API calls going out without a Bearer token.
+// circuit scope. This means the circuit-scoped AuthTokenStore (which holds the JWT
+// token retrieved from sessionStorage) would not be resolved from the correct circuit
+// scope, causing all API calls to go out without a Bearer token.
 // Instead we build the HttpClient manually from the circuit's DI scope so that
-// AuthTokenHandler gets the correct IJSRuntime and AuthTokenStore instances.
+// AuthTokenHandler gets the correct AuthTokenStore instance for the active circuit.
 builder.Services.AddScoped<AuthTokenHandler>();
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
-    // Resolve the handler from the current (circuit) scope so IJSRuntime works correctly.
+    // Resolve the handler from the current (circuit) scope so AuthTokenStore works correctly.
     var tokenHandler = sp.GetRequiredService<AuthTokenHandler>();
     tokenHandler.InnerHandler = new HttpClientHandler();
     var client = new HttpClient(tokenHandler)
