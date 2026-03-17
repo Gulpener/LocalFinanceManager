@@ -7,6 +7,7 @@
 @inject IBlazorCircuitUser CircuitUser
 @inject AppDbContext DbContext
 @inject ILogger<Routes> Logger
+@implements IDisposable
 
 @if (_circuitReady)
 {
@@ -21,6 +22,7 @@
 
 @code {
     private bool _circuitReady;
+    private bool _authStateSubscriptionSet;
 
     private static readonly HashSet<string> AnonymousRoutes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -32,38 +34,95 @@
         "not-found"
     };
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!firstRender)
+        {
+            return;
+        }
+
         try
         {
-            if (!CircuitUser.IsInitialized)
+            if (!_authStateSubscriptionSet)
             {
-                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-                var user = authState.User;
-                if (user.Identity?.IsAuthenticated ?? false)
-                {
-                    var subClaim = user.FindFirst("sub")?.Value;
-                    if (!string.IsNullOrEmpty(subClaim))
-                    {
-                        var localUser = await DbContext.Users
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(u => u.SupabaseUserId == subClaim);
-                        if (localUser != null)
-                        {
-                            var email = user.FindFirst("email")?.Value ?? localUser.Email;
-                            CircuitUser.Initialize(localUser.Id, email);
-                        }
-                    }
-                }
+                AuthenticationStateProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+                _authStateSubscriptionSet = true;
             }
+
+            await EnsureCircuitUserInitializedAsync();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize circuit user context. The user may see a login page or reduced functionality.");
+            Logger.LogError(ex, "Failed to initialize circuit user context during first render. The user may see a login page or reduced functionality.");
         }
         finally
         {
-            _circuitReady = true;
+            if (!_circuitReady)
+            {
+                _circuitReady = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task EnsureCircuitUserInitializedAsync()
+    {
+        if (CircuitUser.IsInitialized)
+        {
+            return;
+        }
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        await InitializeCircuitUserFromAuthStateAsync(authState);
+    }
+
+    private async Task InitializeCircuitUserFromAuthStateAsync(AuthenticationState authState)
+    {
+        var user = authState.User;
+        var isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        // When the authentication state is unauthenticated, explicitly clear any
+        // previously initialized circuit user to avoid stale authenticated state
+        // being reused for an anonymous HttpContext.
+        if (!isAuthenticated)
+        {
+            // Reset/clear circuit user state when transitioning to anonymous.
+            CircuitUser.Reset();
+            return;
+        }
+
+        var subClaim = user.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(subClaim))
+        {
+            // If we cannot identify the remote user, clear any existing circuit user.
+            CircuitUser.Reset();
+            return;
+        }
+
+        var localUser = await DbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.SupabaseUserId == subClaim);
+        if (localUser == null)
+        {
+            // If there is no corresponding local user, clear any existing circuit user.
+            CircuitUser.Reset();
+            return;
+        }
+
+        var email = user.FindFirst("email")?.Value ?? localUser.Email;
+        CircuitUser.Initialize(localUser.Id, email);
+    }
+
+    private async void OnAuthenticationStateChanged(Task<AuthenticationState> authenticationStateTask)
+    {
+        try
+        {
+            var authState = await authenticationStateTask;
+            await InitializeCircuitUserFromAuthStateAsync(authState);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to update circuit user context when authentication state changed.");
         }
     }
 
@@ -89,5 +148,14 @@
             : $"/{context.Path}";
 
         Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: false);
+    }
+
+    public void Dispose()
+    {
+        if (_authStateSubscriptionSet)
+        {
+            AuthenticationStateProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+            _authStateSubscriptionSet = false;
+        }
     }
 }

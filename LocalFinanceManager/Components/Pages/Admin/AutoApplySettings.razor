@@ -7,9 +7,11 @@
 @using FluentValidation
 @using System.Text.Json
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
 @inject ILogger<AutoApplySettings> Logger
 @inject IAccountRepository AccountRepository
 @inject ICategoryRepository CategoryRepository
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
 @inject AppDbContext DbContext
 @inject IUserContext UserContext
@@ -306,6 +308,17 @@ else
             _errorMessage = null;
 
             var currentUserId = UserContext.GetCurrentUserId();
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var isAuthenticated = authState.User?.Identity?.IsAuthenticated == true;
+
+            if (!isAuthenticated || currentUserId == Guid.Empty)
+            {
+                Logger.LogWarning("Attempted to load auto-apply settings without an authenticated user or with an empty user ID. IsAuthenticated={IsAuthenticated}, UserId={UserId}", isAuthenticated, currentUserId);
+                _errorMessage = SettingsLoadErrorMessage;
+                return;
+            }
+
             var dbSettings = await DbContext.AppSettings
                 .Where(s => !s.IsArchived && s.UserId == currentUserId)
                 .FirstOrDefaultAsync();
@@ -419,6 +432,15 @@ else
             }
 
             var currentUserId = UserContext.GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                Logger.LogWarning("Attempted to save auto-apply settings with an empty user id. The user may not be authenticated.");
+                _errorMessage = "Unable to save settings. Please sign in again and retry.";
+                _saving = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
             var accountIds = _settings.AccountIds ?? new List<Guid>();
             var excludedCategoryIds = _settings.ExcludedCategoryIds ?? new List<Guid>();
 
