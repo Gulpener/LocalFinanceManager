@@ -81,21 +81,18 @@
         var user = authState.User;
         var isAuthenticated = user.Identity?.IsAuthenticated ?? false;
 
-        // When the authentication state is unauthenticated, explicitly clear any
-        // previously initialized circuit user to avoid stale authenticated state
-        // being reused for an anonymous HttpContext.
+        // When the authentication state is unauthenticated, do not initialize
+        // the circuit user to avoid associating state with an anonymous HttpContext.
         if (!isAuthenticated)
         {
-            // Reset/clear circuit user state when transitioning to anonymous.
-            CircuitUser.Reset();
+            // No circuit user is initialized for anonymous users.
             return;
         }
 
         var subClaim = user.FindFirst("sub")?.Value;
         if (string.IsNullOrEmpty(subClaim))
         {
-            // If we cannot identify the remote user, clear any existing circuit user.
-            CircuitUser.Reset();
+            // If we cannot identify the remote user, do not initialize a circuit user.
             return;
         }
 
@@ -104,8 +101,7 @@
             .FirstOrDefaultAsync(u => u.SupabaseUserId == subClaim);
         if (localUser == null)
         {
-            // If there is no corresponding local user, clear any existing circuit user.
-            CircuitUser.Reset();
+            // If there is no corresponding local user, do not initialize a circuit user.
             return;
         }
 
