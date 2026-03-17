@@ -14,7 +14,7 @@
 @if (IsVisible && TransactionIds != null && TransactionIds.Any())
 {
     <div id="bulkAssignModal" data-testid="bulk-assign-modal" class="modal fade show" style="display: block;" tabindex="-1"
-         role="dialog" aria-modal="true"   aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown"
+         role="dialog" aria-modal="true" aria-labelledby="bulkAssignTitle" @onkeydown="HandleKeyDown"
          @ref="modalContainerRef">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -172,8 +172,8 @@
                 </div>
             </div>
         </div>
-    <div class="modal-backdrop fade show"></div>
-}
+        <div class="modal-backdrop fade show"></div>
+    }
 
 @code {
     [Parameter] public List<Guid>? TransactionIds { get; set; }
