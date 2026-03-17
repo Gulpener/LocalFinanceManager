@@ -94,9 +94,9 @@ builder.Services.AddAuthentication(options =>
             // Supabase projects use RS256 with rotating key pairs (kid = UUID).
             // Use OIDC discovery so .NET auto-fetches the JWKS and matches by kid.
             // The HS256 JWT secret is included as a fallback for projects that have
-            // not yet migrated to RS256. The resolver merges OIDC/JWKS-discovered
-            // RS256 keys (populated by the JwtBearer middleware before the resolver
-            // is invoked) with the HS256 symmetric key so neither mode is blocked.
+            // not yet migrated to RS256. The resolver only returns the symmetric key
+            // for HS256 tokens; for RS256 tokens it returns the OIDC/JWKS-discovered
+            // keys so RS256 validation is never blocked by the symmetric key.
             options.Authority = $"{supabaseOptions.Url}/auth/v1";
             options.RequireHttpsMetadata = true;
             options.TokenValidationParameters = new TokenValidationParameters
@@ -107,17 +107,21 @@ builder.Services.AddAuthentication(options =>
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = $"{supabaseOptions.Url}/auth/v1",
                 ValidAudience = "authenticated",
-                // Merge OIDC/JWKS-discovered RS256 keys with the HS256 symmetric fallback.
-                // The JwtBearer middleware populates validationParameters.IssuerSigningKeys
-                // from OIDC discovery before this resolver is called, so returning both
-                // supports RS256 Supabase tokens and HS256 legacy tokens simultaneously.
-                IssuerSigningKeyResolver = (_, _, kid, validationParameters) =>
+                // Only apply the HS256 symmetric fallback when the token's alg header
+                // indicates HS256. For RS256 tokens the framework uses the JWKS keys
+                // fetched via OIDC discovery (options.Authority), so RS256 validation
+                // is never overridden by the symmetric key.
+                IssuerSigningKeyResolver = (_, securityToken, _, validationParameters) =>
                 {
-                    var discoveredKeys = validationParameters.IssuerSigningKeys?.ToList()
-                        ?? new List<SecurityKey>();
-                    var fallback = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret.Trim()));
-                    discoveredKeys.Add(fallback);
-                    return discoveredKeys;
+                    var jwtToken = securityToken as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                    if (string.Equals(jwtToken?.Header?.Alg,
+                            Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return [new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret.Trim()))];
+                    }
+                    // RS256 or other algorithms: delegate to the OIDC-discovered JWKS keys.
+                    return validationParameters.IssuerSigningKeys ?? [];
                 }
             };
             options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
