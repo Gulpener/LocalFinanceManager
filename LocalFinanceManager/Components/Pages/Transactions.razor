@@ -67,7 +67,7 @@
 
 <div data-testid="transactions-list-container"
      data-filter-assignment="@filterState.AssignmentStatus"
-     data-loaded-account="@(selectedAccountId?.ToString() ?? "all")">
+     data-loaded-account="@_loadedAccountId">
 
 @if (loading)
 {
@@ -254,6 +254,7 @@ else
     private Guid? selectedAccountId = null;
     private string selectedAccountIdString = "";
     private bool loading = true;
+    private string _loadedAccountId = "all";
     private decimal filteredTotalAmount = 0;
     private int unassignedCount = 0;
     private FilterState filterState = new();
@@ -441,6 +442,7 @@ else
         finally
         {
             loading = false;
+            _loadedAccountId = selectedAccountId?.ToString() ?? "all";
         }
     }
 
