@@ -398,11 +398,11 @@ If you're seeing unexpected data or an empty database:
 
 ### Database Target Validation
 
-Confirm the resolved `ASPNETCORE_ConnectionStrings__Default` value and verify the target host/database match your intended environment.
+Confirm the resolved `ConnectionStrings__Local` environment variable value and verify the target host/database match your intended environment.
 
 ### Database Connectivity Errors
 
-For local PostgreSQL failures, verify PostgreSQL is running and credentials in `ConnectionStrings:Default` are correct.
+For local PostgreSQL failures, verify PostgreSQL is running and credentials in `ConnectionStrings:Local` are correct (set via user-secrets or the `ConnectionStrings__Local` environment variable).
 
 ### Port Already in Use
 
