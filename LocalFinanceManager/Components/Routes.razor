@@ -78,11 +78,6 @@
 
     private async Task InitializeCircuitUserFromAuthStateAsync(AuthenticationState authState)
     {
-        if (CircuitUser.IsInitialized)
-        {
-            return;
-        }
-
         var user = authState.User;
         if (!(user.Identity?.IsAuthenticated ?? false))
         {

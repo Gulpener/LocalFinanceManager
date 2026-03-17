@@ -432,6 +432,15 @@ else
             }
 
             var currentUserId = UserContext.GetCurrentUserId();
+            if (currentUserId == Guid.Empty)
+            {
+                Logger.LogWarning("Attempted to save auto-apply settings with an empty user id. The user may not be authenticated.");
+                _errorMessage = "Unable to save settings. Please sign in again and retry.";
+                _saving = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
             var accountIds = _settings.AccountIds ?? new List<Guid>();
             var excludedCategoryIds = _settings.ExcludedCategoryIds ?? new List<Guid>();
 
