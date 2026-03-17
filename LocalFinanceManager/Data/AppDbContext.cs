@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using LocalFinanceManager.Models;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace LocalFinanceManager.Data;
 
@@ -47,13 +48,10 @@ public class AppDbContext : DbContext
             {
                 if (Database.IsNpgsql())
                 {
-                    // Map XMin to PostgreSQL's xmin system column for reliable optimistic concurrency.
-                    // PostgreSQL updates xmin automatically on every row modification; no trigger needed.
+                    // Use PostgreSQL's internal xmin system column for optimistic concurrency.
+                    // This avoids creating a user-defined "xmin" column and binds to the real system column.
                     modelBuilder.Entity(entityType.ClrType)
-                        .Property("XMin")
-                        .HasColumnName("xmin")
-                        .ValueGeneratedOnAddOrUpdate()
-                        .IsConcurrencyToken();
+                        .UseXminAsConcurrencyToken();
                 }
                 else
                 {
