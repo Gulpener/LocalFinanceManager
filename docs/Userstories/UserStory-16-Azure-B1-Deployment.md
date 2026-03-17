@@ -61,7 +61,7 @@ door de €50/maand recurring Azure credits.
 
 - [ ] **[User]** Ga naar App Service → Configuration → Application Settings en voeg toe:
   - `ASPNETCORE_ENVIRONMENT` = `Production`
-  - `ConnectionStrings__Default` = (Supabase PostgreSQL connection string)
+  - `ConnectionStrings__Local` = (Supabase PostgreSQL connection string)
   - `Supabase__Url` = (Supabase project URL)
   - `Supabase__AnonKey` = (Supabase anon/public key)
 - [ ] **[User]** Klik **Save** en verifieer dat de app herstart
