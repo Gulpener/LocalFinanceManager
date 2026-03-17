@@ -5,11 +5,6 @@
         }
     ],
     "settings": {
-        "chat.tools.terminal.autoApprove": {
-            "dotnet test": true,
-            "dotnet build": true,
-            "ForEach-Object": true
-        },
         "sqltools.connections": [
             {
                 "ssh": "Disabled",
