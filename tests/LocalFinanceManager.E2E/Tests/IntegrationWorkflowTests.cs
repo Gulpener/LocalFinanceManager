@@ -129,7 +129,7 @@ public class IntegrationWorkflowTests : E2ETestBase
                         new() { BudgetLineId = budgetLineFood, Amount = split1 },
                         new() { BudgetLineId = budgetLineEntertainment, Amount = split2 }
                     },
-                    RowVersion = tx.RowVersion
+                    XMin = tx.XMin
                 });
             }
         }

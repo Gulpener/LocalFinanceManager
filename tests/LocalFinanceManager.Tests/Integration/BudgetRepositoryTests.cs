@@ -531,13 +531,13 @@ public class BudgetRepositoryTests
     }
 
     [Test]
-    [Ignore("SQLite in-memory doesn't fully support RowVersion concurrency detection like SQL Server. This scenario is manually testable via E2E tests with actual database.")]
+    [Ignore("SQLite in-memory doesn't support xmin-based concurrency detection (PostgreSQL-specific). This scenario is testable via E2E tests with PostgreSQL.")]
     public async Task UpdateAsync_BudgetLine_WithStaleRowVersion_ThrowsConcurrencyException()
     {
         // Note: This test documents the expected behavior but is ignored because
-        // SQLite's RowVersion implementation differs from SQL Server's timestamp type.
-        // The concurrency detection works in production with proper SQLite file database
-        // and is tested via E2E tests.
+        // SQLite doesn't have a PostgreSQL xmin system column.
+        // In production with PostgreSQL, xmin is auto-updated on every write,
+        // and stale reads are detected reliably via DbUpdateConcurrencyException.
 
         // Arrange
         var account = await CreateTestAccountAsync();
@@ -564,7 +564,7 @@ public class BudgetRepositoryTests
 
         // Simulate first user loading the line
         var line1 = await _budgetLineRepository.GetByIdAsync(line.Id);
-        var originalRowVersion = line1!.RowVersion?.ToArray();
+        var originalXMin = line1!.XMin;
 
         // Simulate second user updating the line
         var line2 = await _budgetLineRepository.GetByIdAsync(line.Id);
@@ -582,7 +582,7 @@ public class BudgetRepositoryTests
             Notes = line1.Notes,
             IsArchived = line1.IsArchived,
             CreatedAt = line1.CreatedAt,
-            RowVersion = originalRowVersion
+            XMin = originalXMin
         };
 
         // Assert - Should throw concurrency exception

@@ -363,7 +363,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             ExternalId = transaction.ExternalId,
             SourceFileName = transaction.SourceFileName,
             ImportedAt = transaction.ImportedAt,
-            RowVersion = transaction.RowVersion
+            XMin = transaction.XMin
         };
     }
 }

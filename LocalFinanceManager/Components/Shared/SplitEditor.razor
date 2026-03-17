@@ -324,7 +324,7 @@
                 MonthlyAmounts = bl.MonthlyAmounts,
                 YearTotal = bl.MonthlyAmounts.Sum(),
                 Notes = bl.Notes,
-                RowVersion = bl.RowVersion
+                XMin = bl.XMin
             }).ToList();
 
             if (!budgetLines.Any())
@@ -406,7 +406,7 @@
                     Amount = s.Amount,
                     Note = null
                 }).ToList(),
-                RowVersion = Transaction.RowVersion
+                XMin = Transaction.XMin
             };
 
             var result = await AssignmentService.SplitTransactionAsync(Transaction.Id, request);

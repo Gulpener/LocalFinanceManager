@@ -43,10 +43,6 @@ public class UpdateBudgetPlanDtoValidator : AbstractValidator<UpdateBudgetPlanDt
             .WithMessage("Name is required.")
             .MaximumLength(150)
             .WithMessage("Name cannot exceed 150 characters.");
-
-        RuleFor(x => x.RowVersion)
-            .NotNull()
-            .WithMessage("RowVersion is required for concurrency control.");
     }
 }
 
@@ -101,10 +97,6 @@ public class UpdateBudgetLineDtoValidator : AbstractValidator<UpdateBudgetLineDt
         RuleFor(x => x.Notes)
             .MaximumLength(500)
             .WithMessage("Notes cannot exceed 500 characters.");
-
-        RuleFor(x => x.RowVersion)
-            .NotNull()
-            .WithMessage("RowVersion is required for concurrency control.");
     }
 }
 
@@ -147,9 +139,5 @@ public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
         RuleFor(x => x.Type)
             .IsInEnum()
             .WithMessage("Type moet Income of Expense zijn");
-
-        RuleFor(x => x.RowVersion)
-            .NotNull()
-            .WithMessage("RowVersion is verplicht voor concurrency controle");
     }
 }

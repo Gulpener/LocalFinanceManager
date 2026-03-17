@@ -291,7 +291,7 @@
                 MonthlyAmounts = bl.MonthlyAmounts,
                 YearTotal = bl.MonthlyAmounts.Sum(),
                 Notes = bl.Notes,
-                RowVersion = bl.RowVersion
+                XMin = bl.XMin
             }).ToList();
 
             if (budgetLines.Count == 0)
@@ -364,7 +364,7 @@
             {
                 BudgetLineId = budgetLineGuid,
                 Note = note,
-                RowVersion = Transaction.RowVersion
+                XMin = Transaction.XMin
             };
 
             await AssignmentService.AssignTransactionAsync(Transaction.Id, request);

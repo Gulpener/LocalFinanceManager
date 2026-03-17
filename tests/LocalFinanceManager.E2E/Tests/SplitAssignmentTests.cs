@@ -204,7 +204,7 @@ public class SplitAssignmentTests : E2ETestBase
                     new() { BudgetLineId = _budgetLineFood, Amount = 60m },
                     new() { BudgetLineId = foreignBudgetLineId, Amount = 40m }
                 },
-                RowVersion = Array.Empty<byte>()
+                XMin = 0u
             }));
 
         Assert.That(ex, Is.Not.Null);
@@ -273,7 +273,7 @@ public class SplitAssignmentTests : E2ETestBase
                     new() { BudgetLineId = _budgetLineFood, Amount = 60m },
                     new() { BudgetLineId = _budgetLineTransport, Amount = 40m }
                 },
-                RowVersion = tx!.RowVersion
+                XMin = tx!.XMin
             });
         }
 

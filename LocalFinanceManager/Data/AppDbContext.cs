@@ -45,12 +45,24 @@ public class AppDbContext : DbContext
         {
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
             {
-                // Configure RowVersion for optimistic concurrency.
-                // IsRequired(false) allows the column to be null (EF tracks version via token).
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property("RowVersion")
-                    .IsRowVersion()
-                    .IsRequired(false);
+                if (Database.IsNpgsql())
+                {
+                    // Map XMin to PostgreSQL's xmin system column for reliable optimistic concurrency.
+                    // PostgreSQL updates xmin automatically on every row modification; no trigger needed.
+                    modelBuilder.Entity(entityType.ClrType)
+                        .Property("XMin")
+                        .HasColumnName("xmin")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .IsConcurrencyToken();
+                }
+                else
+                {
+                    // SQLite (test environments): XMin is a regular uint column acting as a
+                    // concurrency token. Tests manipulate it directly; concurrency tests are [Ignore]d.
+                    modelBuilder.Entity(entityType.ClrType)
+                        .Property("XMin")
+                        .IsConcurrencyToken();
+                }
 
                 // Note: CreatedAt/UpdatedAt are set by UpdateTimestamps() in SaveChanges/SaveChangesAsync.
                 // SQL-level defaults are intentionally omitted to stay provider-agnostic and avoid

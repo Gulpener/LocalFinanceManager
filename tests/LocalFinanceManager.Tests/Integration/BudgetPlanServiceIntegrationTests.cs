@@ -188,7 +188,7 @@ public class BudgetPlanServiceIntegrationTests
         {
             Name = "Income",
             Type = CategoryType.Income,
-            RowVersion = salaryCategory.RowVersion
+            XMin = salaryCategory.XMin
         };
 
         var updatedCategory = await _categoryService.UpdateAsync(salaryCategory.Id, updateDto);

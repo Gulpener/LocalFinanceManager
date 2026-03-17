@@ -119,7 +119,7 @@ else
     private List<BreadcrumbItem> breadcrumbItems = new();
     private string categoryName = string.Empty;
     private CategoryType categoryType = CategoryType.Expense;
-    private byte[]? originalRowVersion;
+    private uint originalXMin;
     private Dictionary<string, string[]> validationErrors = new();
     private string? errorMessage;
     private string? concurrencyMessage;
@@ -177,7 +177,7 @@ else
 
             categoryName = category.Name;
             categoryType = category.Type;
-            originalRowVersion = category.RowVersion;
+            originalXMin = category.XMin;
         }
         catch (Exception ex)
         {
@@ -200,7 +200,7 @@ else
             {
                 Name = categoryName,
                 Type = categoryType,
-                RowVersion = originalRowVersion
+                XMin = originalXMin
             };
 
             var response = await CategoryService.UpdateAsync(Id, updateRequest);

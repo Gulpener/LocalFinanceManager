@@ -113,7 +113,7 @@ public class CategoryServiceIntegrationTests
         // Detach to simulate fresh load
         _context.Entry(category).State = EntityState.Detached;
 
-        // Load the category to get its RowVersion
+        // Load the category to get its XMin
         var loadedCategory = await _categoryRepository.GetByIdAsync(category.Id);
         Assert.That(loadedCategory, Is.Not.Null);
 
@@ -121,7 +121,7 @@ public class CategoryServiceIntegrationTests
         {
             Name = "Updated Name",
             Type = CategoryType.Income,
-            RowVersion = loadedCategory!.RowVersion
+            XMin = loadedCategory!.XMin
         };
 
         // Act
@@ -147,7 +147,7 @@ public class CategoryServiceIntegrationTests
         {
             Name = "Updated Name",
             Type = CategoryType.Income,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 0u
         };
 
         // Act
@@ -158,13 +158,13 @@ public class CategoryServiceIntegrationTests
     }
 
     [Test]
-    [Ignore("SQLite in-memory doesn't fully support RowVersion concurrency detection like SQL Server. This test passes in production with a real database file.")]
+    [Ignore("SQLite in-memory doesn't support xmin-based concurrency detection (PostgreSQL-specific). Real concurrency testing requires PostgreSQL.")]
     public async Task UpdateAsync_StaleRowVersion_ThrowsConcurrencyException()
     {
         // Note: This test documents the intended behavior but is ignored because
-        // SQLite in-memory mode doesn't properly handle RowVersion concurrency.
-        // In production with a persistent SQLite file or SQL Server, the Repository
-        // UpdateAsync will throw DbUpdateConcurrencyException as expected.
+        // SQLite in-memory mode doesn't use xmin (PostgreSQL system column).
+        // In production with PostgreSQL, the Repository UpdateAsync will throw
+        // DbUpdateConcurrencyException when xmin has changed between read and write.
 
         // Arrange - Create a category
         var category = new Category
@@ -183,7 +183,7 @@ public class CategoryServiceIntegrationTests
         // First user loads the category
         var user1Category = await _categoryRepository.GetByIdAsync(category.Id);
         Assert.That(user1Category, Is.Not.Null);
-        var user1RowVersion = user1Category!.RowVersion;
+        var user1XMin = user1Category!.XMin;
 
         // Second user loads and updates the category
         _context.Entry(user1Category).State = EntityState.Detached;
@@ -199,7 +199,7 @@ public class CategoryServiceIntegrationTests
         Assert.That(user1Update, Is.Not.Null);
 
         user1Update!.Name = "User 1 Update";
-        user1Update.RowVersion = user1RowVersion; // Use the stale version
+        user1Update.XMin = user1XMin; // Use the stale version
 
         // Act & Assert
         Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () =>
@@ -317,7 +317,7 @@ public class CategoryServiceIntegrationTests
         {
             Name = "Miscellaneous",
             Type = CategoryType.Income, // Change to Income
-            RowVersion = loadedCategory!.RowVersion
+            XMin = loadedCategory!.XMin
         };
 
         // Act

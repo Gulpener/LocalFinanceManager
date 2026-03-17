@@ -54,7 +54,7 @@ public class TransactionsController : ControllerBase
                 ExternalId = t.ExternalId,
                 SourceFileName = t.SourceFileName,
                 ImportedAt = t.ImportedAt,
-                RowVersion = t.RowVersion
+                XMin = t.XMin
             }).ToList();
 
             return Ok(dtos);

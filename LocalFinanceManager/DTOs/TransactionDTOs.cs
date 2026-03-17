@@ -14,7 +14,7 @@ public class TransactionDto
     public string? ExternalId { get; set; }
     public string? SourceFileName { get; set; }
     public DateTime? ImportedAt { get; set; }
-    public byte[]? RowVersion { get; set; }
+    public uint XMin { get; set; }
     public Guid? AccountBudgetPlanId { get; set; }
     public List<TransactionSplitDetailDto>? Splits { get; set; }
     public bool IsAssigned => Splits?.Any() == true;
@@ -215,7 +215,7 @@ public class TransactionSplitDto
     public Guid BudgetLineId { get; set; }
     public decimal Amount { get; set; }
     public string? Note { get; set; }
-    public byte[]? RowVersion { get; set; }
+    public uint XMin { get; set; }
 }
 
 /// <summary>
@@ -234,9 +234,9 @@ public class AssignTransactionRequest
     public string? Note { get; set; }
 
     /// <summary>
-    /// Row version for optimistic concurrency control.
+    /// xmin concurrency token for optimistic concurrency control.
     /// </summary>
-    public byte[]? RowVersion { get; set; }
+    public uint XMin { get; set; }
 }
 
 /// <summary>
@@ -250,9 +250,9 @@ public class SplitTransactionRequest
     public List<SplitAllocationDto> Splits { get; set; } = new();
 
     /// <summary>
-    /// Row version for optimistic concurrency control.
+    /// xmin concurrency token for optimistic concurrency control.
     /// </summary>
-    public byte[]? RowVersion { get; set; }
+    public uint XMin { get; set; }
 }
 
 /// <summary>

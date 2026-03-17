@@ -52,7 +52,7 @@ public class AutomationControllerConcurrencyIntegrationTests
 
         await setupContext.SaveChangesAsync();
         await setupContext.Database.ExecuteSqlRawAsync(
-            "UPDATE \"AppSettings\" SET \"RowVersion\" = X'01' WHERE \"UserId\" = {0};",
+            "UPDATE \"AppSettings\" SET \"XMin\" = 1 WHERE \"UserId\" = {0};",
             TestUserId);
     }
 
@@ -85,7 +85,7 @@ public class AutomationControllerConcurrencyIntegrationTests
                     "IntervalMinutes" = 45,
                     "UpdatedBy" = 'concurrent-writer',
                     "UpdatedAt" = datetime('now'),
-                    "RowVersion" = X'02'
+                    "XMin" = 2
                 WHERE "UserId" = {0};
                 """,
                 TestUserId);

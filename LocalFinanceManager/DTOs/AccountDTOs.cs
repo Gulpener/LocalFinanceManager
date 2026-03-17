@@ -41,7 +41,7 @@ public class AccountResponse
     public bool IsArchived { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    public byte[]? RowVersion { get; set; }
+    public uint XMin { get; set; }
 
     public static AccountResponse FromEntity(Account account)
     {
@@ -57,7 +57,7 @@ public class AccountResponse
             IsArchived = account.IsArchived,
             CreatedAt = account.CreatedAt,
             UpdatedAt = account.UpdatedAt,
-            RowVersion = account.RowVersion
+            XMin = account.XMin
         };
     }
 }

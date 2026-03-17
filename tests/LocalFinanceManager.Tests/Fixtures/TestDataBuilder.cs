@@ -23,7 +23,7 @@ public class TestDataBuilder
             ModelBytes = new byte[] { 0x01, 0x02, 0x03 },
             Metrics = "{\"accuracy\": 0.95}",
             IsArchived = false,
-            RowVersion = null // Let EF Core handle RowVersion
+            XMin = 0 // Let EF Core / PostgreSQL manage xmin
         };
     }
 
