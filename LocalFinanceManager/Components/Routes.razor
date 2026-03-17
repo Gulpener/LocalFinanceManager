@@ -6,6 +6,7 @@
 @inject NavigationManager Navigation
 @inject IBlazorCircuitUser CircuitUser
 @inject AppDbContext DbContext
+@inject ILogger<Routes> Logger
 
 @if (_circuitReady)
 {
@@ -33,27 +34,37 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (!CircuitUser.IsInitialized)
+        try
         {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-            if (user.Identity?.IsAuthenticated ?? false)
+            if (!CircuitUser.IsInitialized)
             {
-                var subClaim = user.FindFirst("sub")?.Value;
-                if (!string.IsNullOrEmpty(subClaim))
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                if (user.Identity?.IsAuthenticated ?? false)
                 {
-                    var localUser = await DbContext.Users
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(u => u.SupabaseUserId == subClaim);
-                    if (localUser != null)
+                    var subClaim = user.FindFirst("sub")?.Value;
+                    if (!string.IsNullOrEmpty(subClaim))
                     {
-                        var email = user.FindFirst("email")?.Value ?? localUser.Email;
-                        CircuitUser.Initialize(localUser.Id, email);
+                        var localUser = await DbContext.Users
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(u => u.SupabaseUserId == subClaim);
+                        if (localUser != null)
+                        {
+                            var email = user.FindFirst("email")?.Value ?? localUser.Email;
+                            CircuitUser.Initialize(localUser.Id, email);
+                        }
                     }
                 }
             }
         }
-        _circuitReady = true;
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize circuit user context. The user may see a login page or reduced functionality.");
+        }
+        finally
+        {
+            _circuitReady = true;
+        }
     }
 
     private async Task HandleNavigateAsync(NavigationContext context)

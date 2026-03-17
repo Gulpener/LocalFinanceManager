@@ -82,7 +82,7 @@ The application will start and be available at:
 
 The database will be automatically created and migrations applied on first run. Seed data will be loaded in Development environment.
 
-> **Note:** Ensure a local PostgreSQL instance is running and `ConnectionStrings:Local` is configured (see below). The default `appsettings.Development.json` connects to `localhost:5432` with user `postgres` / password `postgres`.
+> **Note:** Ensure a local PostgreSQL instance is running and configure `ConnectionStrings:Local` via user-secrets (see below). If not configured, the app falls back to `Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres`.
 
 ### Health Check
 
