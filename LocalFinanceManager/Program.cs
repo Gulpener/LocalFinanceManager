@@ -93,8 +93,10 @@ builder.Services.AddAuthentication(options =>
         {
             // Supabase projects use RS256 with rotating key pairs (kid = UUID).
             // Use OIDC discovery so .NET auto-fetches the JWKS and matches by kid.
-            // The HS256 JWT secret is kept as a fallback IssuerSigningKeyResolver for
-            // projects that have not yet migrated to RS256.
+            // The HS256 JWT secret is included as a fallback for projects that have
+            // not yet migrated to RS256. The resolver merges OIDC/JWKS-discovered
+            // RS256 keys (populated by the JwtBearer middleware before the resolver
+            // is invoked) with the HS256 symmetric key so neither mode is blocked.
             options.Authority = $"{supabaseOptions.Url}/auth/v1";
             options.RequireHttpsMetadata = true;
             options.TokenValidationParameters = new TokenValidationParameters
@@ -105,11 +107,17 @@ builder.Services.AddAuthentication(options =>
                 ValidateIssuerSigningKey = true,
                 ValidIssuer = $"{supabaseOptions.Url}/auth/v1",
                 ValidAudience = "authenticated",
-                // HS256 fallback: if JWKS lookup fails, try the shared secret
-                IssuerSigningKeyResolver = (_, _, kid, _) =>
+                // Merge OIDC/JWKS-discovered RS256 keys with the HS256 symmetric fallback.
+                // The JwtBearer middleware populates validationParameters.IssuerSigningKeys
+                // from OIDC discovery before this resolver is called, so returning both
+                // supports RS256 Supabase tokens and HS256 legacy tokens simultaneously.
+                IssuerSigningKeyResolver = (_, _, kid, validationParameters) =>
                 {
+                    var discoveredKeys = validationParameters.IssuerSigningKeys?.ToList()
+                        ?? new List<SecurityKey>();
                     var fallback = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret.Trim()));
-                    return [fallback];
+                    discoveredKeys.Add(fallback);
+                    return discoveredKeys;
                 }
             };
             options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
@@ -290,10 +298,12 @@ else
     app.UseSwaggerUI();
 }
 
-// Only apply status code pages for non-API requests; API controllers must return their own
-// error responses (e.g. 401, 404) without having them replaced by the Blazor HTML shell.
+// Only apply status code pages for non-API and non-health requests; API controllers and health
+// checks must return their own responses without being replaced by the Blazor HTML shell.
+// The /health exclusion is critical: a 503 from a failed DB health check must not be replaced
+// with the Blazor not-found page, which would make the endpoint unusable for monitoring.
 app.UseWhen(
-    ctx => !ctx.Request.Path.StartsWithSegments("/api"),
+    ctx => !ctx.Request.Path.StartsWithSegments("/api") && !ctx.Request.Path.StartsWithSegments("/health"),
     b => b.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 app.UseHttpsRedirection();
 

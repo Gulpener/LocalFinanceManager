@@ -52,7 +52,7 @@ On touch devices, keyboard shortcuts are disabled and the help modal shows touch
     ```bash
     docker run -d --name lfm-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16
     ```
-  - Or use an existing PostgreSQL instance and update `ConnectionStrings:Default` via user-secrets.
+  - Or use an existing PostgreSQL instance and update `ConnectionStrings:Local` via user-secrets.
 
 ## Getting Started
 
