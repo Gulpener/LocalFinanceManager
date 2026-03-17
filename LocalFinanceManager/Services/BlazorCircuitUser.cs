@@ -11,6 +11,7 @@ public interface IBlazorCircuitUser
     string Email { get; }
     bool IsInitialized { get; }
     void Initialize(Guid userId, string email);
+    void Reset();
 }
 
 public class BlazorCircuitUser : IBlazorCircuitUser
@@ -24,5 +25,12 @@ public class BlazorCircuitUser : IBlazorCircuitUser
         UserId = userId;
         Email = email;
         IsInitialized = true;
+    }
+
+    public void Reset()
+    {
+        UserId = Guid.Empty;
+        Email = string.Empty;
+        IsInitialized = false;
     }
 }
