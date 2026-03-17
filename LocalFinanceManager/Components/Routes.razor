@@ -79,14 +79,23 @@
     private async Task InitializeCircuitUserFromAuthStateAsync(AuthenticationState authState)
     {
         var user = authState.User;
-        if (!(user.Identity?.IsAuthenticated ?? false))
+        var isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        // When the authentication state is unauthenticated, explicitly clear any
+        // previously initialized circuit user to avoid stale authenticated state
+        // being reused for an anonymous HttpContext.
+        if (!isAuthenticated)
         {
+            // Reset/clear circuit user state when transitioning to anonymous.
+            CircuitUser.Reset();
             return;
         }
 
         var subClaim = user.FindFirst("sub")?.Value;
         if (string.IsNullOrEmpty(subClaim))
         {
+            // If we cannot identify the remote user, clear any existing circuit user.
+            CircuitUser.Reset();
             return;
         }
 
@@ -95,6 +104,8 @@
             .FirstOrDefaultAsync(u => u.SupabaseUserId == subClaim);
         if (localUser == null)
         {
+            // If there is no corresponding local user, clear any existing circuit user.
+            CircuitUser.Reset();
             return;
         }
 
