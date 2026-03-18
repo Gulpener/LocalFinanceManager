@@ -1,25 +1,3 @@
-using Microsoft.EntityFrameworkCore.Migrations;
-
-namespace LocalFinanceManager.Migrations
-{
-    /// <summary>
-    /// No-op migration to avoid introducing a physical `xmin` column.
-    /// The actual concurrency configuration should be handled in the model
-    /// (e.g., via RowVersion or Npgsql's UseXminAsConcurrencyToken).
-    /// </summary>
-    public partial class SwitchToXminConcurrency : Migration
-    {
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            // Intentionally left blank to avoid adding a physical `xmin` column.
-        }
-
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            // Intentionally left blank; Up made no schema changes.
-        }
-    }
-}
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable

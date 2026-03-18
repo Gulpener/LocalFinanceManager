@@ -48,10 +48,15 @@ public class AppDbContext : DbContext
             {
                 if (Database.IsNpgsql())
                 {
-                    // Use PostgreSQL's internal xmin system column for optimistic concurrency.
-                    // This avoids creating a user-defined "xmin" column and binds to the real system column.
+                    // Map XMin to PostgreSQL's xmin system column for optimistic concurrency.
+                    // PostgreSQL updates xmin automatically on every row modification; no trigger needed.
+                    // Npgsql's migration SQL generator skips AddColumn/DropColumn for system columns
+                    // (see NpgsqlMigrationsSqlGenerator.SystemColumnNames), so no schema change is needed.
                     modelBuilder.Entity(entityType.ClrType)
-                        .UseXminAsConcurrencyToken();
+                        .Property("XMin")
+                        .HasColumnName("xmin")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .IsConcurrencyToken();
                 }
                 else
                 {
