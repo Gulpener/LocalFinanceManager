@@ -433,6 +433,8 @@
         wasVisible = false;
         ResetForm();
         await OnClose.InvokeAsync();
+        // Defensive: force UI update to ensure modal closes immediately (prevents race in async scenarios)
+        await InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()

@@ -213,6 +213,8 @@ public class BasicAssignmentTests : E2ETestBase
         await Expect(auditBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15_000 });
         await auditBtn.ClickAsync();
 
+        // Defensive: wait for audit trail modal title to exist before asserting visibility (CI timing)
+        await Page.WaitForSelectorAsync("#auditTrailModalTitle", new() { Timeout = 15000 });
         await Expect(Page.Locator("#auditTrailModalTitle")).ToBeVisibleAsync();
         // Wait for loading spinner to disappear before reading modal content
         await Expect(Page.Locator(".modal.show .spinner-border")).Not.ToBeVisibleAsync();

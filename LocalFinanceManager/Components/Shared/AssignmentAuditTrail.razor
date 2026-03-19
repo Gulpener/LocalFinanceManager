@@ -121,8 +121,10 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        Logger.LogInformation($"AssignmentAuditTrail OnParametersSetAsync: IsVisible={IsVisible}, TransactionId={TransactionId}");
         if (IsVisible && TransactionId.HasValue && TransactionId.Value != Guid.Empty)
         {
+            Logger.LogInformation($"AssignmentAuditTrail loading audit history for TransactionId={TransactionId}");
             await LoadAuditHistory();
         }
     }
@@ -148,7 +150,9 @@
         {
             loading = true;
             errorMessage = null;
+            Logger.LogInformation($"AssignmentAuditTrail LoadAuditHistory: loading for TransactionId={TransactionId}");
             auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(TransactionId!.Value);
+            Logger.LogInformation($"AssignmentAuditTrail LoadAuditHistory: loaded {auditEntries?.Count ?? 0} entries for TransactionId={TransactionId}");
         }
         catch (Exception ex)
         {
