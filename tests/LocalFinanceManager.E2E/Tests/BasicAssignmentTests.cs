@@ -208,7 +208,11 @@ public class BasicAssignmentTests : E2ETestBase
         //             → JS releaseFocusTrap → OnClose → re-render. Allow 60s under load.
         await Expect(Page.Locator("#transactionAssignModal")).Not.ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 60_000 });
 
+        // Wait for the transaction row to show as assigned (contains 'Food' or 'splits') before clicking the audit button
         var row = Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')").First;
+        await Expect(row).ToContainTextAsync(new[] { "Food", "splits" }, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
+
+        // Now the audit button should be present and enabled
         var auditBtn = row.Locator("button[title='Bekijk toewijzingsgeschiedenis']");
         await Expect(auditBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15_000 });
         await auditBtn.ClickAsync();
