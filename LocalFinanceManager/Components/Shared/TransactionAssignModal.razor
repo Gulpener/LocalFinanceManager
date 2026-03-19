@@ -376,8 +376,17 @@
                 await RecentCategoriesService.TrackCategoryUsageAsync(selectedBudgetLine.CategoryId);
             }
 
-            await OnAssignmentSuccess.InvokeAsync();
+            // Defensive: ensure modal closes even if OnAssignmentSuccess fails or is slow
+            try
+            {
+                await OnAssignmentSuccess.InvokeAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAssignmentSuccess failed after assignment for transaction {TransactionId}", Transaction.Id);
+            }
             await Close();
+            Logger.LogInformation("TransactionAssignModal closed after assignment for transaction {TransactionId}", Transaction.Id);
         }
         catch (Exception ex)
         {
