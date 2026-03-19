@@ -101,6 +101,10 @@ public class UpdateBudgetLineDtoValidator : AbstractValidator<UpdateBudgetLineDt
         RuleFor(x => x.Notes)
             .MaximumLength(500)
             .WithMessage("Notes cannot exceed 500 characters.");
+
+        RuleFor(x => x.XMin)
+            .GreaterThan(0)
+            .WithMessage("Concurrency token (XMin) is required and must be greater than 0.");
     }
 }
 
