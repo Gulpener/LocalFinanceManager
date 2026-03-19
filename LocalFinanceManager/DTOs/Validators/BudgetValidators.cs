@@ -45,7 +45,7 @@ public class UpdateBudgetPlanDtoValidator : AbstractValidator<UpdateBudgetPlanDt
             .WithMessage("Name cannot exceed 150 characters.");
 
         RuleFor(x => x.XMin)
-            .GreaterThan(0u)
+            .Must(val => val > 0)
             .WithMessage("XMin concurrency token is required and must be greater than 0.");
     }
 }
@@ -103,7 +103,7 @@ public class UpdateBudgetLineDtoValidator : AbstractValidator<UpdateBudgetLineDt
             .WithMessage("Notes cannot exceed 500 characters.");
 
         RuleFor(x => x.XMin)
-            .GreaterThan(0)
+            .Must(val => val > 0)
             .WithMessage("Concurrency token (XMin) is required and must be greater than 0.");
     }
 }
@@ -149,7 +149,7 @@ public class UpdateCategoryDtoValidator : AbstractValidator<UpdateCategoryDto>
             .WithMessage("Type moet Income of Expense zijn");
 
         RuleFor(x => x.XMin)
-            .GreaterThan(0u)
+            .Must(val => val > 0)
             .WithMessage("Concurrency token (XMin) is verplicht voor updates.");
     }
 }
