@@ -207,8 +207,8 @@ public class BasicAssignmentTests : E2ETestBase
         // Under sustained suite load the SignalR round-trip may be slow; allow 15s.
         // If the button is still enabled after 15s the click may have been swallowed — retry once.
         var clickRegistered = false;
-            // Fail fast if Blazor error UI is present after assignment
-            var blazorError = Page.Locator("#blazor-error-ui");
+        // Fail fast if Blazor error UI is present after assignment
+        var blazorError = Page.Locator("#blazor-error-ui");
         try
         {
             await Expect(Page.Locator("#assignSaveButton")).ToBeDisabledAsync(
