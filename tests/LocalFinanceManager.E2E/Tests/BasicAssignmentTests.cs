@@ -277,7 +277,23 @@ public class BasicAssignmentTests : E2ETestBase
         if (await blazorError.IsVisibleAsync(new LocatorIsVisibleOptions { Timeout = 1000 }))
         {
             var errorText = await blazorError.TextContentAsync();
-            throw new Exception($"Blazor error UI detected after assignment: {errorText}");
+            // Capture diagnostics with unique variable names
+            var diagDirError = Path.Combine(AppContext.BaseDirectory, "screenshots");
+            if (!Directory.Exists(diagDirError))
+                Directory.CreateDirectory(diagDirError);
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = Path.Combine(diagDirError, "BlazorErrorUI_AfterAssignment.png"), FullPage = true });
+            var htmlError = await Page.ContentAsync();
+            File.WriteAllText(Path.Combine(diagDirError, "BlazorErrorUI_AfterAssignment.html"), htmlError);
+            // Capture browser console and page errors
+            var consoleMessagesError = new List<string>();
+            Page.Console += (_, msg) => consoleMessagesError.Add($"[console] {msg.Type}: {msg.Text}");
+            var pageErrorsError = new List<string>();
+            Page.PageError += (_, msg) => pageErrorsError.Add($"[pageerror] {msg}");
+            // Give a short delay to collect any late console/page errors
+            await Task.Delay(1000);
+            File.WriteAllText(Path.Combine(diagDirError, "BlazorErrorUI_AfterAssignment_console.txt"), string.Join("\n", consoleMessagesError));
+            File.WriteAllText(Path.Combine(diagDirError, "BlazorErrorUI_AfterAssignment_pageerrors.txt"), string.Join("\n", pageErrorsError));
+            throw new Exception($"Blazor error UI detected after assignment: {errorText}. See diagnostics in {diagDirError}/");
         }
         // Defensive: short wait to allow Blazor to render modal
         await Task.Delay(500);
