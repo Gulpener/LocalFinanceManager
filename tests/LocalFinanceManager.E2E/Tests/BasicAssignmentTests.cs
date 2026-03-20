@@ -78,12 +78,40 @@ public class BasicAssignmentTests : E2ETestBase
         await Expect(Page.Locator("#assignSaveButton")).ToBeEnabledAsync(new LocatorAssertionsToBeEnabledOptions { Timeout = 5_000 });
         await Page.ClickAsync("#assignSaveButton");
 
-        // Do NOT wait for the modal to close here — that relies on the JS interop releaseFocusTrap
-        // call (step 5), which is slow under sustained SignalR load.
-        // The row updates in OnAssignmentSuccess → LoadTransactionsAsync → StateHasChanged (step 4),
-        // which always completes BEFORE the modal close. Poll directly for the expected row state.
-        await Expect(Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')")
-            ).ToContainTextAsync("Food", new LocatorAssertionsToContainTextOptions { Timeout = 45_000 });
+        // Attach listeners for console and page errors
+        var consoleMessages = new List<string>();
+        Page.Console += (_, msg) => consoleMessages.Add($"[console] {msg.Type}: {msg.Text}");
+        var pageErrors = new List<string>();
+        Page.PageError += (_, msg) => pageErrors.Add($"[pageerror] {msg}");
+
+        // Poll for the row to update to assigned (showing 'Food')
+        var row = Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')").First;
+        string? rowText = null;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        bool found = false;
+        while (sw.Elapsed < TimeSpan.FromSeconds(45))
+        {
+            rowText = await row.TextContentAsync();
+            if (rowText != null && rowText.Contains("Food"))
+            {
+                found = true;
+                break;
+            }
+            await Task.Delay(250);
+        }
+        if (!found)
+        {
+            // Ensure diagnostics directory exists
+            var diagDir = "test-results/screenshots";
+            if (!System.IO.Directory.Exists(diagDir))
+                System.IO.Directory.CreateDirectory(diagDir);
+            // Capture screenshot and HTML for diagnostics
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = $"{diagDir}/AssignTransaction_UpdatesRowToAssigned_Fail.png", FullPage = true });
+            var html = await Page.ContentAsync();
+            System.IO.File.WriteAllText($"{diagDir}/AssignTransaction_UpdatesRowToAssigned_Fail.html", html);
+            var errorDetails = $"\nConsole messages:\n{string.Join("\n", consoleMessages)}\nPage errors:\n{string.Join("\n", pageErrors)}\n";
+            throw new Exception($"Transaction row did not show as assigned within 45s. Row text: {rowText}. See screenshot and HTML in {diagDir}/. {errorDetails}");
+        }
     }
 
     [Test]
@@ -179,6 +207,8 @@ public class BasicAssignmentTests : E2ETestBase
         // Under sustained suite load the SignalR round-trip may be slow; allow 15s.
         // If the button is still enabled after 15s the click may have been swallowed — retry once.
         var clickRegistered = false;
+            // Fail fast if Blazor error UI is present after assignment
+            var blazorError = Page.Locator("#blazor-error-ui");
         try
         {
             await Expect(Page.Locator("#assignSaveButton")).ToBeDisabledAsync(
@@ -208,24 +238,76 @@ public class BasicAssignmentTests : E2ETestBase
         //             → JS releaseFocusTrap → OnClose → re-render. Allow 60s under load.
         await Expect(Page.Locator("#transactionAssignModal")).Not.ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 60_000 });
 
+
         // Wait for the transaction row to show as assigned (contains 'Food' or 'splits') before clicking the audit button
         var row = Page.Locator("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')").First;
-        await Expect(row).ToContainTextAsync(new[] { "Food", "splits" }, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
+        string? rowText = null;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        bool found = false;
+        while (sw.Elapsed < TimeSpan.FromSeconds(30))
+        {
+            rowText = await row.TextContentAsync();
+            if (rowText != null && (rowText.Contains("Food") || rowText.Contains("splits")))
+            {
+                found = true;
+                break;
+            }
+            // Fail fast if Blazor error UI is present after assignment
+            if (await blazorError.IsVisibleAsync(new LocatorIsVisibleOptions { Timeout = 100 }))
+            {
+                var errorText = await blazorError.TextContentAsync();
+                throw new Exception($"Blazor error UI detected while waiting for assignment: {errorText}");
+            }
+            await Task.Delay(250);
+        }
+        Assert.That(found, $"Transaction row did not show as assigned within 30s. Row text: {rowText}");
 
         // Now the audit button should be present and enabled
         var auditBtn = row.Locator("button[title='Bekijk toewijzingsgeschiedenis']");
         await Expect(auditBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15_000 });
         await auditBtn.ClickAsync();
 
+        // Attach listeners for console and page errors
+        var consoleMessages = new List<string>();
+        Page.Console += (_, msg) => consoleMessages.Add($"[console] {msg.Type}: {msg.Text}");
+        var pageErrors = new List<string>();
+        Page.PageError += (_, msg) => pageErrors.Add($"[pageerror] {msg}");
+
+        // Fail fast if Blazor error UI is present after assignment (post-click)
+        if (await blazorError.IsVisibleAsync(new LocatorIsVisibleOptions { Timeout = 1000 }))
+        {
+            var errorText = await blazorError.TextContentAsync();
+            throw new Exception($"Blazor error UI detected after assignment: {errorText}");
+        }
         // Defensive: short wait to allow Blazor to render modal
         await Task.Delay(500);
+
+        // Use diagnostics directory rooted in E2E project
+        var diagDir = Path.Combine(AppContext.BaseDirectory, "screenshots");
+        if (!Directory.Exists(diagDir))
+            Directory.CreateDirectory(diagDir);
+        // Capture screenshot and HTML after clicking audit button
+        await Page.ScreenshotAsync(new PageScreenshotOptions { Path = Path.Combine(diagDir, "AuditTrailModal_AfterAuditClick.png"), FullPage = true });
+        var html = await Page.ContentAsync();
+        File.WriteAllText(Path.Combine(diagDir, "AuditTrailModal_AfterAuditClick.html"), html);
+
         // Defensive: wait for audit trail modal title to exist before asserting visibility (CI timing)
-        await Page.WaitForSelectorAsync("#auditTrailModalTitle", new() { Timeout = 30000 });
-        await Expect(Page.Locator("#auditTrailModalTitle")).ToBeVisibleAsync();
-        // Wait for loading spinner to disappear before reading modal content
-        await Expect(Page.Locator(".modal.show .spinner-border")).Not.ToBeVisibleAsync();
-        var content = await Page.Locator(".modal.show").TextContentAsync();
-        Assert.That(content, Does.Contain("Assign").Or.Contain("Toegewezen"));
+        try
+        {
+            await Page.WaitForSelectorAsync("#auditTrailModalTitle", new() { Timeout = 30000 });
+            await Expect(Page.Locator("#auditTrailModalTitle")).ToBeVisibleAsync();
+            // Wait for loading spinner to disappear before reading modal content
+            await Expect(Page.Locator(".modal.show .spinner-border")).Not.ToBeVisibleAsync();
+            var content = await Page.Locator(".modal.show").TextContentAsync();
+            Assert.That(content, Does.Contain("Assign").Or.Contain("Toegewezen"));
+        }
+        catch (Exception ex)
+        {
+            // Extra logging for modal state
+            var modalHtml = await Page.Locator("#transactionAssignModal").InnerHTMLAsync();
+            var errorDetails = $"\nConsole messages:\n{string.Join("\n", consoleMessages)}\nPage errors:\n{string.Join("\n", pageErrors)}\nModal HTML:\n{modalHtml}\n";
+            throw new Exception($"AuditTrail modal did not appear. See screenshot and HTML in {diagDir}/. {errorDetails}", ex);
+        }
     }
 
     [Test]
@@ -291,6 +373,7 @@ public class BasicAssignmentTests : E2ETestBase
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_accountId);
 
+        // ...existing code...
         await _transactionsPage.SelectAllOnPageAsync();
         await _transactionsPage.ClickBulkAssignAsync();
 
