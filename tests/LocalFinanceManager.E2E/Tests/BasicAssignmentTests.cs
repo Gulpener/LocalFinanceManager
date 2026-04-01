@@ -262,6 +262,15 @@ public class BasicAssignmentTests : E2ETestBase
         }
         Assert.That(found, $"Transaction row did not show as assigned within 30s. Row text: {rowText}");
 
+        // Check for Blazor error immediately after loop exits (before clicking audit button).
+        // Without this check the error may have appeared during the post-assignment render but
+        // was missed because the loop breaks on "Food" without re-checking blazorError.
+        if (await blazorError.IsVisibleAsync())
+        {
+            var errorText = await blazorError.TextContentAsync();
+            throw new Exception($"Blazor error UI detected after assignment (pre-audit click): {errorText}");
+        }
+
         // Now the audit button should be present and enabled
         var auditBtn = row.Locator("button[title='Bekijk toewijzingsgeschiedenis']");
         await Expect(auditBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15_000 });
