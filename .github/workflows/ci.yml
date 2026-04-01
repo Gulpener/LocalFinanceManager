@@ -57,6 +57,12 @@ jobs:
       - name: Build E2E project (prepares Playwright)
         run: dotnet build tests/LocalFinanceManager.E2E/ --configuration Release --no-restore
 
+      - name: Install dotnet-ef tool
+        run: dotnet tool install --global dotnet-ef
+        shell: bash
+        env:
+          PATH: $PATH:/home/runner/.dotnet/tools
+
       - name: Apply EF Core migrations
         run: dotnet ef database update --project LocalFinanceManager/LocalFinanceManager.csproj
         env:
