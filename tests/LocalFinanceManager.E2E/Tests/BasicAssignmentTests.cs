@@ -253,7 +253,7 @@ public class BasicAssignmentTests : E2ETestBase
                 break;
             }
             // Fail fast if Blazor error UI is present after assignment
-            if (await blazorError.IsVisibleAsync(new LocatorIsVisibleOptions { Timeout = 100 }))
+            if (await blazorError.IsVisibleAsync())
             {
                 var errorText = await blazorError.TextContentAsync();
                 throw new Exception($"Blazor error UI detected while waiting for assignment: {errorText}");
@@ -283,7 +283,7 @@ public class BasicAssignmentTests : E2ETestBase
         Page.PageError += (_, msg) => pageErrors.Add($"[pageerror] {msg}");
 
         // Fail fast if Blazor error UI is present after assignment (post-click)
-        if (await blazorError.IsVisibleAsync(new LocatorIsVisibleOptions { Timeout = 1000 }))
+        if (await blazorError.IsVisibleAsync())
         {
             var errorText = await blazorError.TextContentAsync();
             // Capture diagnostics with unique variable names

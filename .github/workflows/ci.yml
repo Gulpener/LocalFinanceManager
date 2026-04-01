@@ -57,17 +57,6 @@ jobs:
       - name: Build E2E project (prepares Playwright)
         run: dotnet build tests/LocalFinanceManager.E2E/ --configuration Release --no-restore
 
-      - name: Install dotnet-ef tool
-        run: |
-          dotnet tool install --global dotnet-ef
-          echo "export PATH=\"$PATH:/home/runner/.dotnet/tools\"" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Apply EF Core migrations
-        run: dotnet ef database update --project LocalFinanceManager/LocalFinanceManager.csproj
-        env:
-          ConnectionStrings__Default: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
-
       - name: Install Playwright browsers
         run: pwsh -Command "cd tests/LocalFinanceManager.E2E; pwsh bin/Release/net10.0/playwright.ps1 install --with-deps chromium"
         shell: pwsh
