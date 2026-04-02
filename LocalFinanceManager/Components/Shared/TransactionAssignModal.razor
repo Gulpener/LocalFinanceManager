@@ -208,9 +208,17 @@
 
             if (Transaction != null)
             {
-                await LoadBudgetLines();
-                await LoadRecentCategories();
-                ResetForm();
+                try
+                {
+                    await LoadBudgetLines();
+                    await LoadRecentCategories();
+                    ResetForm();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to load modal data for transaction {TransactionId}", Transaction.Id);
+                    errorMessage = "Er is een fout opgetreden bij het laden van de modal.";
+                }
             }
         }
     }
@@ -439,8 +447,15 @@
         await ReleaseFocusTrapAsync();
 
         isInitialFocusSet = false;
-        wasVisible = false;
+        // Do NOT reset wasVisible here. Any StateHasChanged queued by OnAssignmentSuccess may fire
+        // during the ReleaseFocusTrapAsync JS-interop await above. If wasVisible were false at that
+        // point, OnParametersSetAsync would see needsLoad=true and start LoadBudgetLines/
+        // LoadRecentCategories concurrently with the audit-trail query fired by a fast click on the
+        // audit button — causing "A second operation was started on this context instance".
+        // wasVisible is reset to false inside the if (!IsVisible) branch of OnParametersSetAsync
+        // once the parent sets showAssignModal=false and the subsequent render arrives.
         ResetForm();
+        _lastLoadedForTransactionId = null;
         await OnClose.InvokeAsync();
         // Defensive: force UI update to ensure modal closes immediately (prevents race in async scenarios)
         await InvokeAsync(StateHasChanged);
