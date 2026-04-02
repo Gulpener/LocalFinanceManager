@@ -12,10 +12,11 @@ public abstract class BaseEntity
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Row version for optimistic concurrency control.
-    /// Automatically managed by EF Core.
+    /// PostgreSQL xmin system column used as the optimistic concurrency token.
+    /// Automatically updated by PostgreSQL on every row modification.
+    /// In SQLite (test environments) this is a regular uint column managed manually.
     /// </summary>
-    public byte[]? RowVersion { get; set; }
+    public uint XMin { get; set; }
 
     /// <summary>
     /// Timestamp when the entity was created.

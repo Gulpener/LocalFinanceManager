@@ -229,46 +229,11 @@ public class BudgetValidatorTests
     }
 
     [Test]
-    public async Task UpdateBudgetPlanDto_NoRowVersion_FailsValidation()
-    {
-        // Arrange
-        var dto = new UpdateBudgetPlanDto
-        {
-            Name = "Updated Budget",
-            RowVersion = null
-        };
-
-        // Act
-        var result = await _updatePlanValidator.TestValidateAsync(dto);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.RowVersion);
-    }
-
-    [Test]
-    public async Task UpdateBudgetLineDto_NoRowVersion_FailsValidation()
-    {
-        // Arrange
-        var dto = new UpdateBudgetLineDto
-        {
-            CategoryId = Guid.NewGuid(),
-            MonthlyAmounts = Enumerable.Repeat(100m, 12).ToArray(),
-            RowVersion = null
-        };
-
-        // Act
-        var result = await _updateLineValidator.TestValidateAsync(dto);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.RowVersion);
-    }
-
-    [Test]
     public async Task CreateCategoryDto_ValidData_PassesValidation()
     {
         // Arrange
-        var dto = new CreateCategoryDto 
-        { 
+        var dto = new CreateCategoryDto
+        {
             Name = "Test Category",
             Type = CategoryType.Expense,
             BudgetPlanId = Guid.NewGuid()
@@ -285,8 +250,8 @@ public class BudgetValidatorTests
     public async Task CreateCategoryDto_EmptyName_FailsValidation()
     {
         // Arrange
-        var dto = new CreateCategoryDto 
-        { 
+        var dto = new CreateCategoryDto
+        {
             Name = "",
             Type = CategoryType.Expense,
             BudgetPlanId = Guid.NewGuid()

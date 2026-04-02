@@ -11,7 +11,8 @@
 
 - ✅ **19 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2) - Archived
 - ✅ **3 stories ready** for immediate implementation (US-11, US-12, US-17)
-- 🔴 **4 stories need refinement** (US-13, US-14, US-15, US-16) - Post-MVP features
+- 🔴 **3 stories need refinement** (US-13, US-14, US-15) - Post-MVP features
+- 🔵 **1 story redefined** (US-16) - Azure F1 replaced by Azure App Service B1 (€50/mnd recurring credits)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
@@ -730,149 +731,21 @@ public class User
 
 ---
 
-#### UserStory-16: Azure Deployment
+#### UserStory-16: Azure App Service B1 Deployment
 
-**File:** [docs/Userstories/UserStory-16-Azure-Deployment.md](docs/Userstories/UserStory-16-Azure-Deployment.md)
+**File:** [docs/Userstories/UserStory-16-Azure-B1-Deployment.md](docs/Userstories/UserStory-16-Azure-B1-Deployment.md)
 
-**Issues:**
+**Status:** 🔵 **Redefined** — Azure F1 replaced by Azure App Service B1 using €50/mnd
+recurring Azure credits. B1 (~€13/mnd) is fully covered, leaving ~€37/mnd remaining.
+Azure F1 is incompatible with Blazor Server due to the permanent SignalR connection
+(WebSocket) and 60-minute daily CPU limit causing circuit disconnections.
 
-1. **Missing cost estimation** - Free tier has limits, what happens when exceeded?
-2. **No monitoring/alerting strategy** - How to detect production issues?
-3. **Database backup strategy undefined** - How to backup PostgreSQL in production?
-4. **Environment variable management unclear** - How to manage secrets across environments?
-5. **Rollback strategy missing** - How to revert to previous deployment if bugs occur?
+**Approach:** `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions. No Docker,
+Nginx, or server management needed. Always-on enabled. Supabase PostgreSQL unchanged.
 
-**Required Refinements:**
+**No further refinement needed** — story is fully defined and ready for implementation.
 
-Add the following sections:
-
-#### Azure Free Tier Limits & Cost Estimation
-
-**Free Tier (F1) Limits:**
-
-- 60 CPU minutes/day
-- 1 GB RAM
-- 1 GB storage
-- 10 GB bandwidth/month
-
-**Expected Usage:**
-
-- ~10 users × 30 requests/day = 300 requests/day
-- Average response time: 200ms
-- Daily CPU usage: ~60 seconds (well within limit)
-
-**Cost Escalation Plan:**
-
-- If CPU minutes exceeded → Upgrade to Basic (B1) tier ($13/month)
-- Monitor daily usage via Azure Portal metrics
-
-#### Monitoring & Alerting Strategy
-
-**Azure Application Insights:**
-
-- [ ] Install NuGet package: `Microsoft.ApplicationInsights.AspNetCore`
-- [ ] Add to `Program.cs`:
-  ```csharp
-  builder.Services.AddApplicationInsightsTelemetry(options =>
-  {
-      options.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-  });
-  ```
-
-**Key Metrics to Monitor:**
-
-1. **Request rate:** Requests per minute (alert if >100/min sustained)
-2. **Response time:** Average response time (alert if >2s)
-3. **Error rate:** HTTP 500 errors (alert if >5% of requests)
-4. **Database connection failures:** Failed connection attempts (alert on any failure)
-
-**Alert Configuration:**
-
-- Email alerts to developer email on critical failures
-- SMS alerts (optional) for production downtime
-
-#### Database Backup Strategy
-
-**Supabase Automatic Backups:**
-
-- Supabase provides daily automated backups (retained for 7 days on free tier)
-- No additional configuration required
-
-**Manual Backup Schedule:**
-
-- Weekly manual backup via `BackupController` export endpoint
-- Store backup JSON files in Azure Blob Storage (cold tier, $0.002/GB/month)
-- Retention: 4 weekly backups, 12 monthly backups
-
-**Backup Automation:**
-
-```csharp
-// Azure Function (Timer Trigger: 0 0 * * 0 = every Sunday)
-public async Task RunWeeklyBackup(TimerInfo timer)
-{
-    var backupData = await _backupService.CreateBackupAsync(adminUserId);
-    var json = JsonSerializer.Serialize(backupData);
-
-    await _blobService.UploadAsync(
-        containerName: "backups",
-        blobName: $"backup_{DateTime.UtcNow:yyyyMMdd}.json",
-        content: json
-    );
-}
-```
-
-#### Environment Variable Management
-
-**GitHub Secrets (Production):**
-
-- `AZURE_WEBAPP_PUBLISH_PROFILE` - Deployment credentials
-- `SUPABASE_CONNECTION_STRING` - PostgreSQL connection
-- `JWT_SECRET` - Token signing key (auto-generated 256-bit key)
-- `APPLICATIONINSIGHTS_CONNECTION_STRING` - Monitoring
-
-**Azure App Service Configuration:**
-
-- Use App Service → Configuration → Application Settings for runtime secrets
-- Enable "Deployment slot settings" to prevent production secrets in staging
-
-**Local Development:**
-
-- Use `appsettings.Development.json` (never commit)
-- Example secrets:
-  ```json
-  {
-    "ConnectionStrings": {
-      "Default": "Host=localhost;Database=lfm_dev;..."
-    },
-    "Jwt": {
-      "Secret": "dev-secret-key-not-for-production"
-    }
-  }
-  ```
-
-#### Rollback Strategy
-
-**Deployment Slots (Not Available on Free Tier):**
-
-- Free tier doesn't support deployment slots → Manual rollback required
-
-**Manual Rollback Steps:**
-
-1. Identify last known good commit: `git log --oneline`
-2. Create rollback branch: `git checkout -b rollback/{commit-hash}`
-3. Trigger deployment: `git push origin rollback/{commit-hash}`
-4. GitHub Actions redeploys previous version
-
-**Automated Rollback Trigger:**
-
-- If health check fails for >5 minutes after deployment → Trigger rollback workflow
-- GitHub Actions workflow monitors `/health` endpoint post-deployment
-
-**Rollback Time Target:** <10 minutes from detection to restored service
-
-**Estimated Refinement Time:** 2-3 hours
-
-**Estimated Implementation Effort After Refinement:** 3-4 days
+**Estimated Implementation Effort:** 1-2 days
 
 ---
 
@@ -914,7 +787,7 @@ public async Task RunWeeklyBackup(TimerInfo timer)
 15. 🔴 **UserStory-13** (Sharing System) - After US-12 + refinement (5-7 days)
 16. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
 17. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
-18. 🔴 **UserStory-16** (Azure Deployment) - After refinement (3-4 days)
+18. 🔵 **UserStory-16** (Azure App Service B1 Deployment) - Ready for implementation (1-2 days)
 
 ---
 
@@ -1039,4 +912,4 @@ Use this structure for all new stories:
 23. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)
 24. UserStory-14 (Backup & Restore) - Needs refinement (security/encryption, versioning)
 25. UserStory-15 (Application Flow) - Needs refinement (onboarding tracking)
-26. UserStory-16 (Azure Deployment) - Needs refinement (cost, monitoring, rollback)
+26. UserStory-16 (Azure App Service B1 Deployment) - Ready (dotnet publish, GitHub Actions CD)

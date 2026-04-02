@@ -31,24 +31,20 @@ public abstract class E2ETestBase : PageTest
 
             // Create factory with unique database per fixture
             Factory = new TestWebApplicationFactory(_fixtureId);
-            TestContext.Progress.WriteLine($"[WorkerSetUp] Factory created with database: {Factory.TestDatabasePath}");
+            TestContext.Progress.WriteLine($"[WorkerSetUp] Factory created with database: {Factory.TestDatabaseName}");
             TestContext.Progress.WriteLine($"[WorkerSetUp] Server will listen on: {Factory.ServerAddress}");
 
             // Delete old database files before starting server
             await Factory.InitializeDatabaseAsync();
-            TestContext.Progress.WriteLine("[WorkerSetUp] Database files cleaned up");
+            TestContext.Progress.WriteLine("[WorkerSetUp] Database initialized");
 
-            // Start the server (migrations will run automatically via Program.cs)
+            // Start the server (SkipDatabaseMigrations=true, migrations already applied above)
             Factory.EnsureServerStarted();
             TestContext.Progress.WriteLine("[WorkerSetUp] Factory.EnsureServerStarted() completed");
 
-            // Wait for server to be ready (includes migration time)
+            // Wait for server to be ready
             await WaitForServerReadyAsync();
             TestContext.Progress.WriteLine("[WorkerSetUp] Server is ready");
-
-            // Now that migrations are complete, enable WAL mode for better concurrency
-            await Factory.EnableWALModeAsync();
-            TestContext.Progress.WriteLine("[WorkerSetUp] WAL mode enabled");
 
             TestContext.Out.WriteLine($"Fixture {_fixtureId} ready at: {BaseUrl}");
             TestContext.Progress.WriteLine($"[WorkerSetUp] Fixture {_fixtureId} ready at: {BaseUrl}");

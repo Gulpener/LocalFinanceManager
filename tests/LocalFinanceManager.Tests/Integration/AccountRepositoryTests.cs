@@ -281,15 +281,13 @@ public class AccountRepositoryTests
     }
 
     [Test]
-    [Ignore("SQLite does not automatically generate RowVersion values. Real concurrency testing requires SQL Server or PostgreSQL.")]
+    [Ignore("SQLite does not automatically update XMin (xmin system column is PostgreSQL-specific). Real concurrency testing requires PostgreSQL.")]
     public async Task OptimisticConcurrency_DetectsConflict()
     {
-        // Note: SQLite doesn't support automatic RowVersion generation
+        // Note: SQLite doesn't support automatic xmin updates like PostgreSQL
         // This test is marked as Ignore and documents the limitation
         // Real optimistic concurrency testing should be done with:
-        // - SQL Server (with rowversion/timestamp column type)
-        // - PostgreSQL (with xmin system column)
-        // - Or manual RowVersion management in the application
+        // - PostgreSQL (with xmin system column, auto-updated on every write)
 
         await Task.CompletedTask;
     }

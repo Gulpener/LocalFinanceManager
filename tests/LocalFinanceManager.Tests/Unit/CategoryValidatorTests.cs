@@ -180,7 +180,7 @@ public class CategoryValidatorTests
         {
             Name = "Transport",
             Type = CategoryType.Expense,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act
@@ -198,7 +198,7 @@ public class CategoryValidatorTests
         {
             Name = "",
             Type = CategoryType.Expense,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act
@@ -217,7 +217,7 @@ public class CategoryValidatorTests
         {
             Name = new string('B', 101), // 101 characters
             Type = CategoryType.Income,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act
@@ -229,25 +229,6 @@ public class CategoryValidatorTests
     }
 
     [Test]
-    public async Task UpdateCategoryDto_NullRowVersion_FailsValidation()
-    {
-        // Arrange
-        var dto = new UpdateCategoryDto
-        {
-            Name = "Valid Name",
-            Type = CategoryType.Expense,
-            RowVersion = null
-        };
-
-        // Act
-        var result = await _updateValidator.TestValidateAsync(dto);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.RowVersion)
-            .WithErrorMessage("RowVersion is verplicht voor concurrency controle");
-    }
-
-    [Test]
     public async Task UpdateCategoryDto_NameExactly100Chars_PassesValidation()
     {
         // Arrange
@@ -255,7 +236,7 @@ public class CategoryValidatorTests
         {
             Name = new string('C', 100), // Exactly 100 characters
             Type = CategoryType.Income,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act
@@ -273,7 +254,7 @@ public class CategoryValidatorTests
         {
             Name = "Freelance",
             Type = CategoryType.Income,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act
@@ -291,7 +272,7 @@ public class CategoryValidatorTests
         {
             Name = "Utilities",
             Type = CategoryType.Expense,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act
@@ -309,7 +290,7 @@ public class CategoryValidatorTests
         {
             Name = "Test",
             Type = (CategoryType)99, // Invalid enum value
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act
@@ -328,7 +309,7 @@ public class CategoryValidatorTests
         {
             Name = "Converted Category",
             Type = CategoryType.Income,
-            RowVersion = new byte[] { 1, 2, 3, 4 }
+            XMin = 1u
         };
 
         // Act

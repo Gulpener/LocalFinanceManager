@@ -134,7 +134,8 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button id="assignCancelButton" type="button" class="btn btn-secondary" @onclick="Close" disabled="@isSubmitting">
+                        <button id="assignCancelButton" type="button" class="btn btn-secondary" @onclick="Close"
+                                disabled="@isSubmitting">
                             Annuleren
                         </button>
                         <button id="assignSaveButton" type="button" class="btn btn-primary" @onclick="AssignTransaction"
@@ -173,6 +174,7 @@
     private bool isFocusTrapActive;
     private bool isInitialFocusSet;
     private bool wasVisible;
+    private Guid? _lastLoadedForTransactionId;
     private ElementReference modalContainerRef;
     private ElementReference budgetLineSelectRef;
 
@@ -189,19 +191,35 @@
             await ReleaseFocusTrapAsync();
             isInitialFocusSet = false;
             wasVisible = false;
+            return;
         }
 
-        if (IsVisible && !wasVisible)
+        // Only reload budget lines and reset the form when the modal first becomes visible
+        // or when a different transaction is opened. This prevents concurrent DbContext
+        // operations that occur when Blazor re-renders mid-async (e.g. during
+        // LoadTransactionsAsync's intermediate StateHasChanged call), which can
+        // cause "A second operation was started on this context instance" in PostgreSQL.
+        var needsLoad = !wasVisible || Transaction?.Id != _lastLoadedForTransactionId;
+        if (needsLoad)
         {
             isInitialFocusSet = false;
             wasVisible = true;
-        }
+            _lastLoadedForTransactionId = Transaction?.Id;
 
-        if (IsVisible && Transaction != null)
-        {
-            await LoadBudgetLines();
-            await LoadRecentCategories();
-            ResetForm();
+            if (Transaction != null)
+            {
+                try
+                {
+                    await LoadBudgetLines();
+                    await LoadRecentCategories();
+                    ResetForm();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to load modal data for transaction {TransactionId}", Transaction.Id);
+                    errorMessage = "Er is een fout opgetreden bij het laden van de modal.";
+                }
+            }
         }
     }
 
@@ -224,18 +242,22 @@
             return;
         }
 
-        isInitialFocusSet = true;
-
         try
         {
             if (budgetLineSelectRef.Context != null)
             {
+                // Budget lines are loaded — focus the select and mark as done
+                isInitialFocusSet = true;
                 await budgetLineSelectRef.FocusAsync();
             }
-            else
+            else if (budgetLines != null)
             {
+                // Budget lines loaded but no select available (e.g. empty list) — focus modal
+                isInitialFocusSet = true;
                 await modalContainerRef.FocusAsync();
             }
+            // else: budget lines not loaded yet — don't set isInitialFocusSet,
+            // so we retry after the next render when lines are populated
         }
         catch (Exception ex)
         {
@@ -286,7 +308,7 @@
                 MonthlyAmounts = bl.MonthlyAmounts,
                 YearTotal = bl.MonthlyAmounts.Sum(),
                 Notes = bl.Notes,
-                RowVersion = bl.RowVersion
+                XMin = bl.XMin
             }).ToList();
 
             if (budgetLines.Count == 0)
@@ -359,7 +381,7 @@
             {
                 BudgetLineId = budgetLineGuid,
                 Note = note,
-                RowVersion = Transaction.RowVersion
+                XMin = Transaction.XMin
             };
 
             await AssignmentService.AssignTransactionAsync(Transaction.Id, request);
@@ -371,8 +393,17 @@
                 await RecentCategoriesService.TrackCategoryUsageAsync(selectedBudgetLine.CategoryId);
             }
 
-            await OnAssignmentSuccess.InvokeAsync();
+            // Defensive: ensure modal closes even if OnAssignmentSuccess fails or is slow
+            try
+            {
+                await OnAssignmentSuccess.InvokeAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAssignmentSuccess failed after assignment for transaction {TransactionId}", Transaction.Id);
+            }
             await Close();
+            Logger.LogInformation("TransactionAssignModal closed after assignment for transaction {TransactionId}", Transaction.Id);
         }
         catch (Exception ex)
         {
@@ -416,9 +447,18 @@
         await ReleaseFocusTrapAsync();
 
         isInitialFocusSet = false;
-        wasVisible = false;
+        // Do NOT reset wasVisible here. Any StateHasChanged queued by OnAssignmentSuccess may fire
+        // during the ReleaseFocusTrapAsync JS-interop await above. If wasVisible were false at that
+        // point, OnParametersSetAsync would see needsLoad=true and start LoadBudgetLines/
+        // LoadRecentCategories concurrently with the audit-trail query fired by a fast click on the
+        // audit button — causing "A second operation was started on this context instance".
+        // wasVisible is reset to false inside the if (!IsVisible) branch of OnParametersSetAsync
+        // once the parent sets showAssignModal=false and the subsequent render arrives.
         ResetForm();
+        _lastLoadedForTransactionId = null;
         await OnClose.InvokeAsync();
+        // Defensive: force UI update to ensure modal closes immediately (prevents race in async scenarios)
+        await InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()

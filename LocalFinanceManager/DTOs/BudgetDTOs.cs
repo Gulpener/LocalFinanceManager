@@ -19,7 +19,7 @@ public record CreateBudgetPlanDto
 public record UpdateBudgetPlanDto
 {
     public string Name { get; set; } = string.Empty;
-    public byte[]? RowVersion { get; set; }
+    public uint XMin { get; set; }
 }
 
 /// <summary>
@@ -33,7 +33,7 @@ public record BudgetPlanDto
     public string Name { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
-    public byte[]? RowVersion { get; init; }
+    public uint XMin { get; init; }
     public List<BudgetLineDto> BudgetLines { get; init; } = new();
 }
 
@@ -56,7 +56,7 @@ public record UpdateBudgetLineDto
     public Guid CategoryId { get; init; }
     public decimal[] MonthlyAmounts { get; init; } = Array.Empty<decimal>();
     public string? Notes { get; init; }
-    public byte[]? RowVersion { get; init; }
+    public uint XMin { get; init; }
 }
 
 /// <summary>
@@ -71,7 +71,7 @@ public record BudgetLineDto
     public decimal[] MonthlyAmounts { get; init; } = Array.Empty<decimal>();
     public decimal YearTotal { get; init; }
     public string? Notes { get; init; }
-    public byte[]? RowVersion { get; init; }
+    public uint XMin { get; init; }
 }
 
 /// <summary>
@@ -83,7 +83,7 @@ public record CategoryDto
     public string Name { get; init; } = string.Empty;
     public CategoryType Type { get; init; }
     public Guid BudgetPlanId { get; init; }
-    public byte[]? RowVersion { get; init; }
+    public uint XMin { get; init; }
 }
 
 /// <summary>
@@ -103,5 +103,5 @@ public record UpdateCategoryDto
 {
     public string Name { get; init; } = string.Empty;
     public CategoryType Type { get; init; }
-    public byte[]? RowVersion { get; init; }
+    public uint XMin { get; init; }
 }

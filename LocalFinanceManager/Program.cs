@@ -13,14 +13,28 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using System.Text;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DbContext with SQLite
-var connectionString = builder.Configuration.GetConnectionString("Default")
-    ?? "Data Source=localfinancemanager.db";
+// Add DbContext with PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("Local")
+    ?? "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres";
+
+// Guard: refuse to start in Production with a localhost connection string
+if (!builder.Environment.IsDevelopment() && connectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:Local is still set to a localhost value. " +
+        "Set the real PostgreSQL connection string via the ConnectionStrings__Local environment variable before deploying.");
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseNpgsql(connectionString));
+
+// Add database health check
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("database");
 
 // Register configuration options
 builder.Services.Configure<ImportOptions>(builder.Configuration.GetSection("ImportOptions"));
@@ -77,15 +91,47 @@ builder.Services.AddAuthentication(options =>
         var jwtSecret = supabaseOptions.JwtSecret;
         if (!string.IsNullOrEmpty(jwtSecret) && jwtSecret != "placeholder-jwt-secret")
         {
+            // Supabase projects use RS256 with rotating key pairs (kid = UUID).
+            // Use OIDC discovery so .NET auto-fetches the JWKS and matches by kid.
+            // The HS256 JWT secret is included as a fallback for projects that have
+            // not yet migrated to RS256. The resolver only returns the symmetric key
+            // for HS256 tokens; for RS256 tokens it returns the OIDC/JWKS-discovered
+            // keys so RS256 validation is never blocked by the symmetric key.
+            options.Authority = $"{supabaseOptions.Url}/auth/v1";
+            options.RequireHttpsMetadata = true;
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = supabaseOptions.Url,
+                ValidIssuer = $"{supabaseOptions.Url}/auth/v1",
                 ValidAudience = "authenticated",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+                // Only apply the HS256 symmetric fallback when the token's alg header
+                // indicates HS256. For RS256 tokens the framework uses the JWKS keys
+                // fetched via OIDC discovery (options.Authority), so RS256 validation
+                // is never overridden by the symmetric key.
+                IssuerSigningKeyResolver = (_, securityToken, _, validationParameters) =>
+                {
+                    var jwtToken = securityToken as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
+                    if (string.Equals(jwtToken?.Header?.Alg,
+                            Microsoft.IdentityModel.Tokens.SecurityAlgorithms.HmacSha256,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return [new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret.Trim()))];
+                    }
+                    // RS256 or other algorithms: delegate to the OIDC-discovered JWKS keys.
+                    return validationParameters.IssuerSigningKeys ?? [];
+                }
+            };
+            options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+            {
+                OnAuthenticationFailed = ctx =>
+                {
+                    var log = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    log.LogWarning("JWT authentication failed: {Reason}", ctx.Exception.Message);
+                    return Task.CompletedTask;
+                }
             };
         }
         else
@@ -135,15 +181,24 @@ builder.Services.AddAuthorization();
 builder.Services.AddHttpClient();
 
 // Register HttpClient for Blazor components with automatic JWT Bearer forwarding.
+// NOTE: AuthTokenHandler must NOT be used via AddHttpMessageHandler<T>() because
+// IHttpClientFactory resolves handlers from its own internal scope, not the Blazor
+// circuit scope. This means the circuit-scoped AuthTokenStore (which holds the JWT
+// token retrieved from sessionStorage) would not be resolved from the correct circuit
+// scope, causing all API calls to go out without a Bearer token.
+// Instead we build the HttpClient manually from the circuit's DI scope so that
+// AuthTokenHandler gets the correct AuthTokenStore instance for the active circuit.
 builder.Services.AddScoped<AuthTokenHandler>();
-builder.Services.AddHttpClient("AuthorizedApiClient")
-    .AddHttpMessageHandler<AuthTokenHandler>();
-
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
-    var client = sp.GetRequiredService<IHttpClientFactory>().CreateClient("AuthorizedApiClient");
-    client.BaseAddress = new Uri(navigationManager.BaseUri);
+    // Resolve the handler from the current (circuit) scope so AuthTokenStore works correctly.
+    var tokenHandler = sp.GetRequiredService<AuthTokenHandler>();
+    tokenHandler.InnerHandler = new HttpClientHandler();
+    var client = new HttpClient(tokenHandler)
+    {
+        BaseAddress = new Uri(navigationManager.BaseUri)
+    };
     return client;
 });
 
@@ -195,42 +250,22 @@ using (var scope = app.Services.CreateScope())
 /// </summary>
 static async Task UpdateAccountBudgetPlanReferencesAsync(AppDbContext context)
 {
-    var accountsWithoutBudgetPlan = await context.Accounts
-        .Where(a => !a.IsArchived && a.CurrentBudgetPlanId == null)
-        .ToListAsync();
-
-    if (!accountsWithoutBudgetPlan.Any())
-    {
-        return;
-    }
-
-    // Collect account IDs to batch-load budget plans and avoid N+1 queries
-    var accountIds = accountsWithoutBudgetPlan
-        .Select(a => a.Id)
-        .ToList();
-
-    // Load all non-archived budget plans for these accounts in a single query
-    var budgetPlans = await context.BudgetPlans
-        .Where(bp => !bp.IsArchived && accountIds.Contains(bp.AccountId))
-        .ToListAsync();
-
-    // Group in memory and find the most recent budget plan per account
-    var latestByAccountId = budgetPlans
-        .GroupBy(bp => bp.AccountId)
-        .ToDictionary(
-            g => g.Key,
-            g => g.OrderByDescending(bp => bp.Year).First()
-        );
-
-    foreach (var account in accountsWithoutBudgetPlan)
-    {
-        if (latestByAccountId.TryGetValue(account.Id, out var latestBudgetPlan))
-        {
-            account.CurrentBudgetPlanId = latestBudgetPlan.Id;
-        }
-    }
-
-    await context.SaveChangesAsync();
+    // Use a raw SQL UPDATE to bypass EF Core's optimistic concurrency check (xmin).
+    // This is startup initialization code executing in a single-writer context where
+    // OCC is not needed; a direct SQL approach avoids stale-token failures on fresh data.
+    await context.Database.ExecuteSqlRawAsync("""
+        UPDATE "Accounts" a
+        SET "CurrentBudgetPlanId" = bp."Id"
+        FROM (
+            SELECT DISTINCT ON (bp."AccountId") bp."AccountId", bp."Id"
+            FROM "BudgetPlans" bp
+            WHERE NOT bp."IsArchived"
+            ORDER BY bp."AccountId", bp."Year" DESC
+        ) bp
+        WHERE a."Id" = bp."AccountId"
+          AND a."CurrentBudgetPlanId" IS NULL
+          AND NOT a."IsArchived"
+        """);
 }
 
 // Configure the HTTP request pipeline.
@@ -247,7 +282,13 @@ else
     app.UseSwaggerUI();
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// Only apply status code pages for non-API and non-health requests; API controllers and health
+// checks must return their own responses without being replaced by the Blazor HTML shell.
+// The /health exclusion is critical: a 503 from a failed DB health check must not be replaced
+// with the Blazor not-found page, which would make the endpoint unusable for monitoring.
+app.UseWhen(
+    ctx => !ctx.Request.Path.StartsWithSegments("/api") && !ctx.Request.Path.StartsWithSegments("/health"),
+    b => b.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
@@ -262,6 +303,9 @@ app.MapRazorComponents<App>()
 
 // Map API controllers
 app.MapControllers();
+
+// Database health check endpoint
+app.MapHealthChecks("/health/db");
 
 app.Run();
 

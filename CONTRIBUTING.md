@@ -144,6 +144,12 @@ For detailed examples and patterns, see [`docs/Implementation-Guidelines.md`](do
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - A code editor (Visual Studio 2022, VS Code, or Rider)
+- **PostgreSQL 14+** — required for runtime and E2E tests
+  ```bash
+  # Start with Docker (recommended for development)
+  docker run -d --name lfm-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:16
+  ```
+- **Playwright browsers** (for E2E tests) — installed as part of setup below
 
 ### Initial Setup
 
@@ -160,16 +166,22 @@ For detailed examples and patterns, see [`docs/Implementation-Guidelines.md`](do
    dotnet restore
    ```
 
-3. **Run the application:**
+3. **Store the local database connection string in user-secrets (one-time):**
 
-   ```bash
-   cd LocalFinanceManager
-   dotnet run
+   ```powershell
+   dotnet user-secrets init --project LocalFinanceManager
+   dotnet user-secrets set "ConnectionStrings:Local" "Host=localhost;Port=5432;Database=localfinancemanager;Username=postgres;Password=postgres" --project LocalFinanceManager
    ```
 
-   The app will start at http://localhost:5244 with automatic migrations and seed data.
+4. **Run the application:**
 
-4. **Install Playwright browsers** (for E2E tests):
+   ```bash
+   dotnet run --project LocalFinanceManager
+   ```
+
+   The app starts at http://localhost:5244 with automatic migrations and seed data.
+
+5. **Install Playwright browsers** (for E2E tests):
    ```bash
    pwsh tests/LocalFinanceManager.E2E/bin/Debug/net10.0/playwright.ps1 install
    ```
@@ -189,14 +201,37 @@ dotnet test tests/LocalFinanceManager.E2E/
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
+#### E2E PostgreSQL Connection
+
+E2E tests create and tear down per-fixture PostgreSQL databases. The connection is resolved in this order:
+
+1. `E2E_PG_CONNECTION` environment variable (used in CI)
+2. `ConnectionStrings:Local` from the main app's user-secrets (local dev — no extra setup needed)
+3. Hardcoded `localhost:5432` with `postgres`/`postgres`
+
+If you've already set `ConnectionStrings:Local` in user-secrets for running the app, E2E tests will pick it up automatically:
+
+```bash
+dotnet test tests/LocalFinanceManager.E2E/
+```
+
+To override explicitly (e.g. different credentials):
+
+```powershell
+$env:E2E_PG_CONNECTION = "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=<your-password>"
+dotnet test tests/LocalFinanceManager.E2E/
+```
+
+> **Guard:** If `E2E_PG_CONNECTION` targets a `*.supabase.co` host, tests will fail fast to prevent accidental execution against the production database.
+
 ### Database Configuration
 
-- **Development:** Uses local PostgreSQL with automatic seed data
-- **Production:** Uses Supabase PostgreSQL without seed data
-- **Schema evolution:** Forward-only EF Core migrations (no production reset/recreate)
+- **Development:** Local PostgreSQL with automatic seed data; connection string in user-secrets as `ConnectionStrings:Local`
+- **Production:** PostgreSQL connection string set via `ConnectionStrings__Local` environment variable at deploy time
+- **Schema evolution:** Forward-only EF Core migrations applied automatically at startup
 - **Admin dashboard:** View database status at `/admin/settings`
 
-See [README.md](README.md#configuration) for detailed configuration options.
+See [README.md — Database Configuration](README.md#database-configuration) for setup instructions.
 
 ## Coding Conventions
 

@@ -21,7 +21,7 @@ public class AutoApplySettingsValidator : AbstractValidator<AutoApplySettingsDto
             .WithSeverity(Severity.Warning);
 
         RuleFor(x => x.IntervalMinutes)
-            .GreaterThan(0)
+            .Must(val => val > 0)
             .WithMessage("Interval must be greater than 0 minutes");
 
         RuleFor(x => x.IntervalMinutes)

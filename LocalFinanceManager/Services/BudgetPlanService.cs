@@ -77,7 +77,7 @@ public class BudgetPlanService
     /// </summary>
     public async Task<BudgetPlanDto> CreateFromTemplateAsync(CreateBudgetPlanDto dto, string templateName)
     {
-        _logger.LogInformation("Creating new budget plan for account {AccountId}, year {Year} with template {TemplateName}", 
+        _logger.LogInformation("Creating new budget plan for account {AccountId}, year {Year} with template {TemplateName}",
             dto.AccountId, dto.Year, templateName);
 
         // 1. Validate template name
@@ -150,7 +150,7 @@ public class BudgetPlanService
         }
 
         plan.Name = request.Name;
-        plan.RowVersion = request.RowVersion;
+        plan.XMin = request.XMin;
 
         try
         {
@@ -246,7 +246,7 @@ public class BudgetPlanService
         line.CategoryId = request.CategoryId;
         line.MonthlyAmounts = request.MonthlyAmounts;
         line.Notes = request.Notes;
-        line.RowVersion = request.RowVersion;
+        line.XMin = request.XMin;
 
         try
         {
@@ -290,7 +290,7 @@ public class BudgetPlanService
             Name = plan.Name,
             CreatedAt = plan.CreatedAt,
             UpdatedAt = plan.UpdatedAt,
-            RowVersion = plan.RowVersion,
+            XMin = plan.XMin,
             BudgetLines = plan.BudgetLines.Select(bl => MapLineToDto(bl, bl.Category)).ToList()
         };
     }
@@ -306,7 +306,7 @@ public class BudgetPlanService
             MonthlyAmounts = line.MonthlyAmounts,
             YearTotal = line.YearTotal,
             Notes = line.Notes,
-            RowVersion = line.RowVersion
+            XMin = line.XMin
         };
     }
 }

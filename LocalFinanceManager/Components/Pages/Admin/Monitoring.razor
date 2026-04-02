@@ -5,9 +5,9 @@
 @using LocalFinanceManager.DTOs.ML
 @using LocalFinanceManager.Configuration
 @using System.Globalization
-@using System.Net.Http.Json
 @using Microsoft.Extensions.Options
-@inject HttpClient Http
+@inject IMonitoringService MonitoringService
+@inject IUndoService UndoService
 @inject ILogger<Monitoring> Logger
 @inject IJSRuntime JS
 @inject IOptions<AutomationOptions> AutomationOptions
@@ -74,7 +74,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
                         <div class="card-body text-center">
                             <h6 class="card-subtitle mb-2 text-muted">Geaccepteerd</h6>
                             <p class="display-4 mb-0 text-success" data-testid="acceptance-rate">@(stats.TotalAutoApplied -
-                                                                                            stats.UndoCount)</p>
+                                                                                                                            stats.UndoCount)</p>
                             </div>
                         </div>
                     </div>
@@ -296,7 +296,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
 
     private string UndoRateAlertThresholdDisplay => FormatPercent(AutomationOptions.Value.UndoRateAlertThreshold);
 
-    private AutoApplyStatsDto? stats;
+    private AutoApplyStats? stats;
     private List<AutoApplyHistoryDto>? history;
     private int windowDays = 7;
     private bool isLoading = true;
@@ -360,7 +360,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
 
         try
         {
-            stats = await Http.GetFromJsonAsync<AutoApplyStatsDto>($"/api/automation/stats?windowDays={windowDays}");
+            stats = await MonitoringService.GetAutoApplyStatsAsync(windowDays);
         }
         catch (Exception ex)
         {
@@ -379,7 +379,7 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
 
         try
         {
-            history = await Http.GetFromJsonAsync<List<AutoApplyHistoryDto>>($"/api/automation/history?limit=50");
+            history = await MonitoringService.GetAutoApplyHistoryAsync(50);
         }
         catch (Exception ex)
         {
@@ -414,8 +414,6 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
 
     private async Task ConfirmUndoAsync()
     {
-        _showConfirmDialog = false;
-
         var transactionId = _pendingUndoTransactionId;
         _pendingUndoTransactionId = Guid.Empty;
 
@@ -423,9 +421,13 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
         {
             _undoingTransaction = true;
 
-            var response = await Http.PostAsync($"/api/automation/undo/{transactionId}", null);
+            var result = await UndoService.UndoAutoApplyAsync(transactionId);
 
-            if (response.IsSuccessStatusCode)
+            // Hide the dialog only AFTER the undo completes so the browser reflects the
+            // committed state before Playwright (or any caller) sees the dialog disappear.
+            _showConfirmDialog = false;
+
+            if (result.Success)
             {
                 await ShowToastAsync("Toewijzing ongedaan gemaakt", "success");
 
@@ -435,15 +437,14 @@ Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instelling
             }
             else
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Logger.LogWarning("Undo auto-apply failed with status code {StatusCode}. Response: {ErrorContent}", response.StatusCode,
-errorContent);
+                Logger.LogWarning("Undo auto-apply failed: {Message}", result.Message);
                 await JS.InvokeVoidAsync("alert", "Fout bij ongedaan maken van de toewijzing.");
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to undo auto-apply for transaction {TransactionId}", transactionId);
+            _showConfirmDialog = false;
             await JS.InvokeVoidAsync("alert", "Fout bij ongedaan maken van de toewijzing.");
         }
         finally

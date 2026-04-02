@@ -338,7 +338,7 @@ else
             updateModel = new UpdateBudgetPlanDto
             {
                 Name = budgetPlan.Name,
-                RowVersion = budgetPlan.RowVersion
+                XMin = budgetPlan.XMin
             };
         }
     }
@@ -481,7 +481,7 @@ else
                 CategoryId = _editCategoryId,
                 MonthlyAmounts = _editMonthlyAmounts,
                 Notes = _editNotes,
-                RowVersion = _editingLineSnapshot.RowVersion
+                XMin = _editingLineSnapshot.XMin
             };
 
             await BudgetPlanService.UpdateLineAsync(_editingLineId.Value, updateDto);

@@ -31,7 +31,7 @@ public class CategoryService
             Name = c.Name,
             Type = c.Type,
             BudgetPlanId = c.BudgetPlanId,
-            RowVersion = c.RowVersion
+            XMin = c.XMin
         }).ToList();
     }
 
@@ -48,7 +48,7 @@ public class CategoryService
             Name = category.Name,
             Type = category.Type,
             BudgetPlanId = category.BudgetPlanId,
-            RowVersion = category.RowVersion
+            XMin = category.XMin
         } : null;
     }
 
@@ -77,7 +77,7 @@ public class CategoryService
             Name = category.Name,
             Type = category.Type,
             BudgetPlanId = category.BudgetPlanId,
-            RowVersion = category.RowVersion
+            XMin = category.XMin
         };
     }
 
@@ -116,7 +116,7 @@ public class CategoryService
 
         category.Name = request.Name;
         category.Type = request.Type;
-        category.RowVersion = request.RowVersion;
+        category.XMin = request.XMin;
 
         await _categoryRepository.UpdateAsync(category);
 
@@ -128,7 +128,7 @@ public class CategoryService
             Name = category.Name,
             Type = category.Type,
             BudgetPlanId = category.BudgetPlanId,
-            RowVersion = category.RowVersion
+            XMin = category.XMin
         };
     }
 }

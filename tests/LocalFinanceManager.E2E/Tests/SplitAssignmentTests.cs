@@ -39,6 +39,10 @@ public class SplitAssignmentTests : E2ETestBase
 
         var tx = await SeedDataHelper.SeedTransactionAsync(context, _accountId, -100m, DateTime.UtcNow.AddDays(-1), "Split Test Transaction");
         _transactionId = tx.Id;
+
+        // Clear localStorage filter state to prevent cross-test contamination.
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
     }
 
     [Test]
@@ -200,7 +204,7 @@ public class SplitAssignmentTests : E2ETestBase
                     new() { BudgetLineId = _budgetLineFood, Amount = 60m },
                     new() { BudgetLineId = foreignBudgetLineId, Amount = 40m }
                 },
-                RowVersion = Array.Empty<byte>()
+                XMin = 0u
             }));
 
         Assert.That(ex, Is.Not.Null);
@@ -269,7 +273,7 @@ public class SplitAssignmentTests : E2ETestBase
                     new() { BudgetLineId = _budgetLineFood, Amount = 60m },
                     new() { BudgetLineId = _budgetLineTransport, Amount = 40m }
                 },
-                RowVersion = tx!.RowVersion
+                XMin = tx!.XMin
             });
         }
 
@@ -278,6 +282,8 @@ public class SplitAssignmentTests : E2ETestBase
 
         await _transactionsPage.ClickAuditTrailAsync(_transactionId);
         await Expect(Page.Locator("#auditTrailModalTitle")).ToBeVisibleAsync();
+        // Wait for loading spinner to disappear before reading modal content
+        await Expect(Page.Locator(".modal.show .spinner-border")).Not.ToBeVisibleAsync();
 
         var auditText = await Page.Locator(".modal.show").TextContentAsync();
         Assert.That(auditText, Does.Contain("Split").Or.Contain("split").Or.Contain("Splits").Or.Contain("Gesplitst"));

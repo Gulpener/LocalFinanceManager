@@ -58,7 +58,7 @@ public class AppDbContextTests
     }
 
     [Test]
-    public async Task RowVersion_ShouldBeConfigured()
+    public async Task XMin_ShouldBeConfigured_AsUint()
     {
         // Arrange
         using var factory = new TestDbContextFactory();
@@ -69,9 +69,8 @@ public class AppDbContextTests
         await context.SaveChangesAsync();
 
         // Assert
-        // Note: SQLite doesn't auto-generate RowVersion like SQL Server
-        // The property is configured but may be null in SQLite
-        // The concurrency checking still works through EF Core's tracking
+        // XMin is a uint concurrency token. In SQLite (test environment) it remains 0
+        // unless manually set; in PostgreSQL it is auto-updated on every write.
         Assert.That(model.Id, Is.Not.EqualTo(Guid.Empty));
     }
 }

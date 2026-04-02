@@ -56,7 +56,7 @@ public class TransactionAssignModalFocusTrapTests
             Date = new DateTime(2026, 1, 15),
             Amount = -50m,
             Description = "Test transactie",
-            RowVersion = new byte[] { 1 }
+            XMin = 1u
         };
 
         var cut = context.Render<TransactionAssignModal>(parameters => parameters

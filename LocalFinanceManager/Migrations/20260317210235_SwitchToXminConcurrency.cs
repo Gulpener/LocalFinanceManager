@@ -1,0 +1,183 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace LocalFinanceManager.Migrations
+{
+    /// <inheritdoc />
+    public partial class SwitchToXminConcurrency : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "Users");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "TransactionSplits");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "Transactions");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "TransactionAudits");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "MLModels");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "LabeledExamples");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "Categories");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "BudgetPlans");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "BudgetLines");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "AppSettings");
+
+            migrationBuilder.DropColumn(
+                name: "RowVersion",
+                table: "Accounts");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "Users");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "TransactionSplits");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "Transactions");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "TransactionAudits");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "MLModels");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "LabeledExamples");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "Categories");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "BudgetPlans");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "BudgetLines");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "AppSettings");
+
+            migrationBuilder.DropColumn(
+                name: "xmin",
+                table: "Accounts");
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "Users",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "TransactionSplits",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "Transactions",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "TransactionAudits",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "MLModels",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "LabeledExamples",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "Categories",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "BudgetPlans",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "BudgetLines",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "AppSettings",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+
+            migrationBuilder.AddColumn<byte[]>(
+                name: "RowVersion",
+                table: "Accounts",
+                type: "bytea",
+                rowVersion: true,
+                nullable: true);
+        }
+    }
+}

@@ -167,7 +167,7 @@ public class SplitAllocationDtoValidator : AbstractValidator<SplitAllocationDto>
 
         // Amount must be positive
         RuleFor(x => x.Amount)
-            .GreaterThan(0)
+            .Must(val => val > 0)
             .WithMessage("Split amount must be greater than zero");
 
         // Note length validation

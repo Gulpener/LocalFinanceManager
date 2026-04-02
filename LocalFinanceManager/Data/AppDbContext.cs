@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using LocalFinanceManager.Models;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 
 namespace LocalFinanceManager.Data;
 
@@ -45,20 +46,30 @@ public class AppDbContext : DbContext
         {
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
             {
-                // Configure RowVersion for optimistic concurrency (nullable for SQLite compatibility)
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property("RowVersion")
-                    .IsRowVersion()
-                    .IsRequired(false); // SQLite doesn't auto-generate RowVersion like SQL Server
+                if (Database.IsNpgsql())
+                {
+                    // Map XMin to PostgreSQL's xmin system column for optimistic concurrency.
+                    // PostgreSQL updates xmin automatically on every row modification; no trigger needed.
+                    // Npgsql's migration SQL generator skips AddColumn/DropColumn for system columns
+                    // (see NpgsqlMigrationsSqlGenerator.SystemColumnNames), so no schema change is needed.
+                    modelBuilder.Entity(entityType.ClrType)
+                        .Property("XMin")
+                        .HasColumnName("xmin")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .IsConcurrencyToken();
+                }
+                else
+                {
+                    // SQLite (test environments): XMin is a regular uint column acting as a
+                    // concurrency token. Tests manipulate it directly; concurrency tests are [Ignore]d.
+                    modelBuilder.Entity(entityType.ClrType)
+                        .Property("XMin")
+                        .IsConcurrencyToken();
+                }
 
-                // Configure timestamps with default values
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property("CreatedAt")
-                    .HasDefaultValueSql("datetime('now')");
-
-                modelBuilder.Entity(entityType.ClrType)
-                    .Property("UpdatedAt")
-                    .HasDefaultValueSql("datetime('now')");
+                // Note: CreatedAt/UpdatedAt are set by UpdateTimestamps() in SaveChanges/SaveChangesAsync.
+                // SQL-level defaults are intentionally omitted to stay provider-agnostic and avoid
+                // conflicts with in-memory SQLite used in integration tests.
 
                 // Add index for soft-delete filtering
                 modelBuilder.Entity(entityType.ClrType)
@@ -187,7 +198,7 @@ public class AppDbContext : DbContext
         {
             entity.Property(bl => bl.MonthlyAmountsJson)
                 .IsRequired()
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(bl => bl.Notes)
                 .HasMaxLength(500);
@@ -227,7 +238,7 @@ public class AppDbContext : DbContext
                 .HasMaxLength(100);
 
             entity.Property(t => t.OriginalImport)
-                .HasColumnType("TEXT"); // nvarchar(max) equivalent for SQLite
+                .HasColumnType("jsonb");
 
             entity.Property(t => t.SourceFileName)
                 .HasMaxLength(255);
@@ -285,10 +296,10 @@ public class AppDbContext : DbContext
                 .IsRequired();
 
             entity.Property(ta => ta.BeforeState)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(ta => ta.AfterState)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(ta => ta.Reason)
                 .HasMaxLength(500);
@@ -319,10 +330,10 @@ public class AppDbContext : DbContext
                 .HasMaxLength(100);
 
             entity.Property(s => s.AccountIdsJson)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
 
             entity.Property(s => s.ExcludedCategoryIdsJson)
-                .HasColumnType("TEXT");
+                .HasColumnType("jsonb");
         });
 
         // Configure LabeledExample entity
