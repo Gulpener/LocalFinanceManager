@@ -10,8 +10,8 @@
 **Status Overview:**
 
 - ✅ **19 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2) - Archived
-- ✅ **3 stories ready** for immediate implementation (US-11, US-12, US-17)
-- 🔴 **3 stories need refinement** (US-13, US-14, US-15) - Post-MVP features
+- ✅ **4 stories ready** for immediate implementation (US-11, US-12, US-13, US-17)
+- 🔴 **2 stories need refinement** (US-14, US-15) - Post-MVP features
 - 🔵 **1 story redefined** (US-16) - Azure F1 replaced by Azure App Service B1 (€50/mnd recurring credits)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
@@ -182,189 +182,37 @@
 
 **File:** [docs/Userstories/UserStory-13-Sharing-System.md](docs/Userstories/UserStory-13-Sharing-System.md)
 
-**Issues:**
+**Status:** ✅ **Refined and Ready**
 
-1. **Missing authorization middleware implementation** - How to integrate with existing controllers?
-2. **UI mockups needed** - No visual guidance for sharing modal/page
-3. **Permission inheritance unclear** - If Account is shared, are Transactions automatically accessible?
-4. **Notification system undefined** - Should users be notified when something is shared with them?
-5. **Share expiration mechanism missing** - No cron job or background service for expiration checks
+**Refinement Outcome:**
 
-**Required Refinements:**
+1. **Accept/decline flow added** — Shares start as `Pending`; repository access only granted on `Accepted`. `Declined` shares never grant access.
+2. **No user search/listing endpoint** — Share by exact email only; backend exact-matches `Users.Email`. Returns 404 "User not found" — prevents user enumeration.
+3. **`SharedWithUserId` changed to `Guid`** — Consistent with the rest of the codebase (`BaseEntity.UserId` pattern), not `string`.
+4. **Authorization via `ISharingService` helpers** — `CanView`, `CanEdit`, `IsOwner` called directly in service/controller layer. No ASP.NET Core custom authorization policy needed; `[Authorize]` at controller class level is sufficient.
+5. **Shared resources in dedicated section** — Accepted shares appear only in a "Shared with me" page, not mixed into the main dashboard.
+6. **Cascade rules scoped to BudgetPlan** — Shared BudgetPlan grants access to its Categories, BudgetLines, and Transactions. Sharing an Account does not grant access to BudgetPlans, and vice versa.
+7. **No share expiration** — Not in scope; owner revocation is the only removal mechanism.
+8. **No notification entity** — Pending invitations surfaced via `GET /api/shares/pending` and a badge in the nav layout showing the count of incoming pending shares.
+9. **No cross-entity inheritance** — Account share ≠ BudgetPlan access; BudgetPlan share ≠ Account access.
 
-Add the following sections:
+**Permission Inheritance Rules:**
 
-#### Authorization Middleware Implementation
+- Shared Account (Accepted, Viewer) → read-only access to account details
+- Shared Account (Accepted, Editor) → create/edit transactions on the account
+- Shared BudgetPlan (Accepted, Viewer) → read-only access to plan, categories, budget lines, transactions
+- Shared BudgetPlan (Accepted, Editor) → create/edit categories, budget lines, transactions (no delete)
+- Shared BudgetPlan (Accepted, Owner) → full access including delete
+- Pending or Declined share → no repository access at all
 
-**Custom Authorization Policy:**
+**UI Specification:**
 
-```csharp
-// Startup/Program.cs
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AccountAccess", policy =>
-        policy.Requirements.Add(new AccountAccessRequirement()));
-});
+- `ShareModal.razor` — email input + permission dropdown (Viewer/Editor); error if user not found or share already exists
+- `SharedWithMe.razor` — two sub-sections: (1) Pending invitations with Accept/Decline buttons; (2) Accepted shares list with resource type, name, shared by, permission label
+- Owner permission management view (per resource) — shares list with status column + Revoke button
+- Nav pending badge — count of incoming Pending shares
 
-builder.Services.AddScoped<IAuthorizationHandler, AccountAccessHandler>();
-```
-
-**Authorization Handler:**
-
-```csharp
-public class AccountAccessHandler : AuthorizationHandler<AccountAccessRequirement, Guid>
-{
-    private readonly IShareService _shareService;
-
-    protected override async Task HandleRequirementAsync(
-        AuthorizationHandlerContext context,
-        AccountAccessRequirement requirement,
-        Guid accountId)
-    {
-        var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var hasAccess = await _shareService.CanAccessAccountAsync(userId, accountId, requirement.MinimumPermission);
-
-        if (hasAccess)
-            context.Succeed(requirement);
-    }
-}
-```
-
-**Controller Usage:**
-
-```csharp
-[HttpGet("{id}")]
-[Authorize(Policy = "AccountAccess")]
-public async Task<IActionResult> GetAccount(Guid id)
-{
-    // User is already authorized by policy
-    var account = await _accountService.GetByIdAsync(id);
-    return Ok(account);
-}
-```
-
-#### Permission Inheritance Rules
-
-**Explicit Rules:**
-
-1. **Account Shared → Transaction Access:**
-   - If User B has "Viewer" access to Account A → User B can view all Transactions on Account A (read-only)
-   - If User B has "Editor" access to Account A → User B can create/edit Transactions on Account A
-   - If User B has "Owner" access to Account A → User B can delete Transactions on Account A
-
-2. **BudgetPlan Shared → Category/BudgetLine Access:**
-   - If User B has "Viewer" access to BudgetPlan X → User B can view all Categories and BudgetLines in BudgetPlan X
-   - If User B has "Editor" access to BudgetPlan X → User B can create/edit Categories and BudgetLines in BudgetPlan X
-   - If User B has "Owner" access to BudgetPlan X → User B can delete BudgetPlan X and all child entities
-
-3. **No Cross-Entity Inheritance:**
-   - Sharing an Account does NOT grant access to BudgetPlans
-   - Sharing a BudgetPlan does NOT grant access to Accounts
-
-#### Notification System
-
-**Notification Strategy:**
-
-- [ ] Create `Notification` entity:
-
-  ```csharp
-  public class Notification : BaseEntity
-  {
-      public string UserId { get; set; }
-      public string Title { get; set; }
-      public string Message { get; set; }
-      public string Type { get; set; } // "Share", "Revoke", "System"
-      public bool IsRead { get; set; }
-      public Guid? RelatedEntityId { get; set; }
-      public string RelatedEntityType { get; set; } // "Account", "BudgetPlan"
-  }
-  ```
-
-- [ ] Trigger notifications on share/revoke:
-
-  ```csharp
-  // When User A shares Account X with User B
-  await _notificationService.CreateAsync(new Notification
-  {
-      UserId = userBId,
-      Title = "Account Shared With You",
-      Message = $"{userA.Name} shared account '{account.Name}' with you (Viewer access)",
-      Type = "Share",
-      RelatedEntityId = accountId,
-      RelatedEntityType = "Account"
-  });
-  ```
-
-- [ ] Create `Notifications.razor` page showing unread notifications
-- [ ] Add notification bell icon in header with unread count badge
-
-#### Share Expiration Background Service
-
-**Hosted Service Implementation:**
-
-```csharp
-public class ShareExpirationService : BackgroundService
-{
-    private readonly IServiceProvider _serviceProvider;
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            using var scope = _serviceProvider.CreateScope();
-            var shareService = scope.ServiceProvider.GetRequiredService<IShareService>();
-
-            // Find expired shares
-            var expiredShares = await shareService.GetExpiredSharesAsync();
-
-            foreach (var share in expiredShares)
-            {
-                share.IsRevoked = true;
-                await shareService.UpdateAsync(share);
-
-                // Notify user
-                await _notificationService.CreateAsync(new Notification
-                {
-                    UserId = share.SharedWithUserId,
-                    Title = "Share Expired",
-                    Message = $"Your access to {share.ResourceName} has expired",
-                    Type = "System"
-                });
-            }
-
-            // Check every hour
-            await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
-        }
-    }
-}
-```
-
-**Register in Program.cs:**
-
-```csharp
-builder.Services.AddHostedService<ShareExpirationService>();
-```
-
-#### UI Wireframe Requirements
-
-**ShareAccountModal.razor:**
-
-- Search input: "Find user by email"
-- Dropdown: Permission level (Viewer/Editor/Owner)
-- Date picker: Expiration date (optional)
-- Checkbox: "Send notification to user"
-- Buttons: "Share" (primary), "Cancel" (secondary)
-
-**SharedWithMe.razor Page:**
-
-- Table columns: Resource Type, Name, Shared By, Permission, Shared Date, Expiration
-- Filter: Show only Accounts / Show only BudgetPlans
-- Sort: By shared date (newest first)
-- Action buttons: "Open", "Request Full Access" (if Viewer)
-
-**Estimated Refinement Time:** 2-3 hours
-
-**Estimated Implementation Effort After Refinement:** 5-7 days
+**Estimated Implementation Effort:** 5-7 days
 
 ---
 
@@ -784,7 +632,7 @@ Nginx, or server management needed. Always-on enabled. Supabase PostgreSQL uncha
 
 13. **UserStory-11** (Multi-User Auth) - Ready (5-7 days)
 14. ✅ **UserStory-12** (Supabase PostgreSQL) - Ready after US-11 (3-4 days)
-15. 🔴 **UserStory-13** (Sharing System) - After US-12 + refinement (5-7 days)
+15. ✅ **UserStory-13** (Sharing System) - After US-12, refined and ready (5-7 days)
 16. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
 17. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
 18. 🔵 **UserStory-16** (Azure App Service B1 Deployment) - Ready for implementation (1-2 days)
