@@ -25,12 +25,7 @@ public class SharingService : ISharingService
         var targetUser = await _context.Users
             .Where(u => u.Email == targetEmail && !u.IsArchived)
             .FirstOrDefaultAsync()
-            ?? throw new KeyNotFoundException($"No user found with email '{targetEmail}'.");
-
-        if (targetUser.Id == currentUserId)
-            throw new InvalidOperationException("You cannot share a resource with yourself.");
-
-        var existing = await _context.AccountShares
+            ?? throw new KeyNotFoundException("No user found with the specified email address.");
             .Where(s => s.AccountId == accountId && s.SharedWithUserId == targetUser.Id
                         && (s.Status == ShareStatus.Pending || s.Status == ShareStatus.Accepted))
             .FirstOrDefaultAsync();
@@ -63,12 +58,7 @@ public class SharingService : ISharingService
         var targetUser = await _context.Users
             .Where(u => u.Email == targetEmail && !u.IsArchived)
             .FirstOrDefaultAsync()
-            ?? throw new KeyNotFoundException($"No user found with email '{targetEmail}'.");
-
-        if (targetUser.Id == currentUserId)
-            throw new InvalidOperationException("You cannot share a resource with yourself.");
-
-        var existing = await _context.BudgetPlanShares
+            ?? throw new KeyNotFoundException("No user found with the specified email address.");
             .Where(s => s.BudgetPlanId == planId && s.SharedWithUserId == targetUser.Id
                         && (s.Status == ShareStatus.Pending || s.Status == ShareStatus.Accepted))
             .FirstOrDefaultAsync();
