@@ -5,90 +5,25 @@
 
 ---
 
-## Executive Summary
+## Status Overview
 
-**Status Overview:**
+- ✅ **23 stories completed & archived** — see `docs/Userstories/Archive/`
+- 🟢 **1 story ready** for immediate implementation (US-17)
+- 🔴 **2 stories need refinement** (US-14, US-15)
 
-- ✅ **23 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2, UserStory-11, UserStory-12, UserStory-13, UserStory-16) - Archived
-- ✅ **1 story ready** for immediate implementation (US-17)
-- 🔴 **2 stories need refinement** (US-14, US-15) - Post-MVP features
+**Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
 
-**Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
-
-**E2E Testing Technical Debt Resolution:** UserStory-10 series (Phase 1, Phase 2, Phase 3) addresses accumulated E2E testing technical debt from archived user stories and deferred MVP-3 import tests. Originally scoped as 2 integration tests (0.5-1 day), expanded to 64 tests across three stories (12-13 days total) for comprehensive coverage.
-
-**Completed & Archived Stories:**
-
-- UserStory-1 (CI Pipeline) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-2 (Branching Strategy) - ✅ **COMPLETED & ARCHIVED** - GitHub Flow workflow, PR/issue templates, CODEOWNERS
-- UserStory-3 (Category Ownership) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-3.1 (Category Budget Plan Scoping) - ✅ **COMPLETED & ARCHIVED** - Budget-plan-scoped categories with migration
-- UserStory-3.2 (Category Template System) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-3.3 (Category UI Tests) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-4 (Account-Budget Matching) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-5 (Basic Assignment UI) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-5.1 (E2E Infrastructure) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-5.3 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-6 (Split & Bulk Assignment) - ✅ **COMPLETED & ARCHIVED** - Transaction splitting and bulk assignment functionality
-- UserStory-7 (Copilot Agents) - ✅ **ARCHIVED (NOT IMPLEMENTED)** - Decided not to pursue custom agent development
-- UserStory-8 (ML Suggestion & Auto-Apply) - ✅ **COMPLETED & ARCHIVED** - ML model training, auto-apply with monitoring dashboard
-- UserStory-8 (UX Enhancements) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-8 (UX Refinements E2E Tests) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-9.1 (Keyboard Shortcuts) - ✅ **COMPLETED & ARCHIVED**
-- UserStory-9.2 (Quick Filters & Performance) - ✅ **COMPLETED & ARCHIVED** - Performance optimizations and quick filter UI
-- UserStory-10 (E2E Tests - Phase 1 Foundation) - ✅ **COMPLETED & ARCHIVED** - 20 tests implemented and validated
-- UserStory-10.1 (E2E Tests - Phase 2 Advanced) - ✅ **COMPLETED & ARCHIVED** - 19 tests implemented (9 split + 9 bulk + 1 integration workflow)
-- UserStory-10.2 (E2E Tests - Phase 3 ML) - ✅ **COMPLETED & ARCHIVED** - 28 tests implemented (9 ML + 9 auto-apply + 10 monitoring)
-- UserStory-11 (Multi-User Authentication) - ✅ **COMPLETED & ARCHIVED** - Supabase auth, JWT tokens, multi-tenant data isolation
-- UserStory-12 (Supabase PostgreSQL Migration) - ✅ **COMPLETED & ARCHIVED** - PostgreSQL go-live, forward-only migrations, CI ephemeral service container
-- UserStory-13 (Sharing System) - ✅ **COMPLETED & ARCHIVED** - Account/BudgetPlan sharing, pending invites badge, SharedWithMe page
-- UserStory-16 (Azure App Service B1 Deployment) - ✅ **COMPLETED & ARCHIVED** - `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions
+**Deferred E2E test (1):** `AutoApply_AuditTrail_ShowsAutoAppliedIndicator` — blocked on UserStory-17 (`/transactions/{id}/audit` page).
 
 ---
 
-## Detailed User Story Status
+## Active Stories
 
-### ✅ Completed & Archived (Previously "Ready")
-
-#### UserStory-11: Multi-User Authentication
-
-**File:** [docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md](docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md)
-
-**Status:** ✅ **COMPLETED & ARCHIVED** — Supabase authentication with JWT tokens and multi-tenant data isolation.
-
----
-
-#### UserStory-12: Supabase PostgreSQL Migration
-
-**File:** [docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md](docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md)
-
-**Status:** ✅ **COMPLETED & ARCHIVED** — PostgreSQL go-live, forward-only migrations, ephemeral CI service container for E2E tests.
-
----
-
-#### UserStory-13: Sharing System
-
-**File:** [docs/Userstories/Archive/UserStory-13-Sharing-System.md](docs/Userstories/Archive/UserStory-13-Sharing-System.md)
-
-**Status:** ✅ **COMPLETED & ARCHIVED** — Account/BudgetPlan sharing with accept/decline flow, owner revocation, pending badge in nav, SharedWithMe page.
-
----
-
-#### UserStory-16: Azure App Service B1 Deployment
-
-**File:** [docs/Userstories/Archive/UserStory-16-Azure-Deployment.md](docs/Userstories/Archive/UserStory-16-Azure-Deployment.md)
-
-**Status:** ✅ **COMPLETED & ARCHIVED** — `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions, always-on enabled, Supabase PostgreSQL unchanged.
-
----
-
-### ✅ Ready for Implementation (No Refinement Needed)
-
-#### UserStory-17: Transaction Audit Trail UI
+### 🟢 UserStory-17: Transaction Audit Trail UI
 
 **File:** [docs/Userstories/UserStory-17-Transaction-Audit-Trail-UI.md](docs/Userstories/UserStory-17-Transaction-Audit-Trail-UI.md)
 
-**Status:** ✅ **Ready** - Timeline-based UI to view transaction change history with auto-applied indicators.
+**Status:** Ready — no refinement needed. Estimated effort: 2-3 days.
 
 **Key Features:**
 
@@ -98,114 +33,9 @@
 - Before/After state diff viewer
 - Link from transaction list to audit page
 
-**Estimated Effort:** 2-3 days
-
 ---
 
-#### UserStory-10.x Series (E2E Testing - Technical Debt Resolution)
-
-**Context:** Originally scoped as 2 integration tests (0.5-1 day), expanded to 64 tests across three stories (12-13 days total estimated) to address accumulated E2E testing technical debt from archived user stories and deferred MVP-3 import tests.
-
-**UserStory-10: E2E Tests - Phase 1 Foundation**
-
-**File:** [docs/Userstories/Archive/UserStory-10-Integration-Workflow-Tests.md](docs/Userstories/Archive/UserStory-10-Integration-Workflow-Tests.md)
-
-**Status:** ✅ **Completed & Archived** (implemented on 2026-03-01)
-
-**Delivered:**
-
-- 20 E2E tests implemented (8 import + 11 basic assignment + 1 multi-account)
-- Import page model added and transactions page model expanded for filter/audit/bulk actions
-- E2E test guide added
-- Validation run completed successfully (all tests passing)
-
----
-
-**UserStory-10.1: E2E Tests - Phase 2 Advanced**
-
-**File:** [docs/Userstories/Archive/UserStory-10.1-Advanced-Assignment-Tests.md](docs/Userstories/Archive/UserStory-10.1-Advanced-Assignment-Tests.md)
-
-**Status:** ✅ **Completed & Archived** (implemented on 2026-03-02)
-
-**Delivered:**
-
-- 19 E2E tests implemented (9 split assignment + 9 bulk assignment + 1 integration workflow)
-- Split editor sum validation (±0.01 tolerance), row management, re-split support
-- Bulk assignment: progress tracking, all-fail service-level path, error accordion (year-mismatch trigger)
-- Integration workflow: complete assign → bulk assign → split pipeline (35 transactions, 0 unassigned)
-- CI split into 3 sequential phases (`timeout-minutes: 10` each)
-- E2E_TEST_GUIDE.md updated with Phase 2 organization and per-phase timeout info
-
----
-
-### 🟡 Stories Deferred (Pending Dependencies)
-
-#### ~~UserStory-10.2: E2E Tests - Phase 3 ML~~ ✅ COMPLETED & ARCHIVED
-
-**File:** [docs/Userstories/Archive/UserStory-10.2-ML-Tests.md](docs/Userstories/Archive/UserStory-10.2-ML-Tests.md)
-
-**Status:** ✅ **COMPLETED & ARCHIVED** — All E2E tests implemented and active
-
-**Delivered:**
-
-- 9 ML suggestion tests (badge display, confidence scoring, accept, reject, filter by suggestion, sort by confidence, color coding)
-- 9 auto-apply settings tests (page load, toggle, confidence threshold, account selection, validation, manual trigger)
-- 10 monitoring dashboard tests (page load, low/high undo rate, metrics, undo button, confirm dialog, status indicator, auto-refresh, history rows)
-
-**Total: 28 tests** (9 ML + 9 config + 10 monitoring). Combined coverage: UserStory-10 (20) + UserStory-10.1 (19) + UserStory-10.2 (28) = 67 tests.
-
-**Previously-ignored tests now active (implemented in this PR):**
-
-- ✅ `TransactionList_FilterBySuggestion` — `suggestion-filter` dropdown added to Transactions page
-- ✅ `TransactionList_SortByConfidence` — `sort-by` dropdown + `OnConfidenceLoaded` callback added
-- ✅ `MonitoringDashboard_HighUndoRate_AlertBannerShown` — uses `WaitForSelector` for reliable detection
-- ✅ `MonitoringDashboard_UndoButton_RevertsAutoAppliedTransaction` — custom Blazor confirm dialog
-- ✅ `MonitoringDashboard_ConfirmationDialog_AppearsBeforeUndo` — custom dialog replaces native `confirm()`
-- ✅ `AutoApply_ManualTrigger_TransactionsAutoAssigned` — `POST /api/automation/run-now` endpoint added
-
-**Remaining deferred (1 test):**
-
-- ⏭️ `AutoApply_AuditTrail_ShowsAutoAppliedIndicator` — requires UserStory-17 (`/transactions/{id}/audit` page)
-
-**Dependencies:** ~~UserStory-8~~ ✅, ~~UserStory-10~~ ✅, ~~UserStory-10.1~~ ✅, UserStory-17 (1 remaining test)
-
----
-
-### 🔴 Refinement Backlog (US-12 Updated)
-
-#### ~~UserStory-12: Supabase PostgreSQL Migration~~ ✅ COMPLETED & ARCHIVED
-
-**File:** [docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md](docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md)
-
-**Status:** ✅ **COMPLETED & ARCHIVED**
-
-**Refinement Outcome:**
-
-1. **Provider matrix fixed** - Unit/integration tests remain SQLite; E2E/runtime use PostgreSQL
-2. **Tenant isolation clarified** - Repository-level `IUserContext` filtering retained in this story
-3. **Migration scope clarified** - One-time greenfield PostgreSQL go-live; **no SQLite data migration**
-4. **Post-go-live policy clarified** - No production database recreate/drop; forward-only migrations
-5. **CI approach fixed** - Ephemeral PostgreSQL service container for E2E PostgreSQL-backed host validation
-6. **Environment model clarified** - Single Supabase environment (production) with explicit non-production test database targets
-7. **Implementation quality improved** - Added concrete local-dev, Supabase provisioning runbook, JSON mapping, and health check requirements
-8. **Ownership clarified** - Implementation tasks split into Copilot tasks vs User operational/configuration tasks
-9. **Operational safety added** - Release guardrails checklist for post-go-live migrations (forward-only, no recreate)
-
-**Note:** Any SQLite-to-PostgreSQL data import/export belongs in a separate future story if ever needed.
-
-**Additional Note:** Integration and E2E tests must never run against Supabase production credentials.
-
----
-
-#### ~~UserStory-13: Sharing System~~ ✅ COMPLETED & ARCHIVED
-
-**File:** [docs/Userstories/Archive/UserStory-13-Sharing-System.md](docs/Userstories/Archive/UserStory-13-Sharing-System.md)
-
-**Status:** ✅ **COMPLETED & ARCHIVED** — Implemented April 3, 2026. See archived story for full refinement details.
-
----
-
-#### UserStory-14: Backup & Restore
+### 🔴 UserStory-14: Backup & Restore
 
 **File:** [docs/Userstories/UserStory-14-Backup-Restore.md](docs/Userstories/UserStory-14-Backup-Restore.md)
 
@@ -568,54 +398,17 @@ public class User
 
 ---
 
-#### ~~UserStory-16: Azure App Service B1 Deployment~~ ✅ COMPLETED & ARCHIVED
+## Implementation Roadmap (Current)
 
-**File:** [docs/Userstories/Archive/UserStory-16-Azure-Deployment.md](docs/Userstories/Archive/UserStory-16-Azure-Deployment.md)
+### ✅ All Phases 1–5: COMPLETED & ARCHIVED
 
-**Status:** ✅ **COMPLETED & ARCHIVED** — `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions. Always-on enabled, B1 tier (~€13/mnd), Supabase PostgreSQL unchanged.
+See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-16).
 
----
+### Active / Next Up
 
-## Implementation Roadmap
-
-### Phase 1: Foundation ✅ **COMPLETED**
-
-1. ✅ **UserStory-1** (CI Pipeline) - **COMPLETED & ARCHIVED**
-2. ✅ **UserStory-2** (Branching Strategy) - **COMPLETED & ARCHIVED**
-3. ✅ **UserStory-3** (Category Ownership) - **COMPLETED & ARCHIVED**
-4. ✅ **UserStory-3.1** (Category Budget Plan Scoping) - **COMPLETED & ARCHIVED**
-5. ✅ **UserStory-3.2** (Category Template System) - **COMPLETED & ARCHIVED**
-6. ✅ **UserStory-3.3** (Category UI Tests) - **COMPLETED & ARCHIVED**
-7. ✅ **UserStory-8** (UX Enhancements) - **COMPLETED & ARCHIVED**
-
-### Phase 2: Core Features (Weeks 3-5)
-
-4. ✅ **UserStory-4** (Account-Budget Matching) - **COMPLETED & ARCHIVED**
-5. ✅ **UserStory-5** (Basic Assignment UI) - **COMPLETED & ARCHIVED**
-   - **Parallel:** ✅ **UserStory-5.1** (E2E Infrastructure) - **COMPLETED & ARCHIVED**
-6. ✅ **UserStory-6** (Split & Bulk Assignment) - **COMPLETED & ARCHIVED**
-
-### Phase 3: Advanced Features (Weeks 6-8)
-
-7. **UserStory-7** (Copilot Agents) - **NEXT: Ready for implementation** (1-2 days)
-8. **UserStory-8** (ML Suggestion & Auto-Apply) - Ready after US-7 (4-5 days)
-9. **UserStory-10** (Integration Workflow Tests) - Ready, incremental with US-8 (2-3 days)
-
-### Phase 4: UX Improvements (Weeks 9-10)
-
-10. ✅ **UserStory-5.3** (UX Enhancements) - **COMPLETED & ARCHIVED**
-11. ✅ **UserStory-9.2** (Quick Filters & Performance) - **COMPLETED & ARCHIVED**
-12. ✅ **UserStory-9.1** (Keyboard Shortcuts) - **COMPLETED & ARCHIVED**
-
-### Phase 5: Multi-User & Post-MVP (Weeks 11+)
-
-13. ✅ **UserStory-11** (Multi-User Auth) - **COMPLETED & ARCHIVED**
-14. ✅ **UserStory-12** (Supabase PostgreSQL) - **COMPLETED & ARCHIVED**
-15. ✅ **UserStory-13** (Sharing System) - **COMPLETED & ARCHIVED**
-16. ✅ **UserStory-16** (Azure App Service B1 Deployment) - **COMPLETED & ARCHIVED**
-17. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation (2-3 days)
-18. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
-19. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
+1. 🟢 **UserStory-17** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
+2. 🔴 **UserStory-14** (Backup & Restore) — Needs refinement (3-4 days after refinement)
+3. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
 
 ---
 
@@ -633,7 +426,7 @@ public class User
 ### 🔴 Common Anti-Patterns to Avoid
 
 1. **Too Many Tasks:** >50 tasks = story too large, should be split
-2. ✅ **UserStory-1** (CI Pipeline) - \*\*Ready for implementation specifying JWT config
+2. **Missing Auth Details:** Avoid vague security descriptions; specify token type, claims, and JWT config explicitly
 3. **Vague Success Criteria:** "UX is good" instead of measurable metrics
 4. **No Testing Scenarios:** Missing concrete test case examples
 5. **No DoD Checklist:** Success criteria exist but no explicit completion checkbox list
@@ -708,37 +501,7 @@ Use this structure for all new stories:
 ## Next Actions
 
 1. **Immediate:** Implement UserStory-17 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
-2. **Next:** Refine and implement UserStory-14 (Backup & Restore) — conflict resolution, encryption, versioning still needed
-3. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard
+2. **Next:** Refine and implement UserStory-14 (Backup & Restore) — conflict resolution, encryption, versioning (refinement ~2-3h; impl 3-4 days)
+3. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard (refinement ~2-3h; impl 4-5 days)
 
 **Total Refinement Effort Remaining:** ~4-6 hours across 2 remaining unrefined stories (US-14, US-15)
-
-**Priority Order:**
-
-1. ✅ ~~UserStory-1 (CI Pipeline)~~ - **COMPLETED & ARCHIVED**
-2. ✅ ~~UserStory-2 (Branching Strategy)~~ - **COMPLETED & ARCHIVED**
-3. ✅ ~~UserStory-3 (Category Ownership)~~ - **COMPLETED & ARCHIVED**
-4. ✅ ~~UserStory-3.1 (Category Budget Plan Scoping)~~ - **COMPLETED & ARCHIVED**
-5. ✅ ~~UserStory-3.2 (Category Template System)~~ - **COMPLETED & ARCHIVED**
-6. ✅ ~~UserStory-3.3 (Category UI Tests)~~ - **COMPLETED & ARCHIVED**
-7. ✅ ~~UserStory-8 (UX Enhancements & Refinements)~~ - **COMPLETED & ARCHIVED**
-8. ✅ ~~UserStory-4 (Account-Budget Matching)~~ - **COMPLETED & ARCHIVED**
-9. ✅ ~~UserStory-5 (Basic Assignment UI)~~ - **COMPLETED & ARCHIVED**
-10. ✅ ~~UserStory-5.1 (E2E Infrastructure)~~ - **COMPLETED & ARCHIVED**
-11. ✅ ~~UserStory-5.3 (UX Enhancements)~~ - **COMPLETED & ARCHIVED**
-12. ✅ ~~UserStory-6 (Split & Bulk Assignment)~~ - **COMPLETED & ARCHIVED**
-13. ✅ ~~UserStory-9.2 (Quick Filters & Performance)~~ - **COMPLETED & ARCHIVED**
-14. ~~UserStory-7~~ (Copilot Agents) - ✅ **ARCHIVED (NOT IMPLEMENTED)**
-15. ~~UserStory-8~~ (ML Suggestion & Auto-Apply) - ✅ **COMPLETED & ARCHIVED**
-16. ✅ ~~UserStory-9.1~~ (Keyboard Shortcuts) - **COMPLETED & ARCHIVED**
-17. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation
-18. ✅ ~~**UserStory-10**~~ (Integration Workflow Tests) - **COMPLETED & ARCHIVED**
-19. ✅ ~~**UserStory-10.1**~~ (Advanced Assignment Tests) - **COMPLETED & ARCHIVED**
-20. ~~**UserStory-10.2**~~ (ML Tests) - ✅ **COMPLETED & ARCHIVED**
-21. ✅ ~~**UserStory-11**~~ (Multi-User Auth) - **COMPLETED & ARCHIVED**
-22. ✅ ~~**UserStory-12**~~ (Supabase PostgreSQL) - **COMPLETED & ARCHIVED**
-23. ✅ ~~**UserStory-13**~~ (Sharing System) - **COMPLETED & ARCHIVED**
-24. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation
-25. **UserStory-14** (Backup & Restore) - Needs refinement (security/encryption, versioning)
-26. **UserStory-15** (Application Flow) - Needs refinement (onboarding tracking)
-27. ✅ ~~**UserStory-16**~~ (Azure App Service B1 Deployment) - **COMPLETED & ARCHIVED**
