@@ -49,7 +49,7 @@ public class SharingService : ISharingService
         _context.AccountShares.Add(share);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Account {AccountId} shared with {TargetEmail} by user {UserId}", accountId, targetEmail, currentUserId);
+        _logger.LogInformation("Account share created by user {UserId}", currentUserId);
         return share;
     }
 
@@ -87,7 +87,7 @@ public class SharingService : ISharingService
         _context.BudgetPlanShares.Add(share);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("BudgetPlan {PlanId} shared with {TargetEmail} by user {UserId}", planId, targetEmail, currentUserId);
+        _logger.LogInformation("BudgetPlan share created by user {UserId}", currentUserId);
         return share;
     }
 
