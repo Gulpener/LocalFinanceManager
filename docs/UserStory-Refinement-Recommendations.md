@@ -1,6 +1,6 @@
 # User Story Refinement Recommendations
 
-**Date:** March 1, 2026  
+**Date:** April 4, 2026  
 **Purpose:** Identify which user stories need refinement before implementation
 
 ---
@@ -9,10 +9,9 @@
 
 **Status Overview:**
 
-- ✅ **19 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2) - Archived
-- ✅ **4 stories ready** for immediate implementation (US-11, US-12, US-13, US-17)
+- ✅ **23 stories completed** (US-1, US-2, US-3, US-3.1, US-3.2, US-3.3, US-4, US-5, US-5.1, US-5.3, US-6, US-7, US-8, US-8-refinements, US-8-E2E, UserStory-9.1, UserStory-9.2, UserStory-10, UserStory-10.1, UserStory-10.2, UserStory-11, UserStory-12, UserStory-13, UserStory-16) - Archived
+- ✅ **1 story ready** for immediate implementation (US-17)
 - 🔴 **2 stories need refinement** (US-14, US-15) - Post-MVP features
-- 🔵 **1 story redefined** (US-16) - Azure F1 replaced by Azure App Service B1 (€50/mnd recurring credits)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories. All other stories should follow its pattern.
 
@@ -39,10 +38,49 @@
 - UserStory-9.2 (Quick Filters & Performance) - ✅ **COMPLETED & ARCHIVED** - Performance optimizations and quick filter UI
 - UserStory-10 (E2E Tests - Phase 1 Foundation) - ✅ **COMPLETED & ARCHIVED** - 20 tests implemented and validated
 - UserStory-10.1 (E2E Tests - Phase 2 Advanced) - ✅ **COMPLETED & ARCHIVED** - 19 tests implemented (9 split + 9 bulk + 1 integration workflow)
+- UserStory-10.2 (E2E Tests - Phase 3 ML) - ✅ **COMPLETED & ARCHIVED** - 28 tests implemented (9 ML + 9 auto-apply + 10 monitoring)
+- UserStory-11 (Multi-User Authentication) - ✅ **COMPLETED & ARCHIVED** - Supabase auth, JWT tokens, multi-tenant data isolation
+- UserStory-12 (Supabase PostgreSQL Migration) - ✅ **COMPLETED & ARCHIVED** - PostgreSQL go-live, forward-only migrations, CI ephemeral service container
+- UserStory-13 (Sharing System) - ✅ **COMPLETED & ARCHIVED** - Account/BudgetPlan sharing, pending invites badge, SharedWithMe page
+- UserStory-16 (Azure App Service B1 Deployment) - ✅ **COMPLETED & ARCHIVED** - `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions
 
 ---
 
 ## Detailed User Story Status
+
+### ✅ Completed & Archived (Previously "Ready")
+
+#### UserStory-11: Multi-User Authentication
+
+**File:** [docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md](docs/Userstories/Archive/UserStory-11-Multi-User-Authentication.md)
+
+**Status:** ✅ **COMPLETED & ARCHIVED** — Supabase authentication with JWT tokens and multi-tenant data isolation.
+
+---
+
+#### UserStory-12: Supabase PostgreSQL Migration
+
+**File:** [docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md](docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md)
+
+**Status:** ✅ **COMPLETED & ARCHIVED** — PostgreSQL go-live, forward-only migrations, ephemeral CI service container for E2E tests.
+
+---
+
+#### UserStory-13: Sharing System
+
+**File:** [docs/Userstories/Archive/UserStory-13-Sharing-System.md](docs/Userstories/Archive/UserStory-13-Sharing-System.md)
+
+**Status:** ✅ **COMPLETED & ARCHIVED** — Account/BudgetPlan sharing with accept/decline flow, owner revocation, pending badge in nav, SharedWithMe page.
+
+---
+
+#### UserStory-16: Azure App Service B1 Deployment
+
+**File:** [docs/Userstories/Archive/UserStory-16-Azure-Deployment.md](docs/Userstories/Archive/UserStory-16-Azure-Deployment.md)
+
+**Status:** ✅ **COMPLETED & ARCHIVED** — `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions, always-on enabled, Supabase PostgreSQL unchanged.
+
+---
 
 ### ✅ Ready for Implementation (No Refinement Needed)
 
@@ -100,23 +138,6 @@
 
 ---
 
-#### UserStory-11: Multi-User Authentication
-
-**File:** [docs/Userstories/UserStory-11-Multi-User-Authentication.md](docs/Userstories/UserStory-11-Multi-User-Authentication.md)
-
-**Status:** ✅ **Ready** - Supabase authentication with JWT tokens and multi-tenant data isolation.
-
-**Key Features:**
-
-- Supabase authentication integration
-- JWT token management
-- User registration/login UI
-- Tenant-isolated queries
-
-**Estimated Effort:** 5-7 days
-
----
-
 ### 🟡 Stories Deferred (Pending Dependencies)
 
 #### ~~UserStory-10.2: E2E Tests - Phase 3 ML~~ ✅ COMPLETED & ARCHIVED
@@ -152,11 +173,11 @@
 
 ### 🔴 Refinement Backlog (US-12 Updated)
 
-#### UserStory-12: Supabase PostgreSQL Migration
+#### ~~UserStory-12: Supabase PostgreSQL Migration~~ ✅ COMPLETED & ARCHIVED
 
-**File:** [docs/Userstories/UserStory-12-Supabase-PostgreSQL.md](docs/Userstories/UserStory-12-Supabase-PostgreSQL.md)
+**File:** [docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md](docs/Userstories/Archive/UserStory-12-Supabase-PostgreSQL.md)
 
-**Status:** ✅ **Refined and Ready**
+**Status:** ✅ **COMPLETED & ARCHIVED**
 
 **Refinement Outcome:**
 
@@ -174,45 +195,13 @@
 
 **Additional Note:** Integration and E2E tests must never run against Supabase production credentials.
 
-**Estimated Implementation Effort:** 3-4 days
-
 ---
 
-#### UserStory-13: Sharing System
+#### ~~UserStory-13: Sharing System~~ ✅ COMPLETED & ARCHIVED
 
-**File:** [docs/Userstories/UserStory-13-Sharing-System.md](docs/Userstories/UserStory-13-Sharing-System.md)
+**File:** [docs/Userstories/Archive/UserStory-13-Sharing-System.md](docs/Userstories/Archive/UserStory-13-Sharing-System.md)
 
-**Status:** ✅ **Refined and Ready**
-
-**Refinement Outcome:**
-
-1. **Accept/decline flow added** — Shares start as `Pending`; repository access only granted on `Accepted`. `Declined` shares never grant access.
-2. **No user search/listing endpoint** — Share by exact email only; backend exact-matches `Users.Email`. Returns 404 "User not found" — prevents user enumeration.
-3. **`SharedWithUserId` changed to `Guid`** — Consistent with the rest of the codebase (`BaseEntity.UserId` pattern), not `string`.
-4. **Authorization via `ISharingService` helpers** — `CanView`, `CanEdit`, `IsOwner` called directly in service/controller layer. No ASP.NET Core custom authorization policy needed; `[Authorize]` at controller class level is sufficient.
-5. **Shared resources in dedicated section** — Accepted shares appear only in a "Shared with me" page, not mixed into the main dashboard.
-6. **Cascade rules scoped to BudgetPlan** — Shared BudgetPlan grants access to its Categories, BudgetLines, and Transactions. Sharing an Account does not grant access to BudgetPlans, and vice versa.
-7. **No share expiration** — Not in scope; owner revocation is the only removal mechanism.
-8. **No notification entity** — Pending invitations surfaced via `GET /api/shares/pending` and a badge in the nav layout showing the count of incoming pending shares.
-9. **No cross-entity inheritance** — Account share ≠ BudgetPlan access; BudgetPlan share ≠ Account access.
-
-**Permission Inheritance Rules:**
-
-- Shared Account (Accepted, Viewer) → read-only access to account details
-- Shared Account (Accepted, Editor) → create/edit transactions on the account
-- Shared BudgetPlan (Accepted, Viewer) → read-only access to plan, categories, budget lines, transactions
-- Shared BudgetPlan (Accepted, Editor) → create/edit categories, budget lines, transactions (no delete)
-- Shared BudgetPlan (Accepted, Owner) → full access including delete
-- Pending or Declined share → no repository access at all
-
-**UI Specification:**
-
-- `ShareModal.razor` — email input + permission dropdown (Viewer/Editor); error if user not found or share already exists
-- `SharedWithMe.razor` — two sub-sections: (1) Pending invitations with Accept/Decline buttons; (2) Accepted shares list with resource type, name, shared by, permission label
-- Owner permission management view (per resource) — shares list with status column + Revoke button
-- Nav pending badge — count of incoming Pending shares
-
-**Estimated Implementation Effort:** 5-7 days
+**Status:** ✅ **COMPLETED & ARCHIVED** — Implemented April 3, 2026. See archived story for full refinement details.
 
 ---
 
@@ -579,21 +568,11 @@ public class User
 
 ---
 
-#### UserStory-16: Azure App Service B1 Deployment
+#### ~~UserStory-16: Azure App Service B1 Deployment~~ ✅ COMPLETED & ARCHIVED
 
-**File:** [docs/Userstories/UserStory-16-Azure-B1-Deployment.md](docs/Userstories/UserStory-16-Azure-B1-Deployment.md)
+**File:** [docs/Userstories/Archive/UserStory-16-Azure-Deployment.md](docs/Userstories/Archive/UserStory-16-Azure-Deployment.md)
 
-**Status:** 🔵 **Redefined** — Azure F1 replaced by Azure App Service B1 using €50/mnd
-recurring Azure credits. B1 (~€13/mnd) is fully covered, leaving ~€37/mnd remaining.
-Azure F1 is incompatible with Blazor Server due to the permanent SignalR connection
-(WebSocket) and 60-minute daily CPU limit causing circuit disconnections.
-
-**Approach:** `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions. No Docker,
-Nginx, or server management needed. Always-on enabled. Supabase PostgreSQL unchanged.
-
-**No further refinement needed** — story is fully defined and ready for implementation.
-
-**Estimated Implementation Effort:** 1-2 days
+**Status:** ✅ **COMPLETED & ARCHIVED** — `dotnet publish` → `azure/webapps-deploy@v2` via GitHub Actions. Always-on enabled, B1 tier (~€13/mnd), Supabase PostgreSQL unchanged.
 
 ---
 
@@ -630,12 +609,13 @@ Nginx, or server management needed. Always-on enabled. Supabase PostgreSQL uncha
 
 ### Phase 5: Multi-User & Post-MVP (Weeks 11+)
 
-13. **UserStory-11** (Multi-User Auth) - Ready (5-7 days)
-14. ✅ **UserStory-12** (Supabase PostgreSQL) - Ready after US-11 (3-4 days)
-15. ✅ **UserStory-13** (Sharing System) - After US-12, refined and ready (5-7 days)
-16. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
-17. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
-18. 🔵 **UserStory-16** (Azure App Service B1 Deployment) - Ready for implementation (1-2 days)
+13. ✅ **UserStory-11** (Multi-User Auth) - **COMPLETED & ARCHIVED**
+14. ✅ **UserStory-12** (Supabase PostgreSQL) - **COMPLETED & ARCHIVED**
+15. ✅ **UserStory-13** (Sharing System) - **COMPLETED & ARCHIVED**
+16. ✅ **UserStory-16** (Azure App Service B1 Deployment) - **COMPLETED & ARCHIVED**
+17. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation (2-3 days)
+18. 🔴 **UserStory-14** (Backup & Restore) - After refinement (3-4 days)
+19. 🔴 **UserStory-15** (Application Flow) - After refinement (4-5 days)
 
 ---
 
@@ -727,11 +707,11 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Start implementing UserStory-7 (Copilot Agents) - production-ready
-2. **This Week:** Continue with UserStory-10.x E2E expansion and UserStory-17 (Transaction Audit Trail UI)
-3. **Future:** Expand UserStory-13, 14, 15, 16 with implementation tasks (8-9 hours total)
+1. **Immediate:** Implement UserStory-17 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
+2. **Next:** Refine and implement UserStory-14 (Backup & Restore) — conflict resolution, encryption, versioning still needed
+3. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard
 
-**Total Refinement Effort Remaining:** ~8-9 hours across 4 remaining stories
+**Total Refinement Effort Remaining:** ~4-6 hours across 2 remaining unrefined stories (US-14, US-15)
 
 **Priority Order:**
 
@@ -755,9 +735,10 @@ Use this structure for all new stories:
 18. ✅ ~~**UserStory-10**~~ (Integration Workflow Tests) - **COMPLETED & ARCHIVED**
 19. ✅ ~~**UserStory-10.1**~~ (Advanced Assignment Tests) - **COMPLETED & ARCHIVED**
 20. ~~**UserStory-10.2**~~ (ML Tests) - ✅ **COMPLETED & ARCHIVED**
-21. **UserStory-11** (Multi-User Auth) - Ready for implementation
-22. UserStory-12 (Supabase PostgreSQL) - Ready (one-time greenfield go-live, then forward-only migrations)
-23. UserStory-13 (Sharing System) - Needs refinement (authorization middleware, permissions)
-24. UserStory-14 (Backup & Restore) - Needs refinement (security/encryption, versioning)
-25. UserStory-15 (Application Flow) - Needs refinement (onboarding tracking)
-26. UserStory-16 (Azure App Service B1 Deployment) - Ready (dotnet publish, GitHub Actions CD)
+21. ✅ ~~**UserStory-11**~~ (Multi-User Auth) - **COMPLETED & ARCHIVED**
+22. ✅ ~~**UserStory-12**~~ (Supabase PostgreSQL) - **COMPLETED & ARCHIVED**
+23. ✅ ~~**UserStory-13**~~ (Sharing System) - **COMPLETED & ARCHIVED**
+24. **UserStory-17** (Transaction Audit Trail UI) - Ready for implementation
+25. **UserStory-14** (Backup & Restore) - Needs refinement (security/encryption, versioning)
+26. **UserStory-15** (Application Flow) - Needs refinement (onboarding tracking)
+27. ✅ ~~**UserStory-16**~~ (Azure App Service B1 Deployment) - **COMPLETED & ARCHIVED**

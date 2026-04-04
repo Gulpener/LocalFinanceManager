@@ -396,7 +396,8 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         await context.Database.ExecuteSqlRawAsync(@"
             TRUNCATE TABLE ""TransactionSplits"", ""TransactionAudits"", ""LabeledExamples"",
                            ""Transactions"", ""BudgetLines"", ""Categories"",
-                           ""BudgetPlans"", ""Accounts"", ""MLModels"", ""AppSettings"" CASCADE;
+                           ""BudgetPlans"", ""AccountShares"", ""BudgetPlanShares"",
+                           ""Accounts"", ""MLModels"", ""AppSettings"" CASCADE;
         ");
     }
 

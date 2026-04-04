@@ -1,9 +1,12 @@
 @page "/budgets"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@using LocalFinanceManager.Components.Pages.Sharing
 @using Microsoft.JSInterop
 @inject BudgetPlanService BudgetPlanService
 @inject AccountService AccountService
+@inject IUserContext UserContext
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @rendermode InteractiveServer
@@ -80,6 +83,9 @@ else
                         <a href="/budgets/@plan.Id/edit" class="btn btn-sm btn-primary">
                             <i class="bi bi-pencil"></i> Edit
                         </a>
+                        <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(plan)">
+                            <i class="bi bi-share"></i> Share
+                        </button>
                         <button class="btn btn-sm btn-danger" @onclick="() => ArchivePlan(plan.Id)">
                             <i class="bi bi-archive"></i> Archive
                         </button>
@@ -90,11 +96,19 @@ else
     </table>
 }
 
+<!-- Share Modal -->
+<ShareModal IsVisible="showShareModal" ResourceId="shareModalPlanId" ResourceName="shareModalPlanName"
+            Type="ShareModal.ResourceType.BudgetPlan" OnClose="CloseShareModal" OnShareCreated="CloseShareModal" />
+
 @code {
     private List<AccountResponse>? accounts;
     private List<BudgetPlanDto>? budgetPlans;
     private Guid selectedAccountId = Guid.Empty;
     private bool isLoading = false;
+
+    private bool showShareModal;
+    private Guid shareModalPlanId;
+    private string shareModalPlanName = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -137,6 +151,18 @@ else
     private void CreateNewPlan()
     {
         Navigation.NavigateTo($"/budgets/new?accountId={selectedAccountId}");
+    }
+
+    private void OpenShareModal(BudgetPlanDto plan)
+    {
+        shareModalPlanId = plan.Id;
+        shareModalPlanName = plan.Name;
+        showShareModal = true;
+    }
+
+    private void CloseShareModal()
+    {
+        showShareModal = false;
     }
 
     private async Task ArchivePlan(Guid planId)

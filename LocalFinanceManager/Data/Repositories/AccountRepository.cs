@@ -28,12 +28,14 @@ public class AccountRepository : Repository<Account>, IAccountRepository
         }
 
         return await _context.Set<Account>()
-            .Where(a => !a.IsArchived && a.Id == id && a.UserId == userId)
+            .Where(a => !a.IsArchived && a.Id == id
+                && (a.UserId == userId
+                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)))
             .FirstOrDefaultAsync();
     }
 
     /// <summary>
-    /// Get all active (non-archived) accounts for the current user.
+    /// Get all active (non-archived) accounts for the current user (owned or accepted shared).
     /// </summary>
     public async Task<List<Account>> GetAllActiveAsync()
     {
@@ -43,7 +45,9 @@ public class AccountRepository : Repository<Account>, IAccountRepository
             return new List<Account>();
         }
 
-        var query = _context.Set<Account>().Where(a => !a.IsArchived && a.UserId == userId);
+        var query = _context.Set<Account>().Where(a => !a.IsArchived
+            && (a.UserId == userId
+                || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)));
 
         return await query.OrderBy(a => a.Label).ToListAsync();
     }

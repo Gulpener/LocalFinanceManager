@@ -1,7 +1,10 @@
 @page "/accounts"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@using LocalFinanceManager.Components.Pages.Sharing
 @inject AccountService AccountService
+@inject IUserContext UserContext
 @inject NavigationManager Navigation
 @inject ILogger<Accounts> Logger
 @rendermode InteractiveServer
@@ -57,6 +60,9 @@ else
                         <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i> Edit
                         </a>
+                        <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(account)">
+                            <i class="bi bi-share"></i> Share
+                        </button>
                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmArchive(account)">
                             <i class="bi bi-archive"></i> Archive
                         </button>
@@ -66,6 +72,10 @@ else
         </tbody>
     </table>
 }
+
+<!-- Share Modal -->
+<ShareModal IsVisible="showShareModal" ResourceId="shareModalAccountId" ResourceName="shareModalAccountLabel"
+            Type="ShareModal.ResourceType.Account" OnClose="CloseShareModal" OnShareCreated="CloseShareModal" />
 
 <!-- Archive Confirmation Modal -->
 @if (accountToArchive != null)
@@ -95,6 +105,10 @@ else
     private AccountResponse? accountToArchive;
     private string? errorMessage;
 
+    private bool showShareModal;
+    private Guid shareModalAccountId;
+    private string shareModalAccountLabel = string.Empty;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAccounts();
@@ -117,6 +131,18 @@ else
     private void ConfirmArchive(AccountResponse account)
     {
         accountToArchive = account;
+    }
+
+    private void OpenShareModal(AccountResponse account)
+    {
+        shareModalAccountId = account.Id;
+        shareModalAccountLabel = account.Label;
+        showShareModal = true;
+    }
+
+    private void CloseShareModal()
+    {
+        showShareModal = false;
     }
 
     private void CancelArchive()
