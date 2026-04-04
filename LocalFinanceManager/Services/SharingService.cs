@@ -98,7 +98,7 @@ public class SharingService : ISharingService
             throw new InvalidOperationException("Only pending shares can be accepted.");
         share.Status = ShareStatus.Accepted;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("AccountShare {ShareId} accepted by user {UserId}", shareId, currentUserId);
+        _logger.LogInformation("AccountShare accepted by user {UserId}", currentUserId);
     }
 
     public async Task DeclineAccountShareAsync(Guid shareId, Guid currentUserId)
@@ -108,7 +108,7 @@ public class SharingService : ISharingService
             throw new InvalidOperationException("Only pending shares can be declined.");
         share.Status = ShareStatus.Declined;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("AccountShare {ShareId} declined by user {UserId}", shareId, currentUserId);
+        _logger.LogInformation("AccountShare declined by user {UserId}", currentUserId);
     }
 
     public async Task AcceptBudgetPlanShareAsync(Guid shareId, Guid currentUserId)
@@ -118,7 +118,7 @@ public class SharingService : ISharingService
             throw new InvalidOperationException("Only pending shares can be accepted.");
         share.Status = ShareStatus.Accepted;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("BudgetPlanShare {ShareId} accepted by user {UserId}", shareId, currentUserId);
+        _logger.LogInformation("BudgetPlanShare accepted by user {UserId}", currentUserId);
     }
 
     public async Task DeclineBudgetPlanShareAsync(Guid shareId, Guid currentUserId)
@@ -128,7 +128,7 @@ public class SharingService : ISharingService
             throw new InvalidOperationException("Only pending shares can be declined.");
         share.Status = ShareStatus.Declined;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("BudgetPlanShare {ShareId} declined by user {UserId}", shareId, currentUserId);
+        _logger.LogInformation("BudgetPlanShare declined by user {UserId}", currentUserId);
     }
 
     public async Task RevokeAccountShareAsync(Guid shareId, Guid currentUserId)
@@ -139,7 +139,7 @@ public class SharingService : ISharingService
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the owner.");
         _context.AccountShares.Remove(share);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("AccountShare {ShareId} revoked by owner {UserId}", shareId, currentUserId);
+        _logger.LogInformation("AccountShare revoked by owner {UserId}", currentUserId);
     }
 
     public async Task RevokeBudgetPlanShareAsync(Guid shareId, Guid currentUserId)
@@ -150,7 +150,7 @@ public class SharingService : ISharingService
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the owner.");
         _context.BudgetPlanShares.Remove(share);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("BudgetPlanShare {ShareId} revoked by owner {UserId}", shareId, currentUserId);
+        _logger.LogInformation("BudgetPlanShare revoked by owner {UserId}", currentUserId);
     }
 
     public async Task<List<AccountShare>> GetAccountSharesAsync(Guid accountId, Guid currentUserId)
