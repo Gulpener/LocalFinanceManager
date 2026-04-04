@@ -19,14 +19,13 @@
                 @if (showResendVerification)
                 {
                     <div class="mt-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                @onclick="ResendVerificationEmail"
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResendVerificationEmail"
                                 disabled="@isResending">
                             @(isResending ? "Sending..." : "Resend verification email")
                         </button>
                         @if (!string.IsNullOrEmpty(resendMessage))
                         {
-                            <div class="mt-1 text-success small">@resendMessage</div>
+                            <div class="mt-1 @(resendSuccess ? "text-success" : "text-danger") small">@resendMessage</div>
                         }
                     </div>
                 }
@@ -39,14 +38,14 @@
 
             <div class="mb-3">
                 <label for="email" class="form-label">Email</label>
-                <InputText id="email" class="form-control" @bind-Value="loginModel.Email"
-                           type="email" autocomplete="email" />
+                <InputText id="email" class="form-control" @bind-Value="loginModel.Email" type="email"
+                           autocomplete="email" />
             </div>
 
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <InputText id="password" class="form-control" @bind-Value="loginModel.Password"
-                           type="password" autocomplete="current-password" />
+                <InputText id="password" class="form-control" @bind-Value="loginModel.Password" type="password"
+                           autocomplete="current-password" />
             </div>
 
             <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
@@ -73,6 +72,7 @@
     private bool showResendVerification;
     private bool isSubmitting;
     private bool isResending;
+    private bool resendSuccess;
     private string? resendMessage;
 
     private async Task HandleLogin()
@@ -112,10 +112,14 @@
     {
         isResending = true;
         resendMessage = null;
+        resendSuccess = false;
         try
         {
-            await AuthService.ResendVerificationEmailAsync(loginModel.Email);
-            resendMessage = "Verification email sent. Please check your inbox.";
+            var result = await AuthService.ResendVerificationEmailAsync(loginModel.Email);
+            resendSuccess = result.Success;
+            resendMessage = result.Success
+                ? "Verification email sent. Please check your inbox."
+                : result.ErrorMessage ?? "Failed to resend verification email.";
         }
         finally
         {
