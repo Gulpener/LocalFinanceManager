@@ -344,7 +344,7 @@
         }
     }
 
-    private void ConfirmRestore()
+    private async Task ConfirmRestore()
     {
         if (_strategy == ConflictResolutionStrategy.Overwrite)
         {
@@ -352,7 +352,7 @@
         }
         else
         {
-            _ = ExecuteRestore();
+            await ExecuteRestore();
         }
     }
 
