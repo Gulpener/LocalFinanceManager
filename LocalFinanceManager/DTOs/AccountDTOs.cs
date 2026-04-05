@@ -32,6 +32,7 @@ public class UpdateAccountRequest
 public class AccountResponse
 {
     public Guid Id { get; set; }
+    public Guid? OwnerId { get; set; }
     public string Label { get; set; } = string.Empty;
     public AccountType Type { get; set; }
     public string Currency { get; set; } = string.Empty;
@@ -48,6 +49,7 @@ public class AccountResponse
         return new AccountResponse
         {
             Id = account.Id,
+            OwnerId = account.UserId,
             Label = account.Label,
             Type = account.Type,
             Currency = account.Currency,
