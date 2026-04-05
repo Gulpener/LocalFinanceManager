@@ -28,7 +28,7 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
 
         var query = _dbSet.Where(bl => bl.Id == id && !bl.IsArchived
             && (bl.BudgetPlan.UserId == userId
-                || bl.BudgetPlan.Shares.Any(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)));
+                || bl.BudgetPlan.Shares.Any(s => !s.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)));
 
         return await query
             .Include(bl => bl.BudgetPlan)
