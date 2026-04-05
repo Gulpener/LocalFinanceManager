@@ -48,7 +48,7 @@ public class AccountRepository : Repository<Account>, IAccountRepository
 
         var query = _context.Set<Account>().Where(a => !a.IsArchived
             && (a.UserId == userId
-                || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)));
+                || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query.OrderBy(a => a.Label).ToListAsync();
     }
