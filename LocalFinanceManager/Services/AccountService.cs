@@ -70,7 +70,7 @@ public class AccountService
     {
         _logger.LogInformation("Updating account with ID: {AccountId}", id);
 
-        var account = await _accountRepository.GetByIdAsync(id);
+        var account = await _accountRepository.GetOwnedByIdAsync(id);
         if (account == null)
         {
             _logger.LogWarning("Account not found with ID: {AccountId}", id);
@@ -110,7 +110,7 @@ public class AccountService
     {
         _logger.LogInformation("Archiving account with ID: {AccountId}", id);
 
-        var account = await _accountRepository.GetByIdAsync(id);
+        var account = await _accountRepository.GetOwnedByIdAsync(id);
         if (account == null)
         {
             _logger.LogWarning("Account not found with ID: {AccountId}", id);
@@ -139,7 +139,7 @@ public class AccountService
     {
         _logger.LogInformation("Unarchiving account with ID: {AccountId}", id);
 
-        var account = await _accountRepository.GetByIdAsync(id);
+        var account = await _accountRepository.GetOwnedByIdAsync(id);
         if (account == null)
         {
             _logger.LogWarning("Account not found with ID: {AccountId}", id);

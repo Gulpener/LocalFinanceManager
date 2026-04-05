@@ -79,11 +79,14 @@ else
                     <td>@plan.BudgetLines.Count</td>
                     <td>@plan.CreatedAt.ToString("yyyy-MM-dd")</td>
                     <td>
-                        @if (plan.UserPermission == PermissionLevel.Owner)
+                        @if (plan.UserPermission == PermissionLevel.Owner || plan.UserPermission == PermissionLevel.Editor)
                         {
                             <a href="/budgets/@plan.Id/edit" class="btn btn-sm btn-primary">
                                 <i class="bi bi-pencil"></i> Edit
                             </a>
+                        }
+                        @if (plan.UserPermission == PermissionLevel.Owner)
+                        {
                             <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(plan)">
                                 <i class="bi bi-share"></i> Share
                             </button>
@@ -91,7 +94,7 @@ else
                                 <i class="bi bi-archive"></i> Archive
                             </button>
                         }
-                        else
+                        else if (plan.UserPermission == PermissionLevel.Viewer)
                         {
                             <span class="badge bg-secondary">View only</span>
                         }
