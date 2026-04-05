@@ -208,8 +208,9 @@ public class SharingTests : E2ETestBase
         // The nav badge is rendered after OnAfterRenderAsync; wait a moment
         await Page.WaitForTimeoutAsync(2000);
 
-        // Assert: badge shows "2"
-        var badge = Page.Locator(".badge").Filter(new LocatorFilterOptions { HasText = "2" });
+        // Assert: NavMenu badge for "Shared with Me" shows "2"
+        var badge = Page.GetByTestId("nav-pending-share-badge");
         await Expect(badge).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Expect(badge).ToHaveTextAsync("2");
     }
 }
