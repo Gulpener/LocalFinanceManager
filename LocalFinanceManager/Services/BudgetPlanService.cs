@@ -209,7 +209,7 @@ public class BudgetPlanService
         _logger.LogInformation("Creating new budget line for plan {BudgetPlanId}, category {CategoryId}",
             request.BudgetPlanId, request.CategoryId);
 
-        // Verify budget plan exists and requester is the owner
+        // Verify budget plan exists and requester is the owner or editor
         var plan = await _budgetPlanRepository.GetByIdWithLinesAsync(request.BudgetPlanId);
         if (plan == null)
         {

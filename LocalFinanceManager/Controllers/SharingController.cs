@@ -40,6 +40,10 @@ public class SharingController : ControllerBase
             var response = AccountShareResponse.FromEntity(share);
             return CreatedAtAction(nameof(GetAccountShares), new { id }, response);
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new ProblemDetails { Status = 400, Title = "Bad request", Detail = ex.Message });
+        }
         catch (KeyNotFoundException ex)
         {
             return NotFound(new ProblemDetails { Status = 404, Title = "Not found", Detail = ex.Message });
@@ -69,6 +73,10 @@ public class SharingController : ControllerBase
             var share = await _sharingService.ShareBudgetPlanAsync(id, request.Email, request.Permission, currentUserId);
             var response = BudgetPlanShareResponse.FromEntity(share);
             return CreatedAtAction(nameof(GetBudgetPlanShares), new { id }, response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new ProblemDetails { Status = 400, Title = "Bad request", Detail = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
