@@ -46,13 +46,13 @@
 
 ### Widget Specifications
 
-| Widget component | Data source | Content |
-|---|---|---|
-| `AccountSummaryWidget.razor` | `AccountService` | Total balance across all accounts; month-over-month change (e.g. "+5.3% ↑"); list of top-3 accounts by balance |
-| `BudgetStatusWidget.razor` | `BudgetPlanService` + `IBudgetLineRepository` | Current-month budget utilisation percentage; progress bar per category (top 5 by spend); over-budget categories highlighted in red |
-| `RecentTransactionsWidget.razor` | `ITransactionRepository` | Last 10 transactions grouped by **Today / Yesterday / This Week**; each row shows an "Assign" quick-action button when the transaction is unassigned |
-| `UncategorizedAlertWidget.razor` | `ITransactionRepository` | Count of unassigned transactions (e.g. "⚠ 12 transactions need assignment"); "Assign Now" button navigates to `/transactions?filter=unassigned` |
-| `MLSuggestionWidget.razor` | `ISuggestionService` / `/api/suggestions` | Count of pending ML suggestions (e.g. "🤖 5 suggestions available"); "Review Suggestions" button navigates to `/transactions?filter=has-suggestion` |
+| Widget component                 | Data source                                   | Content                                                                                                                                              |
+| -------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AccountSummaryWidget.razor`     | `AccountService`                              | Total balance across all accounts; month-over-month change (e.g. "+5.3% ↑"); list of top-3 accounts by balance                                       |
+| `BudgetStatusWidget.razor`       | `BudgetPlanService` + `IBudgetLineRepository` | Current-month budget utilisation percentage; progress bar per category (top 5 by spend); over-budget categories highlighted in red                   |
+| `RecentTransactionsWidget.razor` | `ITransactionRepository`                      | Last 10 transactions grouped by **Today / Yesterday / This Week**; each row shows an "Assign" quick-action button when the transaction is unassigned |
+| `UncategorizedAlertWidget.razor` | `ITransactionRepository`                      | Count of unassigned transactions (e.g. "⚠ 12 transactions need assignment"); "Assign Now" button navigates to `/transactions?filter=unassigned`      |
+| `MLSuggestionWidget.razor`       | `ISuggestionService` / `/api/suggestions`     | Count of pending ML suggestions (e.g. "🤖 5 suggestions available"); "Review Suggestions" button navigates to `/transactions?filter=has-suggestion`  |
 
 ### Quick-Actions Bar
 
@@ -87,22 +87,22 @@ Four buttons rendered below the widget grid:
 
 The following pages currently **lack** the `[Authorize]` attribute:
 
-| Page | File |
-|---|---|
-| Accounts list | `Components/Pages/Accounts.razor` |
-| Create Account | `Components/Pages/AccountCreate.razor` |
-| Edit Account | `Components/Pages/AccountEdit.razor` |
-| Transactions | `Components/Pages/Transactions.razor` |
-| Import Transactions | `Components/Pages/TransactionImport.razor` |
-| Budget Plans | `Components/Pages/BudgetPlans.razor` |
-| Create Budget Plan | `Components/Pages/BudgetPlanCreate.razor` |
-| Edit Budget Plan | `Components/Pages/BudgetPlanEdit.razor` |
-| Create Category | `Components/Pages/CategoryCreate.razor` |
-| Edit Category | `Components/Pages/CategoryEdit.razor` |
-| Admin Settings | `Components/Pages/Admin/Settings.razor` |
+| Page                | File                                             |
+| ------------------- | ------------------------------------------------ |
+| Accounts list       | `Components/Pages/Accounts.razor`                |
+| Create Account      | `Components/Pages/AccountCreate.razor`           |
+| Edit Account        | `Components/Pages/AccountEdit.razor`             |
+| Transactions        | `Components/Pages/Transactions.razor`            |
+| Import Transactions | `Components/Pages/TransactionImport.razor`       |
+| Budget Plans        | `Components/Pages/BudgetPlans.razor`             |
+| Create Budget Plan  | `Components/Pages/BudgetPlanCreate.razor`        |
+| Edit Budget Plan    | `Components/Pages/BudgetPlanEdit.razor`          |
+| Create Category     | `Components/Pages/CategoryCreate.razor`          |
+| Edit Category       | `Components/Pages/CategoryEdit.razor`            |
+| Admin Settings      | `Components/Pages/Admin/Settings.razor`          |
 | Auto-Apply Settings | `Components/Pages/Admin/AutoApplySettings.razor` |
-| Monitoring | `Components/Pages/Admin/Monitoring.razor` |
-| ML Info | `Components/Pages/Admin/ML.razor` |
+| Monitoring          | `Components/Pages/Admin/Monitoring.razor`        |
+| ML Info             | `Components/Pages/Admin/ML.razor`                |
 
 > `Backup.razor` and `SharedWithMe.razor` already carry `[Authorize]` — do not duplicate.
 
@@ -130,21 +130,21 @@ IBreadcrumbService
 
 ### URL → Breadcrumb Mapping (static dictionary)
 
-| URL segment | Breadcrumb label |
-|---|---|
-| *(root `/`)* | Home |
-| `accounts` | Accounts |
-| `budgets` | Budget Plans |
-| `transactions` | Transactions |
-| `admin` | Admin |
-| `sharing` | Sharing |
-| `backup` | Backup & Restore |
-| `onboarding` | Onboarding |
-| `new` | New |
-| `edit` | Edit |
-| `import` | Import |
-| `shared-with-me` | Shared with Me |
-| *(GUID)* | title registered via `SetSectionTitle`, else "Details" |
+| URL segment      | Breadcrumb label                                       |
+| ---------------- | ------------------------------------------------------ |
+| _(root `/`)_     | Home                                                   |
+| `accounts`       | Accounts                                               |
+| `budgets`        | Budget Plans                                           |
+| `transactions`   | Transactions                                           |
+| `admin`          | Admin                                                  |
+| `sharing`        | Sharing                                                |
+| `backup`         | Backup & Restore                                       |
+| `onboarding`     | Onboarding                                             |
+| `new`            | New                                                    |
+| `edit`           | Edit                                                   |
+| `import`         | Import                                                 |
+| `shared-with-me` | Shared with Me                                         |
+| _(GUID)_         | title registered via `SetSectionTitle`, else "Details" |
 
 ### Example Trails
 
@@ -181,14 +181,14 @@ On `Onboarding.razor` load, if user already has accounts → `Navigation.Navigat
 
 ### Wizard Steps
 
-| # | Title | Key fields / actions |
-|---|---|---|
-| 1 | Welcome | Headline "Welcome to Local Finance Manager!"; "Get Started" → Step 2 |
-| 2 | Create First Account | Account Name, IBAN (validated), Currency (ISO-4217), Initial Balance; "Next" → Step 3; "Skip" → `/` |
-| 3 | Create First Budget Plan | Budget Plan Name, Start Date (today), End Date (1 year from today); "Next" → Step 4 |
-| 4 | Add Categories from Template | Category template multi-select grouped by Income/Expense; all selected by default; "Create Categories" → Step 5 |
-| 5 | Import Transactions (optional) | CSV upload; preview first 5 rows; "Import" → Step 6; "Skip" → Step 6 |
-| 6 | Completion | Summary card: "X account, Y budget plan, Z categories created"; "Go to Dashboard" → `/` |
+| #   | Title                          | Key fields / actions                                                                                            |
+| --- | ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| 1   | Welcome                        | Headline "Welcome to Local Finance Manager!"; "Get Started" → Step 2                                            |
+| 2   | Create First Account           | Account Name, IBAN (validated), Currency (ISO-4217), Initial Balance; "Next" → Step 3; "Skip" → `/`             |
+| 3   | Create First Budget Plan       | Budget Plan Name, Start Date (today), End Date (1 year from today); "Next" → Step 4                             |
+| 4   | Add Categories from Template   | Category template multi-select grouped by Income/Expense; all selected by default; "Create Categories" → Step 5 |
+| 5   | Import Transactions (optional) | CSV upload; preview first 5 rows; "Import" → Step 6; "Skip" → Step 6                                            |
+| 6   | Completion                     | Summary card: "X account, Y budget plan, Z categories created"; "Go to Dashboard" → `/`                         |
 
 - Progress indicator: `Step X of 6` shown above form.
 - Each step that creates data calls the appropriate service directly (no external API round-trips from wizard).
@@ -243,16 +243,16 @@ On `Onboarding.razor` load, if user already has accounts → `Navigation.Navigat
 
 ## New Files
 
-| File | Purpose |
-|---|---|
-| `Services/IBreadcrumbService.cs` | Interface |
-| `Services/BreadcrumbService.cs` | Implementation (scoped) |
-| `Components/Pages/Onboarding.razor` | 6-step wizard |
-| `Components/Pages/Dashboard/AccountSummaryWidget.razor` | Dashboard widget |
-| `Components/Pages/Dashboard/BudgetStatusWidget.razor` | Dashboard widget |
-| `Components/Pages/Dashboard/RecentTransactionsWidget.razor` | Dashboard widget |
-| `Components/Pages/Dashboard/UncategorizedAlertWidget.razor` | Dashboard widget |
-| `Components/Pages/Dashboard/MLSuggestionWidget.razor` | Dashboard widget |
+| File                                                        | Purpose                 |
+| ----------------------------------------------------------- | ----------------------- |
+| `Services/IBreadcrumbService.cs`                            | Interface               |
+| `Services/BreadcrumbService.cs`                             | Implementation (scoped) |
+| `Components/Pages/Onboarding.razor`                         | 6-step wizard           |
+| `Components/Pages/Dashboard/AccountSummaryWidget.razor`     | Dashboard widget        |
+| `Components/Pages/Dashboard/BudgetStatusWidget.razor`       | Dashboard widget        |
+| `Components/Pages/Dashboard/RecentTransactionsWidget.razor` | Dashboard widget        |
+| `Components/Pages/Dashboard/UncategorizedAlertWidget.razor` | Dashboard widget        |
+| `Components/Pages/Dashboard/MLSuggestionWidget.razor`       | Dashboard widget        |
 
 ---
 
@@ -294,6 +294,7 @@ On `Onboarding.razor` load, if user already has accounts → `Navigation.Navigat
 ## Estimated Effort
 
 **4–5 days** (after refinement)
+
 - Dashboard provides clear overview of user's data
 - Uncategorized transaction warnings are visible
 - Onboarding wizard guides new users through setup

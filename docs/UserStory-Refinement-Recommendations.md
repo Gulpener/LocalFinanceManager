@@ -70,6 +70,7 @@
 **Status:** Refined — ready to implement. Estimated effort: 4–5 days.
 
 **Scope:** Five implementation phases:
+
 1. **Dashboard** — replace `Home.razor` at `/` with a 5-widget responsive grid (AccountSummary, BudgetStatus, RecentTransactions, UncategorizedAlert, MLSuggestion) + quick-actions bar; unauthenticated visitors see a hero with Login/Register CTAs.
 2. **Auth Guards** — add `[Authorize]` to 14 currently unprotected pages; relies on existing `RedirectToLogin.razor` pattern.
 3. **Auto-Generated Breadcrumbs** — new `IBreadcrumbService` (scoped) parses the URL into friendly labels; `MainLayout.razor` subscribes and renders `<Breadcrumb>` automatically; pages call `SetSectionTitle(id, name)` for entity names; migrate 3 pages that currently use manual breadcrumbs.
