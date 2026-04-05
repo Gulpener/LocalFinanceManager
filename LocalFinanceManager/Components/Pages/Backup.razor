@@ -1,0 +1,407 @@
+@page "/backup"
+@using LocalFinanceManager.DTOs
+@using System.Text.Json
+@using System.Net.Http.Json
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject ILogger<Backup> Logger
+
+<PageTitle>Backup &amp; Restore</PageTitle>
+
+<div class="container-lg py-4">
+    <h1 class="mb-4">Backup &amp; Restore</h1>
+
+    <!-- Export Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Export Backup</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Download all your financial data (accounts, budget plans, categories, transactions) as a JSON file.</p>
+            <button class="btn btn-primary" @onclick="ExportBackup" disabled="@_exportLoading" data-testid="export-backup-btn">
+                @if (_exportLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Exporting...</span>
+                }
+                else
+                {
+                    <i class="bi bi-download me-2"></i>
+                    <span>Export Backup</span>
+                }
+            </button>
+            @if (_exportError != null)
+            {
+                <div class="alert alert-danger mt-3" role="alert" data-testid="export-error">@_exportError</div>
+            }
+        </div>
+    </div>
+
+    <!-- Import Section -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Import / Restore</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Restore your data from a previously exported backup file (max 10 MB).</p>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Backup File (.json, max 10 MB)</label>
+                <InputFile OnChange="OnFileSelected" accept=".json" class="form-control" data-testid="backup-file-input" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Conflict Resolution Strategy</label>
+                <select class="form-select" style="max-width:300px" @bind="_strategy" data-testid="strategy-select">
+                    <option value="@ConflictResolutionStrategy.Merge">Merge (newer wins)</option>
+                    <option value="@ConflictResolutionStrategy.Skip">Skip (keep existing)</option>
+                    <option value="@ConflictResolutionStrategy.Overwrite">Overwrite (replace all)</option>
+                </select>
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+                <button class="btn btn-secondary" @onclick="ValidateBackup"
+                        disabled="@(_fileContent == null || _validateLoading)"
+                        data-testid="validate-backup-btn">
+                    @if (_validateLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Validating...</span>
+                    }
+                    else
+                    {
+                        <span>Validate</span>
+                    }
+                </button>
+
+                <button class="btn btn-success" @onclick="ConfirmRestore"
+                        disabled="@(_validationResult == null || !_validationResult.IsValid || _restoreLoading)"
+                        data-testid="restore-backup-btn">
+                    @if (_restoreLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Restoring...</span>
+                    }
+                    else
+                    {
+                        <span>Restore</span>
+                    }
+                </button>
+            </div>
+
+            @if (_validationResult != null)
+            {
+                @if (_validationResult.IsValid)
+                {
+                    <div class="alert alert-success" role="alert" data-testid="validation-success">
+                        <i class="bi bi-check-circle-fill me-2"></i>Backup is valid and ready to restore.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-danger" role="alert" data-testid="validation-errors">
+                        <strong>Validation errors:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in _validationResult.Errors)
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            }
+
+            @if (_restoreResult != null)
+            {
+                <div class="alert @(_restoreResult.Success ? "alert-success" : "alert-danger") mt-3"
+                     role="alert" data-testid="restore-result">
+                    @if (_restoreResult.Success)
+                    {
+                        <strong>Restore completed successfully!</strong>
+                        <table class="table table-sm mt-3 mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Entity</th>
+                                    <th>Imported</th>
+                                    <th>Updated</th>
+                                    <th>Skipped</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Accounts</td>
+                                    <td>@_restoreResult.AccountsImported</td>
+                                    <td>@_restoreResult.AccountsUpdated</td>
+                                    <td>@_restoreResult.AccountsSkipped</td>
+                                </tr>
+                                <tr>
+                                    <td>Budget Plans</td>
+                                    <td>@_restoreResult.BudgetPlansImported</td>
+                                    <td>@_restoreResult.BudgetPlansUpdated</td>
+                                    <td>@_restoreResult.BudgetPlansSkipped</td>
+                                </tr>
+                                <tr>
+                                    <td>Categories</td>
+                                    <td>@_restoreResult.CategoriesImported</td>
+                                    <td>@_restoreResult.CategoriesUpdated</td>
+                                    <td>@_restoreResult.CategoriesSkipped</td>
+                                </tr>
+                                <tr>
+                                    <td>Budget Lines</td>
+                                    <td>@_restoreResult.BudgetLinesImported</td>
+                                    <td>@_restoreResult.BudgetLinesUpdated</td>
+                                    <td>@_restoreResult.BudgetLinesSkipped</td>
+                                </tr>
+                                <tr>
+                                    <td>Transactions</td>
+                                    <td>@_restoreResult.TransactionsImported</td>
+                                    <td>@_restoreResult.TransactionsUpdated</td>
+                                    <td>@_restoreResult.TransactionsSkipped</td>
+                                </tr>
+                                <tr>
+                                    <td>Transaction Splits</td>
+                                    <td>@_restoreResult.TransactionSplitsImported</td>
+                                    <td>@_restoreResult.TransactionSplitsUpdated</td>
+                                    <td>@_restoreResult.TransactionSplitsSkipped</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <strong>Restore failed:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach (var error in _restoreResult.Errors)
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Overwrite Confirmation Modal -->
+@if (_showOverwriteConfirm)
+{
+    <div class="modal show d-block" tabindex="-1" style="background:rgba(0,0,0,.5)" role="dialog"
+         data-testid="overwrite-confirm-modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Overwrite</h5>
+                </div>
+                <div class="modal-body">
+                    <p>This will <strong>permanently delete all your existing data</strong> and replace it with the backup. This action cannot be undone.</p>
+                    <p>Are you sure you want to continue?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelRestore" data-testid="cancel-overwrite-btn">Cancel</button>
+                    <button class="btn btn-danger" @onclick="ExecuteRestore" data-testid="confirm-overwrite-btn">Yes, Overwrite Everything</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _exportLoading;
+    private string? _exportError;
+
+    private string? _fileContent;
+    private ConflictResolutionStrategy _strategy = ConflictResolutionStrategy.Merge;
+    private bool _validateLoading;
+    private bool _restoreLoading;
+    private bool _showOverwriteConfirm;
+
+    private BackupValidationResultDto? _validationResult;
+    private BackupRestoreResultDto? _restoreResult;
+
+    private static readonly JsonSerializerOptions JsonReadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private async Task ExportBackup()
+    {
+        _exportLoading = true;
+        _exportError = null;
+        try
+        {
+            await JS.InvokeVoidAsync("open", "/api/backup/export", "_blank");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Export failed");
+            _exportError = "Export failed. Please try again.";
+        }
+        finally
+        {
+            _exportLoading = false;
+        }
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _validationResult = null;
+        _restoreResult = null;
+        _fileContent = null;
+
+        var file = e.File;
+        if (file.Size > 10 * 1024 * 1024)
+        {
+            _validationResult = new BackupValidationResultDto
+            {
+                IsValid = false,
+                Errors = ["File exceeds the 10 MB limit."]
+            };
+            return;
+        }
+
+        using var reader = new System.IO.StreamReader(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+        _fileContent = await reader.ReadToEndAsync();
+    }
+
+    private async Task ValidateBackup()
+    {
+        if (_fileContent == null) return;
+
+        _validateLoading = true;
+        _validationResult = null;
+        _restoreResult = null;
+
+        try
+        {
+            BackupData? backup;
+            try
+            {
+                backup = JsonSerializer.Deserialize<BackupData>(_fileContent, JsonReadOptions);
+            }
+            catch
+            {
+                _validationResult = new BackupValidationResultDto
+                {
+                    IsValid = false,
+                    Errors = ["File is not valid JSON."]
+                };
+                return;
+            }
+
+            if (backup == null)
+            {
+                _validationResult = new BackupValidationResultDto
+                {
+                    IsValid = false,
+                    Errors = ["File could not be parsed as a backup."]
+                };
+                return;
+            }
+
+            var response = await Http.PostAsJsonAsync("/api/backup/validate", backup);
+            if (response.IsSuccessStatusCode)
+            {
+                _validationResult = await response.Content.ReadFromJsonAsync<BackupValidationResultDto>(JsonReadOptions);
+            }
+            else
+            {
+                _validationResult = new BackupValidationResultDto
+                {
+                    IsValid = false,
+                    Errors = [$"Server validation error: {response.StatusCode}"]
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Validation request failed");
+            _validationResult = new BackupValidationResultDto
+            {
+                IsValid = false,
+                Errors = ["Validation request failed. Please try again."]
+            };
+        }
+        finally
+        {
+            _validateLoading = false;
+        }
+    }
+
+    private void ConfirmRestore()
+    {
+        if (_strategy == ConflictResolutionStrategy.Overwrite)
+        {
+            _showOverwriteConfirm = true;
+        }
+        else
+        {
+            _ = ExecuteRestore();
+        }
+    }
+
+    private void CancelRestore()
+    {
+        _showOverwriteConfirm = false;
+    }
+
+    private async Task ExecuteRestore()
+    {
+        _showOverwriteConfirm = false;
+        if (_fileContent == null) return;
+
+        _restoreLoading = true;
+        _restoreResult = null;
+
+        try
+        {
+            var backup = JsonSerializer.Deserialize<BackupData>(_fileContent, JsonReadOptions);
+            if (backup == null)
+            {
+                _restoreResult = new BackupRestoreResultDto
+                {
+                    Success = false,
+                    Errors = ["Could not parse backup file."]
+                };
+                return;
+            }
+
+            var restoreRequest = new RestoreRequest
+            {
+                Backup = backup,
+                Strategy = _strategy
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/backup/restore", restoreRequest);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _restoreResult = await response.Content.ReadFromJsonAsync<BackupRestoreResultDto>(JsonReadOptions);
+            }
+            else
+            {
+                var problem = await response.Content.ReadFromJsonAsync<Microsoft.AspNetCore.Mvc.ProblemDetails>(JsonReadOptions);
+                _restoreResult = new BackupRestoreResultDto
+                {
+                    Success = false,
+                    Errors = [problem?.Detail ?? $"Restore failed with status {response.StatusCode}"]
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Restore request failed");
+            _restoreResult = new BackupRestoreResultDto
+            {
+                Success = false,
+                Errors = ["Restore request failed. Please try again."]
+            };
+        }
+        finally
+        {
+            _restoreLoading = false;
+        }
+    }
+}
