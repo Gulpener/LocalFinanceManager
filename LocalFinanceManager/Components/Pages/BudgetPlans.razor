@@ -94,7 +94,7 @@ else
                                 <i class="bi bi-archive"></i> Archive
                             </button>
                         }
-                        @if (plan.UserPermission == PermissionLevel.Viewer)
+                        else if (plan.UserPermission == PermissionLevel.Viewer)
                         {
                             <span class="badge bg-secondary">View only</span>
                         }
