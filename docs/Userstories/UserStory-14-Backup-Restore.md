@@ -16,14 +16,14 @@ Enable users to export their complete financial data as a JSON file and restore 
 
 ## Architecture Decisions
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Export HTTP method | `GET /api/backup/export` | Conventional file download |
-| Conflict resolution UI | Global strategy selector | Simpler; no per-conflict modal |
-| Overwrite delete mechanism | `ExecuteDeleteAsync` scoped to `UserId` | Efficient bulk delete without loading entities |
-| App version in backup | Hardcoded constant `"1.0"` in `BackupService` | No version tag exists in csproj/appsettings |
-| Dry-run endpoint | Yes — `POST /api/backup/validate` | Allows UI to show errors before committing |
-| Max upload size | 10 MB | Sufficient for typical user data |
+| Decision                   | Choice                                        | Rationale                                      |
+| -------------------------- | --------------------------------------------- | ---------------------------------------------- |
+| Export HTTP method         | `GET /api/backup/export`                      | Conventional file download                     |
+| Conflict resolution UI     | Global strategy selector                      | Simpler; no per-conflict modal                 |
+| Overwrite delete mechanism | `ExecuteDeleteAsync` scoped to `UserId`       | Efficient bulk delete without loading entities |
+| App version in backup      | Hardcoded constant `"1.0"` in `BackupService` | No version tag exists in csproj/appsettings    |
+| Dry-run endpoint           | Yes — `POST /api/backup/validate`             | Allows UI to show errors before committing     |
+| Max upload size            | 10 MB                                         | Sufficient for typical user data               |
 
 ---
 
@@ -110,11 +110,13 @@ public interface IBackupService
 Constructor DI: `AppDbContext`, `IUserContext`, `ILogger<BackupService>`
 
 **CreateBackupAsync:**
+
 - Query all non-archived entities filtered by `UserId`
 - Map to `Backup*Dto` (do not reuse existing API DTOs)
 - Set `Version = "1.0"`, `ExportedAt = DateTime.UtcNow`
 
 **ValidateBackupAsync:**
+
 1. Reject if `backup.Version != "1.0"`
 2. Check internal referential integrity:
    - Every `BudgetLine.BudgetPlanId` exists in `backup.BudgetPlans`
@@ -127,6 +129,7 @@ Constructor DI: `AppDbContext`, `IUserContext`, `ILogger<BackupService>`
 4. Return `BackupValidationResultDto { IsValid, Errors }`
 
 **RestoreBackupAsync:**
+
 - Always validate first; return early with errors if invalid
 - Wrap everything in `await using var tx = await _db.Database.BeginTransactionAsync()`
 - **Overwrite:** hard-delete all user's entities in reverse FK order using `ExecuteDeleteAsync` scoped to `UserId`:
@@ -172,10 +175,12 @@ public class BackupController : ControllerBase
 Route: `/backup`
 
 **Export section:**
+
 - "Export Backup" button → JS interop file download (`window.open` or fetch blob pattern)
 - Loading spinner while request is in flight
 
 **Import section:**
+
 - `InputFile` component (accept=".json", max 10 MB hint label)
 - `<select>` for `ConflictResolutionStrategy`: Merge (default), Overwrite, Skip
 - "Validate" button → reads file content as string → `POST /api/backup/validate` → show green "Backup is valid" or red error list
@@ -191,34 +196,39 @@ Route: `/backup`
 
 ## Conflict Resolution Reference
 
-| Scenario | Detection | Resolution |
-|---|---|---|
-| Duplicate entity ID (Merge) | `Id` already exists locally | Compare `UpdatedAt`; update if backup is newer, skip if local is same/newer |
-| Duplicate entity ID (Skip) | `Id` already exists locally | Skip — never overwrite |
-| IBAN conflict | Different `Id`, same IBAN on another local account | Reject import — return error message identifying the conflicting account |
-| Category name in same plan | Not possible — Categories unique per `BudgetPlanId` | N/A — import normally |
-| Transaction duplicate | Same `AccountId + Date + Amount + Counterparty` | Not auto-detected; use Merge/Skip by ID as primary key — fuzzy matching deferred |
+| Scenario                    | Detection                                           | Resolution                                                                       |
+| --------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Duplicate entity ID (Merge) | `Id` already exists locally                         | Compare `UpdatedAt`; update if backup is newer, skip if local is same/newer      |
+| Duplicate entity ID (Skip)  | `Id` already exists locally                         | Skip — never overwrite                                                           |
+| IBAN conflict               | Different `Id`, same IBAN on another local account  | Reject import — return error message identifying the conflicting account         |
+| Category name in same plan  | Not possible — Categories unique per `BudgetPlanId` | N/A — import normally                                                            |
+| Transaction duplicate       | Same `AccountId + Date + Amount + Counterparty`     | Not auto-detected; use Merge/Skip by ID as primary key — fuzzy matching deferred |
 
 ---
 
 ## Implementation Tasks
 
 ### Phase 1 — DTOs
+
 - [ ] Create `LocalFinanceManager/DTOs/BackupDTOs.cs` with all types listed above
 
 ### Phase 2 — BackupService
+
 - [ ] Create `LocalFinanceManager/Services/IBackupService.cs`
 - [ ] Create `LocalFinanceManager/Services/BackupService.cs` implementing all three strategies
 - [ ] Register `IBackupService` / `BackupService` as scoped in `ServiceCollectionExtensions.cs`
 
 ### Phase 3 — BackupController
+
 - [ ] Create `LocalFinanceManager/Controllers/BackupController.cs` with export, validate, restore endpoints
 
 ### Phase 4 — Blazor UI
+
 - [ ] Create `LocalFinanceManager/Components/Pages/Backup.razor`
 - [ ] Add nav link in `Components/Layout/NavMenu.razor`
 
 ### Phase 5 — Tests
+
 - [ ] Unit tests `tests/LocalFinanceManager.Tests/BackupServiceTests.cs`:
   - `CreateBackupAsync_ExcludesArchivedEntities`
   - `CreateBackupAsync_OnlyReturnsTenantData`
@@ -258,15 +268,54 @@ Route: `/backup`
       "accountType": "Checking",
       "currency": "EUR",
       "iban": "NL91ABNA0417164300",
-      "startingBalance": 0.00,
+      "startingBalance": 0.0,
       "createdAt": "2025-01-01T00:00:00Z",
       "updatedAt": "2025-06-01T12:00:00Z"
     }
   ],
-  "budgetPlans": [{ "id": "...", "accountId": "...", "year": 2026, "name": "2026 Budget", "createdAt": "...", "updatedAt": "..." }],
-  "categories": [{ "id": "...", "name": "Groceries", "categoryType": "Expense", "budgetPlanId": "...", "createdAt": "...", "updatedAt": "..." }],
-  "budgetLines": [{ "id": "...", "budgetPlanId": "...", "categoryId": "...", "monthlyAmountsJson": "[500,500,500,500,500,500,500,500,500,500,500,500]", "notes": null, "createdAt": "...", "updatedAt": "..." }],
-  "transactions": [{ "id": "...", "amount": -45.50, "date": "2026-03-15", "description": "Albert Heijn", "counterparty": "AH", "accountId": "...", "createdAt": "...", "updatedAt": "..." }],
+  "budgetPlans": [
+    {
+      "id": "...",
+      "accountId": "...",
+      "year": 2026,
+      "name": "2026 Budget",
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ],
+  "categories": [
+    {
+      "id": "...",
+      "name": "Groceries",
+      "categoryType": "Expense",
+      "budgetPlanId": "...",
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ],
+  "budgetLines": [
+    {
+      "id": "...",
+      "budgetPlanId": "...",
+      "categoryId": "...",
+      "monthlyAmountsJson": "[500,500,500,500,500,500,500,500,500,500,500,500]",
+      "notes": null,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ],
+  "transactions": [
+    {
+      "id": "...",
+      "amount": -45.5,
+      "date": "2026-03-15",
+      "description": "Albert Heijn",
+      "counterparty": "AH",
+      "accountId": "...",
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  ],
   "transactionSplits": []
 }
 ```
