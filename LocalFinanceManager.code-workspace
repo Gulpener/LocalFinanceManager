@@ -17,6 +17,10 @@
                 "database": "localfinancemanager",
                 "username": "postgres"
             }
-        ]
+        ],
+        "chat.tools.terminal.autoApprove": {
+            "dotnet build": true,
+            "dotnet test": true
+        }
     }
 }
