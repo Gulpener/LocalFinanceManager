@@ -34,4 +34,5 @@ public class BudgetPlan : BaseEntity
     /// Collection of categories for this plan.
     /// </summary>
     public ICollection<Category> Categories { get; set; } = new List<Category>();
+    public ICollection<BudgetPlanShare> Shares { get; set; } = new List<BudgetPlanShare>();
 }

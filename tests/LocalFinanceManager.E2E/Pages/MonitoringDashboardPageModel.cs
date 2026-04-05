@@ -37,8 +37,14 @@ public class MonitoringDashboardPageModel : PageObjectBase
     {
         await NavigateToAsync("/admin/monitoring");
 
-        // Wait for stats to load (spinner to disappear) — allow extra time under parallel load
-        await Page.WaitForSelectorAsync(".spinner-border", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
+        // Wait for stats spinner (large) to disappear — it is the first .spinner-border in DOM order,
+        // so the generic ".spinner-border" wait resolves here while history may still be loading.
+        await Page.WaitForSelectorAsync(".spinner-border:not(.spinner-border-sm)", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
+
+        // Wait for history spinner (small) to disappear — LoadHistory runs after LoadStats in
+        // OnInitializedAsync, so without this second wait IsUndoButtonEnabledForRowAsync (and
+        // any other history-table assertion) could be called before the rows are rendered.
+        await Page.WaitForSelectorAsync(".spinner-border.spinner-border-sm", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
     }
 
     /// <summary>

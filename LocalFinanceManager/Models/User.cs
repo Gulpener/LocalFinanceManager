@@ -19,4 +19,8 @@ public class User : BaseEntity
     public ICollection<BudgetPlan> BudgetPlans { get; set; } = new List<BudgetPlan>();
     public ICollection<Category> Categories { get; set; } = new List<Category>();
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+
+    // Shares received by this user
+    public ICollection<AccountShare> AccountShares { get; set; } = new List<AccountShare>();
+    public ICollection<BudgetPlanShare> BudgetPlanShares { get; set; } = new List<BudgetPlanShare>();
 }

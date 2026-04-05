@@ -19,7 +19,32 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
     }
 
     /// <summary>
+    /// Returns account IDs accessible to the user via direct AccountShare or BudgetPlanShare.
+    /// Combines both paths with a SQL UNION so the set is computed once and used as an IN-list,
+    /// avoiding correlated subqueries that re-evaluate per transaction row.
+    /// </summary>
+    private IQueryable<Guid> GetSharedAccessibleAccountIdsQuery(Guid userId)
+    {
+        var directShares = _context.AccountShares
+            .Where(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted && !s.IsArchived)
+            .Select(s => s.AccountId);
+
+        var budgetPlanSharedAccounts = _context.Accounts
+            .Where(a => !a.IsArchived
+                && a.CurrentBudgetPlanId != null
+                && _context.BudgetPlanShares.Any(s =>
+                    s.BudgetPlanId == a.CurrentBudgetPlanId
+                    && s.SharedWithUserId == userId
+                    && s.Status == ShareStatus.Accepted
+                    && !s.IsArchived))
+            .Select(a => a.Id);
+
+        return directShares.Union(budgetPlanSharedAccounts);
+    }
+
+    /// <summary>
     /// Override GetActiveAsync to include proper ordering by date and user filtering.
+    /// Includes transactions for accounts shared with the current user (cascade from AccountShare or BudgetPlanShare).
     /// </summary>
     public new async Task<List<Transaction>> GetActiveAsync()
     {
@@ -29,7 +54,9 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             return new List<Transaction>();
         }
 
-        var query = _dbSet.Where(t => !t.IsArchived && t.UserId == userId);
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        var query = _dbSet.Where(t => !t.IsArchived
+            && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId)));
 
         return await query
             .OrderByDescending(t => t.Date)
@@ -45,7 +72,9 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             return new List<Transaction>();
         }
 
-        var query = _dbSet.Where(t => !t.IsArchived && t.AccountId == accountId && t.UserId == userId);
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        var query = _dbSet.Where(t => !t.IsArchived && t.AccountId == accountId
+            && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId)));
 
         return await query
             .OrderByDescending(t => t.Date)
@@ -133,7 +162,9 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             return null;
         }
 
-        var query = _dbSet.Include(t => t.Account).Where(t => t.Id == id && !t.IsArchived && t.UserId == userId);
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        var query = _dbSet.Include(t => t.Account).Where(t => t.Id == id && !t.IsArchived
+            && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId)));
 
         return await query.FirstOrDefaultAsync();
     }
@@ -146,7 +177,9 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             return new List<Transaction>();
         }
 
-        var query = _dbSet.Where(t => !t.IsArchived && t.UserId == userId);
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        var query = _dbSet.Where(t => !t.IsArchived
+            && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId)));
 
         return await query
             .Include(t => t.Account)
@@ -166,7 +199,9 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             return new List<Transaction>();
         }
 
-        var query = _dbSet.Where(t => !t.IsArchived && t.AccountId == accountId && t.UserId == userId);
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        var query = _dbSet.Where(t => !t.IsArchived && t.AccountId == accountId
+            && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId)));
 
         return await query
             .Include(t => t.Account)

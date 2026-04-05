@@ -27,8 +27,10 @@ public class DatabaseConfigurationTests
         var connectionString = config.GetConnectionString("Local");
 
         // Skip gracefully when not available (local dev without env var set).
-        Assume.That(connectionString, Is.Not.Null.And.Not.Empty,
-            "Skipping: ConnectionStrings__Local env var not set (required in CI via postgres service)");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            Assert.Ignore("Skipping: ConnectionStrings__Local env var not set (required in CI via postgres service)");
+        }
 
         Assert.That(connectionString, Does.Not.Contain("Data Source=").IgnoreCase,
             "Connection string must not use SQLite Data Source format");

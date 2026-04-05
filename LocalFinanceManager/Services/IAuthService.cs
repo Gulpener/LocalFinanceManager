@@ -22,6 +22,6 @@ public interface IAuthService
     Task<AuthResponse> SignUpAsync(string email, string password);
     Task<AuthResponse> SignInAsync(string email, string password);
     Task SignOutAsync();
-    Task SendPasswordResetEmailAsync(string email);
-    Task ResendVerificationEmailAsync(string email);
+    Task<AuthResponse> SendPasswordResetEmailAsync(string email);
+    Task<AuthResponse> ResendVerificationEmailAsync(string email);
 }

@@ -136,7 +136,7 @@ public class AuthService : IAuthService
     }
 
     /// <inheritdoc />
-    public async Task SendPasswordResetEmailAsync(string email)
+    public async Task<AuthResponse> SendPasswordResetEmailAsync(string email)
     {
         try
         {
@@ -146,20 +146,21 @@ public class AuthService : IAuthService
             {
                 var error = await ReadErrorAsync(response);
                 _logger.LogWarning("Password reset request failed: {Error}", error);
+                return new AuthResponse { Success = false, ErrorMessage = ToUserFriendlyError(error, response.StatusCode) };
             }
-            else
-            {
-                _logger.LogInformation("Password reset email requested.");
-            }
+
+            _logger.LogInformation("Password reset email requested.");
+            return new AuthResponse { Success = true };
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Password reset request failed.");
+            return new AuthResponse { Success = false, ErrorMessage = "We couldn't complete your request right now. Please try again later." };
         }
     }
 
     /// <inheritdoc />
-    public async Task ResendVerificationEmailAsync(string email)
+    public async Task<AuthResponse> ResendVerificationEmailAsync(string email)
     {
         try
         {
@@ -169,16 +170,51 @@ public class AuthService : IAuthService
             {
                 var error = await ReadErrorAsync(response);
                 _logger.LogWarning("Resend verification failed: {Error}", error);
+                return new AuthResponse { Success = false, ErrorMessage = ToUserFriendlyError(error, response.StatusCode) };
             }
-            else
-            {
-                _logger.LogInformation("Verification email resent.");
-            }
+
+            _logger.LogInformation("Verification email resent.");
+            return new AuthResponse { Success = true };
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Resend verification failed.");
+            return new AuthResponse { Success = false, ErrorMessage = "We couldn't complete your request right now. Please try again later." };
         }
+    }
+
+    private static string ToUserFriendlyError(string rawError, System.Net.HttpStatusCode statusCode)
+    {
+        if (statusCode == System.Net.HttpStatusCode.TooManyRequests ||
+            rawError.Contains("rate limit", StringComparison.OrdinalIgnoreCase) ||
+            rawError.Contains("over_email_send_rate_limit", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Too many emails sent recently. Please wait a few minutes before trying again.";
+        }
+
+        if (statusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            if (rawError.Contains("invalid", StringComparison.OrdinalIgnoreCase) &&
+                rawError.Contains("email", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Please enter a valid email address.";
+            }
+
+            if (rawError.Contains("already", StringComparison.OrdinalIgnoreCase) &&
+                (rawError.Contains("confirmed", StringComparison.OrdinalIgnoreCase) ||
+                 rawError.Contains("verified", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "This email address has already been verified.";
+            }
+        }
+
+        if (statusCode == System.Net.HttpStatusCode.Unauthorized ||
+            statusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            return "We couldn't verify your request. Please try again later.";
+        }
+
+        return "We couldn't complete your request right now. Please try again later.";
     }
 
     private async Task<HttpResponseMessage> PostAsync(string path, string jsonBody)

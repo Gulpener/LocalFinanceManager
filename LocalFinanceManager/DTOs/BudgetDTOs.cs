@@ -35,6 +35,11 @@ public record BudgetPlanDto
     public DateTime UpdatedAt { get; init; }
     public uint XMin { get; init; }
     public List<BudgetLineDto> BudgetLines { get; init; } = new();
+    /// <summary>
+    /// The current user's permission level for this plan. Owner for plans they created;
+    /// the share permission level for plans shared with them.
+    /// </summary>
+    public PermissionLevel UserPermission { get; init; }
 }
 
 /// <summary>

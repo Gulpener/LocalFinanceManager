@@ -36,6 +36,8 @@ public class AppDbContext : DbContext
     public DbSet<TransactionSplit> TransactionSplits => Set<TransactionSplit>();
     public DbSet<TransactionAudit> TransactionAudits => Set<TransactionAudit>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
+    public DbSet<AccountShare> AccountShares => Set<AccountShare>();
+    public DbSet<BudgetPlanShare> BudgetPlanShares => Set<BudgetPlanShare>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -127,6 +129,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<MLModel>().Ignore(e => e.User);
         modelBuilder.Entity<LabeledExample>().Ignore(e => e.User);
         modelBuilder.Entity<AppSettings>().Ignore(e => e.User);
+        // AccountShare and BudgetPlanShare: UserId (BaseEntity) is the sharer's user ID.
+        // The User navigation is suppressed; SharedWithUserId is configured explicitly below.
+        modelBuilder.Entity<AccountShare>().Ignore(e => e.User);
+        modelBuilder.Entity<BudgetPlanShare>().Ignore(e => e.User);
 
         // Configure Account entity
         modelBuilder.Entity<Account>(entity =>
@@ -334,6 +340,46 @@ public class AppDbContext : DbContext
 
             entity.Property(s => s.ExcludedCategoryIdsJson)
                 .HasColumnType("jsonb");
+        });
+
+        // Configure AccountShare entity
+        modelBuilder.Entity<AccountShare>(entity =>
+        {
+            entity.HasOne(s => s.Account)
+                .WithMany(a => a.Shares)
+                .HasForeignKey(s => s.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(s => s.SharedWithUser)
+                .WithMany(u => u.AccountShares)
+                .HasForeignKey(s => s.SharedWithUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(s => s.Permission).HasConversion<int>();
+            entity.Property(s => s.Status).HasConversion<int>();
+
+            entity.HasIndex(s => new { s.AccountId, s.SharedWithUserId });
+            entity.HasIndex(s => s.Status);
+        });
+
+        // Configure BudgetPlanShare entity
+        modelBuilder.Entity<BudgetPlanShare>(entity =>
+        {
+            entity.HasOne(s => s.BudgetPlan)
+                .WithMany(bp => bp.Shares)
+                .HasForeignKey(s => s.BudgetPlanId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(s => s.SharedWithUser)
+                .WithMany(u => u.BudgetPlanShares)
+                .HasForeignKey(s => s.SharedWithUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(s => s.Permission).HasConversion<int>();
+            entity.Property(s => s.Status).HasConversion<int>();
+
+            entity.HasIndex(s => new { s.BudgetPlanId, s.SharedWithUserId });
+            entity.HasIndex(s => s.Status);
         });
 
         // Configure LabeledExample entity

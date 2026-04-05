@@ -33,7 +33,27 @@ public class AccountRepository : Repository<Account>, IAccountRepository
     }
 
     /// <summary>
-    /// Get all active (non-archived) accounts for the current user.
+    /// Get an account by ID that is readable by the current user (owned or accepted shared).
+    /// Use for read-only operations. Write operations use GetByIdAsync (owner-only).
+    /// </summary>
+    public async Task<Account?> GetReadableByIdAsync(Guid id)
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        return await _context.Set<Account>()
+            .Where(a => !a.IsArchived
+                && a.Id == id
+                && (a.UserId == userId
+                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)))
+            .FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Get all active (non-archived) accounts for the current user (owned or accepted shared).
     /// </summary>
     public async Task<List<Account>> GetAllActiveAsync()
     {
@@ -43,7 +63,9 @@ public class AccountRepository : Repository<Account>, IAccountRepository
             return new List<Account>();
         }
 
-        var query = _context.Set<Account>().Where(a => !a.IsArchived && a.UserId == userId);
+        var query = _context.Set<Account>().Where(a => !a.IsArchived
+            && (a.UserId == userId
+                || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query.OrderBy(a => a.Label).ToListAsync();
     }

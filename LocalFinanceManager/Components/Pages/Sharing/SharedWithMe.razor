@@ -1,0 +1,264 @@
+@page "/sharing/shared-with-me"
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@using LocalFinanceManager.Services
+@inject ISharingService SharingService
+@inject IUserContext UserContext
+@inject ILogger<SharedWithMe> Logger
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+<PageTitle>Shared with Me</PageTitle>
+
+<h1>Shared with Me</h1>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <!-- Pending Invitations -->
+    <section class="mb-4">
+        <h2>
+            Pending Invitations
+            @if (pendingCount > 0)
+            {
+                <span class="badge bg-warning text-dark ms-2">@pendingCount</span>
+            }
+        </h2>
+
+        @if (!pendingAccountShares.Any() && !pendingBudgetPlanShares.Any())
+        {
+            <p class="text-muted">No pending invitations.</p>
+        }
+
+        @if (pendingAccountShares.Any())
+        {
+            <h5>Accounts</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th>Permission</th>
+                        <th>Invited</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var share in pendingAccountShares)
+                    {
+                        <tr>
+                            <td>@share.AccountLabel</td>
+                            <td>@share.Permission</td>
+                            <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
+                            <td>
+                                <button class="btn btn-sm btn-success me-1" @onclick="() => AcceptAccountShare(share.Id)">
+                                    <i class="bi bi-check-circle"></i> Accept
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => DeclineAccountShare(share.Id)">
+                                    <i class="bi bi-x-circle"></i> Decline
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (pendingBudgetPlanShares.Any())
+        {
+            <h5>Budget Plans</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Budget Plan</th>
+                        <th>Permission</th>
+                        <th>Invited</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var share in pendingBudgetPlanShares)
+                    {
+                        <tr>
+                            <td>@share.BudgetPlanName</td>
+                            <td>@share.Permission</td>
+                            <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
+                            <td>
+                                <button class="btn btn-sm btn-success me-1" @onclick="() => AcceptBudgetPlanShare(share.Id)">
+                                    <i class="bi bi-check-circle"></i> Accept
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => DeclineBudgetPlanShare(share.Id)">
+                                    <i class="bi bi-x-circle"></i> Decline
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+
+    <!-- Accepted Shares -->
+    <section>
+        <h2>Resources Shared with Me</h2>
+
+        @if (!acceptedAccountShares.Any() && !acceptedBudgetPlanShares.Any())
+        {
+            <p class="text-muted">No resources have been shared with you yet.</p>
+        }
+
+        @if (acceptedAccountShares.Any())
+        {
+            <h5>Accounts</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Account</th>
+                        <th>Permission</th>
+                        <th>Since</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var share in acceptedAccountShares)
+                    {
+                        <tr>
+                            <td>@share.AccountLabel</td>
+                            <td><span class="badge bg-secondary">@share.Permission</span></td>
+                            <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (acceptedBudgetPlanShares.Any())
+        {
+            <h5>Budget Plans</h5>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Budget Plan</th>
+                        <th>Permission</th>
+                        <th>Since</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var share in acceptedBudgetPlanShares)
+                    {
+                        <tr>
+                            <td>@share.BudgetPlanName</td>
+                            <td><span class="badge bg-secondary">@share.Permission</span></td>
+                            <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    private List<AccountShareResponse> pendingAccountShares = new();
+    private List<BudgetPlanShareResponse> pendingBudgetPlanShares = new();
+    private List<AccountShareResponse> acceptedAccountShares = new();
+    private List<BudgetPlanShareResponse> acceptedBudgetPlanShares = new();
+
+    private int pendingCount => pendingAccountShares.Count + pendingBudgetPlanShares.Count;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            var userId = UserContext.GetCurrentUserId();
+            var (pendingAccounts, pendingBudgetPlans) = await SharingService.GetPendingSharesForUserAsync(userId);
+            pendingAccountShares = pendingAccounts.Select(AccountShareResponse.FromEntity).ToList();
+            pendingBudgetPlanShares = pendingBudgetPlans.Select(BudgetPlanShareResponse.FromEntity).ToList();
+
+            var (acceptedAccounts, acceptedBudgetPlans) = await SharingService.GetAcceptedSharesForUserAsync(userId);
+            acceptedAccountShares = acceptedAccounts.Select(AccountShareResponse.FromEntity).ToList();
+            acceptedBudgetPlanShares = acceptedBudgetPlans.Select(BudgetPlanShareResponse.FromEntity).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load shared resources");
+            errorMessage = "Failed to load shared resources.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task AcceptAccountShare(Guid shareId)
+    {
+        try
+        {
+            await SharingService.AcceptAccountShareAsync(shareId, UserContext.GetCurrentUserId());
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to accept account share {ShareId}", shareId);
+            errorMessage = "Failed to accept share.";
+        }
+    }
+
+    private async Task DeclineAccountShare(Guid shareId)
+    {
+        try
+        {
+            await SharingService.DeclineAccountShareAsync(shareId, UserContext.GetCurrentUserId());
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to decline account share {ShareId}", shareId);
+            errorMessage = "Failed to decline share.";
+        }
+    }
+
+    private async Task AcceptBudgetPlanShare(Guid shareId)
+    {
+        try
+        {
+            await SharingService.AcceptBudgetPlanShareAsync(shareId, UserContext.GetCurrentUserId());
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to accept budget plan share {ShareId}", shareId);
+            errorMessage = "Failed to accept share.";
+        }
+    }
+
+    private async Task DeclineBudgetPlanShare(Guid shareId)
+    {
+        try
+        {
+            await SharingService.DeclineBudgetPlanShareAsync(shareId, UserContext.GetCurrentUserId());
+            await LoadDataAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to decline budget plan share {ShareId}", shareId);
+            errorMessage = "Failed to decline share.";
+        }
+    }
+}

@@ -35,7 +35,7 @@ public class AccountService
     public async Task<AccountResponse?> GetByIdAsync(Guid id)
     {
         _logger.LogInformation("Retrieving account with ID: {AccountId}", id);
-        var account = await _accountRepository.GetByIdAsync(id);
+        var account = await _accountRepository.GetReadableByIdAsync(id);
         return account != null ? AccountResponse.FromEntity(account) : null;
     }
 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
@@ -136,6 +137,11 @@ public class BudgetPlansController : ControllerBase
             }
             return Ok(plan);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to update budget plan {Id}", id);
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict updating budget plan {Id}", id);
@@ -149,12 +155,20 @@ public class BudgetPlansController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Archive(Guid id)
     {
-        var success = await _budgetPlanService.ArchiveAsync(id);
-        if (!success)
+        try
         {
-            return NotFound(new { title = "Budget plan not found", status = 404 });
+            var success = await _budgetPlanService.ArchiveAsync(id);
+            if (!success)
+            {
+                return NotFound(new { title = "Budget plan not found", status = 404 });
+            }
+            return NoContent();
         }
-        return NoContent();
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to archive budget plan {Id}", id);
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
     }
 
     /// <summary>
@@ -178,6 +192,11 @@ public class BudgetPlansController : ControllerBase
         {
             var line = await _budgetPlanService.CreateLineAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = line.BudgetPlanId }, line);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to create budget line for plan {PlanId}", request.BudgetPlanId);
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
@@ -212,6 +231,11 @@ public class BudgetPlansController : ControllerBase
             }
             return Ok(line);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to update budget line {Id}", id);
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict updating budget line {Id}", id);
@@ -230,11 +254,19 @@ public class BudgetPlansController : ControllerBase
     [HttpDelete("lines/{id}")]
     public async Task<IActionResult> ArchiveLine(Guid id)
     {
-        var success = await _budgetPlanService.ArchiveLineAsync(id);
-        if (!success)
+        try
         {
-            return NotFound(new { title = "Budget line not found", status = 404 });
+            var success = await _budgetPlanService.ArchiveLineAsync(id);
+            if (!success)
+            {
+                return NotFound(new { title = "Budget line not found", status = 404 });
+            }
+            return NoContent();
         }
-        return NoContent();
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to archive budget line {Id}", id);
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
+        }
     }
 }

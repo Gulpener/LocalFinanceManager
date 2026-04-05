@@ -25,11 +25,14 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
             return new List<BudgetPlan>();
         }
 
-        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.UserId == userId);
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId
+            && (bp.UserId == userId
+                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
+            .Include(bp => bp.Shares)
             .OrderByDescending(bp => bp.Year)
             .ToListAsync();
     }
@@ -42,11 +45,14 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
             return null;
         }
 
-        var query = _dbSet.Where(bp => !bp.IsArchived && bp.Id == id && bp.UserId == userId);
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.Id == id
+            && (bp.UserId == userId
+                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
+            .Include(bp => bp.Shares)
             .FirstOrDefaultAsync();
     }
 
@@ -58,7 +64,9 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
             return null;
         }
 
-        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.Year == year && bp.UserId == userId);
+        var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.Year == year
+            && (bp.UserId == userId
+                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))

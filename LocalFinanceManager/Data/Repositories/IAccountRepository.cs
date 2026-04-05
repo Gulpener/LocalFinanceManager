@@ -13,6 +13,12 @@ public interface IAccountRepository : IRepository<Account>
     Task<List<Account>> GetAllActiveAsync();
 
     /// <summary>
+    /// Get an account by ID that is readable by the current user (owned or accepted shared).
+    /// Use for read-only operations. For write operations, use GetByIdAsync (owner-only).
+    /// </summary>
+    Task<Account?> GetReadableByIdAsync(Guid id);
+
+    /// <summary>
     /// Check if an account with the given label already exists.
     /// </summary>
     Task<bool> LabelExistsAsync(string label, Guid? excludeId = null);

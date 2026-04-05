@@ -1,9 +1,12 @@
 @page "/accounts"
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@using LocalFinanceManager.Components.Pages.Sharing
 @inject AccountService AccountService
 @inject NavigationManager Navigation
 @inject ILogger<Accounts> Logger
+@inject IUserContext UserContext
 @rendermode InteractiveServer
 
 <PageTitle>Accounts</PageTitle>
@@ -54,18 +57,28 @@ else
                     <td>@FormatIban(account.IBAN)</td>
                     <td class="text-end">@account.CurrentBalance.ToString("N2")</td>
                     <td>
-                        <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmArchive(account)">
-                            <i class="bi bi-archive"></i> Archive
-                        </button>
+                        @if (account.OwnerId == currentUserId)
+                        {
+                            <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(account)">
+                                <i class="bi bi-share"></i> Share
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmArchive(account)">
+                                <i class="bi bi-archive"></i> Archive
+                            </button>
+                        }
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 }
+
+<!-- Share Modal -->
+<ShareModal IsVisible="showShareModal" ResourceId="shareModalAccountId" ResourceName="shareModalAccountLabel"
+            Type="ShareModal.ResourceType.Account" OnClose="CloseShareModal" OnShareCreated="CloseShareModal" />
 
 <!-- Archive Confirmation Modal -->
 @if (accountToArchive != null)
@@ -94,9 +107,15 @@ else
     private List<AccountResponse>? accounts;
     private AccountResponse? accountToArchive;
     private string? errorMessage;
+    private Guid currentUserId;
+
+    private bool showShareModal;
+    private Guid shareModalAccountId;
+    private string shareModalAccountLabel = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        currentUserId = UserContext.GetCurrentUserId();
         await LoadAccounts();
     }
 
@@ -117,6 +136,18 @@ else
     private void ConfirmArchive(AccountResponse account)
     {
         accountToArchive = account;
+    }
+
+    private void OpenShareModal(AccountResponse account)
+    {
+        shareModalAccountId = account.Id;
+        shareModalAccountLabel = account.Label;
+        showShareModal = true;
+    }
+
+    private void CloseShareModal()
+    {
+        showShareModal = false;
     }
 
     private void CancelArchive()

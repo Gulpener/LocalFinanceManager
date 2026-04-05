@@ -1,8 +1,10 @@
 using Bunit;
 using LocalFinanceManager.Components.Layout;
+using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using System.Security.Claims;
 
 namespace LocalFinanceManager.Tests.Components;
@@ -54,6 +56,15 @@ public class NavMenuTests
         context.Services.AddAuthorizationCore();
         context.Services.AddSingleton<IAuthorizationService>(new TestAuthorizationService(isAuthenticated));
         context.Services.AddScoped<AuthenticationStateProvider>(_ => new TestAuthenticationStateProvider(isAuthenticated));
+
+        var userContextMock = new Mock<IUserContext>();
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(Guid.Empty);
+        userContextMock.Setup(x => x.IsAuthenticated()).Returns(isAuthenticated);
+        context.Services.AddSingleton(userContextMock.Object);
+
+        var sharingServiceMock = new Mock<ISharingService>();
+        sharingServiceMock.Setup(x => x.GetPendingShareCountAsync(It.IsAny<Guid>())).ReturnsAsync(0);
+        context.Services.AddSingleton(sharingServiceMock.Object);
 
         return context.Render<CascadingAuthenticationState>(parameters => parameters
             .AddChildContent<NavMenu>());

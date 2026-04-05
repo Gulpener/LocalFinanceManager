@@ -45,6 +45,8 @@ public class Account : BaseEntity
     /// Computed current balance (for MVP-1, equals StartingBalance; will include transactions in later MVPs).
     /// </summary>
     public decimal CurrentBalance => StartingBalance; // Will be updated in MVP-3
+
+    public ICollection<AccountShare> Shares { get; set; } = new List<AccountShare>();
 }
 
 /// <summary>

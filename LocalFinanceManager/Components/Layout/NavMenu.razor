@@ -35,6 +35,17 @@
                 </div>
 
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="sharing/shared-with-me">
+                        <span class="bi bi-share-fill" aria-hidden="true"></span> Shared with Me
+                        @if (pendingShareCount > 0)
+                        {
+                            <span class="badge bg-warning text-dark ms-1"
+                                  data-testid="nav-pending-share-badge">@pendingShareCount</span>
+                        }
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/settings">
                         <span class="bi bi-gear-fill" aria-hidden="true"></span> Admin Settings
                     </NavLink>
@@ -55,3 +66,63 @@
         </AuthorizeView>
     </nav>
 </div>
+
+@using LocalFinanceManager.Services
+@inject ISharingService SharingService
+@inject IUserContext UserContext
+@inject ILogger<NavMenu> Logger
+@implements IDisposable
+@code {
+    private int pendingShareCount;
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RefreshPendingCountAsync();
+            _cts = new CancellationTokenSource();
+            _ = RunPeriodicRefreshAsync(_cts.Token);
+        }
+    }
+
+    private async Task RunPeriodicRefreshAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                await RefreshPendingCountAsync();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on dispose
+        }
+    }
+
+    private async Task RefreshPendingCountAsync()
+    {
+        try
+        {
+            var userId = UserContext.GetCurrentUserId();
+            if (userId != Guid.Empty)
+            {
+                pendingShareCount = await SharingService.GetPendingShareCountAsync(userId);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Swallow errors in nav menu to avoid disrupting navigation
+            Logger.LogWarning(ex, "Failed to refresh pending share count.");
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

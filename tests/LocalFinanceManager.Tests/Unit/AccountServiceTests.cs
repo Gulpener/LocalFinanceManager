@@ -58,7 +58,7 @@ public class AccountServiceTests
             Currency = "EUR",
             StartingBalance = 1000
         };
-        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync(account);
+        _mockRepository.Setup(r => r.GetReadableByIdAsync(accountId)).ReturnsAsync(account);
 
         // Act
         var result = await _service.GetByIdAsync(accountId);
@@ -74,7 +74,7 @@ public class AccountServiceTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync((Account?)null);
+        _mockRepository.Setup(r => r.GetReadableByIdAsync(accountId)).ReturnsAsync((Account?)null);
 
         // Act
         var result = await _service.GetByIdAsync(accountId);

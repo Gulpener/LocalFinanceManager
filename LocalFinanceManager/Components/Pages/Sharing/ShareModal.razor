@@ -1,0 +1,119 @@
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@using LocalFinanceManager.Services
+@inject ISharingService SharingService
+@inject IUserContext UserContext
+@inject ILogger<ShareModal> Logger
+
+@if (IsVisible)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Share "@ResourceName"</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">@errorMessage</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(successMessage))
+                    {
+                        <div class="alert alert-success" role="alert">@successMessage</div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Recipient email</label>
+                        <input type="email" class="form-control" @bind="email" placeholder="user@example.com" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Permission</label>
+                        <select class="form-select" @bind="permission">
+                            <option value="@PermissionLevel.Viewer">Viewer (read-only)</option>
+                            <option value="@PermissionLevel.Editor">Editor (read and write)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SubmitAsync" disabled="@isSending">
+                        @if (isSending)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnShareCreated { get; set; }
+    [Parameter] public string ResourceName { get; set; } = string.Empty;
+    [Parameter] public Guid ResourceId { get; set; }
+    [Parameter] public ResourceType Type { get; set; }
+
+    public enum ResourceType { Account, BudgetPlan }
+
+    private string email = string.Empty;
+    private PermissionLevel permission = PermissionLevel.Viewer;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isSending;
+
+    private async Task SubmitAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            errorMessage = "Email address is required.";
+            return;
+        }
+
+        isSending = true;
+        try
+        {
+            var userId = UserContext.GetCurrentUserId();
+            if (Type == ResourceType.Account)
+                await SharingService.ShareAccountAsync(ResourceId, email.Trim(), permission, userId);
+            else
+                await SharingService.ShareBudgetPlanAsync(ResourceId, email.Trim(), permission, userId);
+
+            successMessage = $"Invitation sent to {email}.";
+            email = string.Empty;
+            await OnShareCreated.InvokeAsync();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to share {Type} {ResourceId}", Type, ResourceId);
+            errorMessage = "An unexpected error occurred. Please try again.";
+        }
+        finally
+        {
+            isSending = false;
+        }
+    }
+
+    private async Task Close()
+    {
+        errorMessage = null;
+        successMessage = null;
+        email = string.Empty;
+        await OnClose.InvokeAsync();
+    }
+}

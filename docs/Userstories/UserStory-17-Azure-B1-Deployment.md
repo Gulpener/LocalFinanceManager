@@ -44,13 +44,13 @@ door de €50/maand recurring Azure credits.
 
 ### Phase 1: Azure Setup — **[User]**
 
-- [ ] **[User]** Open [portal.azure.com](https://portal.azure.com) en verifieer dat credits beschikbaar zijn (Subscriptions → Cost Management)
-- [ ] **[User]** Maak een **Resource Group** aan (bijv. `rg-localfinancemanager`)
-- [ ] **[User]** Maak een **App Service Plan** aan:
+- [x] **[User]** Open [portal.azure.com](https://portal.azure.com) en verifieer dat credits beschikbaar zijn (Subscriptions → Cost Management)
+- [x] **[User]** Maak een **Resource Group** aan (bijv. `rg-localfinancemanager`)
+- [x] **[User]** Maak een **App Service Plan** aan:
   - Tier: **B1** (Basic)
   - OS: **Linux**
   - Region: West Europe (of dichtstbijzijnde)
-- [ ] **[User]** Maak een **App Service** aan:
+- [x] **[User]** Maak een **App Service** aan:
   - Runtime stack: **.NET 10**
   - Plan: het B1-plan hierboven
   - Naam: bijv. `localfinancemanager` (bepaalt de `azurewebsites.net` URL)
