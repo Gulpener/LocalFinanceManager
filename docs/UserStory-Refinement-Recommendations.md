@@ -7,8 +7,8 @@
 
 ## Status Overview
 
-- ✅ **23 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **3 stories ready** for implementation (US-14, US-16, US-18)
+- ✅ **24 stories completed & archived** — see `docs/Userstories/Archive/`
+- 🟡 **2 stories ready** for implementation (US-16, US-18)
 - 🔴 **1 story needs refinement** (US-15)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
@@ -45,22 +45,11 @@
 
 ---
 
-### � UserStory-14: Backup & Restore
+### ✅ UserStory-14: Backup & Restore — COMPLETED (April 5, 2026)
 
-**File:** [docs/Userstories/UserStory-14-Backup-Restore.md](docs/Userstories/UserStory-14-Backup-Restore.md)
+**File:** [docs/Userstories/Archive/UserStory-14-Backup-Restore.md](docs/Userstories/Archive/UserStory-14-Backup-Restore.md)
 
-**Status:** Refined — ready for implementation. Estimated effort: 3-4 days.
-
-**Key decisions made (April 5, 2026):**
-
-- Entities in scope: Accounts, BudgetPlans, Categories, BudgetLines, Transactions, TransactionSplits
-- Export: `GET /api/backup/export` → `FileContentResult`
-- Conflict UI: Global strategy selector (Merge / Overwrite / Skip) — no per-conflict modal
-- Validate endpoint: `POST /api/backup/validate` — dry-run before committing
-- Encryption: Deferred to a future story
-- Overwrite uses `ExecuteDeleteAsync` in reverse FK order; all restore strategies wrapped in a DB transaction
-- IBAN conflicts always rejected (database uniqueness constraint)
-- App version hardcoded as `"1.0"` constant in `BackupService`
+**Status:** Implemented & archived.
 
 ---
 
@@ -256,9 +245,8 @@ See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-15
 ### Active / Next Up
 
 1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
-2. 🟡 **UserStory-14** (Backup & Restore) — Refined, ready to implement (3-4 days)
-3. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
-4. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
+2. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
+3. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
 
 ---
 
@@ -351,7 +339,7 @@ Use this structure for all new stories:
 ## Next Actions
 
 1. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
-2. **Next:** Implement UserStory-14 (Backup & Restore) — fully refined, ready to implement (3-4 days)
+2. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
 3. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard (refinement ~2-3h; impl 4-5 days)
 
 **Total Refinement Effort Remaining:** ~2-3 hours (US-15 only)
