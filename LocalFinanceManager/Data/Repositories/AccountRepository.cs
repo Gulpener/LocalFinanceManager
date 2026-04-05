@@ -28,9 +28,9 @@ public class AccountRepository : Repository<Account>, IAccountRepository
         }
 
         return await _context.Set<Account>()
-            .Where(a => !a.IsArchived && a.Id == id
-                && (a.UserId == userId
-                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)))
+            .Where(a => !a.IsArchived
+                && a.Id == id
+                && a.UserId == userId)
             .FirstOrDefaultAsync();
     }
 

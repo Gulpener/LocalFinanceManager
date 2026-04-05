@@ -206,14 +206,14 @@ else
         }
     }
 
-    private async Task<List<AccountShareResponse>> GetAcceptedAccountSharesAsync(Guid userId)
+    private Task<List<AccountShareResponse>> GetAcceptedAccountSharesAsync(Guid userId)
     {
-        return acceptedAccountShares;
+        return Task.FromResult(acceptedAccountShares);
     }
 
-    private async Task<List<BudgetPlanShareResponse>> GetAcceptedBudgetPlanSharesAsync(Guid userId)
+    private Task<List<BudgetPlanShareResponse>> GetAcceptedBudgetPlanSharesAsync(Guid userId)
     {
-        return acceptedBudgetPlanShares;
+        return Task.FromResult(acceptedBudgetPlanShares);
     }
 
     private async Task AcceptAccountShare(Guid shareId)

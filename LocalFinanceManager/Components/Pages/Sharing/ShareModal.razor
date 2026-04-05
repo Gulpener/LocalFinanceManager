@@ -12,7 +12,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Share "@ResourceName"</h5>
-                    <button type="button" class="btn-close" @onclick="Close"></button>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
                 </div>
                 <div class="modal-body">
                     @if (!string.IsNullOrWhiteSpace(errorMessage))
