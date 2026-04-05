@@ -31,7 +31,7 @@ public class SharingService : ISharingService
             throw new InvalidOperationException("You cannot share an account with yourself.");
 
         var existing = await _context.AccountShares
-            .Where(s => s.AccountId == accountId && s.SharedWithUserId == targetUser.Id
+            .Where(s => !s.IsArchived && s.AccountId == accountId && s.SharedWithUserId == targetUser.Id
                         && (s.Status == ShareStatus.Pending || s.Status == ShareStatus.Accepted))
             .FirstOrDefaultAsync();
         if (existing != null)
@@ -69,7 +69,7 @@ public class SharingService : ISharingService
             throw new InvalidOperationException("You cannot share a budget plan with yourself.");
 
         var existing = await _context.BudgetPlanShares
-            .Where(s => s.BudgetPlanId == planId && s.SharedWithUserId == targetUser.Id
+            .Where(s => !s.IsArchived && s.BudgetPlanId == planId && s.SharedWithUserId == targetUser.Id
                         && (s.Status == ShareStatus.Pending || s.Status == ShareStatus.Accepted))
             .FirstOrDefaultAsync();
         if (existing != null)
@@ -134,7 +134,7 @@ public class SharingService : ISharingService
     public async Task RevokeAccountShareAsync(Guid shareId, Guid currentUserId)
     {
         var share = await _context.AccountShares
-            .Where(s => s.Id == shareId && s.UserId == currentUserId)
+            .Where(s => !s.IsArchived && s.Id == shareId && s.UserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the owner.");
         _context.AccountShares.Remove(share);
@@ -145,7 +145,7 @@ public class SharingService : ISharingService
     public async Task RevokeBudgetPlanShareAsync(Guid shareId, Guid currentUserId)
     {
         var share = await _context.BudgetPlanShares
-            .Where(s => s.Id == shareId && s.UserId == currentUserId)
+            .Where(s => !s.IsArchived && s.Id == shareId && s.UserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the owner.");
         _context.BudgetPlanShares.Remove(share);
@@ -162,7 +162,7 @@ public class SharingService : ISharingService
 
         return await _context.AccountShares
             .Include(s => s.SharedWithUser)
-            .Where(s => s.AccountId == accountId)
+            .Where(s => !s.IsArchived && s.AccountId == accountId)
             .ToListAsync();
     }
 
@@ -175,7 +175,7 @@ public class SharingService : ISharingService
 
         return await _context.BudgetPlanShares
             .Include(s => s.SharedWithUser)
-            .Where(s => s.BudgetPlanId == planId)
+            .Where(s => !s.IsArchived && s.BudgetPlanId == planId)
             .ToListAsync();
     }
 
@@ -183,12 +183,12 @@ public class SharingService : ISharingService
     {
         var accountShares = await _context.AccountShares
             .Include(s => s.Account)
-            .Where(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Pending)
+            .Where(s => !s.IsArchived && !s.Account.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Pending)
             .ToListAsync();
 
         var budgetPlanShares = await _context.BudgetPlanShares
             .Include(s => s.BudgetPlan)
-            .Where(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Pending)
+            .Where(s => !s.IsArchived && !s.BudgetPlan.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Pending)
             .ToListAsync();
 
         return (accountShares, budgetPlanShares);
@@ -198,12 +198,12 @@ public class SharingService : ISharingService
     {
         var accountShares = await _context.AccountShares
             .Include(s => s.Account)
-            .Where(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
+            .Where(s => !s.IsArchived && !s.Account.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
             .ToListAsync();
 
         var budgetPlanShares = await _context.BudgetPlanShares
             .Include(s => s.BudgetPlan)
-            .Where(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
+            .Where(s => !s.IsArchived && !s.BudgetPlan.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
             .ToListAsync();
 
         return (accountShares, budgetPlanShares);
@@ -212,9 +212,9 @@ public class SharingService : ISharingService
     public async Task<int> GetPendingShareCountAsync(Guid userId)
     {
         var accountCount = await _context.AccountShares
-            .CountAsync(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Pending);
+            .CountAsync(s => !s.IsArchived && !s.Account.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Pending);
         var budgetPlanCount = await _context.BudgetPlanShares
-            .CountAsync(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Pending);
+            .CountAsync(s => !s.IsArchived && !s.BudgetPlan.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Pending);
         return accountCount + budgetPlanCount;
     }
 
@@ -225,7 +225,7 @@ public class SharingService : ISharingService
         if (isOwner) return PermissionLevel.Owner;
 
         var share = await _context.AccountShares
-            .Where(s => s.AccountId == accountId && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
+            .Where(s => !s.IsArchived && s.AccountId == accountId && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
             .FirstOrDefaultAsync();
         return share?.Permission;
     }
@@ -237,7 +237,7 @@ public class SharingService : ISharingService
         if (isOwner) return PermissionLevel.Owner;
 
         var share = await _context.BudgetPlanShares
-            .Where(s => s.BudgetPlanId == planId && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
+            .Where(s => !s.IsArchived && s.BudgetPlanId == planId && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
             .FirstOrDefaultAsync();
         return share?.Permission;
     }
@@ -282,7 +282,7 @@ public class SharingService : ISharingService
     private async Task<AccountShare> GetAccountShareForRecipientAsync(Guid shareId, Guid currentUserId)
     {
         return await _context.AccountShares
-            .Where(s => s.Id == shareId && s.SharedWithUserId == currentUserId)
+            .Where(s => !s.IsArchived && s.Id == shareId && s.SharedWithUserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the recipient.");
     }
@@ -290,7 +290,7 @@ public class SharingService : ISharingService
     private async Task<BudgetPlanShare> GetBudgetPlanShareForRecipientAsync(Guid shareId, Guid currentUserId)
     {
         return await _context.BudgetPlanShares
-            .Where(s => s.Id == shareId && s.SharedWithUserId == currentUserId)
+            .Where(s => !s.IsArchived && s.Id == shareId && s.SharedWithUserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the recipient.");
     }
