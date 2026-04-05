@@ -1,6 +1,6 @@
 # User Story Refinement Recommendations
 
-**Date:** April 4, 2026  
+**Date:** April 5, 2026  
 **Purpose:** Identify which user stories need refinement before implementation
 
 ---
@@ -8,9 +8,8 @@
 ## Status Overview
 
 - ✅ **23 stories completed & archived** — see `docs/Userstories/Archive/`
-- � **1 story ready** for immediate implementation (US-18)
-- 🟡 **1 story new** and awaiting planning (US-16)
-- 🔴 **2 stories need refinement** (US-14, US-15)
+- 🟡 **3 stories ready** for implementation (US-14, US-16, US-18)
+- 🔴 **1 story needs refinement** (US-15)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
 
@@ -46,183 +45,22 @@
 
 ---
 
-### 🔴 UserStory-14: Backup & Restore
+### � UserStory-14: Backup & Restore
 
 **File:** [docs/Userstories/UserStory-14-Backup-Restore.md](docs/Userstories/UserStory-14-Backup-Restore.md)
 
-**Issues:**
+**Status:** Refined — ready for implementation. Estimated effort: 3-4 days.
 
-1. Conflict resolution strategy needs concrete examples
-2. Missing implementation tasks for Blazor UI
-3. No integration test scenarios defined
-4. Backup format example provided but not validated against current schema
-5. **Missing security considerations** - Should backups be encrypted?
-6. **No versioning strategy** - How to handle schema changes between backup and restore?
+**Key decisions made (April 5, 2026):**
 
-**Required Refinements:**
-
-Add the following sections:
-
-#### Conflict Resolution Strategy
-
-**Scenario 1: Duplicate Account ID**
-
-- **Detection:** Backup contains `AccountId=X` that exists locally
-- **Resolution Options:**
-  1. **Skip:** Keep local account, ignore backup account
-  2. **Overwrite:** Replace local account with backup account (loses local changes)
-  3. **Merge:** Compare `UpdatedAt` timestamps, keep newer version
-  4. **Rename:** Import backup account with new GUID, append " (Imported)" to name
-
-**Default Strategy:** **Merge by timestamp** (configurable in `appsettings.json`)
-
-**Scenario 2: IBAN Conflict**
-
-- **Detection:** Backup contains Account with IBAN that exists on different account locally
-- **Resolution:** ❌ **Reject import** → IBAN must be unique (database constraint)
-- **User Action Required:** Manually resolve by editing backup JSON or deleting local account
-
-**Scenario 3: Category Name Conflict**
-
-- **Detection:** Backup contains Category "Groceries" in BudgetPlan A, but local has Category "Groceries" in BudgetPlan B
-- **Resolution:** ✅ **Allow both** → Category names are unique per budget plan, not globally
-
-**Scenario 4: Transaction Duplicate Detection**
-
-- **Detection:** Transaction with same `AccountId`, `Date`, `Amount`, `Counterparty` exists
-- **Resolution:** **Skip duplicate** → Assume it's the same transaction
-- **Threshold:** Match if all 4 fields identical (configurable fuzzy matching disabled by default)
-
-#### Implementation Tasks
-
-**1. Backup Export:**
-
-- [ ] Add `POST /api/backup/export` endpoint returning JSON file
-- [ ] Export format:
-  ```json
-  {
-    "exportedAt": "2026-01-16T12:00:00Z",
-    "version": "1.0",
-    "accounts": [...],
-    "budgetPlans": [...],
-    "categories": [...],
-    "transactions": [...],
-    "budgetLines": [...]
-  }
-  ```
-- [ ] Include all user-owned entities (filter by `UserId`)
-- [ ] Exclude soft-deleted entities (`IsArchived = true`)
-
-**2. Backup Import:**
-
-- [ ] Add `POST /api/backup/import` endpoint accepting JSON file
-- [ ] Validate backup format version compatibility
-- [ ] Implement conflict detection for each entity type
-- [ ] Apply conflict resolution strategy (merge by timestamp)
-- [ ] Return `ImportResult` DTO with counts (imported, skipped, errors)
-
-**3. Blazor UI:**
-
-- [ ] Create `Backup.razor` page in `Components/Pages/`
-- [ ] Add "Export Backup" button → Downloads JSON file
-- [ ] Add "Import Backup" file upload component
-- [ ] Display import preview modal:
-  - Show entities to be imported
-  - Highlight conflicts with resolution action
-  - Allow user to select resolution per conflict
-- [ ] Show import progress bar during processing
-- [ ] Display import result summary (X accounts imported, Y skipped, Z errors)
-
-**4. Tests:**
-
-- [ ] Unit tests for conflict detection logic
-- [ ] Integration tests for export endpoint (verify JSON structure)
-- [ ] Integration tests for import endpoint:
-  - Import into empty database → All entities imported
-  - Import with duplicate IDs → Merge by timestamp
-  - Import with IBAN conflict → Reject with error message
-- [ ] E2E test: Export → Clear database → Import → Verify data restored
-
-#### Testing Scenarios
-
-1. **Full Backup & Restore:**
-   - User has 5 accounts, 2 budget plans, 100 transactions
-   - Export backup → JSON file size ~50KB
-   - Clear local database
-   - Import backup → 100% data restored
-
-2. **Partial Conflict:**
-   - Local has Account A (UpdatedAt: Jan 15)
-   - Backup has Account A (UpdatedAt: Jan 16) with different name
-   - Import with merge strategy → Local Account A updated to Jan 16 version
-
-3. **IBAN Conflict (Reject):**
-   - Local has Account A with IBAN "NL01ABCD0123456789"
-   - Backup has Account B with same IBAN
-   - Import fails with error: "IBAN NL01ABCD0123456789 already exists on account 'Account A'"
-
-#### Security Considerations
-
-**Encryption Strategy:**
-
-- [ ] Add optional encryption for backup files using AES-256
-- [ ] Generate encryption key from user password (PBKDF2, 10,000 iterations)
-- [ ] Store IV (Initialization Vector) in backup file header
-- [ ] UI: Checkbox "Encrypt backup" with password input field
-
-**Implementation:**
-
-```csharp
-public async Task<byte[]> CreateEncryptedBackupAsync(string userId, string password)
-{
-    var backupData = await CreateBackupAsync(userId);
-    var json = JsonSerializer.Serialize(backupData);
-
-    using var aes = Aes.Create();
-    aes.KeySize = 256;
-
-    var key = DeriveKeyFromPassword(password, out var salt);
-    aes.Key = key;
-    aes.GenerateIV();
-
-    using var encryptor = aes.CreateEncryptor();
-    var encryptedData = encryptor.TransformFinalBlock(Encoding.UTF8.GetBytes(json), 0, json.Length);
-
-    // Return: [salt][iv][encryptedData]
-    return salt.Concat(aes.IV).Concat(encryptedData).ToArray();
-}
-```
-
-#### Schema Versioning Strategy
-
-**Backward Compatibility:**
-
-- [ ] Add `schemaVersion` field to backup format (current: "1.0")
-- [ ] Implement version-specific import handlers:
-  ```csharp
-  public async Task<ImportResult> RestoreBackupAsync(BackupData backup)
-  {
-      return backup.SchemaVersion switch
-      {
-          "1.0" => await RestoreV1Async(backup),
-          "1.1" => await RestoreV1_1Async(backup),
-          _ => throw new NotSupportedException($"Schema version {backup.SchemaVersion} not supported")
-      };
-  }
-  ```
-
-**Migration Logic:**
-
-- If backup schema < current schema → Apply transformations before import
-- Example: Schema 1.0 → 1.1 adds `CategoryType` field → Set default `CategoryType = Expense` for old backups
-
-**Forward Compatibility Warning:**
-
-- If backup schema > current schema → Display error: "Backup created with newer version. Please update the application."
-
-**Estimated Refinement Time:** 2-3 hours
-
-**Estimated Implementation Effort After Refinement:** 3-4 days
+- Entities in scope: Accounts, BudgetPlans, Categories, BudgetLines, Transactions, TransactionSplits
+- Export: `GET /api/backup/export` → `FileContentResult`
+- Conflict UI: Global strategy selector (Merge / Overwrite / Skip) — no per-conflict modal
+- Validate endpoint: `POST /api/backup/validate` — dry-run before committing
+- Encryption: Deferred to a future story
+- Overwrite uses `ExecuteDeleteAsync` in reverse FK order; all restore strategies wrapped in a DB transaction
+- IBAN conflicts always rejected (database uniqueness constraint)
+- App version hardcoded as `"1.0"` constant in `BackupService`
 
 ---
 
@@ -417,9 +255,9 @@ See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-15
 
 ### Active / Next Up
 
-1. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
-2. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
-3. 🔴 **UserStory-14** (Backup & Restore) — Needs refinement (3-4 days after refinement)
+1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
+2. 🟡 **UserStory-14** (Backup & Restore) — Refined, ready to implement (3-4 days)
+3. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
 4. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
 
 ---
@@ -512,8 +350,8 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Implement UserStory-17 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
-2. **Next:** Refine and implement UserStory-14 (Backup & Restore) — conflict resolution, encryption, versioning (refinement ~2-3h; impl 3-4 days)
+1. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
+2. **Next:** Implement UserStory-14 (Backup & Restore) — fully refined, ready to implement (3-4 days)
 3. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard (refinement ~2-3h; impl 4-5 days)
 
-**Total Refinement Effort Remaining:** ~4-6 hours across 2 remaining unrefined stories (US-14, US-15)
+**Total Refinement Effort Remaining:** ~2-3 hours (US-15 only)
