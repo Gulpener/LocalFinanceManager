@@ -26,7 +26,7 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
     private IQueryable<Guid> GetSharedAccessibleAccountIdsQuery(Guid userId)
     {
         var directShares = _context.AccountShares
-            .Where(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
+            .Where(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted && !s.IsArchived)
             .Select(s => s.AccountId);
 
         var budgetPlanSharedAccounts = _context.Accounts
@@ -35,7 +35,8 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
                 && _context.BudgetPlanShares.Any(s =>
                     s.BudgetPlanId == a.CurrentBudgetPlanId
                     && s.SharedWithUserId == userId
-                    && s.Status == ShareStatus.Accepted))
+                    && s.Status == ShareStatus.Accepted
+                    && !s.IsArchived))
             .Select(a => a.Id);
 
         return directShares.Union(budgetPlanSharedAccounts);

@@ -27,7 +27,7 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
 
         var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId
             && (bp.UserId == userId
-                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)));
+                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
@@ -47,7 +47,7 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
 
         var query = _dbSet.Where(bp => !bp.IsArchived && bp.Id == id
             && (bp.UserId == userId
-                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)));
+                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
@@ -66,7 +66,7 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
 
         var query = _dbSet.Where(bp => !bp.IsArchived && bp.AccountId == accountId && bp.Year == year
             && (bp.UserId == userId
-                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)));
+                || bp.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))

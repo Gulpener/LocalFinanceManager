@@ -31,7 +31,7 @@ public class AccountRepository : Repository<Account>, IAccountRepository
             .Where(a => !a.IsArchived
                 && a.Id == id
                 && (a.UserId == userId
-                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted)))
+                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)))
             .FirstOrDefaultAsync();
     }
 

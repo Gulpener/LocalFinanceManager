@@ -322,7 +322,8 @@ public class BudgetPlanService
         plan.UserId == userId ||
         plan.Shares.Any(s => s.SharedWithUserId == userId
             && s.Status == ShareStatus.Accepted
-            && s.Permission == PermissionLevel.Editor);
+            && s.Permission == PermissionLevel.Editor
+            && !s.IsArchived);
 
     private BudgetPlanDto MapToDto(BudgetPlan plan)
     {
