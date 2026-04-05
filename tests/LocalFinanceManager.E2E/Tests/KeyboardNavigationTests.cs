@@ -70,6 +70,13 @@ public class KeyboardNavigationTests : E2ETestBase
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        // Blazor Server loads transaction data over SignalR after initial HTML is delivered.
+        // NetworkIdle does not detect SignalR traffic, so wait explicitly for the transactions
+        // table before interacting with rows (mirrors the SelectAccountFilterAsync fix).
+        await Page.WaitForSelectorAsync(
+            "[data-testid='transactions-table'], [data-testid='no-transactions-message']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
         await Page.Locator("button:has-text('Split')").First.ClickAsync();
 
         var splitModal = Page.Locator("#splitEditorModal");
