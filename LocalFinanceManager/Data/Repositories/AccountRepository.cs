@@ -36,6 +36,23 @@ public class AccountRepository : Repository<Account>, IAccountRepository
     }
 
     /// <summary>
+    /// Get an account by ID where the current user is the owner. Used for write operations
+    /// to prevent users with shared access (Viewer/Editor) from mutating accounts they don't own.
+    /// </summary>
+    public async Task<Account?> GetOwnedByIdAsync(Guid id)
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return null;
+        }
+
+        return await _context.Set<Account>()
+            .Where(a => !a.IsArchived && a.Id == id && a.UserId == userId)
+            .FirstOrDefaultAsync();
+    }
+
+    /// <summary>
     /// Get all active (non-archived) accounts for the current user (owned or accepted shared).
     /// </summary>
     public async Task<List<Account>> GetAllActiveAsync()

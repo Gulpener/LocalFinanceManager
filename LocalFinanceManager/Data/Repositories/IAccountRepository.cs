@@ -13,6 +13,11 @@ public interface IAccountRepository : IRepository<Account>
     Task<List<Account>> GetAllActiveAsync();
 
     /// <summary>
+    /// Get an account by ID where the current user is the owner (for write operations).
+    /// </summary>
+    Task<Account?> GetOwnedByIdAsync(Guid id);
+
+    /// <summary>
     /// Check if an account with the given label already exists.
     /// </summary>
     Task<bool> LabelExistsAsync(string label, Guid? excludeId = null);

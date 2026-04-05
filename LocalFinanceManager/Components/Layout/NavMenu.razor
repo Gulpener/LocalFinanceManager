@@ -70,6 +70,7 @@
 @using LocalFinanceManager.Services
 @inject ISharingService SharingService
 @inject IUserContext UserContext
+@inject ILogger<NavMenu> Logger
 @implements IDisposable
 @code {
     private int pendingShareCount;
@@ -112,9 +113,10 @@
                 await InvokeAsync(StateHasChanged);
             }
         }
-        catch
+        catch (Exception ex)
         {
             // Swallow errors in nav menu to avoid disrupting navigation
+            Logger.LogWarning(ex, "Failed to refresh pending share count.");
         }
     }
 

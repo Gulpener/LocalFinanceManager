@@ -155,7 +155,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Password reset request failed.");
-            return new AuthResponse { Success = false, ErrorMessage = ex.Message };
+            return new AuthResponse { Success = false, ErrorMessage = "We couldn't complete your request right now. Please try again later." };
         }
     }
 
@@ -179,7 +179,7 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Resend verification failed.");
-            return new AuthResponse { Success = false, ErrorMessage = ex.Message };
+            return new AuthResponse { Success = false, ErrorMessage = "We couldn't complete your request right now. Please try again later." };
         }
     }
 
