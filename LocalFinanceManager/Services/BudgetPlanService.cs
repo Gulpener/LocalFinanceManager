@@ -15,6 +15,7 @@ public class BudgetPlanService
     private readonly IAccountRepository _accountRepository;
     private readonly ICategoryRepository _categoryRepository;
     private readonly CategoryService _categoryService;
+    private readonly IUserContext _userContext;
     private readonly ILogger<BudgetPlanService> _logger;
 
     public BudgetPlanService(
@@ -23,6 +24,7 @@ public class BudgetPlanService
         IAccountRepository accountRepository,
         ICategoryRepository categoryRepository,
         CategoryService categoryService,
+        IUserContext userContext,
         ILogger<BudgetPlanService> logger)
     {
         _budgetPlanRepository = budgetPlanRepository;
@@ -30,6 +32,7 @@ public class BudgetPlanService
         _accountRepository = accountRepository;
         _categoryRepository = categoryRepository;
         _categoryService = categoryService;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -149,6 +152,13 @@ public class BudgetPlanService
             return null;
         }
 
+        var userId = _userContext.GetCurrentUserId();
+        if (plan.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to update budget plan {PlanId} without owner permission.", userId, id);
+            throw new UnauthorizedAccessException("Only the owner can modify this budget plan.");
+        }
+
         plan.Name = request.Name;
         plan.XMin = request.XMin;
 
@@ -172,11 +182,18 @@ public class BudgetPlanService
     {
         _logger.LogInformation("Archiving budget plan with ID: {BudgetPlanId}", id);
 
-        var plan = await _budgetPlanRepository.GetByIdAsync(id);
+        var plan = await _budgetPlanRepository.GetByIdWithLinesAsync(id);
         if (plan == null)
         {
             _logger.LogWarning("Budget plan not found with ID: {BudgetPlanId}", id);
             return false;
+        }
+
+        var userId = _userContext.GetCurrentUserId();
+        if (plan.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to archive budget plan {PlanId} without owner permission.", userId, id);
+            throw new UnauthorizedAccessException("Only the owner can archive this budget plan.");
         }
 
         await _budgetPlanRepository.ArchiveAsync(id);
@@ -192,11 +209,18 @@ public class BudgetPlanService
         _logger.LogInformation("Creating new budget line for plan {BudgetPlanId}, category {CategoryId}",
             request.BudgetPlanId, request.CategoryId);
 
-        // Verify budget plan exists
-        var plan = await _budgetPlanRepository.GetByIdAsync(request.BudgetPlanId);
+        // Verify budget plan exists and requester is the owner
+        var plan = await _budgetPlanRepository.GetByIdWithLinesAsync(request.BudgetPlanId);
         if (plan == null)
         {
             throw new InvalidOperationException($"Budget plan with ID {request.BudgetPlanId} not found.");
+        }
+
+        var userId = _userContext.GetCurrentUserId();
+        if (plan.UserId != userId)
+        {
+            _logger.LogWarning("User {UserId} attempted to create a budget line on plan {PlanId} without owner permission.", userId, request.BudgetPlanId);
+            throw new UnauthorizedAccessException("Only the owner can add budget lines to this plan.");
         }
 
         // Verify category exists
@@ -282,6 +306,19 @@ public class BudgetPlanService
 
     private BudgetPlanDto MapToDto(BudgetPlan plan)
     {
+        var userId = _userContext.GetCurrentUserId();
+        PermissionLevel permission;
+        if (plan.UserId == userId)
+        {
+            permission = PermissionLevel.Owner;
+        }
+        else
+        {
+            var share = plan.Shares
+                .FirstOrDefault(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted);
+            permission = share?.Permission ?? PermissionLevel.Viewer;
+        }
+
         return new BudgetPlanDto
         {
             Id = plan.Id,
@@ -291,7 +328,8 @@ public class BudgetPlanService
             CreatedAt = plan.CreatedAt,
             UpdatedAt = plan.UpdatedAt,
             XMin = plan.XMin,
-            BudgetLines = plan.BudgetLines.Select(bl => MapLineToDto(bl, bl.Category)).ToList()
+            BudgetLines = plan.BudgetLines.Select(bl => MapLineToDto(bl, bl.Category)).ToList(),
+            UserPermission = permission
         };
     }
 

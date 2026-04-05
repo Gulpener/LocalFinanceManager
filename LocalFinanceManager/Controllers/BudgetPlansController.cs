@@ -136,6 +136,11 @@ public class BudgetPlansController : ControllerBase
             }
             return Ok(plan);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to update budget plan {Id}", id);
+            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+        }
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict updating budget plan {Id}", id);
@@ -149,12 +154,20 @@ public class BudgetPlansController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Archive(Guid id)
     {
-        var success = await _budgetPlanService.ArchiveAsync(id);
-        if (!success)
+        try
         {
-            return NotFound(new { title = "Budget plan not found", status = 404 });
+            var success = await _budgetPlanService.ArchiveAsync(id);
+            if (!success)
+            {
+                return NotFound(new { title = "Budget plan not found", status = 404 });
+            }
+            return NoContent();
         }
-        return NoContent();
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to archive budget plan {Id}", id);
+            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+        }
     }
 
     /// <summary>
@@ -178,6 +191,11 @@ public class BudgetPlansController : ControllerBase
         {
             var line = await _budgetPlanService.CreateLineAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = line.BudgetPlanId }, line);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to create budget line for plan {PlanId}", request.BudgetPlanId);
+            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
