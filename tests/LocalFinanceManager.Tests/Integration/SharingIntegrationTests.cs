@@ -205,7 +205,7 @@ public class SharingIntegrationTests
         Assert.That(canEdit, Is.False);
     }
 
-    // --- Cascade: accepted shared BudgetPlan grants access to its Transactions (via Account link) ---
+    // --- Cascade: accepted Account share grants access to its Transactions ---
 
     [Test]
     public async Task TransactionRepository_AcceptedAccountShare_GrantsTransactionAccess()
@@ -229,6 +229,47 @@ public class SharingIntegrationTests
         SeedTransaction(account.Id);
 
         await _sharingService.ShareAccountAsync(account.Id, "recipient@test.com", PermissionLevel.Viewer, OwnerUserId);
+
+        var txs = await _transactionRepo.GetByAccountIdAsync(account.Id);
+
+        Assert.That(txs, Is.Empty);
+    }
+
+    // --- Cascade: accepted BudgetPlan share grants access to Transactions of the linked Account ---
+
+    [Test]
+    public async Task TransactionRepository_AcceptedBudgetPlanShare_GrantsTransactionAccess()
+    {
+        var account = SeedAccount();
+        var plan = SeedBudgetPlan(account.Id);
+
+        // Wire up CurrentBudgetPlanId so the repository's BudgetPlanShare lookup can match
+        account.CurrentBudgetPlanId = plan.Id;
+        _context.SaveChanges();
+
+        var tx = SeedTransaction(account.Id);
+
+        var share = await _sharingService.ShareBudgetPlanAsync(plan.Id, "recipient@test.com", PermissionLevel.Viewer, OwnerUserId);
+        await _sharingService.AcceptBudgetPlanShareAsync(share.Id, RecipientUserId);
+
+        var txs = await _transactionRepo.GetByAccountIdAsync(account.Id);
+
+        Assert.That(txs, Has.Count.EqualTo(1));
+        Assert.That(txs[0].Id, Is.EqualTo(tx.Id));
+    }
+
+    [Test]
+    public async Task TransactionRepository_PendingBudgetPlanShare_DoesNotGrantTransactionAccess()
+    {
+        var account = SeedAccount();
+        var plan = SeedBudgetPlan(account.Id);
+
+        account.CurrentBudgetPlanId = plan.Id;
+        _context.SaveChanges();
+
+        SeedTransaction(account.Id);
+
+        await _sharingService.ShareBudgetPlanAsync(plan.Id, "recipient@test.com", PermissionLevel.Viewer, OwnerUserId);
 
         var txs = await _transactionRepo.GetByAccountIdAsync(account.Id);
 
