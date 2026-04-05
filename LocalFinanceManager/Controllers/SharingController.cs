@@ -48,6 +48,11 @@ public class SharingController : ControllerBase
         {
             return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid operation", Detail = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error sharing account");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 
     [HttpPost("api/budgetplans/{id}/share")]
@@ -72,6 +77,11 @@ public class SharingController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid operation", Detail = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error sharing budget plan");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
         }
     }
 
@@ -99,6 +109,11 @@ public class SharingController : ControllerBase
         {
             return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid operation", Detail = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error accepting account share");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 
     [HttpPost("api/shares/accounts/{id}/decline")]
@@ -122,6 +137,11 @@ public class SharingController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid operation", Detail = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error declining account share");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
         }
     }
 
@@ -147,6 +167,11 @@ public class SharingController : ControllerBase
         {
             return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid operation", Detail = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error accepting budget plan share");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 
     [HttpPost("api/shares/budgetplans/{id}/decline")]
@@ -171,6 +196,11 @@ public class SharingController : ControllerBase
         {
             return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid operation", Detail = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error declining budget plan share");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 
     // --- Revoke ---
@@ -192,6 +222,11 @@ public class SharingController : ControllerBase
         {
             return NotFound(new ProblemDetails { Status = 404, Title = "Not found", Detail = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error revoking account share");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 
     [HttpDelete("api/shares/budgetplans/{id}")]
@@ -210,6 +245,11 @@ public class SharingController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return NotFound(new ProblemDetails { Status = 404, Title = "Not found", Detail = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error revoking budget plan share");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
         }
     }
 
@@ -237,6 +277,11 @@ public class SharingController : ControllerBase
         {
             return NotFound(new ProblemDetails { Status = 404, Title = "Not found", Detail = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error retrieving shares for account");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 
     [HttpGet("api/budgetplans/{id}/shares")]
@@ -261,6 +306,11 @@ public class SharingController : ControllerBase
         {
             return NotFound(new ProblemDetails { Status = 404, Title = "Not found", Detail = ex.Message });
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error retrieving shares for budget plan");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 
     [HttpGet("api/shares/pending")]
@@ -270,14 +320,22 @@ public class SharingController : ControllerBase
         var currentUserId = _userContext.GetCurrentUserId();
         if (currentUserId == Guid.Empty) return Unauthorized();
 
-        var (accountShares, budgetPlanShares) = await _sharingService.GetPendingSharesForUserAsync(currentUserId);
-
-        var response = new PendingSharesResponse
+        try
         {
-            AccountShares = accountShares.Select(AccountShareResponse.FromEntity).ToList(),
-            BudgetPlanShares = budgetPlanShares.Select(BudgetPlanShareResponse.FromEntity).ToList()
-        };
+            var (accountShares, budgetPlanShares) = await _sharingService.GetPendingSharesForUserAsync(currentUserId);
 
-        return Ok(response);
+            var response = new PendingSharesResponse
+            {
+                AccountShares = accountShares.Select(AccountShareResponse.FromEntity).ToList(),
+                BudgetPlanShares = budgetPlanShares.Select(BudgetPlanShareResponse.FromEntity).ToList()
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error retrieving pending shares for user");
+            return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails { Status = 500, Title = "Unexpected error" });
+        }
     }
 }
