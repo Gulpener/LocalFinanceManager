@@ -8,7 +8,7 @@
 ## Status Overview
 
 - ✅ **24 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **2 stories ready** for implementation (US-16, US-18)
+- 🟡 **3 stories ready** for implementation (US-16, US-18, US-19)
 - 🔴 **1 story needs refinement** (US-15)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
@@ -25,7 +25,17 @@
 
 **Status:** New — full specification written. Estimated effort: 5-7 days.
 
-**Scope:** Volledige visuele redesign met Finance Blue kleurenpallet, custom Bootstrap 5 thema, dark mode, mobile-first responsive navigatie, dashboard KPI-kaarten en consistente componentpatronen.
+**Scope:** Full visual redesign with a Finance Blue color palette, custom Bootstrap 5 theme, dark mode, mobile-first responsive navigation, dashboard KPI cards, and consistent component patterns.
+
+---
+
+### 🟡 UserStory-19: Unified Admin Panel
+
+**File:** [docs/Userstories/UserStory-19-Admin-Panel-Unified.md](docs/Userstories/UserStory-19-Admin-Panel-Unified.md)
+
+**Status:** New — full specification written. Estimated effort: 3-4 days.
+
+**Scope:** Reorganize all existing admin pages (Settings, Auto-Apply, ML, Monitoring) into one tabbed panel with a persistent tab bar. Add a new Users tab for user management (overview, viewing active shares, and revoking them).
 
 ---
 
@@ -245,8 +255,9 @@ See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-15
 ### Active / Next Up
 
 1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
-2. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
-3. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
+2. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3-4 days)
+3. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
+4. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
 
 ---
 
@@ -339,7 +350,8 @@ Use this structure for all new stories:
 ## Next Actions
 
 1. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
-2. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
-3. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard (refinement ~2-3h; impl 4-5 days)
+2. **Immediate:** Implement UserStory-19 (Unified Admin Panel) — fully ready, no refinement needed (3-4 days)
+3. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
+4. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard (refinement ~2-3h; impl 4-5 days)
 
 **Total Refinement Effort Remaining:** ~2-3 hours (US-15 only)
