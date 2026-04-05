@@ -72,18 +72,31 @@
 @implements IDisposable
 @code {
     private int pendingShareCount;
-    private System.Threading.Timer? _timer;
+    private CancellationTokenSource? _cts;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await RefreshPendingCountAsync();
-            _timer = new System.Threading.Timer(async _ =>
+            _cts = new CancellationTokenSource();
+            _ = RunPeriodicRefreshAsync(_cts.Token);
+        }
+    }
+
+    private async Task RunPeriodicRefreshAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken))
             {
                 await RefreshPendingCountAsync();
-                await InvokeAsync(StateHasChanged);
-            }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on dispose
         }
     }
 
@@ -106,6 +119,7 @@
 
     public void Dispose()
     {
-        _timer?.Dispose();
+        _cts?.Cancel();
+        _cts?.Dispose();
     }
 }
