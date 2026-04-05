@@ -71,10 +71,14 @@ public class KeyboardNavigationTests : E2ETestBase
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
         // Blazor Server loads transaction data over SignalR after initial HTML is delivered.
-        // NetworkIdle does not detect SignalR traffic, so wait explicitly for the transactions
-        // table before interacting with rows (mirrors the SelectAccountFilterAsync fix).
+        // NetworkIdle does not detect SignalR traffic, so wait explicitly for transaction rows
+        // before interacting. Waiting for the OR-condition (table | no-transactions-message)
+        // is insufficient: Blazor renders with loading=false and an empty list BEFORE the first
+        // data fetch completes, so no-transactions-message flashes immediately and the selector
+        // returns — leaving no Split buttons in the DOM. Waiting for an actual row guarantees
+        // the data has loaded and Split buttons are present.
         await Page.WaitForSelectorAsync(
-            "[data-testid='transactions-table'], [data-testid='no-transactions-message']",
+            "[data-testid='transaction-row']",
             new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
 
         await Page.Locator("button:has-text('Split')").First.ClickAsync();
