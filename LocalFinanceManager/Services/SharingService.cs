@@ -58,13 +58,16 @@ public class SharingService : ISharingService
 
     public async Task<BudgetPlanShare> ShareBudgetPlanAsync(Guid planId, string targetEmail, PermissionLevel permission, Guid currentUserId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetEmail);
+        var normalizedTargetEmail = targetEmail.Trim().ToUpperInvariant();
+
         var plan = await _context.BudgetPlans
             .Where(bp => !bp.IsArchived && bp.Id == planId && bp.UserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Budget plan {planId} not found or you are not the owner.");
 
         var targetUser = await _context.Users
-            .Where(u => u.Email == targetEmail && !u.IsArchived)
+            .Where(u => !u.IsArchived && u.Email != null && u.Email.Trim().ToUpper() == normalizedTargetEmail)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException("No user found with the specified email address.");
 
