@@ -230,6 +230,11 @@ public class BudgetPlansController : ControllerBase
             }
             return Ok(line);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to update budget line {Id}", id);
+            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+        }
         catch (DbUpdateConcurrencyException ex)
         {
             _logger.LogWarning(ex, "Concurrency conflict updating budget line {Id}", id);
@@ -248,11 +253,19 @@ public class BudgetPlansController : ControllerBase
     [HttpDelete("lines/{id}")]
     public async Task<IActionResult> ArchiveLine(Guid id)
     {
-        var success = await _budgetPlanService.ArchiveLineAsync(id);
-        if (!success)
+        try
         {
-            return NotFound(new { title = "Budget line not found", status = 404 });
+            var success = await _budgetPlanService.ArchiveLineAsync(id);
+            if (!success)
+            {
+                return NotFound(new { title = "Budget line not found", status = 404 });
+            }
+            return NoContent();
         }
-        return NoContent();
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning(ex, "Unauthorized attempt to archive budget line {Id}", id);
+            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+        }
     }
 }

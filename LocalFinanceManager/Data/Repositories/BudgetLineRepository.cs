@@ -26,10 +26,13 @@ public class BudgetLineRepository : Repository<BudgetLine>, IBudgetLineRepositor
             return null;
         }
 
-        var query = _dbSet.Where(bl => bl.Id == id && !bl.IsArchived && bl.BudgetPlan.UserId == userId);
+        var query = _dbSet.Where(bl => bl.Id == id && !bl.IsArchived
+            && (bl.BudgetPlan.UserId == userId
+                || bl.BudgetPlan.Shares.Any(s => s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)));
 
         return await query
             .Include(bl => bl.BudgetPlan)
+                .ThenInclude(bp => bp.Shares)
             .Include(bl => bl.Category)
             .FirstOrDefaultAsync();
     }

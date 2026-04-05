@@ -153,10 +153,10 @@ public class BudgetPlanService
         }
 
         var userId = _userContext.GetCurrentUserId();
-        if (plan.UserId != userId)
+        if (!IsOwnerOrEditor(plan, userId))
         {
-            _logger.LogWarning("User {UserId} attempted to update budget plan {PlanId} without owner permission.", userId, id);
-            throw new UnauthorizedAccessException("Only the owner can modify this budget plan.");
+            _logger.LogWarning("User {UserId} attempted to update budget plan {PlanId} without edit permission.", userId, id);
+            throw new UnauthorizedAccessException("Only the owner or an editor can modify this budget plan.");
         }
 
         plan.Name = request.Name;
@@ -217,10 +217,10 @@ public class BudgetPlanService
         }
 
         var userId = _userContext.GetCurrentUserId();
-        if (plan.UserId != userId)
+        if (!IsOwnerOrEditor(plan, userId))
         {
-            _logger.LogWarning("User {UserId} attempted to create a budget line on plan {PlanId} without owner permission.", userId, request.BudgetPlanId);
-            throw new UnauthorizedAccessException("Only the owner can add budget lines to this plan.");
+            _logger.LogWarning("User {UserId} attempted to create a budget line on plan {PlanId} without edit permission.", userId, request.BudgetPlanId);
+            throw new UnauthorizedAccessException("Only the owner or an editor can add budget lines to this plan.");
         }
 
         // Verify category exists
@@ -258,6 +258,13 @@ public class BudgetPlanService
         {
             _logger.LogWarning("Budget line not found with ID: {BudgetLineId}", id);
             return null;
+        }
+
+        var userId = _userContext.GetCurrentUserId();
+        if (!IsOwnerOrEditor(line.BudgetPlan, userId))
+        {
+            _logger.LogWarning("User {UserId} attempted to update budget line {LineId} without edit permission.", userId, id);
+            throw new UnauthorizedAccessException("Only the owner or an editor can modify budget lines.");
         }
 
         // Verify category exists
@@ -299,10 +306,23 @@ public class BudgetPlanService
             return false;
         }
 
+        var userId = _userContext.GetCurrentUserId();
+        if (!IsOwnerOrEditor(line.BudgetPlan, userId))
+        {
+            _logger.LogWarning("User {UserId} attempted to archive budget line {LineId} without edit permission.", userId, id);
+            throw new UnauthorizedAccessException("Only the owner or an editor can archive budget lines.");
+        }
+
         await _budgetLineRepository.ArchiveAsync(id);
         _logger.LogInformation("Budget line archived successfully: {BudgetLineId}", id);
         return true;
     }
+
+    private static bool IsOwnerOrEditor(BudgetPlan plan, Guid userId) =>
+        plan.UserId == userId ||
+        plan.Shares.Any(s => s.SharedWithUserId == userId
+            && s.Status == ShareStatus.Accepted
+            && s.Permission == PermissionLevel.Editor);
 
     private BudgetPlanDto MapToDto(BudgetPlan plan)
     {
