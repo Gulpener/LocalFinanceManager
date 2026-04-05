@@ -59,6 +59,14 @@ public class AccountServiceTests
             StartingBalance = 1000
         };
         _mockRepository.Setup(r => r.GetReadableByIdAsync(accountId)).ReturnsAsync(account);
+
+        // Act
+        var result = await _service.GetByIdAsync(accountId);
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Id, Is.EqualTo(accountId));
+        Assert.That(result.Label, Is.EqualTo("Test Account"));
     }
 
     [Test]
@@ -67,6 +75,12 @@ public class AccountServiceTests
         // Arrange
         var accountId = Guid.NewGuid();
         _mockRepository.Setup(r => r.GetReadableByIdAsync(accountId)).ReturnsAsync((Account?)null);
+
+        // Act
+        var result = await _service.GetByIdAsync(accountId);
+
+        // Assert
+        Assert.That(result, Is.Null);
     }
 
     [Test]
