@@ -192,7 +192,29 @@ public class AuthService : IAuthService
             return "Too many emails sent recently. Please wait a few minutes before trying again.";
         }
 
-        return rawError;
+        if (statusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            if (rawError.Contains("invalid", StringComparison.OrdinalIgnoreCase) &&
+                rawError.Contains("email", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Please enter a valid email address.";
+            }
+
+            if (rawError.Contains("already", StringComparison.OrdinalIgnoreCase) &&
+                (rawError.Contains("confirmed", StringComparison.OrdinalIgnoreCase) ||
+                 rawError.Contains("verified", StringComparison.OrdinalIgnoreCase)))
+            {
+                return "This email address has already been verified.";
+            }
+        }
+
+        if (statusCode == System.Net.HttpStatusCode.Unauthorized ||
+            statusCode == System.Net.HttpStatusCode.Forbidden)
+        {
+            return "We couldn't verify your request. Please try again later.";
+        }
+
+        return "We couldn't complete your request right now. Please try again later.";
     }
 
     private async Task<HttpResponseMessage> PostAsync(string path, string jsonBody)

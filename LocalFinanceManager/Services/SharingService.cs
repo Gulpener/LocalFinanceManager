@@ -17,13 +17,16 @@ public class SharingService : ISharingService
 
     public async Task<AccountShare> ShareAccountAsync(Guid accountId, string targetEmail, PermissionLevel permission, Guid currentUserId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetEmail);
+        var normalizedTargetEmail = targetEmail.Trim().ToUpperInvariant();
+
         var account = await _context.Accounts
             .Where(a => !a.IsArchived && a.Id == accountId && a.UserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Account {accountId} not found or you are not the owner.");
 
         var targetUser = await _context.Users
-            .Where(u => u.Email == targetEmail && !u.IsArchived)
+            .Where(u => !u.IsArchived && u.Email != null && u.Email.Trim().ToUpper() == normalizedTargetEmail)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException("No user found with the specified email address.");
 

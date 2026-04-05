@@ -206,16 +206,6 @@ else
         }
     }
 
-    private Task<List<AccountShareResponse>> GetAcceptedAccountSharesAsync(Guid userId)
-    {
-        return Task.FromResult(acceptedAccountShares);
-    }
-
-    private Task<List<BudgetPlanShareResponse>> GetAcceptedBudgetPlanSharesAsync(Guid userId)
-    {
-        return Task.FromResult(acceptedBudgetPlanShares);
-    }
-
     private async Task AcceptAccountShare(Guid shareId)
     {
         try
