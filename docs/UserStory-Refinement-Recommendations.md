@@ -8,20 +8,31 @@
 ## Status Overview
 
 - ✅ **23 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟢 **1 story ready** for immediate implementation (US-17)
+- � **1 story ready** for immediate implementation (US-18)
+- 🟡 **1 story new** and awaiting planning (US-16)
 - 🔴 **2 stories need refinement** (US-14, US-15)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
 
-**Deferred E2E test (1):** `AutoApply_AuditTrail_ShowsAutoAppliedIndicator` — blocked on UserStory-17 (`/transactions/{id}/audit` page).
+**Deferred E2E test (1):** `AutoApply_AuditTrail_ShowsAutoAppliedIndicator` — blocked on UserStory-18 (`/transactions/{id}/audit` page).
 
 ---
 
 ## Active Stories
 
-### 🟢 UserStory-17: Transaction Audit Trail UI
+### � UserStory-16: Design Overhaul
 
-**File:** [docs/Userstories/UserStory-17-Transaction-Audit-Trail-UI.md](docs/Userstories/UserStory-17-Transaction-Audit-Trail-UI.md)
+**File:** [docs/Userstories/UserStory-16-Design-Overhaul.md](docs/Userstories/UserStory-16-Design-Overhaul.md)
+
+**Status:** New — full specification written. Estimated effort: 5-7 days.
+
+**Scope:** Volledige visuele redesign met Finance Blue kleurenpallet, custom Bootstrap 5 thema, dark mode, mobile-first responsive navigatie, dashboard KPI-kaarten en consistente componentpatronen.
+
+---
+
+### 🟡 UserStory-18: Transaction Audit Trail UI
+
+**File:** [docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md](docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md)
 
 **Status:** Ready — no refinement needed. Estimated effort: 2-3 days.
 
@@ -402,13 +413,14 @@ public class User
 
 ### ✅ All Phases 1–5: COMPLETED & ARCHIVED
 
-See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-16).
+See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-15).
 
 ### Active / Next Up
 
-1. 🟢 **UserStory-17** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
-2. 🔴 **UserStory-14** (Backup & Restore) — Needs refinement (3-4 days after refinement)
-3. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
+1. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
+2. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
+3. 🔴 **UserStory-14** (Backup & Restore) — Needs refinement (3-4 days after refinement)
+4. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
 
 ---
 
