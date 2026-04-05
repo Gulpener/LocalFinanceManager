@@ -8,8 +8,8 @@
 ## Status Overview
 
 - ✅ **24 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **3 stories ready** for implementation (US-16, US-18, US-19)
-- 🔴 **1 story needs refinement** (US-15)
+- 🟡 **4 stories ready** for implementation (US-15, US-16, US-18, US-19)
+- 🔴 **0 stories need refinement**
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
 
@@ -63,186 +63,18 @@
 
 ---
 
-#### UserStory-15: Application Flow & Onboarding
+### 🟡 UserStory-15: Application Flow & Onboarding
 
 **File:** [docs/Userstories/UserStory-15-Application-Flow.md](docs/Userstories/UserStory-15-Application-Flow.md)
 
-**Issues:**
+**Status:** Refined — ready to implement. Estimated effort: 4–5 days.
 
-1. Tasks exist but lack detail (e.g., dashboard widget specifications unclear)
-2. Onboarding wizard step-by-step flow needs mockups/wireframes
-3. Breadcrumb generation logic unclear (static routes vs dynamic entity paths?)
-4. Success criteria too vague ("user experience is intuitive")
-5. **Missing user onboarding completion tracking** - How to prevent showing wizard on every login?
-
-**Required Refinements:**
-
-Add the following sections:
-
-#### Dashboard Widget Specifications
-
-**Widget 1: Account Summary**
-
-- Display total balance across all accounts
-- Show balance change from previous month (+5.3% ↑)
-- List top 3 accounts by balance
-
-**Widget 2: Budget Status**
-
-- Show current month budget utilization (e.g., "65% of budget used")
-- Display progress bar for each category (top 5 by spend)
-- Highlight over-budget categories in red
-
-**Widget 3: Recent Transactions**
-
-- Show last 10 transactions across all accounts
-- Group by date (Today, Yesterday, This Week)
-- Add "Assign" quick action button for uncategorized transactions
-
-**Widget 4: Uncategorized Transaction Alert**
-
-- Display count of uncategorized transactions (e.g., "⚠️ 12 transactions need assignment")
-- Add "Assign Now" button navigating to transaction list with filter
-
-**Widget 5: ML Suggestion Summary**
-
-- Show count of pending ML suggestions (e.g., "🤖 5 suggestions available")
-- Add "Review Suggestions" button navigating to suggestions page
-
-#### Onboarding Wizard Flow
-
-**Step 1: Welcome Screen**
-
-- Headline: "Welcome to Local Finance Manager!"
-- Subtext: "Let's set up your first account and budget plan."
-- Button: "Get Started" → Step 2
-
-**Step 2: Create First Account**
-
-- Form fields: Account Name, IBAN, Currency, Initial Balance
-- Validation: IBAN format check, currency ISO-4217
-- Button: "Next" → Step 3
-- Skip option: "I'll do this later" → Dashboard
-
-**Step 3: Create First Budget Plan**
-
-- Form fields: Budget Plan Name, Start Date, End Date
-- Pre-fill: Name = "My First Budget", Start = today, End = 1 year from today
-- Button: "Next" → Step 4
-
-**Step 4: Add Categories from Templates**
-
-- Display category templates grouped by type (Income/Expense)
-- Multi-select checkboxes for templates (default: select all)
-- Button: "Create Categories" → Step 5
-
-**Step 5: Import Transactions (Optional)**
-
-- Upload CSV file (standard format: Date, Amount, Description, Counterparty)
-- Preview first 5 rows in table
-- Button: "Import" → Dashboard
-- Skip option: "I'll add transactions manually" → Dashboard
-
-**Step 6: Completion**
-
-- Success message: "You're all set! 🎉"
-- Summary: "1 account, 1 budget plan, 15 categories created"
-- Button: "Go to Dashboard" → Dashboard
-
-#### Breadcrumb Generation Logic
-
-**Static Routes:**
-
-- Home → `/` (no breadcrumb)
-- Accounts → `/accounts` → Breadcrumb: `Home / Accounts`
-- Transactions → `/transactions` → Breadcrumb: `Home / Transactions`
-
-**Dynamic Entity Paths:**
-
-- Account Details → `/accounts/{id}` → Breadcrumb: `Home / Accounts / {AccountName}`
-- Transaction Edit → `/transactions/{id}/edit` → Breadcrumb: `Home / Transactions / {TransactionId} / Edit`
-
-**Implementation:**
-
-- Store breadcrumb trail in `NavigationManager` state
-- Update breadcrumb component on navigation events
-- Fetch entity names asynchronously for dynamic breadcrumbs (cache for 5 minutes)
-
-#### Implementation Tasks
-
-**1. Dashboard:**
-
-- [ ] Create `Dashboard.razor` page in `Components/Pages/`
-- [ ] Create widget components:
-  - `AccountSummaryWidget.razor`
-  - `BudgetStatusWidget.razor`
-  - `RecentTransactionsWidget.razor`
-  - `UncategorizedAlertWidget.razor`
-  - `MLSuggestionWidget.razor`
-- [ ] Add responsive grid layout (CSS Grid, 2 columns on desktop, 1 on mobile)
-
-**2. Onboarding Wizard:**
-
-- [ ] Create `Onboarding.razor` page with multi-step form
-- [ ] Implement wizard steps 1-6 with form validation
-- [ ] Add progress indicator (e.g., "Step 2 of 6")
-- [ ] Store wizard state in browser session storage
-- [ ] Redirect to dashboard on completion
-- [ ] Set `User.HasCompletedOnboarding = true` flag
-
-**3. Breadcrumbs:**
-
-- [ ] Create `Breadcrumb.razor` component in `Components/Shared/`
-- [ ] Implement breadcrumb trail generation based on current route
-- [ ] Add entity name fetching for dynamic breadcrumbs
-- [ ] Style with chevron separator (›) and hover effects
-
-**4. Tests:**
-
-- [ ] Unit tests for breadcrumb generation logic
-- [ ] E2E tests for onboarding wizard:
-  - Complete all steps → Dashboard shows created entities
-  - Skip steps → Dashboard shows empty state
-- [ ] E2E tests for dashboard widgets:
-  - Verify widget data accuracy (e.g., balance calculations)
-
-#### Success Criteria (Measurable)
-
-- ✅ 100% of new users complete onboarding wizard (tracked via `User.HasCompletedOnboarding`)
-- ✅ Dashboard loads in <2 seconds with 5 widgets (measured via browser performance API)
-- ✅ Breadcrumb navigation reduces "back button" usage by 30% (tracked via analytics)
-- ✅ Average time to first transaction assignment: <5 minutes after onboarding
-
-#### User Onboarding Completion Tracking
-
-**Database Schema:**
-
-```csharp
-public class User
-{
-    public string Id { get; set; }
-    public string Email { get; set; }
-    public bool HasCompletedOnboarding { get; set; }
-    public DateTime? OnboardingCompletedAt { get; set; }
-}
-```
-
-**Workflow:**
-
-1. User registers → `HasCompletedOnboarding = false`
-2. User logs in → Check `HasCompletedOnboarding`:
-   - If `false` → Redirect to `/onboarding`
-   - If `true` → Redirect to `/dashboard`
-3. User completes onboarding wizard → Set `HasCompletedOnboarding = true`, `OnboardingCompletedAt = DateTime.UtcNow`
-
-**Skip Option:**
-
-- Add "Skip Onboarding" button on wizard pages → Set `HasCompletedOnboarding = true` (tracks completion but not full participation)
-- Add "Show me around" link on dashboard for users who skipped → Reopens onboarding wizard
-
-**Estimated Refinement Time:** 2-3 hours
-
-**Estimated Implementation Effort After Refinement:** 4-5 days
+**Scope:** Five implementation phases:
+1. **Dashboard** — replace `Home.razor` at `/` with a 5-widget responsive grid (AccountSummary, BudgetStatus, RecentTransactions, UncategorizedAlert, MLSuggestion) + quick-actions bar; unauthenticated visitors see a hero with Login/Register CTAs.
+2. **Auth Guards** — add `[Authorize]` to 14 currently unprotected pages; relies on existing `RedirectToLogin.razor` pattern.
+3. **Auto-Generated Breadcrumbs** — new `IBreadcrumbService` (scoped) parses the URL into friendly labels; `MainLayout.razor` subscribes and renders `<Breadcrumb>` automatically; pages call `SetSectionTitle(id, name)` for entity names; migrate 3 pages that currently use manual breadcrumbs.
+4. **Onboarding Wizard** — 6-step wizard at `/onboarding`; triggered when a new user has 0 accounts after login (no DB schema change); covers account creation, budget plan, category templates, and optional CSV import.
+5. **Multi-Tenant UX** — permission badges (Owner/Editor/Viewer), "Shared by [email]" labels, and filter dropdowns on `Accounts.razor`, `BudgetPlans.razor`, and `SharedWithMe.razor`.
 
 ---
 
@@ -250,14 +82,14 @@ public class User
 
 ### ✅ All Phases 1–5: COMPLETED & ARCHIVED
 
-See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-15).
+See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-14).
 
 ### Active / Next Up
 
-1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2-3 days)
-2. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3-4 days)
-3. 🟡 **UserStory-16** (Design Overhaul) — New, ready to plan and implement (5-7 days)
-4. 🔴 **UserStory-15** (Application Flow & Onboarding) — Needs refinement (4-5 days after refinement)
+1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
+2. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3–4 days)
+3. 🟡 **UserStory-16** (Design Overhaul) — Ready to implement (5–7 days)
+4. 🟡 **UserStory-15** (Application Flow & Onboarding) — Refined, ready to implement (4–5 days)
 
 ---
 
