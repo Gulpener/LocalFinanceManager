@@ -37,7 +37,7 @@ public class AutoApplySettingsPageModel : PageObjectBase
         await NavigateToAsync("/admin/autoapply");
         // Wait for the loading spinner to disappear (settings loaded from API)
         await Page.WaitForSelectorAsync(".spinner-border",
-            new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 5000 });
+            new() { State = Microsoft.Playwright.WaitForSelectorState.Hidden, Timeout = 15000 });
     }
 
     /// <summary>

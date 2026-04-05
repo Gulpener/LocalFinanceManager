@@ -285,10 +285,21 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAccounts();
-        await LoadCategories();
-        await LoadSettings();
-        _loading = false;
+        try
+        {
+            await LoadAccounts();
+            await LoadCategories();
+            await LoadSettings();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize Auto-Apply settings page.");
+            _errorMessage = SettingsLoadErrorMessage;
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private async Task LoadAccounts()
