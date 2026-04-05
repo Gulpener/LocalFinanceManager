@@ -237,7 +237,16 @@
         _exportError = null;
         try
         {
-            await JS.InvokeVoidAsync("open", "/api/backup/export", "_blank");
+            var response = await Http.GetAsync("/api/backup/export");
+            if (!response.IsSuccessStatusCode)
+            {
+                _exportError = $"Export failed (HTTP {(int)response.StatusCode}). Please try again.";
+                return;
+            }
+
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var fileName = $"backup-{DateTime.UtcNow:yyyyMMdd}.json";
+            await JS.InvokeVoidAsync("downloadFileFromBytes", fileName, "application/json", bytes);
         }
         catch (Exception ex)
         {
