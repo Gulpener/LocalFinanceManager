@@ -13,9 +13,10 @@ public interface IAccountRepository : IRepository<Account>
     Task<List<Account>> GetAllActiveAsync();
 
     /// <summary>
-    /// Get an account by ID where the current user is the owner (for write operations).
+    /// Get an account by ID that is readable by the current user (owned or accepted shared).
+    /// Use for read-only operations. For write operations, use GetByIdAsync (owner-only).
     /// </summary>
-    Task<Account?> GetOwnedByIdAsync(Guid id);
+    Task<Account?> GetReadableByIdAsync(Guid id);
 
     /// <summary>
     /// Check if an account with the given label already exists.

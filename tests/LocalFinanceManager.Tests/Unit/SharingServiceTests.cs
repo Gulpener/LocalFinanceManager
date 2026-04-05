@@ -192,8 +192,9 @@ public class SharingServiceTests
 
         await _service.RevokeAccountShareAsync(share.Id, OwnerUserId);
 
-        var deleted = await _context.AccountShares.FindAsync(share.Id);
-        Assert.That(deleted, Is.Null);
+        var revoked = await _context.AccountShares.FindAsync(share.Id);
+        Assert.That(revoked, Is.Not.Null);
+        Assert.That(revoked!.IsArchived, Is.True);
     }
 
     [Test]
@@ -329,7 +330,8 @@ public class SharingServiceTests
         // Revoke accepted share
         await _service.RevokeAccountShareAsync(share.Id, OwnerUserId);
 
-        var deleted = await _context.AccountShares.FindAsync(share.Id);
-        Assert.That(deleted, Is.Null);
+        var revoked = await _context.AccountShares.FindAsync(share.Id);
+        Assert.That(revoked, Is.Not.Null);
+        Assert.That(revoked!.IsArchived, Is.True);
     }
 }

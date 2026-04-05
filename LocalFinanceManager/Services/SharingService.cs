@@ -143,7 +143,7 @@ public class SharingService : ISharingService
             .Where(s => !s.IsArchived && s.Id == shareId && s.UserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the owner.");
-        _context.AccountShares.Remove(share);
+        share.IsArchived = true;
         await _context.SaveChangesAsync();
         _logger.LogInformation("AccountShare revoked by owner {UserId}", currentUserId);
     }
@@ -154,7 +154,7 @@ public class SharingService : ISharingService
             .Where(s => !s.IsArchived && s.Id == shareId && s.UserId == currentUserId)
             .FirstOrDefaultAsync()
             ?? throw new KeyNotFoundException($"Share {shareId} not found or you are not the owner.");
-        _context.BudgetPlanShares.Remove(share);
+        share.IsArchived = true;
         await _context.SaveChangesAsync();
         _logger.LogInformation("BudgetPlanShare revoked by owner {UserId}", currentUserId);
     }

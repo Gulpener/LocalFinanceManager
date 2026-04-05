@@ -123,7 +123,7 @@ public class SharingIntegrationTests
             new Mock<ILogger<Repository<Account>>>().Object,
             new TestUserContext(RecipientUserId));
 
-        var result = await recipientRepo.GetByIdAsync(account.Id);
+        var result = await recipientRepo.GetReadableByIdAsync(account.Id);
 
         Assert.That(result, Is.Null);
     }
@@ -141,7 +141,7 @@ public class SharingIntegrationTests
             new Mock<ILogger<Repository<Account>>>().Object,
             new TestUserContext(RecipientUserId));
 
-        var result = await recipientRepo.GetByIdAsync(account.Id);
+        var result = await recipientRepo.GetReadableByIdAsync(account.Id);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Id, Is.EqualTo(account.Id));
@@ -160,7 +160,7 @@ public class SharingIntegrationTests
             new Mock<ILogger<Repository<Account>>>().Object,
             new TestUserContext(RecipientUserId));
 
-        var result = await recipientRepo.GetByIdAsync(account.Id);
+        var result = await recipientRepo.GetReadableByIdAsync(account.Id);
 
         Assert.That(result, Is.Null);
     }
@@ -179,13 +179,13 @@ public class SharingIntegrationTests
             new TestUserContext(RecipientUserId));
 
         // Verify access before revocation
-        var before = await recipientRepo.GetByIdAsync(account.Id);
+        var before = await recipientRepo.GetReadableByIdAsync(account.Id);
         Assert.That(before, Is.Not.Null);
 
         // Revoke
         await _sharingService.RevokeAccountShareAsync(share.Id, OwnerUserId);
 
-        var after = await recipientRepo.GetByIdAsync(account.Id);
+        var after = await recipientRepo.GetReadableByIdAsync(account.Id);
         Assert.That(after, Is.Null);
     }
 

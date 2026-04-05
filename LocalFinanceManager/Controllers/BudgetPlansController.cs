@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using LocalFinanceManager.Services;
 using LocalFinanceManager.DTOs;
@@ -139,7 +140,7 @@ public class BudgetPlansController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized attempt to update budget plan {Id}", id);
-            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -166,7 +167,7 @@ public class BudgetPlansController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized attempt to archive budget plan {Id}", id);
-            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
         }
     }
 
@@ -195,7 +196,7 @@ public class BudgetPlansController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized attempt to create budget line for plan {PlanId}", request.BudgetPlanId);
-            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
@@ -233,7 +234,7 @@ public class BudgetPlansController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized attempt to update budget line {Id}", id);
-            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -265,7 +266,7 @@ public class BudgetPlansController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Unauthorized attempt to archive budget line {Id}", id);
-            return StatusCode(403, new { title = "Forbidden", status = 403, detail = ex.Message });
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Forbidden", Status = StatusCodes.Status403Forbidden, Detail = ex.Message });
         }
     }
 }

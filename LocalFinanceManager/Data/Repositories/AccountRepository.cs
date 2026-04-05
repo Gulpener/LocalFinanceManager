@@ -28,18 +28,15 @@ public class AccountRepository : Repository<Account>, IAccountRepository
         }
 
         return await _context.Set<Account>()
-            .Where(a => !a.IsArchived
-                && a.Id == id
-                && (a.UserId == userId
-                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)))
+            .Where(a => !a.IsArchived && a.Id == id && a.UserId == userId)
             .FirstOrDefaultAsync();
     }
 
     /// <summary>
-    /// Get an account by ID where the current user is the owner. Used for write operations
-    /// to prevent users with shared access (Viewer/Editor) from mutating accounts they don't own.
+    /// Get an account by ID that is readable by the current user (owned or accepted shared).
+    /// Use for read-only operations. Write operations use GetByIdAsync (owner-only).
     /// </summary>
-    public async Task<Account?> GetOwnedByIdAsync(Guid id)
+    public async Task<Account?> GetReadableByIdAsync(Guid id)
     {
         var userId = _userContext.GetCurrentUserId();
         if (userId == Guid.Empty)
@@ -48,7 +45,10 @@ public class AccountRepository : Repository<Account>, IAccountRepository
         }
 
         return await _context.Set<Account>()
-            .Where(a => !a.IsArchived && a.Id == id && a.UserId == userId)
+            .Where(a => !a.IsArchived
+                && a.Id == id
+                && (a.UserId == userId
+                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)))
             .FirstOrDefaultAsync();
     }
 

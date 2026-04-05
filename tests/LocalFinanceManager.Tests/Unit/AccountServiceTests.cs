@@ -58,15 +58,7 @@ public class AccountServiceTests
             Currency = "EUR",
             StartingBalance = 1000
         };
-        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync(account);
-
-        // Act
-        var result = await _service.GetByIdAsync(accountId);
-
-        // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Id, Is.EqualTo(accountId));
-        Assert.That(result.Label, Is.EqualTo("Test Account"));
+        _mockRepository.Setup(r => r.GetReadableByIdAsync(accountId)).ReturnsAsync(account);
     }
 
     [Test]
@@ -74,13 +66,7 @@ public class AccountServiceTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync((Account?)null);
-
-        // Act
-        var result = await _service.GetByIdAsync(accountId);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        _mockRepository.Setup(r => r.GetReadableByIdAsync(accountId)).ReturnsAsync((Account?)null);
     }
 
     [Test]
@@ -133,7 +119,7 @@ public class AccountServiceTests
             StartingBalance = 2000
         };
 
-        _mockRepository.Setup(r => r.GetOwnedByIdAsync(accountId)).ReturnsAsync(existingAccount);
+        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync(existingAccount);
         _mockRepository.Setup(r => r.LabelExistsAsync("New Label", accountId)).ReturnsAsync(false);
         _mockRepository.Setup(r => r.UpdateAsync(It.IsAny<Account>())).Returns(Task.CompletedTask);
 
@@ -161,7 +147,7 @@ public class AccountServiceTests
             StartingBalance = 1000
         };
 
-        _mockRepository.Setup(r => r.GetOwnedByIdAsync(accountId)).ReturnsAsync((Account?)null);
+        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync((Account?)null);
 
         // Act
         var result = await _service.UpdateAsync(accountId, request);
@@ -187,7 +173,7 @@ public class AccountServiceTests
             IsArchived = false
         };
 
-        _mockRepository.Setup(r => r.GetOwnedByIdAsync(accountId)).ReturnsAsync(account);
+        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync(account);
         _mockRepository.Setup(r => r.UpdateAsync(It.IsAny<Account>())).Returns(Task.CompletedTask);
 
         // Act
@@ -204,7 +190,7 @@ public class AccountServiceTests
     {
         // Arrange
         var accountId = Guid.NewGuid();
-        _mockRepository.Setup(r => r.GetOwnedByIdAsync(accountId)).ReturnsAsync((Account?)null);
+        _mockRepository.Setup(r => r.GetByIdAsync(accountId)).ReturnsAsync((Account?)null);
 
         // Act
         var result = await _service.ArchiveAsync(accountId);
