@@ -226,7 +226,7 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .Where(t => !t.IsArchived
                 && t.AccountId == accountId
                 && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
-                && t.IsSplit
+                && t.AssignedParts!.Any(s => !s.IsArchived)
                 && t.Date >= from
                 && t.Date < to)
             .Include(t => t.AssignedParts!)
