@@ -72,6 +72,7 @@ monthEnd);
                     .Where(t => t.AssignedParts != null)
                     .SelectMany(t => t.AssignedParts!)
                     .Where(s => !s.IsArchived)
+                    .Where(s => !s.IsArchived)
                     .GroupBy(s => s.BudgetLine?.Category?.Name ?? string.Empty)
                     .ToDictionary(g => g.Key, g => g.Sum(s => Math.Abs(s.Amount)));
 
