@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Security.Claims;
 using LocalFinanceManager.Data;
+using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -378,8 +379,21 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         await using var context = new AppDbContext(options);
         await context.Database.MigrateAsync();
-        var seedService = new DevelopmentUserSeedService(context);
-        await seedService.SeedAsync();
+
+        // Create the dev user that E2E tests authenticate as (idempotent)
+        if (!await context.Users.AnyAsync(u => u.Id == AppDbContext.SeedUserId))
+        {
+            context.Users.Add(new User
+            {
+                Id = AppDbContext.SeedUserId,
+                SupabaseUserId = "00000000-0000-0000-0000-000000000001",
+                Email = AppDbContext.SeedUserEmail,
+                DisplayName = "Dev User",
+                EmailConfirmed = true,
+                IsArchived = false
+            });
+            await context.SaveChangesAsync();
+        }
     }
 
     /// <summary>
