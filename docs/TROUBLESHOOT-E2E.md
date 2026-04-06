@@ -1,12 +1,12 @@
-# E2E Test Troubleshooting — Current State (March 12, 2026)
+# E2E Test Troubleshooting — Current State (April 6, 2026)
 
 ## Baseline
 
-| Milestone                           | Passing | Total eligible | Notes                                     |
-| ----------------------------------- | ------- | -------------- | ----------------------------------------- |
-| After SQLite → PostgreSQL migration | 93      | 107            | Starting point                            |
-| After session fixes                 | ~106    | 107            | 1 non-deterministic failure per run       |
-| 5 tests permanently skipped         | —       | —              | Keyboard shortcut tests skipped by design |
+| Milestone                           | Passing | Total eligible | Notes                                 |
+| ----------------------------------- | ------- | -------------- | ------------------------------------- |
+| After SQLite → PostgreSQL migration | 93      | 107            | Starting point                        |
+| After session fixes (Mar 12)        | ~106    | 107            | 1 non-deterministic failure per run   |
+| After April 2026 fixes              | 107     | 107            | Consistent pass (5 skipped by design) |
 
 ---
 
@@ -261,3 +261,137 @@ dotnet test tests/LocalFinanceManager.E2E --no-build `
 # Run all ML tests
 dotnet test tests/LocalFinanceManager.E2E --no-build --filter "Category=ML"
 ```
+
+---
+
+## April 2026 — CI-only Timeout: `TransactionList_Slash_FocusesFilterInput`
+
+### Symptom
+
+Phase 3 (`KeyboardNavigationTests`) failed consistently in CI with:
+
+```
+System.TimeoutException : Timeout 30000ms exceeded.
+Call log:
+  - waiting for Locator("tr[data-testid='transaction-row']").First
+  at KeyboardNavigationTests.TransactionList_Slash_FocusesFilterInput() line 337
+```
+
+The test passed locally every time. All other tests in the same phase passed.
+
+### Root Cause Analysis
+
+**Why it only fails in CI:** Blazor Server delivers HTML first, then fetches transaction data via a SignalR WebSocket during `OnInitializedAsync`. `WaitUntil = NetworkIdle` does not observe WebSocket traffic, so `GotoAsync` returns before row data arrives. Locally, the SignalR response takes ~100 ms and the default 30 s Playwright action timeout easily covers it. In CI, Phase 3 runs after ~40 minutes of prior activity (build, unit tests, ML tests, E2E phases 1–2) on a 2-vCPU GitHub Actions runner. The Kestrel server is under sustained memory/CPU pressure, SignalR responses are delayed, and the 30 s budget occasionally expires.
+
+**Why this specific test was vulnerable:** `TransactionList_Slash_FocusesFilterInput` was the only test in `KeyboardNavigationTests` that navigated to `/transactions` and then immediately called an action on a locator (`FocusAsync()`) with no explicit wait for the rows to appear first. Every other test that touches `/transactions` in the same file already had:
+
+```csharp
+await Page.WaitForSelectorAsync(
+    "[data-testid='transaction-row']",
+    new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+```
+
+### What Was Tried
+
+| Approach                                | Outcome                                                           |
+| --------------------------------------- | ----------------------------------------------------------------- |
+| Rely on `WaitUntil = NetworkIdle` alone | Fails — WebSocket (SignalR) traffic is invisible to `NetworkIdle` |
+| Default 30 s `FocusAsync()` timeout     | Fails in CI under phase 3 load; passes locally                    |
+
+### Fix Applied (April 6, 2026)
+
+**Fix 1 — `TransactionList_Slash_FocusesFilterInput`** ([tests/LocalFinanceManager.E2E/Tests/KeyboardNavigationTests.cs](../tests/LocalFinanceManager.E2E/Tests/KeyboardNavigationTests.cs)):
+
+Added an explicit `WaitForSelectorAsync` with `Timeout = 45_000` between `GotoAsync` and `FocusAsync`, matching the pattern already used in `SplitEditor_InitialFocus_IsSetToFirstCategorySelect` and `BulkAssignModal_InitialFocus_IsSetToBudgetLineSelect` directly above:
+
+```csharp
+await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+// Added: wait for SignalR data before acting on rows
+await Page.WaitForSelectorAsync(
+    "tr[data-testid='transaction-row']",
+    new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
+await Page.Locator("tr[data-testid='transaction-row']").First.FocusAsync();
+await Page.Keyboard.PressAsync("/");
+await Page.WaitForFunctionAsync("() => document.activeElement?.id === 'assignmentStatusFilter'");
+```
+
+**Fix 2 — Global Playwright action timeout** ([tests/LocalFinanceManager.E2E/E2ETestBase.cs](../tests/LocalFinanceManager.E2E/E2ETestBase.cs)):
+
+Added `Page.SetDefaultTimeout(60_000)` in `BaseSetUp()` to raise the per-action timeout from Playwright's 30 s default to 60 s for all E2E tests. This addresses the wider class of rotating single failures (see March 12 status) caused by CI load spikes:
+
+```csharp
+// In BaseSetUp(), before AddCookiesAsync:
+Page.SetDefaultTimeout(60_000);
+```
+
+Note — `SetDefaultTimeout` is synchronous in Playwright .NET (`IPage`). There is no `SetDefaultTimeoutAsync` variant; using `await` on it produces `CS1061`.
+
+### Files Changed
+
+| File                                                             | Change                                                                                                |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `tests/LocalFinanceManager.E2E/Tests/KeyboardNavigationTests.cs` | Added `WaitForSelectorAsync` (45 s) before `FocusAsync` in `TransactionList_Slash_FocusesFilterInput` |
+| `tests/LocalFinanceManager.E2E/E2ETestBase.cs`                   | Added `Page.SetDefaultTimeout(60_000)` in `BaseSetUp()`                                               |
+
+---
+
+## April 2026 — CI-only Timeout: `RecentBudgetLines_Display_In_AssignModal`
+
+### Symptom
+
+Phase 3 (`UXEnhancementsTests`) failed with:
+
+```
+System.TimeoutException : Timeout 60000ms exceeded.
+Call log:
+  - waiting for Locator("button:has-text('Toewijzen')").First
+  at UXEnhancementsTests.RecentBudgetLines_Display_In_AssignModal() line 216
+```
+
+Note: 60 s (not 30 s) because the global `Page.SetDefaultTimeout(60_000)` applied from the previous fix. Locally the test passes every time.
+
+### Root Cause
+
+Same pattern as `TransactionList_Slash_FocusesFilterInput`: `WaitUntil = NetworkIdle` returns before Blazor SignalR delivers row data. `button:has-text('Toewijzen')` is rendered per-row by Blazor — it does not exist in the DOM until `OnInitializedAsync` completes over SignalR.
+
+Additionally, `UXEnhancementsTests` had **no `[SetUp]`** at all. `QuickFilters_State_Persists_After_Page_Reload` intentionally saves `"unassigned"` to `localStorage`. The next test to run inherits this filter and sees zero rows — hiding all `Toewijzen` buttons regardless of timeout length.
+
+Two affected tests: `RecentBudgetLines_Display_In_AssignModal` and `AssignmentModal_Closes_When_Escape_Pressed` — both navigated to `/transactions` and clicked `button:has-text('Toewijzen')` without any row-ready guard.
+
+### Fix Applied (April 6, 2026)
+
+**Fix 1 — New `[SetUp]`** ([tests/LocalFinanceManager.E2E/UX/UXEnhancementsTests.cs](../tests/LocalFinanceManager.E2E/UX/UXEnhancementsTests.cs)):
+
+Added a `[SetUp]` method matching the pattern used in `KeyboardNavigationTests` and `BasicAssignmentTests`:
+
+```csharp
+[SetUp]
+public async Task SetUp()
+{
+    await Factory!.TruncateTablesAsync();
+    await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+    await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
+}
+```
+
+**Fix 2 — `WaitForSelectorAsync` guard in `RecentBudgetLines_Display_In_AssignModal` and `AssignmentModal_Closes_When_Escape_Pressed`**:
+
+```csharp
+await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+// Added: wait for SignalR row data before clicking Toewijzen
+await Page.WaitForSelectorAsync(
+    "tr[data-testid='transaction-row']",
+    new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
+var assignButtons = Page.Locator("button:has-text('Toewijzen')");
+await assignButtons.First.ClickAsync();
+```
+
+### Files Changed
+
+| File                                                      | Change                                                                                                                                                                                                                  |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/LocalFinanceManager.E2E/UX/UXEnhancementsTests.cs` | Added `[SetUp]` with `TruncateTablesAsync` + localStorage clear; added `WaitForSelectorAsync` (45 s) before `ClickAsync` in `RecentBudgetLines_Display_In_AssignModal` and `AssignmentModal_Closes_When_Escape_Pressed` |
