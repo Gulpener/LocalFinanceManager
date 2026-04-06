@@ -52,6 +52,7 @@ public class AccountService
         var account = new Account
         {
             Id = Guid.NewGuid(),
+            UserId = _userContext.GetCurrentUserId(),
             Label = request.Label,
             Type = request.Type,
             Currency = request.Currency.ToUpperInvariant(),

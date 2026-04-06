@@ -329,6 +329,24 @@ else
     {
         await LoadBudgetPlan();
         await LoadCategories();
+        _initialized = true;
+    }
+
+    private bool _initialized;
+    private bool _afterRenderRetried;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && budgetPlan == null && _initialized && !_afterRenderRetried)
+        {
+            // Race condition: circuit user was not yet initialized during OnInitializedAsync.
+            // Retry once after the first interactive render when auth is available.
+            // _initialized ensures OnInitializedAsync has fully completed to avoid concurrent DbContext use.
+            _afterRenderRetried = true;
+            await LoadBudgetPlan();
+            await LoadCategories();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadBudgetPlan()
@@ -346,11 +364,7 @@ else
 
     private async Task LoadCategories()
     {
-        // Load categories for the current budget plan (using page parameter Id)
-        if (budgetPlan != null)
-        {
-            categories = await CategoryService.GetByBudgetPlanAsync(Id);
-        }
+        categories = await CategoryService.GetByBudgetPlanAsync(Id);
     }
 
     private async Task HandleUpdatePlan()

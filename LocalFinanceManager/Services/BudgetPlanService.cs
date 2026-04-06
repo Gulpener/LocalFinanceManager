@@ -109,7 +109,8 @@ public class BudgetPlanService
             AccountId = dto.AccountId,
             Year = dto.Year,
             Name = dto.Name,
-            IsArchived = false
+            IsArchived = false,
+            UserId = _userContext.GetCurrentUserId()
         };
 
         await _budgetPlanRepository.AddAsync(plan);

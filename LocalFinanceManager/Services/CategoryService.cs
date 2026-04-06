@@ -10,11 +10,13 @@ namespace LocalFinanceManager.Services;
 public class CategoryService
 {
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IUserContext _userContext;
     private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(ICategoryRepository categoryRepository, ILogger<CategoryService> logger)
+    public CategoryService(ICategoryRepository categoryRepository, IUserContext userContext, ILogger<CategoryService> logger)
     {
         _categoryRepository = categoryRepository;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -64,7 +66,8 @@ public class CategoryService
             Name = request.Name,
             Type = request.Type,
             BudgetPlanId = request.BudgetPlanId,
-            IsArchived = false
+            IsArchived = false,
+            UserId = _userContext.GetCurrentUserId()
         };
 
         await _categoryRepository.AddAsync(category);

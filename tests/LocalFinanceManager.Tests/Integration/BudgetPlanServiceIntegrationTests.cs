@@ -80,12 +80,12 @@ public class BudgetPlanServiceIntegrationTests
         Assert.That(categories, Has.Count.EqualTo(6), "Personal template should create 6 categories");
 
         // Verify specific categories exist
-        Assert.That(categories.Any(c => c.Name == "Salary" && c.Type == CategoryType.Income), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Housing" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Transportation" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Food" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Entertainment" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Savings" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Salaris" && c.Type == CategoryType.Income), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Wonen" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Vervoer" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Eten & Drinken" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Vrije Tijd" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Sparen" && c.Type == CategoryType.Expense), Is.True);
     }
 
     [Test]
@@ -108,11 +108,11 @@ public class BudgetPlanServiceIntegrationTests
         var categories = await _categoryRepository.GetByBudgetPlanAsync(result.Id);
         Assert.That(categories, Has.Count.EqualTo(5), "Business template should create 5 categories");
 
-        Assert.That(categories.Any(c => c.Name == "Revenue" && c.Type == CategoryType.Income), Is.True);
-        Assert.That(categories.Any(c => c.Name == "COGS" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Operating Expenses" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Omzet" && c.Type == CategoryType.Income), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Kostprijs Verkopen" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Bedrijfskosten" && c.Type == CategoryType.Expense), Is.True);
         Assert.That(categories.Any(c => c.Name == "Marketing" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Payroll" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Salarissen" && c.Type == CategoryType.Expense), Is.True);
     }
 
     [Test]
@@ -135,12 +135,12 @@ public class BudgetPlanServiceIntegrationTests
         var categories = await _categoryRepository.GetByBudgetPlanAsync(result.Id);
         Assert.That(categories, Has.Count.EqualTo(6), "Household template should create 6 categories");
 
-        Assert.That(categories.Any(c => c.Name == "Income" && c.Type == CategoryType.Income), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Rent/Mortgage" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Utilities" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Groceries" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Childcare" && c.Type == CategoryType.Expense), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Healthcare" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Inkomsten" && c.Type == CategoryType.Income), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Huur/Hypotheek" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Nutsvoorzieningen" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Boodschappen" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Kinderopvang" && c.Type == CategoryType.Expense), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Zorgkosten" && c.Type == CategoryType.Expense), Is.True);
     }
 
     [Test]
@@ -180,10 +180,10 @@ public class BudgetPlanServiceIntegrationTests
         var budgetPlan = await _budgetPlanService.CreateAsync(createDto);
         var categories = await _categoryRepository.GetByBudgetPlanAsync(budgetPlan.Id);
 
-        // Find the "Salary" category created by template
-        var salaryCategory = categories.First(c => c.Name == "Salary");
+        // Find the "Salaris" category created by template
+        var salaryCategory = categories.First(c => c.Name == "Salaris");
 
-        // Act - Update the category name from "Salary" to "Income"
+        // Act - Update the category name from "Salaris" to "Inkomsten"
         var updateDto = new UpdateCategoryDto
         {
             Name = "Income",
@@ -257,11 +257,11 @@ public class BudgetPlanServiceIntegrationTests
 
         // Verify Personal template was applied (6 categories)
         Assert.That(categories, Has.Count.EqualTo(6), "Seed data should use Personal template with 6 categories");
-        Assert.That(categories.Any(c => c.Name == "Salary"), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Housing"), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Transportation"), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Food"), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Entertainment"), Is.True);
-        Assert.That(categories.Any(c => c.Name == "Savings"), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Salaris"), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Wonen"), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Vervoer"), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Eten & Drinken"), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Vrije Tijd"), Is.True);
+        Assert.That(categories.Any(c => c.Name == "Sparen"), Is.True);
     }
 }

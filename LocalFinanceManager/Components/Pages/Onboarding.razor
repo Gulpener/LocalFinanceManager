@@ -207,7 +207,8 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <button class="btn btn-primary me-2" disabled="@_isBusy" @onclick="() => _step = 6">
+                            <button class="btn btn-primary me-2" disabled="@_isBusy"
+                                    @onclick="() => { _csvImported = true; _step = 6; }">
                                 Preview bevestigen &amp; Doorgaan
                             </button>
                         }
@@ -243,6 +244,28 @@
                                 <br /><span><strong>@_createdCategoryCount</strong> categorie(ën) aangemaakt.</span>
                             }
                         </p>
+                        @if (_createdBudgetPlanId != Guid.Empty || !_csvImported)
+                        {
+                            <div class="alert alert-info text-start mt-3">
+                                <strong>Volgende stappen:</strong>
+                                <ul class="mb-0 mt-1">
+                                    @if (_createdBudgetPlanId != Guid.Empty)
+                                    {
+                                        <li>
+                                            <a href="/budgets/@_createdBudgetPlanId/edit">Vul uw budgetplan in</a>
+                                            met budgetregels per categorie om uitgaven bij te houden.
+                                        </li>
+                                    }
+                                    @if (!_csvImported)
+                                    {
+                                        <li>
+                                            <a href="/transactions/import">Importeer uw transacties</a>
+                                            via een CSV-bestand om direct een overzicht te krijgen.
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
                         <a href="/" class="btn btn-primary btn-lg mt-2">
                             Naar Dashboard <i class="bi bi-house"></i>
                         </a>
@@ -255,6 +278,7 @@
 @code {
     private int _step = 1;
     private bool _isBusy;
+    private bool _csvImported;
     private string? _errorMessage;
 
     // Step 2 — Account
