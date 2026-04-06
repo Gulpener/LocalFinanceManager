@@ -109,6 +109,10 @@ public class KeyboardNavigationTests : E2ETestBase
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        await Page.WaitForSelectorAsync(
+            "[data-testid='transaction-row']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
         await Page.Locator("tr[data-testid='transaction-row'] input[type='checkbox']").First.CheckAsync();
         await Page.Locator("button:has-text('Bulk toewijzen')").ClickAsync();
 
@@ -194,6 +198,10 @@ public class KeyboardNavigationTests : E2ETestBase
         await SeedDataHelper.SeedTransactionAsync(context, account.Id, -32m, DateTime.UtcNow, "Keyboard Enter Test");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        await Page.WaitForSelectorAsync(
+            "[data-testid='transaction-row']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
 
         await Page.Locator("button:has-text('Toewijzen')").First.ClickAsync();
         var modal = Page.Locator("#transactionAssignModal");
