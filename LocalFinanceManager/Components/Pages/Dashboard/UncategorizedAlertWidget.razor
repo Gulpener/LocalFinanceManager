@@ -1,15 +1,13 @@
-@using LocalFinanceManager.Models
-
 <div class="card h-100">
     <div class="card-body">
         <h6 class="card-subtitle mb-2 text-muted text-uppercase small">Niet-toegewezen transacties</h6>
-        @if (Transactions == null)
+        @if (UnassignedCount == null)
         {
             <div class="text-center py-3">
                 <div class="spinner-border spinner-border-sm" role="status"></div>
             </div>
         }
-        else if (_unassignedCount == 0)
+        else if (UnassignedCount == 0)
         {
             <p class="text-success small"><i class="bi bi-check-circle"></i> Alle transacties zijn toegewezen.</p>
         }
@@ -17,7 +15,7 @@
         {
             <div class="d-flex align-items-center gap-2 mb-2">
                 <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-                <span class="fs-5 fw-bold">@_unassignedCount</span>
+                <span class="fs-5 fw-bold">@UnassignedCount</span>
                 <span class="text-muted small">transacties moeten worden toegewezen</span>
             </div>
             <a href="/transactions?filter=unassigned" class="btn btn-sm btn-warning text-dark">
@@ -28,13 +26,5 @@
 </div>
 
 @code {
-    [Parameter] public List<Transaction>? Transactions { get; set; }
-
-    private int _unassignedCount;
-
-    protected override void OnParametersSet()
-    {
-        if (Transactions == null) return;
-        _unassignedCount = Transactions.Count(t => !t.IsSplit && (t.AssignedParts == null || !t.AssignedParts.Any()));
-    }
+    [Parameter] public int? UnassignedCount { get; set; }
 }

@@ -1,4 +1,4 @@
-@page "/"
+﻿@page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.Components.Pages.Dashboard
@@ -50,7 +50,7 @@
                         <BudgetStatusWidget Accounts="_accounts" />
                     </div>
                     <div class="col-md-6">
-                        <UncategorizedAlertWidget Transactions="_transactions" />
+                        <UncategorizedAlertWidget UnassignedCount="_unassignedCount" />
                     </div>
                     <div class="col-md-6">
                         <MLSuggestionWidget Transactions="_transactions" />
@@ -104,6 +104,7 @@
 @code {
     private List<AccountResponse>? _accounts;
     private List<Transaction>? _transactions;
+    private int? _unassignedCount;
     private bool _isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -122,10 +123,12 @@
             if (_accounts.Count > 0)
             {
                 _transactions = await TransactionRepository.GetRecentWithSplitsAsync(50);
+                _unassignedCount = await TransactionRepository.CountUnassignedAsync();
             }
             else
             {
                 _transactions = new List<Transaction>();
+                _unassignedCount = 0;
             }
         }
         catch (Exception ex)
