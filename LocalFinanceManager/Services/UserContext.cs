@@ -1,6 +1,5 @@
 using LocalFinanceManager.Data;
 using Microsoft.EntityFrameworkCore;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace LocalFinanceManager.Services;
 
@@ -15,15 +14,13 @@ public class UserContext : IUserContext
 
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IBlazorCircuitUser _circuitUser;
-    private readonly AuthTokenStore _tokenStore;
     private readonly AppDbContext _context;
     private readonly ILogger<UserContext> _logger;
 
-    public UserContext(IHttpContextAccessor httpContextAccessor, IBlazorCircuitUser circuitUser, AuthTokenStore tokenStore, AppDbContext context, ILogger<UserContext> logger)
+    public UserContext(IHttpContextAccessor httpContextAccessor, IBlazorCircuitUser circuitUser, AppDbContext context, ILogger<UserContext> logger)
     {
         _httpContextAccessor = httpContextAccessor;
         _circuitUser = circuitUser;
-        _tokenStore = tokenStore;
         _context = context;
         _logger = logger;
     }
@@ -42,10 +39,13 @@ public class UserContext : IUserContext
             if (_circuitUser.IsInitialized)
                 return _circuitUser.UserId;
 
-            // Circuit user not yet initialized (race condition: login navigation fired before
-            // OnAuthenticationStateChanged DB lookup completed). Resolve from the token store
-            // so write operations don't silently persist Guid.Empty as the owner.
-            return ResolveUserIdFromTokenStore();
+            // Circuit user not yet initialized — return Guid.Empty rather than
+            // reading an unvalidated token from the sessionStorage token store.
+            // Callers that require an authenticated user (AccountService, CategoryService,
+            // BudgetPlanService, etc.) already guard against Guid.Empty and will throw,
+            // which is the correct behavior when the circuit hasn't been set up yet.
+            _logger.LogDebug("GetCurrentUserId called before circuit user was initialized; returning Guid.Empty");
+            return Guid.Empty;
         }
 
         // API/HTTP path: check cache first to avoid repeated DB lookups per request
@@ -99,44 +99,5 @@ public class UserContext : IUserContext
         if (_httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false)
             return true;
         return _circuitUser.IsInitialized && _circuitUser.UserId != Guid.Empty;
-    }
-
-    /// <summary>
-    /// Fallback path for when the circuit user hasn't been initialized yet.
-    /// Parses the stored JWT, resolves the local user from the DB, and eagerly
-    /// initializes the circuit user to avoid repeated DB lookups.
-    /// </summary>
-    private Guid ResolveUserIdFromTokenStore()
-    {
-        var token = _tokenStore.AccessToken;
-        if (string.IsNullOrEmpty(token))
-            return Guid.Empty;
-
-        var handler = new JwtSecurityTokenHandler();
-        if (!handler.CanReadToken(token))
-            return Guid.Empty;
-
-        var jwtToken = handler.ReadJwtToken(token);
-        var sub = jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-        if (string.IsNullOrEmpty(sub))
-            return Guid.Empty;
-
-        var localUser = _context.Users
-            .AsNoTracking()
-            .Where(u => u.SupabaseUserId == sub)
-            .Select(u => new { u.Id, u.Email })
-            .FirstOrDefault();
-
-        if (localUser == null)
-        {
-            _logger.LogWarning("Token store fallback: no local user found for Supabase UUID {Sub}", sub);
-            return Guid.Empty;
-        }
-
-        var email = jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value ?? localUser.Email;
-        _circuitUser.Initialize(localUser.Id, email);
-
-        _logger.LogDebug("Token store fallback resolved user {UserId}; circuit user eagerly initialized", localUser.Id);
-        return localUser.Id;
     }
 }

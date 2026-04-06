@@ -104,13 +104,19 @@ public class BudgetPlanService
         }
 
         // 4. Create budget plan
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot create a budget plan without an authenticated user.");
+        }
+
         var plan = new BudgetPlan
         {
             AccountId = dto.AccountId,
             Year = dto.Year,
             Name = dto.Name,
             IsArchived = false,
-            UserId = _userContext.GetCurrentUserId()
+            UserId = userId
         };
 
         await _budgetPlanRepository.AddAsync(plan);

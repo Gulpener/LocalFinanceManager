@@ -434,7 +434,11 @@
             // Preload ML suggestion confidences for unassigned transactions so that
             // "has-suggestion" / "no-suggestion" filters are stable and deterministic
             // from the moment the list is rendered, rather than depending on async badge loading.
-            var unassigned = transactionDtos.Where(t => !t.IsAssigned).ToList();
+            // Preload is capped at MaxMlPreloadCount to avoid allocating thousands of Tasks for
+            // large transaction histories; items beyond the cap are simply absent from
+            // _suggestionConfidences and are treated as "no suggestion" by the filter.
+            const int MaxMlPreloadCount = 100;
+            var unassigned = transactionDtos.Where(t => !t.IsAssigned).Take(MaxMlPreloadCount).ToList();
             if (unassigned.Count > 0)
             {
                 const int maxConcurrentPredictionRequests = 4;
