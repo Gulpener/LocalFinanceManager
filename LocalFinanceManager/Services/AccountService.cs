@@ -28,27 +28,7 @@ public class AccountService
     {
         _logger.LogInformation("Retrieving all active accounts");
         var accounts = await _accountRepository.GetAllActiveAsync();
-        var currentUserId = _userContext.GetCurrentUserId();
-
-        return accounts.Select(a =>
-        {
-            var response = AccountResponse.FromEntity(a);
-
-            if (a.UserId == currentUserId)
-            {
-                response.PermissionLevel = Models.PermissionLevel.Owner;
-            }
-            else
-            {
-                var share = a.Shares?.FirstOrDefault(s =>
-                    s.SharedWithUserId == currentUserId &&
-                    s.Status == Models.ShareStatus.Accepted &&
-                    !s.IsArchived);
-                response.PermissionLevel = share?.Permission ?? Models.PermissionLevel.Viewer;
-            }
-
-            return response;
-        }).ToList();
+        return accounts.Select(a => BuildResponse(a)).ToList();
     }
 
     /// <summary>
@@ -58,7 +38,8 @@ public class AccountService
     {
         _logger.LogInformation("Retrieving account with ID: {AccountId}", id);
         var account = await _accountRepository.GetReadableByIdAsync(id);
-        return account != null ? AccountResponse.FromEntity(account) : null;
+        if (account == null) return null;
+        return BuildResponse(account);
     }
 
     /// <summary>
@@ -82,7 +63,9 @@ public class AccountService
         await _accountRepository.AddAsync(account);
 
         _logger.LogInformation("Account created successfully with ID: {AccountId}", account.Id);
-        return AccountResponse.FromEntity(account);
+        var response = AccountResponse.FromEntity(account);
+        response.PermissionLevel = Models.PermissionLevel.Owner;
+        return response;
     }
 
     /// <summary>
@@ -116,7 +99,10 @@ public class AccountService
         {
             await _accountRepository.UpdateAsync(account);
             _logger.LogInformation("Account updated successfully: {AccountId}", id);
-            return AccountResponse.FromEntity(account);
+            // UpdateAsync uses owner-only GetByIdAsync, so the current user is always the owner
+            var response = AccountResponse.FromEntity(account);
+            response.PermissionLevel = Models.PermissionLevel.Owner;
+            return response;
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -190,5 +176,30 @@ public class AccountService
     public async Task<int> GetActiveAccountCountAsync()
     {
         return await _accountRepository.CountActiveAsync();
+    }
+
+    /// <summary>
+    /// Builds an <see cref="AccountResponse"/> from an entity and populates <see cref="AccountResponse.PermissionLevel"/>
+    /// based on whether the current user owns the account or has been granted shared access.
+    /// </summary>
+    private AccountResponse BuildResponse(Account account)
+    {
+        var response = AccountResponse.FromEntity(account);
+        var currentUserId = _userContext.GetCurrentUserId();
+
+        if (account.UserId == currentUserId)
+        {
+            response.PermissionLevel = Models.PermissionLevel.Owner;
+        }
+        else
+        {
+            var share = account.Shares?.FirstOrDefault(s =>
+                s.SharedWithUserId == currentUserId &&
+                s.Status == Models.ShareStatus.Accepted &&
+                !s.IsArchived);
+            response.PermissionLevel = share?.Permission ?? Models.PermissionLevel.Viewer;
+        }
+
+        return response;
     }
 }

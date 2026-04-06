@@ -3,12 +3,14 @@
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Data.Repositories
 @using LocalFinanceManager.Services
+@using LocalFinanceManager.ML
 @inject ITransactionRepository TransactionRepository
 @inject IAccountRepository AccountRepository
 @inject IDeviceDetectionService DeviceDetectionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject ILogger<Transactions> Logger
+@inject IMLService MLService
 @implements IAsyncDisposable
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -428,6 +430,30 @@
 
             // Reset stored confidence scores when transaction list is refreshed
             _suggestionConfidences.Clear();
+
+            // Preload ML suggestion confidences for unassigned transactions so that
+            // "has-suggestion" / "no-suggestion" filters are stable and deterministic
+            // from the moment the list is rendered, rather than depending on async badge loading.
+            var unassigned = transactionDtos.Where(t => !t.IsAssigned).ToList();
+            if (unassigned.Count > 0)
+            {
+                var predictionTasks = unassigned.Select(async t =>
+                {
+                    try
+                    {
+                        var prediction = await MLService.PredictCategoryAsync(t.Id);
+                        if (prediction != null)
+                        {
+                            _suggestionConfidences[t.Id] = prediction.Confidence;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogDebug(ex, "ML prediction unavailable for transaction {TransactionId}", t.Id);
+                    }
+                });
+                await Task.WhenAll(predictionTasks);
+            }
 
             ApplyFilters();
             errorMessage = null;

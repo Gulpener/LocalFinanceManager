@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Moq;
+using LocalFinanceManager.ML;
 
 namespace LocalFinanceManager.Tests.Components;
 
@@ -184,6 +185,7 @@ public class ShortcutHelpTests
         var budgetPlanRepositoryMock = new Mock<IBudgetPlanRepository>();
         var recentCategoriesServiceMock = new Mock<IRecentCategoriesService>();
         var hostEnvironmentMock = new Mock<IWebHostEnvironment>();
+        var mlServiceMock = new Mock<IMLService>();
 
         transactionRepositoryMock
             .Setup(x => x.GetAllWithSplitsAsync())
@@ -209,6 +211,10 @@ public class ShortcutHelpTests
             .Setup(x => x.EnvironmentName)
             .Returns(Environments.Development);
 
+        mlServiceMock
+            .Setup(x => x.PredictCategoryAsync(It.IsAny<Guid>()))
+            .ReturnsAsync((CategoryPrediction?)null);
+
         services.AddSingleton(transactionRepositoryMock.Object);
         services.AddSingleton(accountRepositoryMock.Object);
         services.AddSingleton(deviceDetectionServiceMock.Object);
@@ -218,6 +224,7 @@ public class ShortcutHelpTests
         services.AddSingleton(budgetPlanRepositoryMock.Object);
         services.AddSingleton(recentCategoriesServiceMock.Object);
         services.AddSingleton(hostEnvironmentMock.Object);
+        services.AddSingleton(mlServiceMock.Object);
         services.AddOptions();
         services.Configure<BulkAssignUiOptions>(_ => { });
         services.AddLogging();

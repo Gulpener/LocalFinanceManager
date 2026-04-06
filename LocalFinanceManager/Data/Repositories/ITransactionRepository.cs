@@ -49,4 +49,16 @@ public interface ITransactionRepository : IRepository<Transaction>
     /// Gets transactions for a specific account with their splits and related data.
     /// </summary>
     Task<List<Transaction>> GetByAccountIdWithSplitsAsync(Guid accountId);
+
+    /// <summary>
+    /// Gets the most recent transactions (across all accessible accounts) with splits, limited to a given count.
+    /// Used by the dashboard to avoid loading the full transaction history.
+    /// </summary>
+    Task<List<Transaction>> GetRecentWithSplitsAsync(int count);
+
+    /// <summary>
+    /// Returns the count of unassigned (non-split) transactions accessible by the current user.
+    /// Used by the dashboard widget without materializing full entities.
+    /// </summary>
+    Task<int> CountUnassignedAsync();
 }

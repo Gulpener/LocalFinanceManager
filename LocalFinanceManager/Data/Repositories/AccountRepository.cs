@@ -49,6 +49,8 @@ public class AccountRepository : Repository<Account>, IAccountRepository
                 && a.Id == id
                 && (a.UserId == userId
                     || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)))
+            .Include(a => a.User)
+            .Include(a => a.Shares)
             .FirstOrDefaultAsync();
     }
 
