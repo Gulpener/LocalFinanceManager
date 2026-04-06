@@ -1,4 +1,5 @@
 @page "/budgets/new"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
@@ -56,7 +57,7 @@
             </div>
 
             @if (!string.IsNullOrEmpty(model.TemplateName) &&
-                        CategoryTemplates.Templates.ContainsKey(model.TemplateName))
+                                    CategoryTemplates.Templates.ContainsKey(model.TemplateName))
             {
                 <div class="mb-3">
                     <label class="form-label">Template Preview (@model.TemplateName)</label>

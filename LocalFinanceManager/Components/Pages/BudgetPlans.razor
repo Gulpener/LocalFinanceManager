@@ -1,4 +1,5 @@
 @page "/budgets"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
@@ -31,13 +32,20 @@
                 }
             </select>
         </div>
-        <div class="col-md-6 d-flex align-items-end">
+        <div class="col-md-4 d-flex align-items-end">
             @if (selectedAccountId != Guid.Empty)
             {
                 <button class="btn btn-primary" @onclick="CreateNewPlan">
                     <i class="bi bi-plus-circle"></i> Create New Budget Plan
                 </button>
             }
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <select class="form-select" @bind="_ownerFilter" @bind:after="StateHasChanged">
+                <option value="all">All</option>
+                <option value="mine">Owned by Me</option>
+                <option value="shared">Shared with Me</option>
+            </select>
         </div>
     </div>
 </div>
@@ -52,7 +60,7 @@ else if (selectedAccountId == Guid.Empty)
         <p>Please select an account to view its budget plans.</p>
     </div>
 }
-else if (budgetPlans == null || !budgetPlans.Any())
+else if (budgetPlans == null || !FilteredPlans.Any())
 {
     <div class="alert alert-info">
         <p>No budget plans found for this account. Create your first budget plan to get started!</p>
@@ -71,11 +79,18 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var plan in budgetPlans)
+            @foreach (var plan in FilteredPlans)
             {
                 <tr>
                     <td>@plan.Year</td>
-                    <td>@plan.Name</td>
+                    <td>
+                        @plan.Name
+                        <span class="ms-2 badge @PermissionBadgeClass(plan.UserPermission)">@plan.UserPermission</span>
+                        @if (plan.UserPermission != PermissionLevel.Owner && !string.IsNullOrEmpty(plan.OwnerEmail))
+                        {
+                            <div class="text-muted small">Gedeeld door @plan.OwnerEmail</div>
+                        }
+                    </td>
                     <td>@plan.BudgetLines.Count</td>
                     <td>@plan.CreatedAt.ToString("yyyy-MM-dd")</td>
                     <td>
@@ -114,6 +129,22 @@ else
     private List<BudgetPlanDto>? budgetPlans;
     private Guid selectedAccountId = Guid.Empty;
     private bool isLoading = false;
+    private string _ownerFilter = "all";
+
+    private IEnumerable<BudgetPlanDto> FilteredPlans => (budgetPlans ?? Enumerable.Empty<BudgetPlanDto>())
+        .Where(p => _ownerFilter switch
+        {
+            "mine" => p.UserPermission == PermissionLevel.Owner,
+            "shared" => p.UserPermission != PermissionLevel.Owner,
+            _ => true
+        });
+
+    private static string PermissionBadgeClass(PermissionLevel level) => level switch
+    {
+        PermissionLevel.Owner => "bg-primary",
+        PermissionLevel.Editor => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
 
     private bool showShareModal;
     private Guid shareModalPlanId;

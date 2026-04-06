@@ -189,11 +189,13 @@ public class SharingService : ISharingService
     {
         var accountShares = await _context.AccountShares
             .Include(s => s.Account)
+            .ThenInclude(a => a.User)
             .Where(s => !s.IsArchived && !s.Account.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Pending)
             .ToListAsync();
 
         var budgetPlanShares = await _context.BudgetPlanShares
             .Include(s => s.BudgetPlan)
+            .ThenInclude(bp => bp.User)
             .Where(s => !s.IsArchived && !s.BudgetPlan.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Pending)
             .ToListAsync();
 
@@ -204,11 +206,13 @@ public class SharingService : ISharingService
     {
         var accountShares = await _context.AccountShares
             .Include(s => s.Account)
+            .ThenInclude(a => a.User)
             .Where(s => !s.IsArchived && !s.Account.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
             .ToListAsync();
 
         var budgetPlanShares = await _context.BudgetPlanShares
             .Include(s => s.BudgetPlan)
+            .ThenInclude(bp => bp.User)
             .Where(s => !s.IsArchived && !s.BudgetPlan.IsArchived && s.SharedWithUserId == userId && s.Status == ShareStatus.Accepted)
             .ToListAsync();
 

@@ -33,6 +33,7 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
             .Include(bp => bp.Shares)
+            .Include(bp => bp.User)
             .OrderByDescending(bp => bp.Year)
             .ToListAsync();
     }
@@ -53,6 +54,7 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
             .Include(bp => bp.Shares)
+            .Include(bp => bp.User)
             .FirstOrDefaultAsync();
     }
 
@@ -71,6 +73,7 @@ public class BudgetPlanRepository : Repository<BudgetPlan>, IBudgetPlanRepositor
         return await query
             .Include(bp => bp.BudgetLines.Where(bl => !bl.IsArchived))
             .ThenInclude(bl => bl.Category)
+            .Include(bp => bp.User)
             .FirstOrDefaultAsync();
     }
 }

@@ -556,6 +556,26 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             var ticket = new AuthenticationTicket(principal, Scheme.Name);
             return Task.FromResult(AuthenticateResult.Success(ticket));
         }
+
+        /// <summary>
+        /// When an unauthenticated browser accesses a protected Blazor route (e.g. /accounts),
+        /// ASP.NET Core calls the challenge handler instead of returning 200. The default base
+        /// class behavior returns 401, which UseStatusCodePagesWithReExecute converts to a 404
+        /// via the /not-found re-execution — the browser never receives the Blazor HTML shell,
+        /// so the Blazor circuit never starts and Routes.razor never fires its auth redirect.
+        ///
+        /// Override HandleChallengeAsync to issue an HTTP 302 redirect to /login instead.
+        /// This mirrors the expected behaviour in the UnauthenticatedBrowser_*_RedirectsToLogin
+        /// tests: the URL must change to /login, which Playwright's ToHaveURLAsync can detect.
+        /// Authenticated browsers (with the e2e-auth-token cookie) never reach this method
+        /// because HandleAuthenticateAsync succeeds for them.
+        /// </summary>
+        protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+        {
+            var returnUrl = Request.Path + Request.QueryString;
+            Response.Redirect($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+            return Task.CompletedTask;
+        }
     }
 
     /// <summary>

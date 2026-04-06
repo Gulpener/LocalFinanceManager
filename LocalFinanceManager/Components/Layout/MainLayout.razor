@@ -1,4 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.Components.Shared
+@inject IBreadcrumbService BreadcrumbService
+@implements IDisposable
 
 <div class="page">
     <div class="sidebar">
@@ -20,6 +24,10 @@
             </AuthorizeView>
         </div>
 
+        <div class="px-4 pt-2">
+            <Breadcrumb Items="@_breadcrumbs" />
+        </div>
+
         <article class="content px-4">
             @Body
         </article>
@@ -33,3 +41,25 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private List<Breadcrumb.BreadcrumbItem> _breadcrumbs = new();
+
+    protected override void OnInitialized()
+    {
+        BreadcrumbService.OnChange += HandleBreadcrumbChange;
+        UpdateBreadcrumbs();
+    }
+
+    private void HandleBreadcrumbChange()
+        => InvokeAsync(() => { UpdateBreadcrumbs(); StateHasChanged(); });
+
+    private void UpdateBreadcrumbs()
+    {
+        _breadcrumbs = BreadcrumbService.Items
+            .Select(i => new Breadcrumb.BreadcrumbItem(i.Text, i.Href))
+            .ToList();
+    }
+
+    public void Dispose() => BreadcrumbService.OnChange -= HandleBreadcrumbChange;
+}

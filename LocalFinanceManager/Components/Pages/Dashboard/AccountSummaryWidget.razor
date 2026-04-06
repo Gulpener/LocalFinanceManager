@@ -1,0 +1,50 @@
+@using LocalFinanceManager.DTOs
+
+<div class="card h-100">
+    <div class="card-body">
+        <h6 class="card-subtitle mb-2 text-muted text-uppercase small">Rekeningen</h6>
+        @if (Accounts == null)
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+            </div>
+        }
+        else if (!Accounts.Any())
+        {
+            <p class="text-muted small">Geen rekeningen gevonden.</p>
+        }
+        else
+        {
+            <p class="display-6 mb-1">
+                @_totalBalance.ToString("N2")
+                <small class="fs-6 text-muted">@_primaryCurrency</small>
+            </p>
+            <ul class="list-unstyled small mt-2">
+                @foreach (var acc in _topAccounts)
+                {
+                    <li class="d-flex justify-content-between">
+                        <span>@acc.Label</span>
+                        <span class="fw-semibold">@acc.CurrentBalance.ToString("N2")</span>
+                    </li>
+                }
+            </ul>
+            <a href="/accounts" class="btn btn-sm btn-outline-secondary mt-2">Alle rekeningen</a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<AccountResponse>? Accounts { get; set; }
+
+    private decimal _totalBalance;
+    private string _primaryCurrency = string.Empty;
+    private List<AccountResponse> _topAccounts = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Accounts == null) return;
+        _totalBalance = Accounts.Sum(a => a.CurrentBalance);
+        _primaryCurrency = Accounts.FirstOrDefault()?.Currency ?? string.Empty;
+        _topAccounts = Accounts.OrderByDescending(a => a.CurrentBalance).Take(3).ToList();
+    }
+}

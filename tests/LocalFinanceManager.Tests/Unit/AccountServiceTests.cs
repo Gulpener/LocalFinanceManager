@@ -13,6 +13,7 @@ namespace LocalFinanceManager.Tests.Unit;
 public class AccountServiceTests
 {
     private Mock<IAccountRepository> _mockRepository = null!;
+    private Mock<IUserContext> _mockUserContext = null!;
     private Mock<ILogger<AccountService>> _mockLogger = null!;
     private AccountService _service = null!;
 
@@ -20,8 +21,10 @@ public class AccountServiceTests
     public void Setup()
     {
         _mockRepository = new Mock<IAccountRepository>();
+        _mockUserContext = new Mock<IUserContext>();
+        _mockUserContext.Setup(u => u.GetCurrentUserId()).Returns(Guid.Empty);
         _mockLogger = new Mock<ILogger<AccountService>>();
-        _service = new AccountService(_mockRepository.Object, _mockLogger.Object);
+        _service = new AccountService(_mockRepository.Object, _mockUserContext.Object, _mockLogger.Object);
     }
 
     [Test]

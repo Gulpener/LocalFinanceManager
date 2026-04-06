@@ -1,14 +1,14 @@
 # User Story Refinement Recommendations
 
-**Date:** April 5, 2026  
+**Date:** April 6, 2026  
 **Purpose:** Identify which user stories need refinement before implementation
 
 ---
 
 ## Status Overview
 
-- ✅ **23 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **4 stories ready** for implementation (US-15, US-16, US-18, US-19)
+- ✅ **24 stories completed & archived** — see `docs/Userstories/Archive/`
+- 🟡 **3 stories ready** for implementation (US-16, US-18, US-19)
 - 🔴 **0 stories need refinement**
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
@@ -63,19 +63,18 @@
 
 ---
 
-### 🟡 UserStory-15: Application Flow & Onboarding
+### ✅ UserStory-15: Application Flow & Onboarding — COMPLETED (April 6, 2026)
 
-**File:** [docs/Userstories/UserStory-15-Application-Flow.md](docs/Userstories/UserStory-15-Application-Flow.md)
+**File:** [docs/Userstories/Archive/UserStory-15-Application-Flow.md](docs/Userstories/Archive/UserStory-15-Application-Flow.md)
 
-**Status:** Refined — ready to implement. Estimated effort: 4–5 days.
+**Status:** Implemented & archived.
 
-**Scope:** Five implementation phases:
-
-1. **Dashboard** — replace `Home.razor` at `/` with a 5-widget responsive grid (AccountSummary, BudgetStatus, RecentTransactions, UncategorizedAlert, MLSuggestion) + quick-actions bar; unauthenticated visitors see a hero with Login/Register CTAs.
-2. **Auth Guards** — add `[Authorize]` to 14 currently unprotected pages; relies on existing `RedirectToLogin.razor` pattern.
-3. **Auto-Generated Breadcrumbs** — new `IBreadcrumbService` (scoped) parses the URL into friendly labels; `MainLayout.razor` subscribes and renders `<Breadcrumb>` automatically; pages call `SetSectionTitle(id, name)` for entity names; migrate 3 pages that currently use manual breadcrumbs.
-4. **Onboarding Wizard** — 6-step wizard at `/onboarding`; triggered when a new user has 0 accounts after login (no DB schema change); covers account creation, budget plan, category templates, and optional CSV import.
-5. **Multi-Tenant UX** — permission badges (Owner/Editor/Viewer), "Shared by [email]" labels, and filter dropdowns on `Accounts.razor`, `BudgetPlans.razor`, and `SharedWithMe.razor`.
+**Delivered:**
+1. **Dashboard** — `Home.razor` replaced with 5-widget responsive grid + quick-actions bar; unauthenticated visitors see hero with Login/Register CTAs.
+2. **Auth Guards** — `[Authorize]` added to 14 pages.
+3. **Auto-Generated Breadcrumbs** — `IBreadcrumbService` + `BreadcrumbService` implemented; `MainLayout.razor` renders breadcrumbs automatically; manual breadcrumbs removed from 3 pages.
+4. **Onboarding Wizard** — 6-step wizard at `/onboarding`; auto-redirects new users with 0 accounts.
+5. **Multi-Tenant UX** — Permission badges, "Shared by" labels, and owner/shared filter dropdowns on `Accounts.razor`, `BudgetPlans.razor`, and `SharedWithMe.razor`.
 
 ---
 
@@ -83,14 +82,13 @@
 
 ### ✅ All Phases 1–5: COMPLETED & ARCHIVED
 
-See `docs/Userstories/Archive/` for all 23 completed stories (US-1 through US-14).
+See `docs/Userstories/Archive/` for all 24 completed stories (US-1 through US-15).
 
 ### Active / Next Up
 
 1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
 2. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3–4 days)
 3. 🟡 **UserStory-16** (Design Overhaul) — Ready to implement (5–7 days)
-4. 🟡 **UserStory-15** (Application Flow & Onboarding) — Refined, ready to implement (4–5 days)
 
 ---
 
@@ -185,6 +183,5 @@ Use this structure for all new stories:
 1. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
 2. **Immediate:** Implement UserStory-19 (Unified Admin Panel) — fully ready, no refinement needed (3-4 days)
 3. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
-4. **Next:** Refine and implement UserStory-15 (Application Flow & Onboarding) — dashboard widgets, onboarding wizard (refinement ~2-3h; impl 4-5 days)
 
-**Total Refinement Effort Remaining:** ~2-3 hours (US-15 only)
+**Total Refinement Effort Remaining:** 0 hours — all active stories are fully specified.

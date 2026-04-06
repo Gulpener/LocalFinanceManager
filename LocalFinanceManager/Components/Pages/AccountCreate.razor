@@ -1,4 +1,5 @@
 @page "/accounts/new"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
@@ -52,7 +53,8 @@
 
             <div class="mb-3">
                 <label for="currency" class="form-label">Currency</label>
-                <InputText id="currency" class="form-control" @bind-Value="request.Currency" placeholder="EUR" maxlength="3" />
+                <InputText id="currency" class="form-control" @bind-Value="request.Currency" placeholder="EUR"
+                           maxlength="3" />
                 @if (validationErrors.ContainsKey("Currency"))
                 {
                     <div class="text-danger">@string.Join(", ", validationErrors["Currency"])</div>

@@ -346,6 +346,7 @@ public class BudgetPlanService
             AccountId = plan.AccountId,
             Year = plan.Year,
             Name = plan.Name,
+            OwnerEmail = plan.User?.Email ?? string.Empty,
             CreatedAt = plan.CreatedAt,
             UpdatedAt = plan.UpdatedAt,
             XMin = plan.XMin,

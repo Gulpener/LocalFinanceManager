@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<AccountService>();
         services.AddScoped<CategoryService>();
         services.AddScoped<BudgetPlanService>();
+        services.AddScoped<IBreadcrumbService, BreadcrumbService>();
         services.AddScoped<ITransactionAssignmentService, TransactionAssignmentService>();
         services.AddScoped<IRecentCategoriesService, RecentCategoriesService>();
         services.AddScoped<IFilterStateService, FilterStateService>();

@@ -67,7 +67,11 @@ public class AccountRepository : Repository<Account>, IAccountRepository
             && (a.UserId == userId
                 || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
-        return await query.OrderBy(a => a.Label).ToListAsync();
+        return await query
+            .Include(a => a.User)
+            .Include(a => a.Shares)
+            .OrderBy(a => a.Label)
+            .ToListAsync();
     }
 
     /// <summary>

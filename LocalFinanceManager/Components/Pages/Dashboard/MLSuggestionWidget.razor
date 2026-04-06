@@ -1,0 +1,41 @@
+@using LocalFinanceManager.Models
+
+<div class="card h-100">
+    <div class="card-body">
+        <h6 class="card-subtitle mb-2 text-muted text-uppercase small">ML Suggesties</h6>
+        @if (Transactions == null)
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+            </div>
+        }
+        else if (_candidateCount == 0)
+        {
+            <p class="text-muted small">Geen transacties beschikbaar voor ML-suggesties.</p>
+        }
+        else
+        {
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-robot text-info"></i>
+                <span class="fs-5 fw-bold">@_candidateCount</span>
+                <span class="text-muted small">suggesties beschikbaar</span>
+            </div>
+            <a href="/transactions?filter=has-suggestion" class="btn btn-sm btn-info text-white">
+                Suggesties bekijken
+            </a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<Transaction>? Transactions { get; set; }
+
+    private int _candidateCount;
+
+    protected override void OnParametersSet()
+    {
+        if (Transactions == null) return;
+        // Count unassigned transactions that are candidates for ML suggestions
+        _candidateCount = Transactions.Count(t => !t.IsSplit && (t.AssignedParts == null || !t.AssignedParts.Any()));
+    }
+}

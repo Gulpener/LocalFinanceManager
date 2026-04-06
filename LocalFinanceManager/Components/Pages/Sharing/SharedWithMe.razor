@@ -121,6 +121,7 @@ else
                 <thead>
                     <tr>
                         <th>Account</th>
+                        <th>Gedeeld door</th>
                         <th>Permission</th>
                         <th>Since</th>
                     </tr>
@@ -130,7 +131,10 @@ else
                     {
                         <tr>
                             <td>@share.AccountLabel</td>
-                            <td><span class="badge bg-secondary">@share.Permission</span></td>
+                            <td class="text-muted small">@share.OwnerEmail</td>
+                            <td>
+                                <span class="badge @PermissionBadgeClass(share.Permission)">@share.Permission</span>
+                            </td>
                             <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
                         </tr>
                     }
@@ -145,6 +149,7 @@ else
                 <thead>
                     <tr>
                         <th>Budget Plan</th>
+                        <th>Gedeeld door</th>
                         <th>Permission</th>
                         <th>Since</th>
                     </tr>
@@ -154,7 +159,10 @@ else
                     {
                         <tr>
                             <td>@share.BudgetPlanName</td>
-                            <td><span class="badge bg-secondary">@share.Permission</span></td>
+                            <td class="text-muted small">@share.OwnerEmail</td>
+                            <td>
+                                <span class="badge @PermissionBadgeClass(share.Permission)">@share.Permission</span>
+                            </td>
                             <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
                         </tr>
                     }
@@ -261,4 +269,11 @@ else
             errorMessage = "Failed to decline share.";
         }
     }
+
+    private static string PermissionBadgeClass(PermissionLevel level) => level switch
+    {
+        PermissionLevel.Owner => "bg-primary",
+        PermissionLevel.Editor => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
 }

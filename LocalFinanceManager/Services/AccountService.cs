@@ -11,11 +11,13 @@ namespace LocalFinanceManager.Services;
 public class AccountService
 {
     private readonly IAccountRepository _accountRepository;
+    private readonly IUserContext _userContext;
     private readonly ILogger<AccountService> _logger;
 
-    public AccountService(IAccountRepository accountRepository, ILogger<AccountService> logger)
+    public AccountService(IAccountRepository accountRepository, IUserContext userContext, ILogger<AccountService> logger)
     {
         _accountRepository = accountRepository;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -26,7 +28,27 @@ public class AccountService
     {
         _logger.LogInformation("Retrieving all active accounts");
         var accounts = await _accountRepository.GetAllActiveAsync();
-        return accounts.Select(AccountResponse.FromEntity).ToList();
+        var currentUserId = _userContext.GetCurrentUserId();
+
+        return accounts.Select(a =>
+        {
+            var response = AccountResponse.FromEntity(a);
+
+            if (a.UserId == currentUserId)
+            {
+                response.PermissionLevel = Models.PermissionLevel.Owner;
+            }
+            else
+            {
+                var share = a.Shares?.FirstOrDefault(s =>
+                    s.SharedWithUserId == currentUserId &&
+                    s.Status == Models.ShareStatus.Accepted &&
+                    !s.IsArchived);
+                response.PermissionLevel = share?.Permission ?? Models.PermissionLevel.Viewer;
+            }
+
+            return response;
+        }).ToList();
     }
 
     /// <summary>
@@ -159,5 +181,15 @@ public class AccountService
             _logger.LogWarning(ex, "Concurrency conflict unarchiving account: {AccountId}", id);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Returns the count of active (non-archived) accounts for the current user.
+    /// Used to determine whether to redirect a new user to the onboarding wizard.
+    /// </summary>
+    public async Task<int> GetActiveAccountCountAsync()
+    {
+        var accounts = await _accountRepository.GetAllActiveAsync();
+        return accounts.Count;
     }
 }

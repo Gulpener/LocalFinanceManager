@@ -17,6 +17,7 @@ public class AccountShareResponse
     public Guid Id { get; set; }
     public Guid AccountId { get; set; }
     public string AccountLabel { get; set; } = string.Empty;
+    public string OwnerEmail { get; set; } = string.Empty;
     public Guid SharedWithUserId { get; set; }
     public string SharedWithEmail { get; set; } = string.Empty;
     public string SharedWithDisplayName { get; set; } = string.Empty;
@@ -31,6 +32,7 @@ public class AccountShareResponse
             Id = share.Id,
             AccountId = share.AccountId,
             AccountLabel = share.Account?.Label ?? string.Empty,
+            OwnerEmail = share.Account?.User?.Email ?? string.Empty,
             SharedWithUserId = share.SharedWithUserId,
             SharedWithEmail = share.SharedWithUser?.Email ?? string.Empty,
             SharedWithDisplayName = share.SharedWithUser?.DisplayName ?? string.Empty,
@@ -46,6 +48,7 @@ public class BudgetPlanShareResponse
     public Guid Id { get; set; }
     public Guid BudgetPlanId { get; set; }
     public string BudgetPlanName { get; set; } = string.Empty;
+    public string OwnerEmail { get; set; } = string.Empty;
     public Guid SharedWithUserId { get; set; }
     public string SharedWithEmail { get; set; } = string.Empty;
     public string SharedWithDisplayName { get; set; } = string.Empty;
@@ -60,6 +63,7 @@ public class BudgetPlanShareResponse
             Id = share.Id,
             BudgetPlanId = share.BudgetPlanId,
             BudgetPlanName = share.BudgetPlan?.Name ?? string.Empty,
+            OwnerEmail = share.BudgetPlan?.User?.Email ?? string.Empty,
             SharedWithUserId = share.SharedWithUserId,
             SharedWithEmail = share.SharedWithUser?.Email ?? string.Empty,
             SharedWithDisplayName = share.SharedWithUser?.DisplayName ?? string.Empty,

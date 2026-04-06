@@ -1,13 +1,14 @@
 @page "/budgets/{budgetPlanId:guid}/categories/{id:guid}/edit"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
 @using LocalFinanceManager.Components.Shared
 @using System.Net
-@using static LocalFinanceManager.Components.Shared.Breadcrumb
 @inject NavigationManager Navigation
 @inject CategoryService CategoryService
 @inject BudgetPlanService BudgetPlanService
+@inject IBreadcrumbService BreadcrumbService
 @inject ILogger<CategoryEdit> Logger
 @rendermode InteractiveServer
 
@@ -19,8 +20,6 @@
 }
 else
 {
-    <Breadcrumb Items="@breadcrumbItems" />
-
     <h1>Categorie Bewerken</h1>
 
     @if (category == null)
@@ -116,7 +115,6 @@ else
 
     private BudgetPlanDto? budgetPlan;
     private CategoryDto? category;
-    private List<BreadcrumbItem> breadcrumbItems = new();
     private string categoryName = string.Empty;
     private CategoryType categoryType = CategoryType.Expense;
     private uint originalXMin;
@@ -142,13 +140,7 @@ else
                 return;
             }
 
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new BreadcrumbItem("Budget Plans", "/budgets"),
-                new BreadcrumbItem(budgetPlan.Name, $"/budgets/{BudgetPlanId}/edit"),
-                new BreadcrumbItem("Categorieën", null),
-                new BreadcrumbItem("Bewerken", null)
-            };
+            BreadcrumbService.SetSectionTitle(BudgetPlanId.ToString(), budgetPlan.Name);
         }
         catch (Exception ex)
         {
