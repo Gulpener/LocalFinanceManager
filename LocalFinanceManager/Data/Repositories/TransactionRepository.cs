@@ -226,7 +226,7 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .Where(t => !t.IsArchived
                 && t.AccountId == accountId
                 && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
-                && t.IsSplit
+                && t.AssignedParts!.Any(s => !s.IsArchived)
                 && t.Date >= from
                 && t.Date < to)
             .Include(t => t.AssignedParts!)
@@ -270,6 +270,6 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
         return await _dbSet
             .CountAsync(t => !t.IsArchived
                 && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
-                && !t.AssignedParts!.Any());
+                && !t.AssignedParts!.Any(s => !s.IsArchived));
     }
 }

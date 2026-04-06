@@ -61,13 +61,19 @@ public class CategoryService
     {
         _logger.LogInformation("Creating new category: {Name} for budget plan: {BudgetPlanId}", request.Name, request.BudgetPlanId);
 
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot create a category without an authenticated user.");
+        }
+
         var category = new Category
         {
             Name = request.Name,
             Type = request.Type,
             BudgetPlanId = request.BudgetPlanId,
             IsArchived = false,
-            UserId = _userContext.GetCurrentUserId()
+            UserId = userId
         };
 
         await _categoryRepository.AddAsync(category);

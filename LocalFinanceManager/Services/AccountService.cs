@@ -49,10 +49,16 @@ public class AccountService
     {
         _logger.LogInformation("Creating new account: {Label}", request.Label);
 
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot create an account without an authenticated user.");
+        }
+
         var account = new Account
         {
             Id = Guid.NewGuid(),
-            UserId = _userContext.GetCurrentUserId(),
+            UserId = userId,
             Label = request.Label,
             Type = request.Type,
             Currency = request.Currency.ToUpperInvariant(),
