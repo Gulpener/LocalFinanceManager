@@ -27,14 +27,15 @@
                 {
                     <li class="d-flex justify-content-between">
                         <span>@acc.Label</span>
-                        <span class="fw-semibold">@acc.CurrentBalance.ToString("N2") <small class="text-muted">@acc.Currency</small></span>
-                    </li>
-                }
-            </ul>
-            <a href="/accounts" class="btn btn-sm btn-outline-secondary mt-2">Alle rekeningen</a>
-        }
+                        <span class="fw-semibold">@acc.CurrentBalance.ToString("N2") <small
+                            class="text-muted">@acc.Currency</small></span>
+                        </li>
+                    }
+                </ul>
+                <a href="/accounts" class="btn btn-sm btn-outline-secondary mt-2">Alle rekeningen</a>
+            }
+        </div>
     </div>
-</div>
 
 @code {
     [Parameter] public List<AccountResponse>? Accounts { get; set; }
