@@ -28,6 +28,7 @@ public sealed class BreadcrumbService : IBreadcrumbService, IDisposable
             ["ml"] = "ML Info",
             ["settings"] = "Settings",
             ["auto-apply"] = "Auto-Apply",
+            ["autoapply"] = "Auto-Apply",
         };
 
     private readonly NavigationManager _navigationManager;

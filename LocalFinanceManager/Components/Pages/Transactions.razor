@@ -48,7 +48,8 @@
         <label for="suggestion-filter" class="form-label">ML suggestie:</label>
         <select id="suggestion-filter" class="form-select" @bind="_suggestionFilter" @bind:after="ApplyFilters">
             <option value="all">Alle transacties</option>
-            <option value="has-suggestion">Heeft suggestie</option>
+            <option value="has-suggestion">Heeft ML suggestie</option>
+            <option value="no-suggestion">Geen ML suggestie</option>
         </select>
     </div>
     <div class="col-md-3">
@@ -497,10 +498,24 @@
             query = query.Where(t => t.AccountId == filterState.SelectedAccountId.Value);
         }
 
-        // Apply ML suggestion filter: show only unassigned transactions (where badge renders)
+        // Apply ML suggestion filter: show only transactions with a loaded ML suggestion
         if (_suggestionFilter == "has-suggestion")
         {
-            query = query.Where(t => !t.IsAssigned);
+            query = query.Where(t => _suggestionConfidences.ContainsKey(t.Id));
+        }
+        else if (_suggestionFilter == "no-suggestion")
+        {
+            query = query.Where(t => !t.IsAssigned && !_suggestionConfidences.ContainsKey(t.Id));
+        }
+
+        // Apply suggestion status filter from QuickFilters panel
+        if (filterState.SuggestionStatus == "has-suggestion")
+        {
+            query = query.Where(t => _suggestionConfidences.ContainsKey(t.Id));
+        }
+        else if (filterState.SuggestionStatus == "no-suggestion")
+        {
+            query = query.Where(t => !t.IsAssigned && !_suggestionConfidences.ContainsKey(t.Id));
         }
 
         // Apply sort
