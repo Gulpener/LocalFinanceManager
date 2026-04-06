@@ -11,13 +11,11 @@ public class BackupService : IBackupService
     private const string SupportedVersion = "1.0";
 
     private readonly AppDbContext _db;
-    private readonly IUserContext _userContext;
     private readonly ILogger<BackupService> _logger;
 
-    public BackupService(AppDbContext db, IUserContext userContext, ILogger<BackupService> logger)
+    public BackupService(AppDbContext db, ILogger<BackupService> logger)
     {
         _db = db;
-        _userContext = userContext;
         _logger = logger;
     }
 
@@ -44,14 +42,10 @@ public class BackupService : IBackupService
             .Where(c => c.UserId == userId && !c.IsArchived && budgetPlanIds.Contains(c.BudgetPlanId))
             .ToListAsync();
 
-        var categoryIds = categories.Select(c => c.Id).ToHashSet();
-
         var budgetLines = await _db.BudgetLines
             .AsNoTracking()
             .Where(bl => !bl.IsArchived && budgetPlanIds.Contains(bl.BudgetPlanId))
             .ToListAsync();
-
-        var budgetLineIds = budgetLines.Select(bl => bl.Id).ToHashSet();
 
         var transactions = await _db.Transactions
             .AsNoTracking()
@@ -159,6 +153,12 @@ public class BackupService : IBackupService
                 errors.Add($"BudgetPlan '{bp.Id}' references Account '{bp.AccountId}' which is not in the backup.");
         }
 
+        foreach (var c in backup.Categories)
+        {
+            if (!backupBudgetPlanIds.Contains(c.BudgetPlanId))
+                errors.Add($"Category '{c.Id}' references BudgetPlan '{c.BudgetPlanId}' which is not in the backup.");
+        }
+
         foreach (var bl in backup.BudgetLines)
         {
             if (!backupBudgetPlanIds.Contains(bl.BudgetPlanId))
@@ -181,10 +181,40 @@ public class BackupService : IBackupService
                 errors.Add($"Transaction '{t.Id}' references Account '{t.AccountId}' which is not in the backup.");
         }
 
-        // IBAN conflict check: backup accounts whose Id doesn't match existing local accounts
-        var backupIbans = backup.Accounts
+        // Enum value validation
+        foreach (var a in backup.Accounts)
+        {
+            if (!Enum.TryParse<AccountType>(a.AccountType, ignoreCase: true, out _))
+                errors.Add($"Account '{a.Id}' has unknown AccountType '{a.AccountType}'.");
+        }
+
+        foreach (var c in backup.Categories)
+        {
+            if (!Enum.TryParse<CategoryType>(c.CategoryType, ignoreCase: true, out _))
+                errors.Add($"Category '{c.Id}' has unknown CategoryType '{c.CategoryType}'.");
+        }
+
+        // IBAN duplicate check within backup
+        var backupAccountsWithIban = backup.Accounts
             .Where(a => !string.IsNullOrEmpty(a.IBAN))
-            .ToDictionary(a => a.IBAN!, a => a.Id);
+            .ToList();
+
+        var duplicateIbanGroups = backupAccountsWithIban
+            .GroupBy(a => a.IBAN!)
+            .Where(g => g.Count() > 1)
+            .ToList();
+
+        foreach (var grp in duplicateIbanGroups)
+        {
+            var ids = string.Join(", ", grp.Select(a => a.Id));
+            errors.Add($"Duplicate IBAN in backup: '{grp.Key}' is assigned to multiple accounts ({ids}).");
+        }
+
+        if (errors.Count > 0)
+            return new BackupValidationResultDto { IsValid = false, Errors = errors };
+
+        // IBAN conflict check: backup accounts whose Id doesn't match existing local accounts
+        var backupIbans = backupAccountsWithIban.ToDictionary(a => a.IBAN!, a => a.Id);
 
         if (backupIbans.Count > 0)
         {
@@ -322,17 +352,35 @@ public class BackupService : IBackupService
 
     private async Task ExecuteMergeAsync(Guid userId, BackupData backup, BackupRestoreResultDto result)
     {
-        var existingAccountIds = await _db.Accounts
+        // Preload all existing accounts (tracked) for this user - eliminates N+1 FindAsync calls
+        var existingAccounts = await _db.Accounts
             .Where(a => a.UserId == userId)
-            .Select(a => new { a.Id, a.UpdatedAt, a.IBAN })
             .ToDictionaryAsync(a => a.Id);
 
         // Detect IBAN conflicts for Merge
-        var backupIbans = backup.Accounts
+        var backupAccountsWithIban = backup.Accounts
             .Where(a => !string.IsNullOrEmpty(a.IBAN))
-            .ToDictionary(a => a.IBAN!, a => a.Id);
+            .ToList();
 
-        foreach (var existing in existingAccountIds.Values)
+        var duplicateIbanGroups = backupAccountsWithIban
+            .GroupBy(a => a.IBAN!)
+            .Where(g => g.Count() > 1)
+            .ToList();
+
+        if (duplicateIbanGroups.Count != 0)
+        {
+            foreach (var grp in duplicateIbanGroups)
+            {
+                var ids = string.Join(", ", grp.Select(a => a.Id));
+                result.Errors.Add($"Duplicate IBAN in backup: '{grp.Key}' is assigned to multiple accounts ({ids}). Import aborted.");
+            }
+            result.Success = false;
+            return;
+        }
+
+        var backupIbans = backupAccountsWithIban.ToDictionary(a => a.IBAN!, a => a.Id);
+
+        foreach (var existing in existingAccounts.Values)
         {
             if (!string.IsNullOrEmpty(existing.IBAN)
                 && backupIbans.TryGetValue(existing.IBAN, out var backupId)
@@ -347,12 +395,11 @@ public class BackupService : IBackupService
         // Accounts
         foreach (var dto in backup.Accounts)
         {
-            if (existingAccountIds.TryGetValue(dto.Id, out var existing))
+            if (existingAccounts.TryGetValue(dto.Id, out var existingAccount))
             {
-                if (dto.UpdatedAt > existing.UpdatedAt)
+                if (dto.UpdatedAt > existingAccount.UpdatedAt)
                 {
-                    var entity = await _db.Accounts.FindAsync(dto.Id);
-                    if (entity != null) ApplyAccountUpdate(entity, dto);
+                    ApplyAccountUpdate(existingAccount, dto);
                     result.AccountsUpdated++;
                 }
                 else
@@ -367,19 +414,18 @@ public class BackupService : IBackupService
             }
         }
 
-        var existingBudgetPlanIds = await _db.BudgetPlans
+        // Preload all existing BudgetPlans (tracked) for this user
+        var existingBudgetPlans = await _db.BudgetPlans
             .Where(bp => bp.UserId == userId)
-            .Select(bp => new { bp.Id, bp.UpdatedAt })
             .ToDictionaryAsync(bp => bp.Id);
 
         foreach (var dto in backup.BudgetPlans)
         {
-            if (existingBudgetPlanIds.TryGetValue(dto.Id, out var existing))
+            if (existingBudgetPlans.TryGetValue(dto.Id, out var existingBp))
             {
-                if (dto.UpdatedAt > existing.UpdatedAt)
+                if (dto.UpdatedAt > existingBp.UpdatedAt)
                 {
-                    var entity = await _db.BudgetPlans.FindAsync(dto.Id);
-                    if (entity != null) ApplyBudgetPlanUpdate(entity, dto);
+                    ApplyBudgetPlanUpdate(existingBp, dto);
                     result.BudgetPlansUpdated++;
                 }
                 else
@@ -394,19 +440,18 @@ public class BackupService : IBackupService
             }
         }
 
-        var existingCategoryIds = await _db.Categories
+        // Preload all existing Categories (tracked) for this user
+        var existingCategories = await _db.Categories
             .Where(c => c.UserId == userId)
-            .Select(c => new { c.Id, c.UpdatedAt })
             .ToDictionaryAsync(c => c.Id);
 
         foreach (var dto in backup.Categories)
         {
-            if (existingCategoryIds.TryGetValue(dto.Id, out var existing))
+            if (existingCategories.TryGetValue(dto.Id, out var existingCategory))
             {
-                if (dto.UpdatedAt > existing.UpdatedAt)
+                if (dto.UpdatedAt > existingCategory.UpdatedAt)
                 {
-                    var entity = await _db.Categories.FindAsync(dto.Id);
-                    if (entity != null) ApplyCategoryUpdate(entity, dto);
+                    ApplyCategoryUpdate(existingCategory, dto);
                     result.CategoriesUpdated++;
                 }
                 else
@@ -421,19 +466,18 @@ public class BackupService : IBackupService
             }
         }
 
-        var existingBudgetLineIds = await _db.BudgetLines
+        // Preload all existing BudgetLines (tracked) for this user
+        var existingBudgetLines = await _db.BudgetLines
             .Where(bl => _db.BudgetPlans.Any(bp => bp.Id == bl.BudgetPlanId && bp.UserId == userId))
-            .Select(bl => new { bl.Id, bl.UpdatedAt })
             .ToDictionaryAsync(bl => bl.Id);
 
         foreach (var dto in backup.BudgetLines)
         {
-            if (existingBudgetLineIds.TryGetValue(dto.Id, out var existing))
+            if (existingBudgetLines.TryGetValue(dto.Id, out var existingBl))
             {
-                if (dto.UpdatedAt > existing.UpdatedAt)
+                if (dto.UpdatedAt > existingBl.UpdatedAt)
                 {
-                    var entity = await _db.BudgetLines.FindAsync(dto.Id);
-                    if (entity != null) ApplyBudgetLineUpdate(entity, dto);
+                    ApplyBudgetLineUpdate(existingBl, dto);
                     result.BudgetLinesUpdated++;
                 }
                 else
@@ -448,19 +492,18 @@ public class BackupService : IBackupService
             }
         }
 
-        var existingTransactionIds = await _db.Transactions
+        // Preload all existing Transactions (tracked) for this user
+        var existingTransactions = await _db.Transactions
             .Where(t => t.UserId == userId)
-            .Select(t => new { t.Id, t.UpdatedAt })
             .ToDictionaryAsync(t => t.Id);
 
         foreach (var dto in backup.Transactions)
         {
-            if (existingTransactionIds.TryGetValue(dto.Id, out var existing))
+            if (existingTransactions.TryGetValue(dto.Id, out var existingTransaction))
             {
-                if (dto.UpdatedAt > existing.UpdatedAt)
+                if (dto.UpdatedAt > existingTransaction.UpdatedAt)
                 {
-                    var entity = await _db.Transactions.FindAsync(dto.Id);
-                    if (entity != null) ApplyTransactionUpdate(entity, dto);
+                    ApplyTransactionUpdate(existingTransaction, dto);
                     result.TransactionsUpdated++;
                 }
                 else
@@ -475,19 +518,18 @@ public class BackupService : IBackupService
             }
         }
 
-        var existingTransactionSplitIds = await _db.TransactionSplits
+        // Preload all existing TransactionSplits (tracked) for this user
+        var existingTransactionSplits = await _db.TransactionSplits
             .Where(ts => _db.Transactions.Any(t => t.Id == ts.TransactionId && t.UserId == userId))
-            .Select(ts => new { ts.Id, ts.UpdatedAt })
             .ToDictionaryAsync(ts => ts.Id);
 
         foreach (var dto in backup.TransactionSplits)
         {
-            if (existingTransactionSplitIds.TryGetValue(dto.Id, out var existing))
+            if (existingTransactionSplits.TryGetValue(dto.Id, out var existingTs))
             {
-                if (dto.UpdatedAt > existing.UpdatedAt)
+                if (dto.UpdatedAt > existingTs.UpdatedAt)
                 {
-                    var entity = await _db.TransactionSplits.FindAsync(dto.Id);
-                    if (entity != null) ApplyTransactionSplitUpdate(entity, dto);
+                    ApplyTransactionSplitUpdate(existingTs, dto);
                     result.TransactionSplitsUpdated++;
                 }
                 else
@@ -608,7 +650,7 @@ public class BackupService : IBackupService
     {
         Id = dto.Id,
         Label = dto.Label,
-        Type = Enum.Parse<AccountType>(dto.AccountType),
+        Type = Enum.Parse<AccountType>(dto.AccountType, ignoreCase: true),
         Currency = dto.Currency,
         IBAN = dto.IBAN ?? "",
         StartingBalance = dto.StartingBalance,
@@ -621,7 +663,7 @@ public class BackupService : IBackupService
     private static void ApplyAccountUpdate(Account entity, BackupAccountDto dto)
     {
         entity.Label = dto.Label;
-        entity.Type = Enum.Parse<AccountType>(dto.AccountType);
+        entity.Type = Enum.Parse<AccountType>(dto.AccountType, ignoreCase: true);
         entity.Currency = dto.Currency;
         entity.IBAN = dto.IBAN ?? "";
         entity.StartingBalance = dto.StartingBalance;
@@ -651,7 +693,7 @@ public class BackupService : IBackupService
     {
         Id = dto.Id,
         Name = dto.Name,
-        Type = Enum.Parse<CategoryType>(dto.CategoryType),
+        Type = Enum.Parse<CategoryType>(dto.CategoryType, ignoreCase: true),
         BudgetPlanId = dto.BudgetPlanId,
         CreatedAt = dto.CreatedAt,
         UpdatedAt = dto.UpdatedAt,
@@ -662,7 +704,7 @@ public class BackupService : IBackupService
     private static void ApplyCategoryUpdate(Category entity, BackupCategoryDto dto)
     {
         entity.Name = dto.Name;
-        entity.Type = Enum.Parse<CategoryType>(dto.CategoryType);
+        entity.Type = Enum.Parse<CategoryType>(dto.CategoryType, ignoreCase: true);
         entity.UpdatedAt = dto.UpdatedAt;
     }
 

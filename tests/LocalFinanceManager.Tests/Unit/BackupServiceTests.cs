@@ -40,9 +40,8 @@ public class BackupServiceTests
             _context.SaveChanges();
         }
 
-        var userContext = new TestUserContext(TestUserId);
         var logger = new Mock<ILogger<BackupService>>().Object;
-        _service = new BackupService(_context, userContext, logger);
+        _service = new BackupService(_context, logger);
     }
 
     [TearDown]

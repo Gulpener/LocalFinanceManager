@@ -2,7 +2,6 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
-using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -10,11 +9,11 @@ using Moq;
 namespace LocalFinanceManager.Tests.Integration;
 
 /// <summary>
-/// Integration tests for BackupController / BackupService against in-memory SQLite.
+/// Integration tests for BackupService against in-memory SQLite.
 /// Tests verify full service behaviour including database interactions.
 /// </summary>
 [TestFixture]
-public class BackupControllerIntegrationTests
+public class BackupServiceIntegrationTests
 {
     private static readonly Guid UserId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
@@ -44,9 +43,8 @@ public class BackupControllerIntegrationTests
         });
         _context.SaveChanges();
 
-        var userContext = new TestUserContext(UserId);
         var logger = new Mock<ILogger<BackupService>>().Object;
-        _service = new BackupService(_context, userContext, logger);
+        _service = new BackupService(_context, logger);
     }
 
     [TearDown]

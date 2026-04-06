@@ -7,7 +7,7 @@
 
 ## Status Overview
 
-- ✅ **24 stories completed & archived** — see `docs/Userstories/Archive/`
+- ✅ **23 stories completed & archived** — see `docs/Userstories/Archive/`
 - 🟡 **4 stories ready** for implementation (US-15, US-16, US-18, US-19)
 - 🔴 **0 stories need refinement**
 

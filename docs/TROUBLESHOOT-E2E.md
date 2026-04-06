@@ -2,11 +2,11 @@
 
 ## Baseline
 
-| Milestone                           | Passing | Total eligible | Notes                                 |
-| ----------------------------------- | ------- | -------------- | ------------------------------------- |
-| After SQLite → PostgreSQL migration | 93      | 107            | Starting point                        |
-| After session fixes (Mar 12)        | ~106    | 107            | 1 non-deterministic failure per run   |
-| After April 2026 fixes              | 107     | 107            | Consistent pass (5 skipped by design) |
+| Milestone                           | Passing | Total eligible | Notes                                            |
+| ----------------------------------- | ------- | -------------- | ------------------------------------------------ |
+| After SQLite → PostgreSQL migration | 93      | 107            | Starting point                                   |
+| After session fixes (Mar 12)        | ~106    | 107            | 1 non-deterministic failure per run              |
+| After April 2026 fixes              | 107     | 107            | Consistent pass (5 skipped by design; 112 total) |
 
 ---
 

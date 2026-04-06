@@ -2,14 +2,51 @@ namespace LocalFinanceManager.DTOs;
 
 public class BackupData
 {
+    private List<BackupAccountDto> _accounts = [];
+    private List<BackupBudgetPlanDto> _budgetPlans = [];
+    private List<BackupCategoryDto> _categories = [];
+    private List<BackupBudgetLineDto> _budgetLines = [];
+    private List<BackupTransactionDto> _transactions = [];
+    private List<BackupTransactionSplitDto> _transactionSplits = [];
+
     public DateTime ExportedAt { get; set; }
     public string Version { get; set; } = "1.0";
-    public List<BackupAccountDto> Accounts { get; set; } = [];
-    public List<BackupBudgetPlanDto> BudgetPlans { get; set; } = [];
-    public List<BackupCategoryDto> Categories { get; set; } = [];
-    public List<BackupBudgetLineDto> BudgetLines { get; set; } = [];
-    public List<BackupTransactionDto> Transactions { get; set; } = [];
-    public List<BackupTransactionSplitDto> TransactionSplits { get; set; } = [];
+
+    public List<BackupAccountDto> Accounts
+    {
+        get => _accounts;
+        set => _accounts = value ?? [];
+    }
+
+    public List<BackupBudgetPlanDto> BudgetPlans
+    {
+        get => _budgetPlans;
+        set => _budgetPlans = value ?? [];
+    }
+
+    public List<BackupCategoryDto> Categories
+    {
+        get => _categories;
+        set => _categories = value ?? [];
+    }
+
+    public List<BackupBudgetLineDto> BudgetLines
+    {
+        get => _budgetLines;
+        set => _budgetLines = value ?? [];
+    }
+
+    public List<BackupTransactionDto> Transactions
+    {
+        get => _transactions;
+        set => _transactions = value ?? [];
+    }
+
+    public List<BackupTransactionSplitDto> TransactionSplits
+    {
+        get => _transactionSplits;
+        set => _transactionSplits = value ?? [];
+    }
 }
 
 public class BackupAccountDto
