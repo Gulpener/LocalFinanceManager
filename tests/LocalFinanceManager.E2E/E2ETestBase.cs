@@ -93,7 +93,7 @@ public abstract class E2ETestBase : PageTest
         // Raise the per-action timeout from 30s (default) to 60s so that Blazor Server SignalR
         // round-trips under CI load (2 vCPU runner, sustained pressure from prior phases) do not
         // exceed the budget. Individual tests that need faster feedback can override per-call.
-        await Page.SetDefaultTimeoutAsync(60_000);
+        Page.SetDefaultTimeout(60_000);
 
         var baseUri = new Uri(BaseUrl);
         await Context.AddCookiesAsync(new[]
