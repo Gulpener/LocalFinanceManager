@@ -65,15 +65,11 @@
                 var plan = await BudgetPlanService.GetByAccountAndYearAsync(account.Id, currentYear);
                 if (plan == null) continue;
 
-                // Limit processing to the current month before flattening and aggregating splits.
-                var transactions = await TransactionRepository.GetByAccountIdWithSplitsAsync(account.Id);
-                var monthlySplitTransactions = transactions
-                    .Where(t => t.IsSplit
-                        && t.Date >= monthStart
-                        && t.Date < monthEnd
-                        && t.AssignedParts != null);
-
-                var spentByCategory = monthlySplitTransactions
+                // Query only the current month's split transactions in SQL — avoids loading full history.
+                var splitTransactions = await TransactionRepository.GetSplitTransactionsByDateRangeAsync(account.Id, monthStart,
+monthEnd);
+                var spentByCategory = splitTransactions
+                    .Where(t => t.AssignedParts != null)
                     .SelectMany(t => t.AssignedParts!)
                     .GroupBy(s => s.BudgetLine?.Category?.Name ?? string.Empty)
                     .ToDictionary(g => g.Key, g => g.Sum(s => Math.Abs(s.Amount)));

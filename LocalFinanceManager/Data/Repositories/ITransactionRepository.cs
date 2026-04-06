@@ -51,6 +51,14 @@ public interface ITransactionRepository : IRepository<Transaction>
     Task<List<Transaction>> GetByAccountIdWithSplitsAsync(Guid accountId);
 
     /// <summary>
+    /// Gets split transactions for a specific account within a date range, with only
+    /// the split/budget-line/category data required for budget aggregation.
+    /// The SQL query applies both the account and date-range filters so no full
+    /// history is loaded into memory.
+    /// </summary>
+    Task<List<Transaction>> GetSplitTransactionsByDateRangeAsync(Guid accountId, DateTime from, DateTime to);
+
+    /// <summary>
     /// Gets the most recent transactions (across all accessible accounts) with splits, limited to a given count.
     /// Used by the dashboard to avoid loading the full transaction history.
     /// </summary>

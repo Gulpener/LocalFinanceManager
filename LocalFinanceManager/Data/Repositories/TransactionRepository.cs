@@ -213,6 +213,28 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .ToListAsync();
     }
 
+    public async Task<List<Transaction>> GetSplitTransactionsByDateRangeAsync(Guid accountId, DateTime from, DateTime to)
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        return await _dbSet
+            .Where(t => !t.IsArchived
+                && t.AccountId == accountId
+                && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
+                && t.IsSplit
+                && t.Date >= from
+                && t.Date < to)
+            .Include(t => t.AssignedParts!)
+                .ThenInclude(s => s.BudgetLine)
+                    .ThenInclude(bl => bl.Category)
+            .ToListAsync();
+    }
+
     public async Task<List<Transaction>> GetRecentWithSplitsAsync(int count)
     {
         var userId = _userContext.GetCurrentUserId();
