@@ -90,6 +90,11 @@ public abstract class E2ETestBase : PageTest
         // Tests that intentionally verify unauthenticated behaviour (UnauthenticatedBrowser_*)
         // create a fresh browser context with Browser.NewContextAsync(), which does NOT carry
         // this cookie, so those requests still see an anonymous user and get redirected.
+        // Raise the per-action timeout from 30s (default) to 60s so that Blazor Server SignalR
+        // round-trips under CI load (2 vCPU runner, sustained pressure from prior phases) do not
+        // exceed the budget. Individual tests that need faster feedback can override per-call.
+        Page.SetDefaultTimeout(60_000);
+
         var baseUri = new Uri(BaseUrl);
         await Context.AddCookiesAsync(new[]
         {

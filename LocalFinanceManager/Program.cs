@@ -88,6 +88,10 @@ builder.Services.AddAuthentication(options =>
     .AddScheme<AuthenticationSchemeOptions, DevSmokeAuthenticationHandler>("DevSmoke", _ => { })
     .AddJwtBearer(options =>
     {
+        // Preserve original JWT claim names (e.g. "sub") instead of remapping to
+        // long WS-Federation URIs like ClaimTypes.NameIdentifier.
+        options.MapInboundClaims = false;
+
         var jwtSecret = supabaseOptions.JwtSecret;
         if (!string.IsNullOrEmpty(jwtSecret) && jwtSecret != "placeholder-jwt-secret")
         {

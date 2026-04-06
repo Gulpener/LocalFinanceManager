@@ -56,6 +56,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFilterStateService, FilterStateService>();
         services.AddScoped<IDeviceDetectionService, DeviceDetectionService>();
         services.AddScoped<ISharingService, SharingService>();
+        services.AddScoped<IBackupService, BackupService>();
 
         return services;
     }

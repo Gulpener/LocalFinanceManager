@@ -17,6 +17,19 @@ namespace LocalFinanceManager.E2E.UX;
 [TestFixture]
 public class UXEnhancementsTests : E2ETestBase
 {
+    [SetUp]
+    public async Task SetUp()
+    {
+        // Truncate tables before each test to ensure clean state.
+        await Factory!.TruncateTablesAsync();
+
+        // Clear localStorage filter state to prevent cross-test contamination.
+        // A stale 'Assigned' or date-range filter hides rows and makes 'Toewijzen' buttons
+        // invisible, causing ClickAsync to exceed its timeout.
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+        await Page.EvaluateAsync("() => localStorage.removeItem('transactionFilters')");
+    }
+
     [Test]
     public async Task ShortcutHelp_Opens_When_HelpButton_Clicked()
     {
@@ -208,6 +221,11 @@ public class UXEnhancementsTests : E2ETestBase
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        // Blazor Server loads row data over SignalR after NetworkIdle — wait explicitly.
+        await Page.WaitForSelectorAsync(
+            "tr[data-testid='transaction-row']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
         // Note: Recent budget lines require localStorage tracking which needs actual user interaction
         // This test verifies the UI structure is present
 
@@ -235,6 +253,11 @@ public class UXEnhancementsTests : E2ETestBase
         await SeedDataHelper.SeedTransactionAsync(context, account.Id, -50m, DateTime.UtcNow, "Test Transaction");
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        // Blazor Server loads row data over SignalR after NetworkIdle — wait explicitly.
+        await Page.WaitForSelectorAsync(
+            "tr[data-testid='transaction-row']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
 
         // Open assignment modal
         var assignButton = Page.Locator("button:has-text('Toewijzen')").First;
