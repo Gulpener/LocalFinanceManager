@@ -94,4 +94,21 @@ public class AccountRepository : Repository<Account>, IAccountRepository
 
         return await query.AnyAsync();
     }
+
+    /// <summary>
+    /// Returns the count of active (non-archived) accounts accessible by the current user (owned or accepted shared).
+    /// </summary>
+    public async Task<int> CountActiveAsync()
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return 0;
+        }
+
+        return await _context.Set<Account>()
+            .CountAsync(a => !a.IsArchived
+                && (a.UserId == userId
+                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
+    }
 }

@@ -189,7 +189,6 @@ public class AccountService
     /// </summary>
     public async Task<int> GetActiveAccountCountAsync()
     {
-        var accounts = await _accountRepository.GetAllActiveAsync();
-        return accounts.Count;
+        return await _accountRepository.CountActiveAsync();
     }
 }

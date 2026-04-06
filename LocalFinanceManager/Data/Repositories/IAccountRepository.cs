@@ -22,4 +22,9 @@ public interface IAccountRepository : IRepository<Account>
     /// Check if an account with the given label already exists.
     /// </summary>
     Task<bool> LabelExistsAsync(string label, Guid? excludeId = null);
+
+    /// <summary>
+    /// Returns the count of active (non-archived) accounts accessible by the current user (owned or accepted shared).
+    /// </summary>
+    Task<int> CountActiveAsync();
 }

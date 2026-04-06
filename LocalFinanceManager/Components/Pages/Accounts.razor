@@ -72,8 +72,7 @@ else
                     <td>@FormatIban(account.IBAN)</td>
                     <td class="text-end">@account.CurrentBalance.ToString("N2")</td>
                     <td>
-                        @if (account.PermissionLevel == PermissionLevel.Owner || account.PermissionLevel ==
-                                        PermissionLevel.Editor)
+                        @if (account.PermissionLevel == PermissionLevel.Owner)
                         {
                             <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Edit

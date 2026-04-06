@@ -54,11 +54,17 @@
         _recent = Transactions.OrderByDescending(t => t.Date).Take(10).ToList();
 
         var today = DateTime.Today;
+        var startOfCurrentWeek = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
+
         _grouped = _recent.GroupBy(t =>
         {
-            if (t.Date.Date == today) return "Vandaag";
-            if (t.Date.Date == today.AddDays(-1)) return "Gisteren";
-            return "Deze week";
+            var transactionDate = t.Date.Date;
+
+            if (transactionDate == today) return "Vandaag";
+            if (transactionDate == today.AddDays(-1)) return "Gisteren";
+            if (transactionDate >= startOfCurrentWeek) return "Deze week";
+
+            return "Ouder";
         });
     }
 }

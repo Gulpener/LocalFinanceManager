@@ -1,6 +1,8 @@
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Data.Repositories
 @inject BudgetPlanService BudgetPlanService
+@inject ITransactionRepository TransactionRepository
 
 <div class="card h-100">
     <div class="card-body">
@@ -60,11 +62,20 @@
                 var plan = await BudgetPlanService.GetByAccountAndYearAsync(account.Id, currentYear);
                 if (plan == null) continue;
 
+                // Load transactions with splits for this account to compute actual spending
+                var transactions = await TransactionRepository.GetByAccountIdWithSplitsAsync(account.Id);
+                var spentByCategory = transactions
+                    .Where(t => t.Date.Month == currentMonth && t.Date.Year == currentYear && t.IsSplit)
+                    .SelectMany(t => t.AssignedParts!)
+                    .GroupBy(s => s.BudgetLine?.Category?.Name ?? string.Empty)
+                    .ToDictionary(g => g.Key, g => g.Sum(s => Math.Abs(s.Amount)));
+
                 foreach (var line in plan.BudgetLines)
                 {
                     var monthlyBudget = line.MonthlyAmounts.Length >= currentMonth
                         ? line.MonthlyAmounts[currentMonth - 1] : 0;
-                    _lines.Add((line.CategoryName, monthlyBudget, 0m));
+                    var spent = spentByCategory.GetValueOrDefault(line.CategoryName, 0m);
+                    _lines.Add((line.CategoryName, monthlyBudget, spent));
                 }
                 break; // show first account's current plan
             }
