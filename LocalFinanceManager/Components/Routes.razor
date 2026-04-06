@@ -131,7 +131,10 @@
     {
         var targetPath = context.Path.Trim('/');
 
-        if (AnonymousRoutes.Contains(targetPath))
+        // Strip query string before checking anonymous routes so that
+        // paths like "login?returnUrl=..." still match "login".
+        var pathWithoutQuery = targetPath.Split('?')[0];
+        if (AnonymousRoutes.Contains(pathWithoutQuery))
         {
             return;
         }

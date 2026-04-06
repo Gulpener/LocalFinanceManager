@@ -129,10 +129,12 @@
 
     private string GetSafeReturnUrl()
     {
-        // Only allow local paths (starts with / but not //) to prevent open redirect
+        // Only allow local paths (starts with / but not //) to prevent open redirect.
+        // Also reject returnUrls that point back to /login to avoid redirect loops.
         if (!string.IsNullOrEmpty(ReturnUrl)
             && ReturnUrl.StartsWith('/')
-            && !ReturnUrl.StartsWith("//"))
+            && !ReturnUrl.StartsWith("//")
+            && !ReturnUrl.TrimStart('/').StartsWith("login", StringComparison.OrdinalIgnoreCase))
         {
             return ReturnUrl;
         }
