@@ -70,6 +70,7 @@
 **Status:** Implemented & archived.
 
 **Delivered:**
+
 1. **Dashboard** — `Home.razor` replaced with 5-widget responsive grid + quick-actions bar; unauthenticated visitors see hero with Login/Register CTAs.
 2. **Auth Guards** — `[Authorize]` added to 14 pages.
 3. **Auto-Generated Breadcrumbs** — `IBreadcrumbService` + `BreadcrumbService` implemented; `MainLayout.razor` renders breadcrumbs automatically; manual breadcrumbs removed from 3 pages.
