@@ -54,18 +54,26 @@
 
         try
         {
-            var currentMonth = DateTime.Today.Month;
-            var currentYear = DateTime.Today.Year;
+            var today = DateTime.Today;
+            var currentMonth = today.Month;
+            var currentYear = today.Year;
+            var monthStart = new DateTime(currentYear, currentMonth, 1);
+            var monthEnd = monthStart.AddMonths(1);
 
             foreach (var account in Accounts)
             {
                 var plan = await BudgetPlanService.GetByAccountAndYearAsync(account.Id, currentYear);
                 if (plan == null) continue;
 
-                // Load transactions with splits for this account to compute actual spending
+                // Limit processing to the current month before flattening and aggregating splits.
                 var transactions = await TransactionRepository.GetByAccountIdWithSplitsAsync(account.Id);
-                var spentByCategory = transactions
-                    .Where(t => t.Date.Month == currentMonth && t.Date.Year == currentYear && t.IsSplit)
+                var monthlySplitTransactions = transactions
+                    .Where(t => t.IsSplit
+                        && t.Date >= monthStart
+                        && t.Date < monthEnd
+                        && t.AssignedParts != null);
+
+                var spentByCategory = monthlySplitTransactions
                     .SelectMany(t => t.AssignedParts!)
                     .GroupBy(s => s.BudgetLine?.Category?.Name ?? string.Empty)
                     .ToDictionary(g => g.Key, g => g.Sum(s => Math.Abs(s.Amount)));

@@ -437,22 +437,42 @@
             var unassigned = transactionDtos.Where(t => !t.IsAssigned).ToList();
             if (unassigned.Count > 0)
             {
-                var predictionTasks = unassigned.Select(async t =>
+                const int maxConcurrentPredictionRequests = 4;
+                var predictionThrottle = new System.Threading.SemaphoreSlim(maxConcurrentPredictionRequests);
+                var suggestionConfidenceLock = new object();
+
+                try
                 {
-                    try
+                    var predictionTasks = unassigned.Select(async t =>
                     {
-                        var prediction = await MLService.PredictCategoryAsync(t.Id);
-                        if (prediction != null)
+                        await predictionThrottle.WaitAsync();
+                        try
                         {
-                            _suggestionConfidences[t.Id] = prediction.Confidence;
+                            var prediction = await MLService.PredictCategoryAsync(t.Id);
+                            if (prediction != null)
+                            {
+                                lock (suggestionConfidenceLock)
+                                {
+                                    _suggestionConfidences[t.Id] = prediction.Confidence;
+                                }
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.LogDebug(ex, "ML prediction unavailable for transaction {TransactionId}", t.Id);
-                    }
-                });
-                await Task.WhenAll(predictionTasks);
+                        catch (Exception ex)
+                        {
+                            Logger.LogDebug(ex, "ML prediction unavailable for transaction {TransactionId}", t.Id);
+                        }
+                        finally
+                        {
+                            predictionThrottle.Release();
+                        }
+                    });
+
+                    await Task.WhenAll(predictionTasks);
+                }
+                finally
+                {
+                    predictionThrottle.Dispose();
+                }
             }
 
             ApplyFilters();
