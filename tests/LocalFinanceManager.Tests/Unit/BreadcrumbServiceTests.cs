@@ -66,11 +66,11 @@ public class BreadcrumbServiceTests
     }
 
     [Test]
-    [TestCase("/accounts", "Accounts")]
-    [TestCase("/budgets", "Budget Plans")]
-    [TestCase("/transactions", "Transactions")]
-    [TestCase("/admin", "Admin")]
-    [TestCase("/sharing", "Sharing")]
+    [TestCase("/accounts", "Rekeningen")]
+    [TestCase("/budgets", "Budgetplannen")]
+    [TestCase("/transactions", "Transacties")]
+    [TestCase("/admin", "Beheer")]
+    [TestCase("/sharing", "Delen")]
     [TestCase("/onboarding", "Onboarding")]
     public void KnownSegment_MapsToCorrectLabel(string path, string expectedLabel)
     {
@@ -175,13 +175,13 @@ public class BreadcrumbServiceTests
 
         var items = _sut.Items.ToList();
 
-        // Home → Admin (with href) → Monitoring (no href)
+        // Home → Beheer (with href) → Bewaking (no href)
         Assert.That(items, Has.Count.EqualTo(3));
         Assert.That(items[0].Text, Is.EqualTo("Home"));
         Assert.That(items[0].Href, Is.EqualTo("/"));
-        Assert.That(items[1].Text, Is.EqualTo("Admin"));
+        Assert.That(items[1].Text, Is.EqualTo("Beheer"));
         Assert.That(items[1].Href, Is.EqualTo("/admin"));
-        Assert.That(items[2].Text, Is.EqualTo("Monitoring"));
+        Assert.That(items[2].Text, Is.EqualTo("Bewaking"));
         Assert.That(items[2].Href, Is.Null);
     }
 

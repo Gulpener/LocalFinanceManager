@@ -24,12 +24,12 @@ public class NavMenuTests
         {
             Assert.That(navLinks.Count, Is.EqualTo(1));
             Assert.That(navLinks[0].TextContent, Does.Contain("Home"));
-            Assert.That(cut.Markup, Does.Not.Contain("Accounts"));
+            Assert.That(cut.Markup, Does.Not.Contain("Rekeningen"));
             Assert.That(cut.Markup, Does.Not.Contain("Transacties"));
-            Assert.That(cut.Markup, Does.Not.Contain("Budget Plans"));
-            Assert.That(cut.Markup, Does.Not.Contain("Admin Settings"));
-            Assert.That(cut.Markup, Does.Not.Contain("Auto-Apply"));
-            Assert.That(cut.Markup, Does.Not.Contain("Monitoring"));
+            Assert.That(cut.Markup, Does.Not.Contain("Budgetplannen"));
+            Assert.That(cut.Markup, Does.Not.Contain("Beheerinstellingen"));
+            Assert.That(cut.Markup, Does.Not.Contain("Automatisch toewijzen"));
+            Assert.That(cut.Markup, Does.Not.Contain("Bewaking"));
         });
     }
 
@@ -42,12 +42,12 @@ public class NavMenuTests
         Assert.Multiple(() =>
         {
             Assert.That(cut.Markup, Does.Contain("Home"));
-            Assert.That(cut.Markup, Does.Contain("Accounts"));
+            Assert.That(cut.Markup, Does.Contain("Rekeningen"));
             Assert.That(cut.Markup, Does.Contain("Transacties"));
-            Assert.That(cut.Markup, Does.Contain("Budget Plans"));
-            Assert.That(cut.Markup, Does.Contain("Admin Settings"));
-            Assert.That(cut.Markup, Does.Contain("Auto-Apply"));
-            Assert.That(cut.Markup, Does.Contain("Monitoring"));
+            Assert.That(cut.Markup, Does.Contain("Budgetplannen"));
+            Assert.That(cut.Markup, Does.Contain("Beheerinstellingen"));
+            Assert.That(cut.Markup, Does.Contain("Automatisch toewijzen"));
+            Assert.That(cut.Markup, Does.Contain("Bewaking"));
         });
     }
 
