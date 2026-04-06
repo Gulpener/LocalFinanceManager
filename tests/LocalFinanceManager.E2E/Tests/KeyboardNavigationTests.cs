@@ -334,6 +334,10 @@ public class KeyboardNavigationTests : E2ETestBase
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        await Page.WaitForSelectorAsync(
+            "tr[data-testid='transaction-row']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
         await Page.Locator("tr[data-testid='transaction-row']").First.FocusAsync();
         await Page.Keyboard.PressAsync("/");
         await Page.WaitForFunctionAsync("() => document.activeElement?.id === 'assignmentStatusFilter'");
