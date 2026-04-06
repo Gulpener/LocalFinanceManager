@@ -90,6 +90,9 @@ public class AccountServiceTests
     public async Task CreateAsync_ValidRequest_CreatesAccount()
     {
         // Arrange
+        var userId = Guid.NewGuid();
+        _mockUserContext.Setup(u => u.GetCurrentUserId()).Returns(userId);
+
         var request = new CreateAccountRequest
         {
             Label = "New Account",

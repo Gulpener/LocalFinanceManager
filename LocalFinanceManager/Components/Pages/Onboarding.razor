@@ -352,7 +352,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Onboarding: failed to create account.");
-            _step2Errors.Add("Aanmaken van rekening mislukt: " + ex.Message);
+            _step2Errors.Add("Aanmaken van rekening mislukt. Probeer het opnieuw.");
         }
         finally
         {
@@ -389,7 +389,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Onboarding: failed to create budget plan.");
-            _step3Errors.Add("Aanmaken van budgetplan mislukt: " + ex.Message);
+            _step3Errors.Add("Aanmaken van budgetplan mislukt. Probeer het opnieuw.");
         }
         finally
         {
@@ -426,7 +426,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Onboarding: failed to create categories.");
-            _errorMessage = "Aanmaken van categorieën mislukt: " + ex.Message;
+            _errorMessage = "Aanmaken van categorieën mislukt. Probeer het opnieuw.";
         }
         finally
         {
