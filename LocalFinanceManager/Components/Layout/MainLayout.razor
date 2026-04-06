@@ -14,12 +14,12 @@
             <AuthorizeView>
                 <Authorized>
                     <span class="me-2 fw-semibold text-body">Ingelogd</span>
-                    <span class="me-3">Hello, @context.User.Identity?.Name</span>
-                    <a href="/logout" class="nav-link">Logout</a>
+                    <span class="me-3">Hallo, @context.User.Identity?.Name</span>
+                    <a href="/logout" class="nav-link">Uitloggen</a>
                 </Authorized>
                 <NotAuthorized>
-                    <a href="/login" class="nav-link me-2">Login</a>
-                    <a href="/register" class="nav-link">Register</a>
+                    <a href="/login" class="nav-link me-2">Inloggen</a>
+                    <a href="/register" class="nav-link">Registreren</a>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
@@ -37,8 +37,8 @@
 @* ShortcutHelp is rendered on specific pages (e.g., Transactions) to avoid duplicate modal IDs. *@
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Er is een onverwachte fout opgetreden.
+    <a href="." class="reload">Herladen</a>
     <span class="dismiss">🗙</span>
 </div>
 

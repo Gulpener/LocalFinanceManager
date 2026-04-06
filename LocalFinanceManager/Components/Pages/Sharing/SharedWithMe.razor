@@ -8,9 +8,9 @@
 @rendermode InteractiveServer
 @attribute [Authorize]
 
-<PageTitle>Shared with Me</PageTitle>
+<PageTitle>Gedeeld met mij</PageTitle>
 
-<h1>Shared with Me</h1>
+<h1>Gedeeld met mij</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
@@ -19,14 +19,14 @@
 
 @if (isLoading)
 {
-    <p><em>Loading...</em></p>
+    <p><em>Laden...</em></p>
 }
 else
 {
     <!-- Pending Invitations -->
     <section class="mb-4">
         <h2>
-            Pending Invitations
+            Openstaande uitnodigingen
             @if (pendingCount > 0)
             {
                 <span class="badge bg-warning text-dark ms-2">@pendingCount</span>
@@ -35,19 +35,19 @@ else
 
         @if (!pendingAccountShares.Any() && !pendingBudgetPlanShares.Any())
         {
-            <p class="text-muted">No pending invitations.</p>
+            <p class="text-muted">Geen openstaande uitnodigingen.</p>
         }
 
         @if (pendingAccountShares.Any())
         {
-            <h5>Accounts</h5>
+            <h5>Rekeningen</h5>
             <table class="table table-sm">
                 <thead>
                     <tr>
-                        <th>Account</th>
-                        <th>Permission</th>
-                        <th>Invited</th>
-                        <th>Actions</th>
+                        <th>Rekening</th>
+                        <th>Toestemming</th>
+                        <th>Uitgenodigd</th>
+                        <th>Acties</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,10 +59,10 @@ else
                             <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
                             <td>
                                 <button class="btn btn-sm btn-success me-1" @onclick="() => AcceptAccountShare(share.Id)">
-                                    <i class="bi bi-check-circle"></i> Accept
+                                    <i class="bi bi-check-circle"></i> Accepteren
                                 </button>
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="() => DeclineAccountShare(share.Id)">
-                                    <i class="bi bi-x-circle"></i> Decline
+                                    <i class="bi bi-x-circle"></i> Weigeren
                                 </button>
                             </td>
                         </tr>
@@ -73,14 +73,14 @@ else
 
         @if (pendingBudgetPlanShares.Any())
         {
-            <h5>Budget Plans</h5>
+            <h5>Budgetplannen</h5>
             <table class="table table-sm">
                 <thead>
                     <tr>
-                        <th>Budget Plan</th>
-                        <th>Permission</th>
-                        <th>Invited</th>
-                        <th>Actions</th>
+                        <th>Budgetplan</th>
+                        <th>Toestemming</th>
+                        <th>Uitgenodigd</th>
+                        <th>Acties</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,10 +92,10 @@ else
                             <td>@share.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")</td>
                             <td>
                                 <button class="btn btn-sm btn-success me-1" @onclick="() => AcceptBudgetPlanShare(share.Id)">
-                                    <i class="bi bi-check-circle"></i> Accept
+                                    <i class="bi bi-check-circle"></i> Accepteren
                                 </button>
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="() => DeclineBudgetPlanShare(share.Id)">
-                                    <i class="bi bi-x-circle"></i> Decline
+                                    <i class="bi bi-x-circle"></i> Weigeren
                                 </button>
                             </td>
                         </tr>
@@ -107,23 +107,23 @@ else
 
     <!-- Accepted Shares -->
     <section>
-        <h2>Resources Shared with Me</h2>
+        <h2>Gedeelde bronnen met mij</h2>
 
         @if (!acceptedAccountShares.Any() && !acceptedBudgetPlanShares.Any())
         {
-            <p class="text-muted">No resources have been shared with you yet.</p>
+            <p class="text-muted">Er zijn nog geen bronnen met u gedeeld.</p>
         }
 
         @if (acceptedAccountShares.Any())
         {
-            <h5>Accounts</h5>
+            <h5>Rekeningen</h5>
             <table class="table table-sm">
                 <thead>
                     <tr>
-                        <th>Account</th>
+                        <th>Rekening</th>
                         <th>Gedeeld door</th>
-                        <th>Permission</th>
-                        <th>Since</th>
+                        <th>Toestemming</th>
+                        <th>Sinds</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -144,14 +144,14 @@ else
 
         @if (acceptedBudgetPlanShares.Any())
         {
-            <h5>Budget Plans</h5>
+            <h5>Budgetplannen</h5>
             <table class="table table-sm">
                 <thead>
                     <tr>
-                        <th>Budget Plan</th>
+                        <th>Budgetplan</th>
                         <th>Gedeeld door</th>
-                        <th>Permission</th>
-                        <th>Since</th>
+                        <th>Toestemming</th>
+                        <th>Sinds</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -206,7 +206,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to load shared resources");
-            errorMessage = "Failed to load shared resources.";
+            errorMessage = "Laden van gedeelde bronnen mislukt.";
         }
         finally
         {
@@ -238,7 +238,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to decline account share {ShareId}", shareId);
-            errorMessage = "Failed to decline share.";
+            errorMessage = "Weigeren mislukt.";
         }
     }
 
@@ -252,7 +252,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to accept budget plan share {ShareId}", shareId);
-            errorMessage = "Failed to accept share.";
+            errorMessage = "Accepteren mislukt.";
         }
     }
 
@@ -266,7 +266,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to decline budget plan share {ShareId}", shareId);
-            errorMessage = "Failed to decline share.";
+            errorMessage = "Weigeren mislukt.";
         }
     }
 

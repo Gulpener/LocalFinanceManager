@@ -5,18 +5,18 @@
 @inject IAuthStateNotifier AuthStateNotifier
 @inject NavigationManager Navigation
 
-<PageTitle>Logout</PageTitle>
+<PageTitle>Uitloggen</PageTitle>
 
 <div class="row justify-content-center mt-5">
     <div class="col-md-4">
-        <h2>Logout</h2>
-        <p>Are you sure you want to logout?</p>
+        <h2>Uitloggen</h2>
+        <p>Weet u zeker dat u wilt uitloggen?</p>
 
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-danger" @onclick="HandleLogout" disabled="@isLoggingOut">
-                @(isLoggingOut ? "Logging out..." : "Yes, logout")
+                @(isLoggingOut ? "Bezig met uitloggen..." : "Ja, uitloggen")
             </button>
-            <a href="/" class="btn btn-secondary">Cancel</a>
+            <a href="/" class="btn btn-secondary">Annuleren</a>
         </div>
     </div>
 </div>

@@ -11,16 +11,16 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Budget Plans</PageTitle>
+<PageTitle>Budgetplannen</PageTitle>
 
-<h1>Budget Plans</h1>
+<h1>Budgetplannen</h1>
 
 <div class="mb-3">
     <div class="row">
         <div class="col-md-6">
-            <label for="accountSelect" class="form-label">Select Account</label>
+            <label for="accountSelect" class="form-label">Rekening selecteren</label>
             <select id="accountSelect" class="form-select" @onchange="OnAccountChanged">
-                <option value="">-- Select an account --</option>
+                <option value="">-- Selecteer een rekening --</option>
                 @if (accounts != null)
                 {
                     @foreach (var account in accounts)
@@ -36,15 +36,15 @@
             @if (selectedAccountId != Guid.Empty)
             {
                 <button class="btn btn-primary" @onclick="CreateNewPlan">
-                    <i class="bi bi-plus-circle"></i> Create New Budget Plan
+                    <i class="bi bi-plus-circle"></i> Nieuw budgetplan aanmaken
                 </button>
             }
         </div>
         <div class="col-md-2 d-flex align-items-end">
             <select class="form-select" @bind="_ownerFilter" @bind:after="StateHasChanged">
-                <option value="all">All</option>
-                <option value="mine">Owned by Me</option>
-                <option value="shared">Shared with Me</option>
+                <option value="all">Alle</option>
+                <option value="mine">Mijn plannen</option>
+                <option value="shared">Gedeeld met mij</option>
             </select>
         </div>
     </div>
@@ -52,18 +52,18 @@
 
 @if (isLoading)
 {
-    <p><em>Loading budget plans...</em></p>
+    <p><em>Budgetplannen laden...</em></p>
 }
 else if (selectedAccountId == Guid.Empty)
 {
     <div class="alert alert-info">
-        <p>Please select an account to view its budget plans.</p>
+        <p>Selecteer een rekening om de bijbehorende budgetplannen te bekijken.</p>
     </div>
 }
 else if (budgetPlans == null || !FilteredPlans.Any())
 {
     <div class="alert alert-info">
-        <p>No budget plans found for this account. Create your first budget plan to get started!</p>
+        <p>Geen budgetplannen gevonden voor deze rekening. Maak uw eerste budgetplan aan om te beginnen!</p>
     </div>
 }
 else
@@ -71,11 +71,11 @@ else
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Year</th>
-                <th>Name</th>
-                <th>Budget Lines</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th>Jaar</th>
+                <th>Naam</th>
+                <th>Budgetregels</th>
+                <th>Aangemaakt</th>
+                <th>Acties</th>
             </tr>
         </thead>
         <tbody>
@@ -97,21 +97,21 @@ else
                         @if (plan.UserPermission == PermissionLevel.Owner || plan.UserPermission == PermissionLevel.Editor)
                         {
                             <a href="/budgets/@plan.Id/edit" class="btn btn-sm btn-primary">
-                                <i class="bi bi-pencil"></i> Edit
+                                <i class="bi bi-pencil"></i> Bewerken
                             </a>
                         }
                         @if (plan.UserPermission == PermissionLevel.Owner)
                         {
                             <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(plan)">
-                                <i class="bi bi-share"></i> Share
+                                <i class="bi bi-share"></i> Delen
                             </button>
                             <button class="btn btn-sm btn-danger" @onclick="() => ArchivePlan(plan.Id)">
-                                <i class="bi bi-archive"></i> Archive
+                                <i class="bi bi-archive"></i> Archiveren
                             </button>
                         }
                         else if (plan.UserPermission == PermissionLevel.Viewer)
                         {
-                            <span class="badge bg-secondary">View only</span>
+                            <span class="badge bg-secondary">Alleen lezen</span>
                         }
                     </td>
                 </tr>

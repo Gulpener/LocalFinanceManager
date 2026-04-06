@@ -6,7 +6,7 @@
 @using Microsoft.EntityFrameworkCore
 @using Npgsql
 
-<PageTitle>Admin Settings</PageTitle>
+<PageTitle>Beheerinstellingen</PageTitle>
 
 <h3>Systeem Instellingen</h3>
 
@@ -18,17 +18,17 @@
         <table class="table table-borderless">
             <tbody>
                 <tr>
-                    <th scope="row">Environment:</th>
+                    <th scope="row">Omgeving:</th>
                     <td>
                         <span class="badge @_environmentBadgeClass">@Environment.EnvironmentName</span>
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row">Application Name:</th>
+                    <th scope="row">Applicatienaam:</th>
                     <td>@Environment.ApplicationName</td>
                 </tr>
                 <tr>
-                    <th scope="row">Content Root Path:</th>
+                    <th scope="row">Hoofdmap:</th>
                     <td><code>@Environment.ContentRootPath</code></td>
                 </tr>
             </tbody>
@@ -44,15 +44,15 @@
         <table class="table table-borderless">
             <tbody>
                 <tr>
-                    <th scope="row">Connection String:</th>
+                    <th scope="row">Verbindingsreeks:</th>
                     <td><code>@_maskedConnectionString</code></td>
                 </tr>
                 <tr>
-                    <th scope="row">Database Host:</th>
+                    <th scope="row">Databasehost:</th>
                     <td><code>@_databaseHost</code></td>
                 </tr>
                 <tr>
-                    <th scope="row">Database Name:</th>
+                    <th scope="row">Databasenaam:</th>
                     <td><code>@_databaseName</code></td>
                 </tr>
                 <tr>
@@ -73,12 +73,12 @@
                     <td><code>@_lastMigration</code></td>
                 </tr>
                 <tr>
-                    <th scope="row">Pending Migrations:</th>
+                    <th scope="row">Uitstaande migraties:</th>
                     <td>
                         @if (_pendingMigrations?.Any() == true)
                         {
                             <span class="badge bg-warning" aria-label="Pending migrations">@_pendingMigrations.Count()
-                                pending</span>
+                                uitstaand</span>
                                 <ul class="mt-2">
                                     @foreach (var migration in _pendingMigrations)
                                     {
@@ -99,33 +99,33 @@
 
     <div class="card mt-3">
         <div class="card-header">
-            <h5>Seed Data Status</h5>
+            <h5>Status seeddata</h5>
         </div>
         <div class="card-body">
             <table class="table table-borderless">
                 <tbody>
                     <tr>
-                        <th scope="row">Accounts:</th>
+                        <th scope="row">Rekeningen:</th>
                         <td>@_accountCount records</td>
                     </tr>
                     <tr>
-                        <th scope="row">Categories:</th>
+                        <th scope="row">Categorieën:</th>
                         <td>@_categoryCount records</td>
                     </tr>
                     <tr>
-                        <th scope="row">Budget Plans:</th>
+                        <th scope="row">Budgetplannen:</th>
                         <td>@_budgetPlanCount records</td>
                     </tr>
                     <tr>
-                        <th scope="row">Budget Lines:</th>
+                        <th scope="row">Budgetregels:</th>
                         <td>@_budgetLineCount records</td>
                     </tr>
                     <tr>
-                        <th scope="row">Transactions:</th>
+                        <th scope="row">Transacties:</th>
                         <td>@_transactionCount records</td>
                     </tr>
                     <tr>
-                        <th scope="row">Transaction Splits:</th>
+                        <th scope="row">Transactiesplitsingen:</th>
                         <td>@_transactionSplitCount records</td>
                     </tr>
                     <tr>

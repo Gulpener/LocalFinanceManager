@@ -6,11 +6,11 @@
 @inject IAuthStateNotifier AuthStateNotifier
 @inject NavigationManager Navigation
 
-<PageTitle>Login</PageTitle>
+<PageTitle>Inloggen</PageTitle>
 
 <div class="row justify-content-center mt-5">
     <div class="col-md-4">
-        <h2>Login</h2>
+        <h2>Inloggen</h2>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
@@ -21,7 +21,7 @@
                     <div class="mt-2">
                         <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResendVerificationEmail"
                                 disabled="@isResending">
-                            @(isResending ? "Sending..." : "Resend verification email")
+                            @(isResending ? "Bezig..." : "Verificatiemail opnieuw versturen")
                         </button>
                         @if (!string.IsNullOrEmpty(resendMessage))
                         {
@@ -37,28 +37,28 @@
             <ValidationSummary />
 
             <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
+                <label for="email" class="form-label">E-mailadres</label>
                 <InputText id="email" class="form-control" @bind-Value="loginModel.Email" type="email"
                            autocomplete="email" />
             </div>
 
             <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
+                <label for="password" class="form-label">Wachtwoord</label>
                 <InputText id="password" class="form-control" @bind-Value="loginModel.Password" type="password"
                            autocomplete="current-password" />
             </div>
 
             <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
-                @(isSubmitting ? "Signing in..." : "Sign in")
+                @(isSubmitting ? "Bezig met inloggen..." : "Inloggen")
             </button>
         </EditForm>
 
         <hr />
         <p class="text-center">
-            Don't have an account? <a href="/register">Register</a>
+            Nog geen account? <a href="/register">Registreren</a>
         </p>
         <p class="text-center">
-            <a href="/password-reset">Forgot password?</a>
+            <a href="/password-reset">Wachtwoord vergeten?</a>
         </p>
     </div>
 </div>
@@ -94,12 +94,12 @@
             }
             else if (result.EmailVerified == false)
             {
-                errorMessage = "Email not verified. Please check your inbox and verify your email address.";
+                errorMessage = "E-mail niet geverifieerd. Controleer uw inbox en verifieer uw e-mailadres.";
                 showResendVerification = true;
             }
             else
             {
-                errorMessage = result.ErrorMessage ?? "Login failed. Please check your credentials.";
+                errorMessage = result.ErrorMessage ?? "Inloggen mislukt. Controleer uw gegevens.";
             }
         }
         finally
@@ -118,8 +118,8 @@
             var result = await AuthService.ResendVerificationEmailAsync(loginModel.Email);
             resendSuccess = result.Success;
             resendMessage = result.Success
-                ? "Verification email sent. Please check your inbox."
-                : result.ErrorMessage ?? "Failed to resend verification email.";
+                ? "Verificatiemail verstuurd. Controleer uw inbox."
+                : result.ErrorMessage ?? "Versturen van verificatiemail mislukt.";
         }
         finally
         {

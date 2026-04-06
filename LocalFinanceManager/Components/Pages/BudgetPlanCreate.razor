@@ -9,9 +9,9 @@
 @inject ILogger<BudgetPlanCreate> Logger
 @rendermode InteractiveServer
 
-<PageTitle>Create Budget Plan</PageTitle>
+<PageTitle>Budgetplan aanmaken</PageTitle>
 
-<h1>Create Budget Plan</h1>
+<h1>Budgetplan aanmaken</h1>
 
 <div class="card">
     <div class="card-body">
@@ -19,9 +19,9 @@
             <DataAnnotationsValidator />
 
             <div class="mb-3">
-                <label for="accountId" class="form-label">Account</label>
+                <label for="accountId" class="form-label">Rekening</label>
                 <InputSelect id="accountId" class="form-select" @bind-Value="model.AccountId">
-                    <option value="">-- Select an account --</option>
+                    <option value="">-- Selecteer een rekening --</option>
                     @if (accounts != null)
                     {
                         @foreach (var account in accounts)
@@ -34,33 +34,33 @@
             </div>
 
             <div class="mb-3">
-                <label for="year" class="form-label">Year</label>
+                <label for="year" class="form-label">Jaar</label>
                 <InputNumber id="year" class="form-control" @bind-Value="model.Year" />
                 <ValidationMessage For="@(() => model.Year)" />
             </div>
 
             <div class="mb-3">
-                <label for="name" class="form-label">Name</label>
+                <label for="name" class="form-label">Naam</label>
                 <InputText id="name" class="form-control" @bind-Value="model.Name" />
                 <ValidationMessage For="@(() => model.Name)" />
             </div>
 
             <div class="mb-3">
-                <label for="template" class="form-label">Category Template</label>
+                <label for="template" class="form-label">Categoriesjabloon</label>
                 <InputSelect id="template" class="form-select" @bind-Value="model.TemplateName">
                     @foreach (var templateName in CategoryTemplates.Templates.Keys)
                     {
                         <option value="@templateName">@templateName</option>
                     }
                 </InputSelect>
-                <div class="form-text">Select a template to auto-create categories for this budget plan.</div>
+                <div class="form-text">Selecteer een sjabloon om automatisch categorieën aan te maken voor dit budgetplan.</div>
             </div>
 
             @if (!string.IsNullOrEmpty(model.TemplateName) &&
                                     CategoryTemplates.Templates.ContainsKey(model.TemplateName))
             {
                 <div class="mb-3">
-                    <label class="form-label">Template Preview (@model.TemplateName)</label>
+                    <label class="form-label">Sjabloonvoorbeeld (@model.TemplateName)</label>
                     <div class="card">
                         <div class="card-body">
                             @if (CategoryTemplates.Templates[model.TemplateName].Any())
@@ -78,7 +78,7 @@
                             }
                             else
                             {
-                                <p class="text-muted mb-0">Empty template - no categories will be created.</p>
+                                <p class="text-muted mb-0">Leeg sjabloon - er worden geen categorieën aangemaakt.</p>
                             }
                         </div>
                     </div>
@@ -96,9 +96,9 @@
                     {
                         <span class="spinner-border spinner-border-sm me-2"></span>
                     }
-                    Create Budget Plan
+                    Budgetplan aanmaken
                 </button>
-                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                <button type="button" class="btn btn-secondary" @onclick="Cancel">Annuleren</button>
             </div>
         </EditForm>
     </div>

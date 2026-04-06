@@ -35,14 +35,14 @@
 {
     <span class="badge bg-secondary">
         <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-        Loading...
+        Laden...
     </span>
 }
 else if (_noModelAvailable && !_isHidden)
 {
-    <span class="badge bg-warning text-dark" title="No ML model trained yet. Train a model to get suggestions."
+    <span class="badge bg-warning text-dark" title="Nog geen ML-model getraind. Train een model om suggesties te ontvangen."
           data-testid="no-model-badge">
-        <i class="bi bi-info-circle"></i> No ML model
+        <i class="bi bi-info-circle"></i> Geen ML-model
     </span>
 }
 else if (_suggestion != null && !_isHidden)
@@ -54,17 +54,17 @@ else if (_suggestion != null && !_isHidden)
 
             @if (_isAutoApplied)
             {
-                <span class="ms-1" title="Auto-applied">✓</span>
+                <span class="ms-1" title="Automatisch toegewezen">✓</span>
             }
 
             @if (!_isProcessing)
             {
                 <button type="button" class="btn btn-sm btn-link text-white p-0 ms-2 border-0" style="font-size: 0.8rem;"
-                        @onclick="AcceptSuggestion" title="Accept suggestion" data-testid="accept-suggestion">
+                        @onclick="AcceptSuggestion" title="Suggestie accepteren" data-testid="accept-suggestion">
                     ✓
                 </button>
                 <button type="button" class="btn btn-sm btn-link text-white p-0 ms-1 border-0" style="font-size: 0.8rem;"
-                        @onclick="RejectSuggestion" title="Reject suggestion" data-testid="reject-suggestion">
+                        @onclick="RejectSuggestion" title="Suggestie weigeren" data-testid="reject-suggestion">
                     ✗
                 </button>
             }
