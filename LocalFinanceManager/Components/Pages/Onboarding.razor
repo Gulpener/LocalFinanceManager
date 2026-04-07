@@ -307,7 +307,28 @@
     // Step 5 — CSV preview
     private List<string> _csvPreviewRows = new();
 
+    private bool _initialized;
+    private bool _afterRenderRetried;
+
     protected override async Task OnInitializedAsync()
+    {
+        await CheckExistingAccountsAsync();
+        _initialized = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _initialized && !_afterRenderRetried)
+        {
+            // Race condition: circuit user was not yet initialized during OnInitializedAsync,
+            // which could cause GetActiveAccountCountAsync() to return 0 for users who already
+            // have accounts, keeping them in the wizard. Retry once after first render.
+            _afterRenderRetried = true;
+            await CheckExistingAccountsAsync();
+        }
+    }
+
+    private async Task CheckExistingAccountsAsync()
     {
         var count = await AccountService.GetActiveAccountCountAsync();
         if (count > 0)

@@ -106,9 +106,31 @@
     private List<Transaction>? _transactions;
     private int? _unassignedCount;
     private bool _isLoading = true;
+    private bool _initialized;
+    private bool _afterRenderRetried;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadDashboardAsync();
+        _initialized = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _accounts?.Count == 0 && _initialized && !_afterRenderRetried)
+        {
+            // Race condition: circuit user was not yet initialized during OnInitializedAsync,
+            // causing GetAllActiveAsync() to return an empty list for users who actually have accounts.
+            // Retry once after the first interactive render when the circuit user is available.
+            _afterRenderRetried = true;
+            await LoadDashboardAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadDashboardAsync()
+    {
+        _isLoading = true;
         try
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
