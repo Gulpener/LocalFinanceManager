@@ -212,4 +212,64 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .ThenByDescending(t => t.CreatedAt)
             .ToListAsync();
     }
+
+    public async Task<List<Transaction>> GetSplitTransactionsByDateRangeAsync(Guid accountId, DateTime from, DateTime to)
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        return await _dbSet
+            .Where(t => !t.IsArchived
+                && t.AccountId == accountId
+                && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
+                && t.AssignedParts!.Any(s => !s.IsArchived)
+                && t.Date >= from
+                && t.Date < to)
+            .Include(t => t.AssignedParts!)
+                .ThenInclude(s => s.BudgetLine)
+                    .ThenInclude(bl => bl.Category)
+            .ToListAsync();
+    }
+
+    public async Task<List<Transaction>> GetRecentWithSplitsAsync(int count)
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return new List<Transaction>();
+        }
+
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        var query = _dbSet.Where(t => !t.IsArchived
+            && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId)));
+
+        return await query
+            .Include(t => t.Account)
+            .Include(t => t.AssignedParts!)
+                .ThenInclude(s => s.BudgetLine)
+                    .ThenInclude(bl => bl.Category)
+            .OrderByDescending(t => t.Date)
+            .ThenByDescending(t => t.CreatedAt)
+            .Take(count)
+            .ToListAsync();
+    }
+
+    public async Task<int> CountUnassignedAsync()
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return 0;
+        }
+
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        return await _dbSet
+            .CountAsync(t => !t.IsArchived
+                && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
+                && !t.AssignedParts!.Any(s => !s.IsArchived));
+    }
 }

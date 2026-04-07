@@ -5,18 +5,18 @@
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Registreren</PageTitle>
 
 <div class="row justify-content-center mt-5">
     <div class="col-md-4">
-        <h2>Register</h2>
+        <h2>Registreren</h2>
 
         @if (registrationSuccess)
         {
             <div class="alert alert-success">
-                Registration successful! Check your email to verify your account before logging in.
+                Registratie geslaagd! Controleer uw e-mail om uw account te verifiëren voordat u inlogt.
             </div>
-            <p><a href="/login">Go to login</a></p>
+            <p><a href="/login">Naar inloggen</a></p>
         }
         else
         {
@@ -30,31 +30,31 @@
                 <ValidationSummary />
 
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <InputText id="email" class="form-control" @bind-Value="registerModel.Email"
-                               type="email" autocomplete="email" />
+                    <label for="email" class="form-label">E-mailadres</label>
+                    <InputText id="email" class="form-control" @bind-Value="registerModel.Email" type="email"
+                               autocomplete="email" />
                 </div>
 
                 <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <InputText id="password" class="form-control" @bind-Value="registerModel.Password"
-                               type="password" autocomplete="new-password" />
+                    <label for="password" class="form-label">Wachtwoord</label>
+                    <InputText id="password" class="form-control" @bind-Value="registerModel.Password" type="password"
+                               autocomplete="new-password" />
                 </div>
 
                 <div class="mb-3">
-                    <label for="confirmPassword" class="form-label">Confirm Password</label>
+                    <label for="confirmPassword" class="form-label">Wachtwoord bevestigen</label>
                     <InputText id="confirmPassword" class="form-control" @bind-Value="registerModel.ConfirmPassword"
                                type="password" autocomplete="new-password" />
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100" disabled="@isSubmitting">
-                    @(isSubmitting ? "Creating account..." : "Create account")
+                    @(isSubmitting ? "Bezig..." : "Account aanmaken")
                 </button>
             </EditForm>
 
             <hr />
             <p class="text-center">
-                Already have an account? <a href="/login">Sign in</a>
+                Al een account? <a href="/login">Inloggen</a>
             </p>
         }
     </div>
@@ -70,7 +70,7 @@
     {
         if (registerModel.Password != registerModel.ConfirmPassword)
         {
-            errorMessage = "Passwords do not match.";
+            errorMessage = "Wachtwoorden komen niet overeen.";
             return;
         }
 
@@ -87,7 +87,7 @@
             }
             else
             {
-                errorMessage = result.ErrorMessage ?? "Registration failed. Please try again.";
+                errorMessage = result.ErrorMessage ?? "Registratie mislukt. Probeer het opnieuw.";
             }
         }
         finally

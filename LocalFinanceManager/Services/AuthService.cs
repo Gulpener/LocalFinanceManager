@@ -18,8 +18,6 @@ public class AuthService : IAuthService
     private readonly SupabaseOptions _options;
     private readonly AppDbContext _context;
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IWebHostEnvironment _environment;
-    private readonly IDevelopmentUserSeedService _developmentUserSeedService;
     private readonly ILogger<AuthService> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -32,15 +30,11 @@ public class AuthService : IAuthService
         IOptions<SupabaseOptions> options,
         AppDbContext context,
         IHttpClientFactory httpClientFactory,
-        IWebHostEnvironment environment,
-        IDevelopmentUserSeedService developmentUserSeedService,
         ILogger<AuthService> logger)
     {
         _options = options.Value;
         _context = context;
         _httpClientFactory = httpClientFactory;
-        _environment = environment;
-        _developmentUserSeedService = developmentUserSeedService;
         _logger = logger;
     }
 
@@ -264,11 +258,6 @@ public class AuthService : IAuthService
 
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();
-
-            if (_environment.IsDevelopment())
-            {
-                await _developmentUserSeedService.SeedForUserAsync(newUser.Id);
-            }
 
             _logger.LogInformation("Created local user record.");
         }

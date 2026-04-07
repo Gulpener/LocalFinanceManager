@@ -131,7 +131,10 @@
     {
         var targetPath = context.Path.Trim('/');
 
-        if (AnonymousRoutes.Contains(targetPath))
+        // Strip query string before checking anonymous routes so that
+        // paths like "login?returnUrl=..." still match "login".
+        var pathWithoutQuery = targetPath.Split('?')[0];
+        if (AnonymousRoutes.Contains(pathWithoutQuery))
         {
             return;
         }
@@ -144,10 +147,17 @@
             return;
         }
 
+        // context.Path already includes the leading '/', so avoid producing a double-slash
+        // like "//transactions" which GetSafeReturnUrl() in Login.razor rejects as open-redirect.
         var returnUrl = string.IsNullOrWhiteSpace(context.Path)
             ? "/"
-            : $"/{context.Path}";
+            : $"/{context.Path.TrimStart('/')}";
 
+        // forceLoad: false (SPA pushState) is used here because forceLoad: true in an
+        // interactive Blazor Server circuit causes the circuit to be disposed before the
+        // navigation message is delivered to the client, resulting in the browser never
+        // navigating to /login. SPA navigation keeps the circuit alive and reliably
+        // changes the URL, which Playwright's ToHaveURLAsync detects correctly.
         Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: false);
     }
 

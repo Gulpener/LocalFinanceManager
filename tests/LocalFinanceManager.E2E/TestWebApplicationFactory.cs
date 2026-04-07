@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Security.Claims;
 using LocalFinanceManager.Data;
+using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -378,8 +379,21 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
 
         await using var context = new AppDbContext(options);
         await context.Database.MigrateAsync();
-        var seedService = new DevelopmentUserSeedService(context);
-        await seedService.SeedAsync();
+
+        // Create the dev user that E2E tests authenticate as (idempotent)
+        if (!await context.Users.AnyAsync(u => u.Id == AppDbContext.SeedUserId))
+        {
+            context.Users.Add(new User
+            {
+                Id = AppDbContext.SeedUserId,
+                SupabaseUserId = "00000000-0000-0000-0000-000000000001",
+                Email = AppDbContext.SeedUserEmail,
+                DisplayName = "Dev User",
+                EmailConfirmed = true,
+                IsArchived = false
+            });
+            await context.SaveChangesAsync();
+        }
     }
 
     /// <summary>
@@ -555,6 +569,26 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             var principal = new ClaimsPrincipal(identity);
             var ticket = new AuthenticationTicket(principal, Scheme.Name);
             return Task.FromResult(AuthenticateResult.Success(ticket));
+        }
+
+        /// <summary>
+        /// When an unauthenticated browser accesses a protected Blazor route (e.g. /accounts),
+        /// ASP.NET Core calls the challenge handler instead of returning 200. The default base
+        /// class behavior returns 401, which UseStatusCodePagesWithReExecute converts to a 404
+        /// via the /not-found re-execution — the browser never receives the Blazor HTML shell,
+        /// so the Blazor circuit never starts and Routes.razor never fires its auth redirect.
+        ///
+        /// Override HandleChallengeAsync to issue an HTTP 302 redirect to /login instead.
+        /// This mirrors the expected behaviour in the UnauthenticatedBrowser_*_RedirectsToLogin
+        /// tests: the URL must change to /login, which Playwright's ToHaveURLAsync can detect.
+        /// Authenticated browsers (with the e2e-auth-token cookie) never reach this method
+        /// because HandleAuthenticateAsync succeeds for them.
+        /// </summary>
+        protected override Task HandleChallengeAsync(AuthenticationProperties properties)
+        {
+            var returnUrl = Request.Path + Request.QueryString;
+            Response.Redirect($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+            return Task.CompletedTask;
         }
     }
 

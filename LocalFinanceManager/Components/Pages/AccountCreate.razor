@@ -1,4 +1,5 @@
 @page "/accounts/new"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
@@ -7,9 +8,9 @@
 @inject ILogger<AccountCreate> Logger
 @rendermode InteractiveServer
 
-<PageTitle>Create Account</PageTitle>
+<PageTitle>Rekening aanmaken</PageTitle>
 
-<h1>Create New Account</h1>
+<h1>Nieuwe rekening aanmaken</h1>
 
 <div class="row">
     <div class="col-md-6">
@@ -31,12 +32,12 @@
             </div>
 
             <div class="mb-3">
-                <label for="type" class="form-label">Account Type</label>
+                <label for="type" class="form-label">Rekeningtype</label>
                 <InputSelect id="type" class="form-select" @bind-Value="request.Type">
-                    <option value="@AccountType.Checking">Checking</option>
-                    <option value="@AccountType.Savings">Savings</option>
-                    <option value="@AccountType.Credit">Credit</option>
-                    <option value="@AccountType.Other">Other</option>
+                    <option value="@AccountType.Checking">Betaalrekening</option>
+                    <option value="@AccountType.Savings">Spaarrekening</option>
+                    <option value="@AccountType.Credit">Creditrekening</option>
+                    <option value="@AccountType.Other">Overig</option>
                 </InputSelect>
             </div>
 
@@ -47,21 +48,22 @@
                 {
                     <div class="text-danger">@string.Join(", ", validationErrors["IBAN"])</div>
                 }
-                <div class="form-text">Enter IBAN with or without spaces</div>
+                <div class="form-text">Voer IBAN in met of zonder spaties</div>
             </div>
 
             <div class="mb-3">
-                <label for="currency" class="form-label">Currency</label>
-                <InputText id="currency" class="form-control" @bind-Value="request.Currency" placeholder="EUR" maxlength="3" />
+                <label for="currency" class="form-label">Valuta</label>
+                <InputText id="currency" class="form-control" @bind-Value="request.Currency" placeholder="EUR"
+                           maxlength="3" />
                 @if (validationErrors.ContainsKey("Currency"))
                 {
                     <div class="text-danger">@string.Join(", ", validationErrors["Currency"])</div>
                 }
-                <div class="form-text">3-letter ISO code (e.g., EUR, USD)</div>
+                <div class="form-text">3-letterige ISO-code (bijv. EUR, USD)</div>
             </div>
 
             <div class="mb-3">
-                <label for="startingBalance" class="form-label">Starting Balance</label>
+                <label for="startingBalance" class="form-label">Beginsaldo</label>
                 <InputNumber id="startingBalance" class="form-control" @bind-Value="request.StartingBalance" />
                 @if (validationErrors.ContainsKey("StartingBalance"))
                 {
@@ -74,14 +76,14 @@
                     @if (isSubmitting)
                     {
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        <span> Creating...</span>
+                        <span> Bezig...</span>
                     }
                     else
                     {
-                        <span>Create Account</span>
+                        <span>Rekening aanmaken</span>
                     }
                 </button>
-                <a href="/accounts" class="btn btn-secondary">Cancel</a>
+                <a href="/accounts" class="btn btn-secondary">Annuleren</a>
             </div>
         </EditForm>
     </div>

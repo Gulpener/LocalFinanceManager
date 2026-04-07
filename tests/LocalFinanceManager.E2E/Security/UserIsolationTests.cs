@@ -263,8 +263,10 @@ public class UserIsolationTests : E2ETestBase
     private async Task AssertRedirectsToLogin(string path)
     {
         // Use a fresh browser context so sessionStorage is completely empty.
-        // CustomAuthenticationStateProvider reads sessionStorage for the JWT;
-        // an empty sessionStorage → AnonymousState → AuthorizeRouteView redirects.
+        // Without the e2e-auth-token cookie, E2ECookieAuthenticationHandler returns NoResult
+        // and UseAuthorization challenges anonymous access to [Authorize] pages. The overridden
+        // HandleChallengeAsync in the test handler issues an HTTP 302 redirect to /login
+        // instead of the default 401 (which UseStatusCodePagesWithReExecute would convert to 404).
         await using var context = await Browser.NewContextAsync(ContextOptions());
         var page = await context.NewPageAsync();
 
@@ -273,6 +275,8 @@ public class UserIsolationTests : E2ETestBase
             WaitUntil = WaitUntilState.NetworkIdle,
             Timeout = 30_000
         });
+
+        await Assertions.Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/login"), new() { Timeout = 20_000 });
 
         Assert.That(page.Url, Does.Contain("/login"),
             $"Unauthenticated access to {path} must redirect to /login");

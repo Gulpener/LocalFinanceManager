@@ -1,4 +1,5 @@
 @page "/accounts/{id:guid}/edit"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
@@ -7,13 +8,13 @@
 @inject ILogger<AccountEdit> Logger
 @rendermode InteractiveServer
 
-<PageTitle>Edit Account</PageTitle>
+<PageTitle>Rekening bewerken</PageTitle>
 
-<h1>Edit Account</h1>
+<h1>Rekening bewerken</h1>
 
 @if (account == null)
 {
-    <p><em>Loading account...</em></p>
+    <p><em>Rekening laden...</em></p>
 }
 else
 {
@@ -32,7 +33,7 @@ else
                     <div class="alert alert-warning">
                         <p>@concurrencyMessage</p>
                         <button type="button" class="btn btn-sm btn-warning" @onclick="ReloadAccount">
-                            Reload Latest Version
+                            Laatste versie herladen
                         </button>
                     </div>
                 }
@@ -47,12 +48,12 @@ else
                 </div>
 
                 <div class="mb-3">
-                    <label for="type" class="form-label">Account Type</label>
+                    <label for="type" class="form-label">Rekeningtype</label>
                     <InputSelect id="type" class="form-select" @bind-Value="request.Type">
-                        <option value="@AccountType.Checking">Checking</option>
-                        <option value="@AccountType.Savings">Savings</option>
-                        <option value="@AccountType.Credit">Credit</option>
-                        <option value="@AccountType.Other">Other</option>
+                        <option value="@AccountType.Checking">Betaalrekening</option>
+                        <option value="@AccountType.Savings">Spaarrekening</option>
+                        <option value="@AccountType.Credit">Creditrekening</option>
+                        <option value="@AccountType.Other">Overig</option>
                     </InputSelect>
                 </div>
 
@@ -63,22 +64,22 @@ else
                     {
                         <div class="text-danger">@string.Join(", ", validationErrors["IBAN"])</div>
                     }
-                    <div class="form-text">Enter IBAN with or without spaces</div>
+                    <div class="form-text">Voer IBAN in met of zonder spaties</div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="currency" class="form-label">Currency</label>
+                    <label for="currency" class="form-label">Valuta</label>
                     <InputText id="currency" class="form-control" @bind-Value="request.Currency" placeholder="EUR"
                                maxlength="3" />
                     @if (validationErrors.ContainsKey("Currency"))
                     {
                         <div class="text-danger">@string.Join(", ", validationErrors["Currency"])</div>
                     }
-                    <div class="form-text">3-letter ISO code (e.g., EUR, USD)</div>
+                    <div class="form-text">3-letterige ISO-code (bijv. EUR, USD)</div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="startingBalance" class="form-label">Starting Balance</label>
+                    <label for="startingBalance" class="form-label">Beginsaldo</label>
                     <InputNumber id="startingBalance" class="form-control" @bind-Value="request.StartingBalance" />
                     @if (validationErrors.ContainsKey("StartingBalance"))
                     {
@@ -91,19 +92,19 @@ else
                         @if (isSubmitting)
                         {
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            <span> Saving...</span>
+                            <span> Bezig met opslaan...</span>
                         }
                         else
                         {
-                            <span>Save Changes</span>
+                            <span>Wijzigingen opslaan</span>
                         }
                     </button>
-                    <a href="/accounts" class="btn btn-secondary">Cancel</a>
+                    <a href="/accounts" class="btn btn-secondary">Annuleren</a>
                 </div>
 
                 <div class="text-muted small">
-                    <p>Created: @account.CreatedAt.ToLocalTime().ToString("g")</p>
-                    <p>Last Updated: @account.UpdatedAt.ToLocalTime().ToString("g")</p>
+                    <p>Aangemaakt: @account.CreatedAt.ToLocalTime().ToString("g")</p>
+                    <p>Laatst bijgewerkt: @account.UpdatedAt.ToLocalTime().ToString("g")</p>
                 </div>
             </EditForm>
         </div>

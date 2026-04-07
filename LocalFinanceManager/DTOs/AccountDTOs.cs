@@ -33,6 +33,8 @@ public class AccountResponse
 {
     public Guid Id { get; set; }
     public Guid? OwnerId { get; set; }
+    public string OwnerEmail { get; set; } = string.Empty;
+    public PermissionLevel PermissionLevel { get; set; }
     public string Label { get; set; } = string.Empty;
     public AccountType Type { get; set; }
     public string Currency { get; set; } = string.Empty;
@@ -50,6 +52,8 @@ public class AccountResponse
         {
             Id = account.Id,
             OwnerId = account.UserId,
+            OwnerEmail = account.User?.Email ?? string.Empty,
+            PermissionLevel = PermissionLevel.Viewer,
             Label = account.Label,
             Type = account.Type,
             Currency = account.Currency,

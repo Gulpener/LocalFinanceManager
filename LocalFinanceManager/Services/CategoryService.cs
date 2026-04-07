@@ -10,11 +10,13 @@ namespace LocalFinanceManager.Services;
 public class CategoryService
 {
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IUserContext _userContext;
     private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(ICategoryRepository categoryRepository, ILogger<CategoryService> logger)
+    public CategoryService(ICategoryRepository categoryRepository, IUserContext userContext, ILogger<CategoryService> logger)
     {
         _categoryRepository = categoryRepository;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -59,12 +61,19 @@ public class CategoryService
     {
         _logger.LogInformation("Creating new category: {Name} for budget plan: {BudgetPlanId}", request.Name, request.BudgetPlanId);
 
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot create a category without an authenticated user.");
+        }
+
         var category = new Category
         {
             Name = request.Name,
             Type = request.Type,
             BudgetPlanId = request.BudgetPlanId,
-            IsArchived = false
+            IsArchived = false,
+            UserId = userId
         };
 
         await _categoryRepository.AddAsync(category);

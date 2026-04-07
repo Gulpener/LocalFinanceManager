@@ -2,30 +2,31 @@
 @attribute [AllowAnonymous]
 @using System.Diagnostics
 
-<PageTitle>Error</PageTitle>
+<PageTitle>Fout</PageTitle>
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<h1 class="text-danger">Fout.</h1>
+<h2 class="text-danger">Er is een fout opgetreden bij het verwerken van uw verzoek.</h2>
 
 @if (ShowRequestId)
 {
     <p>
-        <strong>Request ID:</strong> <code>@RequestId</code>
+        <strong>Aanvraag-ID:</strong> <code>@RequestId</code>
     </p>
 }
 
-<h3>Development Mode</h3>
+<h3>Ontwikkelmodus</h3>
 <p>
-    Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
+    Overschakelen naar de <strong>Development</strong>-omgeving geeft meer gedetailleerde informatie over de opgetreden
+    fout.
 </p>
 <p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
+    <strong>De Development-omgeving mag niet ingeschakeld zijn voor uitgerolde applicaties.</strong>
+    Dit kan leiden tot het tonen van gevoelige informatie aan eindgebruikers.
+    Schakel voor lokale foutopsporing de <strong>Development</strong>-omgeving in door de omgevingsvariabele
+    <strong>ASPNETCORE_ENVIRONMENT</strong> op <strong>Development</strong> in te stellen en de app opnieuw te starten.
 </p>
 
-@code{
+@code {
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
 

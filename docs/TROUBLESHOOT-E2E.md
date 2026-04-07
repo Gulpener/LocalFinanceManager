@@ -1,4 +1,4 @@
-# E2E Test Troubleshooting — Current State (April 6, 2026)
+# E2E Test Troubleshooting — Current State (April 7, 2026)
 
 ## Baseline
 
@@ -7,20 +7,14 @@
 | After SQLite → PostgreSQL migration | 93      | 107            | Starting point                                   |
 | After session fixes (Mar 12)        | ~106    | 107            | 1 non-deterministic failure per run              |
 | After April 2026 fixes              | 107     | 107            | Consistent pass (5 skipped by design; 112 total) |
+| After April 7 circuit-user fix      | 107     | 107            | `Transactions.razor` retry added (see fix #14)   |
 
 ---
 
 ## Current Status
 
-**106–107/112 passing** (5 skipped by design, 107 eligible).  
-The one remaining failure is **non-deterministic** — a different test rotates through the failure each run:
-
-- `AssignTransaction_UpdatesRowToAssigned`
-- `MonitoringDashboard_LowUndoRate_NoAlertShown`
-- `IntegrationWorkflow_AssignBulkSplit_ValidatesCrossFeatureFlow`
-- `AuditTrailButton_OpensHistoryAfterAssignment`
-
-All failing tests **pass in isolation** (`--filter "<TestName>"`). Failure is caused by cumulative timing pressure across a ~4 minute sequential suite run — Blazor Server SignalR round-trips occasionally exceed their timeouts when the Kestrel server is under sustained load.
+**107/112 passing** (5 skipped by design, 107 eligible).  
+All known failures are resolved. Previous non-deterministic failures were caused by a Blazor Server circuit-user init race condition and cumulative timing pressure; both are now mitigated.
 
 ---
 
@@ -169,9 +163,39 @@ Same pattern applied to `#splitEditorModal select` and `#bulkAssignModal select`
 
 > **Note**: `MaxCpuCount` in `.runsettings` controls the VSTest **process** count, not NUnit threads. NUnit-level parallelism is controlled exclusively by `[assembly: LevelOfParallelism]` in `AssemblyInfo.cs`.
 
+### 14. Transactions page — circuit-user init race condition ✅
+
+**File**: `LocalFinanceManager/Components/Pages/Transactions.razor`  
+**Root cause**: In Blazor Server, `OnInitializedAsync` can execute before the circuit user is fully initialized. `GetCurrentUserId()` returns `Guid.Empty`, so `GetAllWithSplitsAsync()` and `GetByAccountIdWithSplitsAsync()` both return an empty list (guard at top of each method). `filteredTransactions` stays empty → the `[data-testid='transaction-row']` selector never becomes visible → `AssignmentModal_Enter_OnSave_SubmitsAndCloses` (and similar tests) time out at 45 s. This failure was non-deterministic and appeared most frequently after a heavy preceding test (`BulkAssignModal_Escape_DuringProcessing_CancelsAndCloses`) that put sustained load on the server.
+
+**Fix**: Mirror the `Home.razor` / `BudgetPlanEdit.razor` pattern — add `_initialized` and `_afterRenderRetried` flags, set `_initialized = true` at the end of `OnInitializedAsync`, then retry `LoadTransactionsAsync()` once in `OnAfterRenderAsync(firstRender: true)` when `transactionDtos.Count == 0 && !loading`:
+
+```csharp
+private bool _initialized;
+private bool _afterRenderRetried;
+
+protected override async Task OnInitializedAsync()
+{
+    try { await LoadAccountsAsync(); await LoadTransactionsAsync(); ... }
+    catch { ... }
+    _initialized = true;
+}
+
+protected override async Task OnAfterRenderAsync(bool firstRender)
+{
+    if (firstRender && transactionDtos.Count == 0 && _initialized && !loading && !_afterRenderRetried)
+    {
+        _afterRenderRetried = true;
+        await LoadTransactionsAsync();
+        StateHasChanged();
+    }
+    // ... existing device detection / keyboard shortcut registration ...
+}
+```
+
 ---
 
-## Remaining Flakiness (~1 failure per 3 runs)
+## Remaining Flakiness (resolved)
 
 **Root cause**: Even with sequential fixture execution, the Kestrel server is active for the full 4-minute suite. Blazor Server SignalR circuits must complete re-renders and DB saves within Playwright timeout windows. On a loaded machine, rare thread pool stalls cause individual SignalR round-trips to miss their timeout.
 

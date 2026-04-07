@@ -11,7 +11,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Share "@ResourceName"</h5>
+                    <h5 class="modal-title">Delen "@ResourceName"</h5>
                     <button type="button" class="btn-close" aria-label="Close" @onclick="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -24,25 +24,25 @@
                         <div class="alert alert-success" role="alert">@successMessage</div>
                     }
                     <div class="mb-3">
-                        <label class="form-label">Recipient email</label>
+                        <label class="form-label">E-mailadres ontvanger</label>
                         <input type="email" class="form-control" @bind="email" placeholder="user@example.com" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Permission</label>
+                        <label class="form-label">Toestemming</label>
                         <select class="form-select" @bind="permission">
-                            <option value="@PermissionLevel.Viewer">Viewer (read-only)</option>
-                            <option value="@PermissionLevel.Editor">Editor (read and write)</option>
+                            <option value="@PermissionLevel.Viewer">Lezer (alleen lezen)</option>
+                            <option value="@PermissionLevel.Editor">Bewerker (lezen en schrijven)</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="Close">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="Close">Annuleren</button>
                     <button type="button" class="btn btn-primary" @onclick="SubmitAsync" disabled="@isSending">
                         @if (isSending)
                         {
                             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
                         }
-                        Share
+                        Delen
                     </button>
                 </div>
             </div>
@@ -73,7 +73,7 @@
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            errorMessage = "Email address is required.";
+            errorMessage = "E-mailadres is verplicht.";
             return;
         }
 
@@ -86,7 +86,7 @@
             else
                 await SharingService.ShareBudgetPlanAsync(ResourceId, email.Trim(), permission, userId);
 
-            successMessage = $"Invitation sent to {email}.";
+            successMessage = $"Uitnodiging verstuurd naar {email}.";
             email = string.Empty;
             await OnShareCreated.InvokeAsync();
         }
@@ -101,7 +101,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to share {Type} {ResourceId}", Type, ResourceId);
-            errorMessage = "An unexpected error occurred. Please try again.";
+            errorMessage = "Er is een onverwachte fout opgetreden. Probeer het opnieuw.";
         }
         finally
         {

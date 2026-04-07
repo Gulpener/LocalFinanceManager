@@ -1,0 +1,493 @@
+@page "/onboarding"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.Services.Import
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Models
+@inject AccountService AccountService
+@inject BudgetPlanService BudgetPlanService
+@inject CategoryService CategoryService
+@inject CsvImportParser CsvImportParser
+@inject NavigationManager Navigation
+@inject ILogger<Onboarding> Logger
+
+<PageTitle>Onboarding</PageTitle>
+
+<div class="container" style="max-width: 700px;">
+    <div class="text-center mb-3 text-muted">
+        <small>Stap @_step van 6</small>
+        <div class="progress mt-1" style="height: 6px;">
+            <div class="progress-bar" style="width: @((_step * 100 / 6))%"></div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger">@_errorMessage</div>
+    }
+
+    @switch (_step)
+    {
+        case 1:
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <h2 class="card-title mb-3">Welkom bij Local Finance Manager!</h2>
+                    <p class="card-text text-muted mb-4">
+                        Laten we samen uw eerste account, budgetplan en categorieën aanmaken zodat u direct aan de slag kunt.
+                    </p>
+                    <button class="btn btn-primary btn-lg" @onclick="() => _step = 2">
+                        Aan de slag <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            break;
+
+        case 2:
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title">Uw eerste rekening aanmaken</h4>
+                    <p class="text-muted mb-3">Voer de gegevens van uw bankrekening in.</p>
+
+                    @if (_step2Errors.Any())
+                    {
+                        <div class="alert alert-warning">
+                            <ul class="mb-0">@foreach (var e in _step2Errors) {
+                                <li>@e</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label">Naam <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="_accountLabel" placeholder="Bijv. Betaalrekening" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">IBAN <span class="text-danger">*</span></label>
+                    <input class="form-control" @bind="_accountIban" placeholder="NL00BANK0000000000" />
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Valuta <span class="text-danger">*</span></label>
+                        <input class="form-control" @bind="_accountCurrency" placeholder="EUR" maxlength="3" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Beginsaldo</label>
+                        <input class="form-control" type="number" step="0.01" @bind="_accountBalance" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type rekening</label>
+                    <select class="form-select" @bind="_accountType">
+                        @foreach (var t in Enum.GetValues<AccountType>())
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" disabled="@_isBusy" @onclick="HandleStep2Next">
+                        @(_isBusy ? "Bezig..." : "Volgende")
+                    </button>
+                    <button class="btn btn-link text-muted" @onclick='() => Navigation.NavigateTo("/")'>
+                        Overslaan
+                    </button>
+                </div>
+            </div>
+    </div>
+    break;
+
+        case 3:
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title">Eerste budgetplan aanmaken</h4>
+                <p class="text-muted mb-3">Geef uw budgetplan een naam en kies de looptijd.</p>
+
+                @if (_step3Errors.Any())
+                {
+                    <div class="alert alert-warning">
+                        <ul class="mb-0">@foreach (var e in _step3Errors) {
+                            <li>@e</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label class="form-label">Naam <span class="text-danger">*</span></label>
+                <input class="form-control" @bind="_budgetName" placeholder="Bijv. Jaarbudget 2026" />
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Jaar</label>
+                    <input class="form-control" type="number" @bind="_budgetYear" />
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-secondary" @onclick="() => _step = 2">
+                    <i class="bi bi-arrow-left"></i> Terug
+                </button>
+                <button class="btn btn-primary" disabled="@_isBusy" @onclick="HandleStep3Next">
+                    @(_isBusy ? "Bezig..." : "Volgende")
+                </button>
+            </div>
+        </div>
+    </div>
+    break;
+
+        case 4:
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title">Categorieën toevoegen</h4>
+                <p class="text-muted mb-3">Selecteer categorieën uit een sjabloon om snel te starten. Alle zijn standaard
+                    geselecteerd.</p>
+
+                    @foreach (var group in CategoryTemplates.Templates["Personal"].GroupBy(c => c.Type))
+                    {
+                        <h6 class="text-muted mt-3">@group.Key</h6>
+                        @foreach (var cat in group)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="cat_@cat.Name.Replace(" ", "_")"
+                                       checked="@_selectedCategories.Contains(cat.Name)"
+                                       @onchange="e => ToggleCategory(cat.Name, (bool)e.Value!)" />
+                                <label class="form-check-label" for="cat_@cat.Name.Replace(" ", "_")">
+                                    @cat.Name
+                                </label>
+                            </div>
+                        }
+                    }
+
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-secondary" @onclick="() => _step = 3">
+                            <i class="bi bi-arrow-left"></i> Terug
+                        </button>
+                        <button class="btn btn-primary" disabled="@_isBusy" @onclick="HandleStep4Next">
+                            @(_isBusy ? "Bezig..." : "Categorieën aanmaken")
+                        </button>
+                    </div>
+                </div>
+            </div>
+            break;
+
+        case 5:
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title">Transacties importeren (optioneel)</h4>
+                        <p class="text-muted mb-3">Importeer een CSV-bestand met transacties of sla dit stap over.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label">CSV-bestand</label>
+                            <InputFile class="form-control" OnChange="HandleFileSelected" accept=".csv" />
+                        </div>
+
+                        @if (_csvPreviewHeader.Any())
+                        {
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            @foreach (var header in _csvPreviewHeader)
+                                            {
+                                                <th>@header</th>
+                                            }
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in _csvPreviewDataRows)
+                                        {
+                                            <tr>
+                                                @foreach (var cell in row)
+                                                {
+                                                    <td>@cell</td>
+                                                }
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button class="btn btn-primary me-2" disabled="@_isBusy"
+                                    @onclick="() => { _csvImported = true; _step = 6; }">
+                                Preview bevestigen &amp; Doorgaan
+                            </button>
+                        }
+
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn btn-secondary" @onclick="() => _step = 4">
+                                <i class="bi bi-arrow-left"></i> Terug
+                            </button>
+                            <button class="btn btn-outline-secondary" @onclick="() => _step = 6">
+                                Overslaan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                break;
+
+            case 6:
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                        <h4 class="mt-3">Klaar!</h4>
+                        <p class="text-muted">
+                            @if (!string.IsNullOrEmpty(_createdAccountLabel))
+                            {
+                                <span>Rekening <strong>@_createdAccountLabel</strong> aangemaakt.</span>
+                            }
+                            @if (!string.IsNullOrEmpty(_createdBudgetName))
+                            {
+                                <br /><span>Budgetplan <strong>@_createdBudgetName</strong> (@_budgetYear) aangemaakt.</span>
+                            }
+                            @if (_createdCategoryCount > 0)
+                            {
+                                <br /><span><strong>@_createdCategoryCount</strong> categorie(ën) aangemaakt.</span>
+                            }
+                        </p>
+                        @if (_createdBudgetPlanId != Guid.Empty || !_csvImported)
+                        {
+                            <div class="alert alert-info text-start mt-3">
+                                <strong>Volgende stappen:</strong>
+                                <ul class="mb-0 mt-1">
+                                    @if (_createdBudgetPlanId != Guid.Empty)
+                                    {
+                                        <li>
+                                            <a href="/budgets/@_createdBudgetPlanId/edit">Vul uw budgetplan in</a>
+                                            met budgetregels per categorie om uitgaven bij te houden.
+                                        </li>
+                                    }
+                                    @if (!_csvImported)
+                                    {
+                                        <li>
+                                            <a href="/transactions/import">Importeer uw transacties</a>
+                                            via een CSV-bestand om direct een overzicht te krijgen.
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+                        <a href="/" class="btn btn-primary btn-lg mt-2">
+                            Naar Dashboard <i class="bi bi-house"></i>
+                        </a>
+                    </div>
+                </div>
+                break;
+            }
+        </div>
+
+@code {
+    private int _step = 1;
+    private bool _isBusy;
+    private bool _csvImported;
+    private string? _errorMessage;
+
+    // Step 2 — Account
+    private string _accountLabel = string.Empty;
+    private string _accountIban = string.Empty;
+    private string _accountCurrency = "EUR";
+    private decimal _accountBalance;
+    private AccountType _accountType = AccountType.Checking;
+    private List<string> _step2Errors = new();
+    private Guid _createdAccountId;
+    private string _createdAccountLabel = string.Empty;
+
+    // Step 3 — Budget Plan
+    private string _budgetName = string.Empty;
+    private int _budgetYear = DateTime.Today.Year;
+    private List<string> _step3Errors = new();
+    private Guid _createdBudgetPlanId;
+    private string _createdBudgetName = string.Empty;
+
+    // Step 4 — Categories
+    private HashSet<string> _selectedCategories = CategoryTemplates.Templates["Personal"]
+        .Select(c => c.Name)
+        .ToHashSet();
+    private int _createdCategoryCount;
+
+    // Step 5 — CSV preview
+    private List<string> _csvPreviewHeader = new();
+    private List<List<string>> _csvPreviewDataRows = new();
+
+    private bool _initialized;
+    private bool _afterRenderRetried;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckExistingAccountsAsync();
+        _initialized = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _initialized && !_afterRenderRetried)
+        {
+            // Race condition: circuit user was not yet initialized during OnInitializedAsync,
+            // which could cause GetActiveAccountCountAsync() to return 0 for users who already
+            // have accounts, keeping them in the wizard. Retry once after first render.
+            _afterRenderRetried = true;
+            await CheckExistingAccountsAsync();
+        }
+    }
+
+    private async Task CheckExistingAccountsAsync()
+    {
+        var count = await AccountService.GetActiveAccountCountAsync();
+        if (count > 0)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private void ToggleCategory(string name, bool selected)
+    {
+        if (selected) _selectedCategories.Add(name);
+        else _selectedCategories.Remove(name);
+    }
+
+    private async Task HandleStep2Next()
+    {
+        _step2Errors.Clear();
+        if (string.IsNullOrWhiteSpace(_accountLabel))
+            _step2Errors.Add("Naam is verplicht.");
+        if (string.IsNullOrWhiteSpace(_accountIban))
+            _step2Errors.Add("IBAN is verplicht.");
+        if (string.IsNullOrWhiteSpace(_accountCurrency) || _accountCurrency.Length != 3)
+            _step2Errors.Add("Valuta moet een 3-letterige ISO-4217 code zijn (bijv. EUR).");
+        if (_step2Errors.Any()) return;
+
+        _isBusy = true;
+        try
+        {
+            var response = await AccountService.CreateAsync(new CreateAccountRequest
+            {
+                Label = _accountLabel,
+                IBAN = _accountIban,
+                Currency = _accountCurrency.ToUpperInvariant(),
+                StartingBalance = _accountBalance,
+                Type = _accountType
+            });
+            _createdAccountId = response.Id;
+            _createdAccountLabel = response.Label;
+            _budgetName = $"Jaarbudget {_budgetYear}";
+            _step = 3;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Onboarding: failed to create account.");
+            _step2Errors.Add("Aanmaken van rekening mislukt. Probeer het opnieuw.");
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task HandleStep3Next()
+    {
+        _step3Errors.Clear();
+        if (string.IsNullOrWhiteSpace(_budgetName))
+            _step3Errors.Add("Naam is verplicht.");
+        if (_createdAccountId == Guid.Empty)
+        {
+            _step3Errors.Add("Geen account gevonden. Ga terug naar stap 2.");
+            return;
+        }
+        if (_step3Errors.Any()) return;
+
+        _isBusy = true;
+        try
+        {
+            var plan = await BudgetPlanService.CreateAsync(new CreateBudgetPlanDto
+            {
+                AccountId = _createdAccountId,
+                Name = _budgetName,
+                Year = _budgetYear,
+                TemplateName = "Empty"
+            });
+            _createdBudgetPlanId = plan.Id;
+            _createdBudgetName = plan.Name;
+            _step = 4;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Onboarding: failed to create budget plan.");
+            _step3Errors.Add("Aanmaken van budgetplan mislukt. Probeer het opnieuw.");
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task HandleStep4Next()
+    {
+        if (_createdBudgetPlanId == Guid.Empty)
+        {
+            _step = 3;
+            return;
+        }
+
+        _isBusy = true;
+        _createdCategoryCount = 0;
+        try
+        {
+            foreach (var catName in _selectedCategories)
+            {
+                var template = CategoryTemplates.Templates["Personal"].FirstOrDefault(c => c.Name == catName);
+                var type = template != default ? template.Type : CategoryType.Expense;
+                await CategoryService.CreateAsync(new CreateCategoryDto
+                {
+                    Name = catName,
+                    Type = type,
+                    BudgetPlanId = _createdBudgetPlanId
+                });
+                _createdCategoryCount++;
+            }
+            _step = 5;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Onboarding: failed to create categories.");
+            _errorMessage = "Aanmaken van categorieën mislukt. Probeer het opnieuw.";
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        _csvPreviewHeader.Clear();
+        _csvPreviewDataRows.Clear();
+        try
+        {
+            using var stream = e.File.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            using var reader = new System.IO.StreamReader(stream);
+            // Read first 6 non-empty lines to limit memory for the preview
+            var rawLines = new System.Text.StringBuilder();
+            int linesRead = 0;
+            while (!reader.EndOfStream && linesRead < 6)
+            {
+                var line = await reader.ReadLineAsync();
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    rawLines.AppendLine(line);
+                    linesRead++;
+                }
+            }
+
+            // Use CsvImportParser so the preview correctly handles quoted fields,
+            // escaped quotes, and auto-detects the delimiter (comma, semicolon, tab).
+            var (headers, dataRows) = await CsvImportParser.ParsePreviewAsync(rawLines.ToString(), maxDataRows: 5);
+            _csvPreviewHeader = headers;
+            _csvPreviewDataRows = dataRows;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Onboarding: failed to read CSV preview.");
+        }
+    }
+}

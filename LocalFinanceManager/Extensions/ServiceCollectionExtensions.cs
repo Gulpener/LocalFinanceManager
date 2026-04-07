@@ -51,6 +51,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<AccountService>();
         services.AddScoped<CategoryService>();
         services.AddScoped<BudgetPlanService>();
+        services.AddScoped<IBreadcrumbService, BreadcrumbService>();
         services.AddScoped<ITransactionAssignmentService, TransactionAssignmentService>();
         services.AddScoped<IRecentCategoriesService, RecentCategoriesService>();
         services.AddScoped<IFilterStateService, FilterStateService>();
@@ -146,7 +147,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBlazorCircuitUser, BlazorCircuitUser>();
         services.AddScoped<IUserContext, UserContext>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IDevelopmentUserSeedService, DevelopmentUserSeedService>();
         services.AddScoped<AuthTokenStore>();
         // Register the concrete provider once and expose it as both its base type (required by Blazor's
         // CascadingAuthState) and the IAuthStateNotifier interface (used by Login/Logout pages) so that

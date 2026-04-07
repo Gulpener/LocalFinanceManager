@@ -11,11 +11,13 @@ namespace LocalFinanceManager.Services;
 public class AccountService
 {
     private readonly IAccountRepository _accountRepository;
+    private readonly IUserContext _userContext;
     private readonly ILogger<AccountService> _logger;
 
-    public AccountService(IAccountRepository accountRepository, ILogger<AccountService> logger)
+    public AccountService(IAccountRepository accountRepository, IUserContext userContext, ILogger<AccountService> logger)
     {
         _accountRepository = accountRepository;
+        _userContext = userContext;
         _logger = logger;
     }
 
@@ -26,7 +28,7 @@ public class AccountService
     {
         _logger.LogInformation("Retrieving all active accounts");
         var accounts = await _accountRepository.GetAllActiveAsync();
-        return accounts.Select(AccountResponse.FromEntity).ToList();
+        return accounts.Select(a => BuildResponse(a)).ToList();
     }
 
     /// <summary>
@@ -36,7 +38,8 @@ public class AccountService
     {
         _logger.LogInformation("Retrieving account with ID: {AccountId}", id);
         var account = await _accountRepository.GetReadableByIdAsync(id);
-        return account != null ? AccountResponse.FromEntity(account) : null;
+        if (account == null) return null;
+        return BuildResponse(account);
     }
 
     /// <summary>
@@ -46,9 +49,16 @@ public class AccountService
     {
         _logger.LogInformation("Creating new account: {Label}", request.Label);
 
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Cannot create an account without an authenticated user.");
+        }
+
         var account = new Account
         {
             Id = Guid.NewGuid(),
+            UserId = userId,
             Label = request.Label,
             Type = request.Type,
             Currency = request.Currency.ToUpperInvariant(),
@@ -60,7 +70,9 @@ public class AccountService
         await _accountRepository.AddAsync(account);
 
         _logger.LogInformation("Account created successfully with ID: {AccountId}", account.Id);
-        return AccountResponse.FromEntity(account);
+        var response = AccountResponse.FromEntity(account);
+        response.PermissionLevel = Models.PermissionLevel.Owner;
+        return response;
     }
 
     /// <summary>
@@ -94,7 +106,10 @@ public class AccountService
         {
             await _accountRepository.UpdateAsync(account);
             _logger.LogInformation("Account updated successfully: {AccountId}", id);
-            return AccountResponse.FromEntity(account);
+            // UpdateAsync uses owner-only GetByIdAsync, so the current user is always the owner
+            var response = AccountResponse.FromEntity(account);
+            response.PermissionLevel = Models.PermissionLevel.Owner;
+            return response;
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -159,5 +174,39 @@ public class AccountService
             _logger.LogWarning(ex, "Concurrency conflict unarchiving account: {AccountId}", id);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Returns the count of active (non-archived) accounts for the current user.
+    /// Used to determine whether to redirect a new user to the onboarding wizard.
+    /// </summary>
+    public async Task<int> GetActiveAccountCountAsync()
+    {
+        return await _accountRepository.CountActiveAsync();
+    }
+
+    /// <summary>
+    /// Builds an <see cref="AccountResponse"/> from an entity and populates <see cref="AccountResponse.PermissionLevel"/>
+    /// based on whether the current user owns the account or has been granted shared access.
+    /// </summary>
+    private AccountResponse BuildResponse(Account account)
+    {
+        var response = AccountResponse.FromEntity(account);
+        var currentUserId = _userContext.GetCurrentUserId();
+
+        if (account.UserId == currentUserId)
+        {
+            response.PermissionLevel = Models.PermissionLevel.Owner;
+        }
+        else
+        {
+            var share = account.Shares?.FirstOrDefault(s =>
+                s.SharedWithUserId == currentUserId &&
+                s.Status == Models.ShareStatus.Accepted &&
+                !s.IsArchived);
+            response.PermissionLevel = share?.Permission ?? Models.PermissionLevel.Viewer;
+        }
+
+        return response;
     }
 }

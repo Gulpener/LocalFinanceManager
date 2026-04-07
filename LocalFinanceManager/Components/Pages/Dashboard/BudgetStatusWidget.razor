@@ -1,0 +1,95 @@
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Data.Repositories
+@inject BudgetPlanService BudgetPlanService
+@inject ITransactionRepository TransactionRepository
+
+<div class="card h-100">
+    <div class="card-body">
+        <h6 class="card-subtitle mb-2 text-muted text-uppercase small">Budgetstatus</h6>
+        @if (_isLoading)
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+            </div>
+        }
+        else if (!_lines.Any())
+        {
+            <p class="text-muted small">Geen budgetregels voor de huidige maand.</p>
+        }
+        else
+        {
+            @foreach (var item in _lines.Take(5))
+            {
+                var pct = item.Budget > 0 ? (int)Math.Min((item.Spent / item.Budget) * 100, 100) : 0;
+                var isOver = item.Budget > 0 && item.Spent > item.Budget;
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small">
+                        <span class="@(isOver ? "text-danger fw-bold" : "")">@item.Name</span>
+                        <span>@item.Spent.ToString("N2") / @item.Budget.ToString("N2")</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar @(isOver ? "bg-danger" : "bg-success")" style="width: @pct%"></div>
+                    </div>
+                </div>
+            }
+            <a href="/budgets" class="btn btn-sm btn-outline-secondary mt-2">Alle budgetplannen</a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<AccountResponse>? Accounts { get; set; }
+
+    private bool _isLoading = true;
+    private List<(string Name, decimal Budget, decimal Spent)> _lines = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Accounts == null || Accounts.Count == 0)
+        {
+            _isLoading = false;
+            return;
+        }
+
+        try
+        {
+            var today = DateTime.Today;
+            var currentMonth = today.Month;
+            var currentYear = today.Year;
+            var monthStart = new DateTime(currentYear, currentMonth, 1);
+            var monthEnd = monthStart.AddMonths(1);
+
+            foreach (var account in Accounts)
+            {
+                var plan = await BudgetPlanService.GetByAccountAndYearAsync(account.Id, currentYear);
+                if (plan == null) continue;
+
+                // Query only the current month's split transactions in SQL — avoids loading full history.
+                var splitTransactions = await TransactionRepository.GetSplitTransactionsByDateRangeAsync(
+                    account.Id,
+                    monthStart,
+                    monthEnd);
+                var spentByCategory = splitTransactions
+                    .Where(t => t.AssignedParts != null)
+                    .SelectMany(t => t.AssignedParts!)
+                    .Where(s => !s.IsArchived)
+                    .GroupBy(s => s.BudgetLine?.Category?.Name ?? string.Empty)
+                    .ToDictionary(g => g.Key, g => g.Sum(s => Math.Abs(s.Amount)));
+
+                foreach (var line in plan.BudgetLines)
+                {
+                    var monthlyBudget = line.MonthlyAmounts.Length >= currentMonth
+                        ? line.MonthlyAmounts[currentMonth - 1] : 0;
+                    var spent = spentByCategory.GetValueOrDefault(line.CategoryName, 0m);
+                    _lines.Add((line.CategoryName, monthlyBudget, spent));
+                }
+                break; // show first account's current plan
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

@@ -49,6 +49,8 @@ public class AccountRepository : Repository<Account>, IAccountRepository
                 && a.Id == id
                 && (a.UserId == userId
                     || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)))
+            .Include(a => a.User)
+            .Include(a => a.Shares)
             .FirstOrDefaultAsync();
     }
 
@@ -67,7 +69,11 @@ public class AccountRepository : Repository<Account>, IAccountRepository
             && (a.UserId == userId
                 || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
 
-        return await query.OrderBy(a => a.Label).ToListAsync();
+        return await query
+            .Include(a => a.User)
+            .Include(a => a.Shares)
+            .OrderBy(a => a.Label)
+            .ToListAsync();
     }
 
     /// <summary>
@@ -89,5 +95,22 @@ public class AccountRepository : Repository<Account>, IAccountRepository
         }
 
         return await query.AnyAsync();
+    }
+
+    /// <summary>
+    /// Returns the count of active (non-archived) accounts accessible by the current user (owned or accepted shared).
+    /// </summary>
+    public async Task<int> CountActiveAsync()
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return 0;
+        }
+
+        return await _context.Set<Account>()
+            .CountAsync(a => !a.IsArchived
+                && (a.UserId == userId
+                    || a.Shares.Any(s => s.SharedWithUserId == userId && s.Status == Models.ShareStatus.Accepted && !s.IsArchived)));
     }
 }

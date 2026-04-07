@@ -15,29 +15,29 @@ public static class CategoryTemplates
     {
         ["Personal"] = new()
         {
-            ("Salary", CategoryType.Income),
-            ("Housing", CategoryType.Expense),
-            ("Transportation", CategoryType.Expense),
-            ("Food", CategoryType.Expense),
-            ("Entertainment", CategoryType.Expense),
-            ("Savings", CategoryType.Expense)
+            ("Salaris", CategoryType.Income),
+            ("Wonen", CategoryType.Expense),
+            ("Vervoer", CategoryType.Expense),
+            ("Eten & Drinken", CategoryType.Expense),
+            ("Vrije Tijd", CategoryType.Expense),
+            ("Sparen", CategoryType.Expense)
         },
         ["Business"] = new()
         {
-            ("Revenue", CategoryType.Income),
-            ("COGS", CategoryType.Expense),
-            ("Operating Expenses", CategoryType.Expense),
+            ("Omzet", CategoryType.Income),
+            ("Kostprijs Verkopen", CategoryType.Expense),
+            ("Bedrijfskosten", CategoryType.Expense),
             ("Marketing", CategoryType.Expense),
-            ("Payroll", CategoryType.Expense)
+            ("Salarissen", CategoryType.Expense)
         },
         ["Household"] = new()
         {
-            ("Income", CategoryType.Income),
-            ("Rent/Mortgage", CategoryType.Expense),
-            ("Utilities", CategoryType.Expense),
-            ("Groceries", CategoryType.Expense),
-            ("Childcare", CategoryType.Expense),
-            ("Healthcare", CategoryType.Expense)
+            ("Inkomsten", CategoryType.Income),
+            ("Huur/Hypotheek", CategoryType.Expense),
+            ("Nutsvoorzieningen", CategoryType.Expense),
+            ("Boodschappen", CategoryType.Expense),
+            ("Kinderopvang", CategoryType.Expense),
+            ("Zorgkosten", CategoryType.Expense)
         },
         ["Empty"] = new()
     };

@@ -1,0 +1,70 @@
+@using LocalFinanceManager.Models
+
+<div class="card h-100">
+    <div class="card-body">
+        <h6 class="card-subtitle mb-2 text-muted text-uppercase small">Recente transacties</h6>
+        @if (Transactions == null)
+        {
+            <div class="text-center py-3">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+            </div>
+        }
+        else if (!_recent.Any())
+        {
+            <p class="text-muted small">Geen transacties gevonden.</p>
+        }
+        else
+        {
+            @foreach (var group in _grouped)
+            {
+                <div class="fw-semibold small text-muted mt-2">@group.Key</div>
+                @foreach (var tx in group)
+                {
+                    <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                        <div>
+                            <span class="small">@tx.Description</span>
+                            @if (!tx.IsSplit && (tx.AssignedParts == null || !tx.AssignedParts.Any()))
+                            {
+                                <a href="/transactions?filter=unassigned" class="ms-2 badge bg-warning text-dark text-decoration-none"
+                                       style="font-size: 0.7rem;">
+                                    Toewijzen
+                                </a>
+                            }
+                        </div>
+                        <span class="small fw-semibold @(tx.Amount >= 0 ? "text-success" : "text-danger")">
+                            @tx.Amount.ToString("N2")
+                        </span>
+                    </div>
+                }
+            }
+            <a href="/transactions" class="btn btn-sm btn-outline-secondary mt-2">Alle transacties</a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<Transaction>? Transactions { get; set; }
+
+    private List<Transaction> _recent = new();
+    private IEnumerable<IGrouping<string, Transaction>> _grouped = Enumerable.Empty<IGrouping<string, Transaction>>();
+
+    protected override void OnParametersSet()
+    {
+        if (Transactions == null) return;
+        _recent = Transactions.OrderByDescending(t => t.Date).Take(10).ToList();
+
+        var today = DateTime.Today;
+        var startOfCurrentWeek = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
+
+        _grouped = _recent.GroupBy(t =>
+        {
+            var transactionDate = t.Date.Date;
+
+            if (transactionDate == today) return "Vandaag";
+            if (transactionDate == today.AddDays(-1)) return "Gisteren";
+            if (transactionDate >= startOfCurrentWeek) return "Deze week";
+
+            return "Ouder";
+        });
+    }
+}

@@ -1,4 +1,5 @@
 @page "/budgets/{Id:guid}/edit"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Components.Shared
@@ -9,29 +10,29 @@
 @inject ILogger<BudgetPlanEdit> Logger
 @rendermode InteractiveServer
 
-<PageTitle>Edit Budget Plan</PageTitle>
+<PageTitle>Budgetplan bewerken</PageTitle>
 
 @if (budgetPlan == null)
 {
-    <p><em>Loading budget plan...</em></p>
+    <p><em>Budgetplan laden...</em></p>
 }
 else
 {
-    <h1>Edit Budget Plan: @budgetPlan.Name (@budgetPlan.Year)</h1>
+    <h1>Budgetplan bewerken: @budgetPlan.Name (@budgetPlan.Year)</h1>
 
     <div class="card mb-3">
         <div class="card-header">
-            <h5>Plan Details</h5>
+            <h5>Plandetails</h5>
         </div>
         <div class="card-body">
             <EditForm Model="@updateModel" OnValidSubmit="HandleUpdatePlan">
                 <div class="row">
                     <div class="col-md-8">
-                        <label for="name" class="form-label">Plan Name</label>
+                        <label for="name" class="form-label">Plannaam</label>
                         <InputText id="name" class="form-control" @bind-Value="updateModel.Name" />
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Update Name</button>
+                        <button type="submit" class="btn btn-primary">Naam bijwerken</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(planErrorMessage))
@@ -44,28 +45,28 @@ else
 
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5>Categories</h5>
+            <h5>Categorieën</h5>
             <a href="/budgets/@Id/categories/new" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-circle"></i> Add Category
+                <i class="bi bi-plus-circle"></i> Categorie toevoegen
             </a>
         </div>
         <div class="card-body">
             @if (categories == null)
             {
-                <p><em>Loading categories...</em></p>
+                <p><em>Categorieën laden...</em></p>
             }
             else if (!categories.Any())
             {
-                <div class="alert alert-info">No categories yet. Click "Add Category" to create one.</div>
+                <div class="alert alert-info">Nog geen categorieën. Klik op "Categorie toevoegen" om er een aan te maken.</div>
             }
             else
             {
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>Naam</th>
                             <th>Type</th>
-                            <th>Actions</th>
+                            <th>Acties</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,31 +94,31 @@ else
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5>Budget Lines</h5>
+            <h5>Budgetregels</h5>
             <button class="btn btn-sm btn-primary" @onclick="ShowAddLineForm">
-                <i class="bi bi-plus-circle"></i> Add Budget Line
+                <i class="bi bi-plus-circle"></i> Budgetregel toevoegen
             </button>
         </div>
         <div class="card-body">
             @if (showAddLineForm)
             {
                 <div class="card mb-3 border-primary">
-                    <div class="card-header bg-primary text-white">New Budget Line</div>
+                    <div class="card-header bg-primary text-white">Nieuwe budgetregel</div>
                     <div class="card-body">
                         <EditForm Model="@newLineModel" OnValidSubmit="HandleAddLine">
                             <div class="mb-3">
-                                <label class="form-label">Category</label>
+                                <label class="form-label">Categorie</label>
                                 <CategorySelector BudgetPlanId="@Id" SelectedCategoryId="newLineModel.CategoryId"
                                                   SelectedCategoryIdChanged="EventCallback.Factory.Create<Guid?>(this, value => newLineModel.CategoryId = value ?? Guid.Empty)"
                                                   IsRequired="true" AllowEmpty="true" />
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Monthly Amounts (or enter uniform value)</label>
+                                <label class="form-label">Maandbedragen (of voer uniform bedrag in)</label>
                                 <div class="input-group mb-2">
-                                    <span class="input-group-text">Uniform Value</span>
+                                    <span class="input-group-text">Uniform bedrag</span>
                                     <input type="number" class="form-control" @bind="uniformAmount" step="0.01" />
                                     <button type="button" class="btn btn-secondary" @onclick="ApplyUniformAmount">
-                                        Apply to All Months
+                                        Toepassen op alle maanden
                                     </button>
                                 </div>
                                 <div class="row g-2">
@@ -133,7 +134,7 @@ else
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Notes</label>
+                                <label class="form-label">Notities</label>
                                 <InputText class="form-control" @bind-Value="newLineModel.Notes" />
                             </div>
                             @if (!string.IsNullOrEmpty(lineErrorMessage))
@@ -141,8 +142,8 @@ else
                                 <div class="alert alert-danger">@lineErrorMessage</div>
                             }
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">Add Line</button>
-                                <button type="button" class="btn btn-secondary" @onclick="CancelAddLine">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Rij toevoegen</button>
+                                <button type="button" class="btn btn-secondary" @onclick="CancelAddLine">Annuleren</button>
                             </div>
                         </EditForm>
                     </div>
@@ -155,13 +156,13 @@ else
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                                <th>Category</th>
+                                <th>Categorie</th>
                                 @for (int i = 0; i < 12; i++)
                                 {
                                     <th class="text-end">@GetMonthAbbr(i)</th>
                                 }
-                                <th class="text-end">Year Total</th>
-                                <th>Actions</th>
+                                <th class="text-end">Jaartotaal</th>
+                                <th>Acties</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -199,7 +200,7 @@ else
                                         <td colspan="15">
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label small">Notes</label>
+                                                        <label class="form-label small">Notities</label>
                                                     <input type="text" class="form-control form-control-sm" @bind="_editNotes" />
                                                 </div>
                                                 <div class="col-md-4">
@@ -214,7 +215,7 @@ else
                                                 @if (_useUniformAmount)
                                                 {
                                                     <div class="col-md-4">
-                                                        <label class="form-label small">Uniform Value</label>
+                                                        <label class="form-label small">Uniform bedrag</label>
                                                         <input type="number" class="form-control form-control-sm" @bind="_uniformAmount"
                                                                @bind:event="oninput" @onchange="ApplyUniformAmountToEdit" step="0.01" />
                                                     </div>
@@ -250,7 +251,7 @@ else
                                 }
                             }
                             <tr class="table-secondary fw-bold">
-                                <td>TOTAL</td>
+                                <td>TOTAAL</td>
                                 @for (int i = 0; i < 12; i++)
                                 {
                                     var monthTotal = budgetPlan.BudgetLines.Sum(l => l.MonthlyAmounts[i]);
@@ -266,14 +267,14 @@ else
             else
             {
                 <div class="alert alert-info">
-                    No budget lines yet. Click "Add Budget Line" to create one.
+                    Nog geen budgetregels. Klik op "Budgetregel toevoegen" om er een aan te maken.
                 </div>
             }
         </div>
     </div>
 
     <div class="mt-3">
-        <button class="btn btn-secondary" @onclick="GoBack">Back to Budget Plans</button>
+        <button class="btn btn-secondary" @onclick="GoBack">Terug naar budgetplannen</button>
     </div>
 }
 
@@ -328,6 +329,24 @@ else
     {
         await LoadBudgetPlan();
         await LoadCategories();
+        _initialized = true;
+    }
+
+    private bool _initialized;
+    private bool _afterRenderRetried;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && budgetPlan == null && _initialized && !_afterRenderRetried)
+        {
+            // Race condition: circuit user was not yet initialized during OnInitializedAsync.
+            // Retry once after the first interactive render when auth is available.
+            // _initialized ensures OnInitializedAsync has fully completed to avoid concurrent DbContext use.
+            _afterRenderRetried = true;
+            await LoadBudgetPlan();
+            await LoadCategories();
+            StateHasChanged();
+        }
     }
 
     private async Task LoadBudgetPlan()
@@ -345,11 +364,7 @@ else
 
     private async Task LoadCategories()
     {
-        // Load categories for the current budget plan (using page parameter Id)
-        if (budgetPlan != null)
-        {
-            categories = await CategoryService.GetByBudgetPlanAsync(Id);
-        }
+        categories = await CategoryService.GetByBudgetPlanAsync(Id);
     }
 
     private async Task HandleUpdatePlan()

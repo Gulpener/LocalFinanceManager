@@ -1,13 +1,16 @@
 @page "/transactions"
+@attribute [Authorize]
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Data.Repositories
 @using LocalFinanceManager.Services
+@using LocalFinanceManager.ML
 @inject ITransactionRepository TransactionRepository
 @inject IAccountRepository AccountRepository
 @inject IDeviceDetectionService DeviceDetectionService
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject ILogger<Transactions> Logger
+@inject IMLService MLService
 @implements IAsyncDisposable
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -47,8 +50,13 @@
         <label for="suggestion-filter" class="form-label">ML suggestie:</label>
         <select id="suggestion-filter" class="form-select" @bind="_suggestionFilter" @bind:after="ApplyFilters">
             <option value="all">Alle transacties</option>
-            <option value="has-suggestion">Heeft suggestie</option>
+            <option value="has-suggestion">Heeft ML suggestie</option>
+            <option value="no-suggestion">Geen ML suggestie</option>
         </select>
+        @if (_suggestionFilter != "all")
+        {
+            <small class="text-muted">Filter is gebaseerd op de eerste 100 onverdeelde transacties.</small>
+        }
     </div>
     <div class="col-md-3">
         <label for="sort-by" class="form-label">Sorteren op:</label>
@@ -284,6 +292,8 @@
     private bool touchDeviceDetected;
     private DotNetObjectReference<Transactions>? dotNetRef;
     private bool globalShortcutsRegistered;
+    private bool _initialized;
+    private bool _afterRenderRetried;
 
     protected override async Task OnInitializedAsync()
     {
@@ -299,10 +309,22 @@
             errorMessage = "Kon transacties niet laden. Vernieuw de pagina of probeer opnieuw in te loggen.";
             loading = false;
         }
+
+        _initialized = true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Retry loading transactions once on first interactive render if the user context was not
+        // yet initialized during OnInitializedAsync (Blazor Server circuit-user race condition:
+        // GetCurrentUserId() returns Guid.Empty → repository returns empty list → no rows rendered).
+        if (firstRender && transactionDtos.Count == 0 && _initialized && !loading && !_afterRenderRetried)
+        {
+            _afterRenderRetried = true;
+            await LoadTransactionsAsync();
+            StateHasChanged();
+        }
+
         if (!firstRender || touchDeviceDetected)
         {
             return;
@@ -427,6 +449,54 @@
             // Reset stored confidence scores when transaction list is refreshed
             _suggestionConfidences.Clear();
 
+            // Preload ML suggestion confidences for unassigned transactions so that
+            // "has-suggestion" / "no-suggestion" filters are stable and deterministic
+            // from the moment the list is rendered, rather than depending on async badge loading.
+            // Preload is capped at MaxMlPreloadCount to avoid allocating thousands of Tasks for
+            // large transaction histories; items beyond the cap are simply absent from
+            // _suggestionConfidences and are treated as "no suggestion" by the filter.
+            const int MaxMlPreloadCount = 100;
+            var unassigned = transactionDtos.Where(t => !t.IsAssigned).Take(MaxMlPreloadCount).ToList();
+            if (unassigned.Count > 0)
+            {
+                const int maxConcurrentPredictionRequests = 4;
+                var predictionThrottle = new System.Threading.SemaphoreSlim(maxConcurrentPredictionRequests);
+                var suggestionConfidenceLock = new object();
+
+                try
+                {
+                    var predictionTasks = unassigned.Select(async t =>
+                    {
+                        await predictionThrottle.WaitAsync();
+                        try
+                        {
+                            var prediction = await MLService.PredictCategoryAsync(t.Id);
+                            if (prediction != null)
+                            {
+                                lock (suggestionConfidenceLock)
+                                {
+                                    _suggestionConfidences[t.Id] = prediction.Confidence;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogDebug(ex, "ML prediction unavailable for transaction {TransactionId}", t.Id);
+                        }
+                        finally
+                        {
+                            predictionThrottle.Release();
+                        }
+                    });
+
+                    await Task.WhenAll(predictionTasks);
+                }
+                finally
+                {
+                    predictionThrottle.Dispose();
+                }
+            }
+
             ApplyFilters();
             errorMessage = null;
         }
@@ -496,10 +566,24 @@
             query = query.Where(t => t.AccountId == filterState.SelectedAccountId.Value);
         }
 
-        // Apply ML suggestion filter: show only unassigned transactions (where badge renders)
+        // Apply ML suggestion filter: show only transactions with a loaded ML suggestion
         if (_suggestionFilter == "has-suggestion")
         {
-            query = query.Where(t => !t.IsAssigned);
+            query = query.Where(t => _suggestionConfidences.ContainsKey(t.Id));
+        }
+        else if (_suggestionFilter == "no-suggestion")
+        {
+            query = query.Where(t => !t.IsAssigned && !_suggestionConfidences.ContainsKey(t.Id));
+        }
+
+        // Apply suggestion status filter from QuickFilters panel
+        if (filterState.SuggestionStatus == "has-suggestion")
+        {
+            query = query.Where(t => _suggestionConfidences.ContainsKey(t.Id));
+        }
+        else if (filterState.SuggestionStatus == "no-suggestion")
+        {
+            query = query.Where(t => !t.IsAssigned && !_suggestionConfidences.ContainsKey(t.Id));
         }
 
         // Apply sort

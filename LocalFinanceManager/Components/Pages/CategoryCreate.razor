@@ -1,12 +1,13 @@
 @page "/budgets/{budgetPlanId:guid}/categories/new"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
 @using LocalFinanceManager.Components.Shared
-@using static LocalFinanceManager.Components.Shared.Breadcrumb
 @inject CategoryService CategoryService
 @inject BudgetPlanService BudgetPlanService
 @inject NavigationManager Navigation
+@inject IBreadcrumbService BreadcrumbService
 @inject ILogger<CategoryCreate> Logger
 @rendermode InteractiveServer
 
@@ -18,8 +19,6 @@
 }
 else
 {
-    <Breadcrumb Items="@breadcrumbItems" />
-
     <h1>Nieuwe Categorie Aanmaken</h1>
 
     <div class="row">
@@ -91,7 +90,6 @@ else
     public Guid BudgetPlanId { get; set; }
 
     private BudgetPlanDto? budgetPlan;
-    private List<BreadcrumbItem> breadcrumbItems = new();
     private string categoryName = string.Empty;
     private CategoryType categoryType = CategoryType.Expense;
     private Dictionary<string, string[]> validationErrors = new();
@@ -114,13 +112,7 @@ else
                 return;
             }
 
-            breadcrumbItems = new List<BreadcrumbItem>
-            {
-                new BreadcrumbItem("Budget Plans", "/budgets"),
-                new BreadcrumbItem(budgetPlan.Name, $"/budgets/{BudgetPlanId}/edit"),
-                new BreadcrumbItem("Categorieën", null),
-                new BreadcrumbItem("Nieuw", null)
-            };
+            BreadcrumbService.SetSectionTitle(BudgetPlanId.ToString(), budgetPlan.Name);
         }
         catch (Exception ex)
         {

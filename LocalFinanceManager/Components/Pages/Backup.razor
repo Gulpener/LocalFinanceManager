@@ -7,30 +7,30 @@
 @inject HttpClient Http
 @inject ILogger<Backup> Logger
 
-<PageTitle>Backup &amp; Restore</PageTitle>
+<PageTitle>Back-up &amp; herstel</PageTitle>
 
 <div class="container-lg py-4">
-    <h1 class="mb-4">Backup &amp; Restore</h1>
+    <h1 class="mb-4">Back-up &amp; herstel</h1>
 
     <!-- Export Section -->
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="mb-0">Export Backup</h5>
+            <h5 class="mb-0">Back-up exporteren</h5>
         </div>
         <div class="card-body">
-            <p class="text-muted">Download all your financial data (accounts, budget plans, categories, transactions) as
-                a JSON file.</p>
+            <p class="text-muted">Download alle financiële gegevens (rekeningen, budgetplannen, categorieën,
+                transacties) als JSON-bestand.</p>
                 <button class="btn btn-primary" @onclick="ExportBackup" disabled="@_exportLoading"
                         data-testid="export-backup-btn">
                     @if (_exportLoading)
                     {
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        <span>Exporting...</span>
+                        <span>Bezig met exporteren...</span>
                     }
                     else
                     {
                         <i class="bi bi-download me-2"></i>
-                        <span>Export Backup</span>
+                        <span>Back-up exporteren</span>
                     }
                 </button>
                 @if (_exportError != null)
@@ -43,23 +43,23 @@
         <!-- Import Section -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Import / Restore</h5>
+                <h5 class="mb-0">Importeren / Herstel</h5>
             </div>
             <div class="card-body">
-                <p class="text-muted">Restore your data from a previously exported backup file (max 10 MB).</p>
+                <p class="text-muted">Herstel uw gegevens vanuit een eerder geëxporteerd back-upbestand (max 10 MB).</p>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Backup File (.json, max 10 MB)</label>
+                    <label class="form-label fw-semibold">Back-upbestand (.json, max 10 MB)</label>
                     <InputFile OnChange="OnFileSelected" accept=".json" class="form-control"
                                data-testid="backup-file-input" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Conflict Resolution Strategy</label>
+                    <label class="form-label fw-semibold">Conflictoplossing</label>
                     <select class="form-select" style="max-width:300px" @bind="_strategy" data-testid="strategy-select">
-                        <option value="@ConflictResolutionStrategy.Merge">Merge (newer wins)</option>
-                        <option value="@ConflictResolutionStrategy.Skip">Skip (keep existing)</option>
-                        <option value="@ConflictResolutionStrategy.Overwrite">Overwrite (replace all)</option>
+                        <option value="@ConflictResolutionStrategy.Merge">Samenvoegen (nieuwste wint)</option>
+                        <option value="@ConflictResolutionStrategy.Skip">Overslaan (bestaande behouden)</option>
+                        <option value="@ConflictResolutionStrategy.Overwrite">Overschrijven (alles vervangen)</option>
                     </select>
                 </div>
 
@@ -69,11 +69,11 @@
                         @if (_validateLoading)
                         {
                             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            <span>Validating...</span>
+                            <span>Valideren...</span>
                         }
                         else
                         {
-                            <span>Validate</span>
+                            <span>Valideren</span>
                         }
                     </button>
 
@@ -83,11 +83,11 @@
                         @if (_restoreLoading)
                         {
                             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            <span>Restoring...</span>
+                            <span>Bezig met herstellen...</span>
                         }
                         else
                         {
-                            <span>Restore</span>
+                            <span>Herstellen</span>
                         }
                     </button>
                 </div>
@@ -97,13 +97,13 @@
                     @if (_validationResult.IsValid)
                     {
                         <div class="alert alert-success" role="alert" data-testid="validation-success">
-                            <i class="bi bi-check-circle-fill me-2"></i>Backup is valid and ready to restore.
+                            <i class="bi bi-check-circle-fill me-2"></i>Back-up is geldig en klaar om te herstellen.
                         </div>
                     }
                     else
                     {
                         <div class="alert alert-danger" role="alert" data-testid="validation-errors">
-                            <strong>Validation errors:</strong>
+                            <strong>Validatiefouten:</strong>
                             <ul class="mb-0 mt-2">
                                 @foreach (var error in _validationResult.Errors)
                                 {
@@ -120,49 +120,49 @@
                          data-testid="restore-result">
                         @if (_restoreResult.Success)
                         {
-                            <strong>Restore completed successfully!</strong>
+                            <strong>Herstellen geslaagd!</strong>
                             <table class="table table-sm mt-3 mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Entity</th>
-                                        <th>Imported</th>
-                                        <th>Updated</th>
-                                        <th>Skipped</th>
+                                        <th>Entiteit</th>
+                                        <th>Geïmporteerd</th>
+                                        <th>Bijgewerkt</th>
+                                        <th>Overgeslagen</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Accounts</td>
+                                        <td>Rekeningen</td>
                                         <td>@_restoreResult.AccountsImported</td>
                                         <td>@_restoreResult.AccountsUpdated</td>
                                         <td>@_restoreResult.AccountsSkipped</td>
                                     </tr>
                                     <tr>
-                                        <td>Budget Plans</td>
+                                        <td>Budgetplannen</td>
                                         <td>@_restoreResult.BudgetPlansImported</td>
                                         <td>@_restoreResult.BudgetPlansUpdated</td>
                                         <td>@_restoreResult.BudgetPlansSkipped</td>
                                     </tr>
                                     <tr>
-                                        <td>Categories</td>
+                                        <td>Categorieën</td>
                                         <td>@_restoreResult.CategoriesImported</td>
                                         <td>@_restoreResult.CategoriesUpdated</td>
                                         <td>@_restoreResult.CategoriesSkipped</td>
                                     </tr>
                                     <tr>
-                                        <td>Budget Lines</td>
+                                        <td>Budgetregels</td>
                                         <td>@_restoreResult.BudgetLinesImported</td>
                                         <td>@_restoreResult.BudgetLinesUpdated</td>
                                         <td>@_restoreResult.BudgetLinesSkipped</td>
                                     </tr>
                                     <tr>
-                                        <td>Transactions</td>
+                                        <td>Transacties</td>
                                         <td>@_restoreResult.TransactionsImported</td>
                                         <td>@_restoreResult.TransactionsUpdated</td>
                                         <td>@_restoreResult.TransactionsSkipped</td>
                                     </tr>
                                     <tr>
-                                        <td>Transaction Splits</td>
+                                        <td>Transactiesplitsingen</td>
                                         <td>@_restoreResult.TransactionSplitsImported</td>
                                         <td>@_restoreResult.TransactionSplitsUpdated</td>
                                         <td>@_restoreResult.TransactionSplitsSkipped</td>
@@ -172,7 +172,7 @@
                         }
                         else
                         {
-                            <strong>Restore failed:</strong>
+                            <strong>Herstellen mislukt:</strong>
                             <ul class="mb-0 mt-2">
                                 @foreach (var error in _restoreResult.Errors)
                                 {
@@ -194,18 +194,18 @@
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Confirm Overwrite</h5>
+                        <h5 class="modal-title">Overschrijven bevestigen</h5>
                     </div>
                     <div class="modal-body">
-                        <p>This will <strong>permanently delete all your existing data</strong> and replace it with the backup.
-                            This action cannot be undone.</p>
-                            <p>Are you sure you want to continue?</p>
+                        <p>Dit zal <strong>alle bestaande gegevens permanent verwijderen</strong> en vervangen door de back-up.
+                            Deze actie kan niet ongedaan worden gemaakt.</p>
+                            <p>Weet u zeker dat u wilt doorgaan?</p>
                         </div>
                         <div class="modal-footer">
                             <button class="btn btn-secondary" @onclick="CancelRestore"
-                                    data-testid="cancel-overwrite-btn">Cancel</button>
-                            <button class="btn btn-danger" @onclick="ExecuteRestore" data-testid="confirm-overwrite-btn">Yes,
-                                Overwrite Everything</button>
+                                    data-testid="cancel-overwrite-btn">Annuleren</button>
+                            <button class="btn btn-danger" @onclick="ExecuteRestore" data-testid="confirm-overwrite-btn">Ja,
+                                alles overschrijven</button>
                             </div>
                         </div>
                     </div>

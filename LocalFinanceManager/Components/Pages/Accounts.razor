@@ -1,4 +1,5 @@
 @page "/accounts"
+@attribute [Authorize]
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
@@ -9,29 +10,34 @@
 @inject IUserContext UserContext
 @rendermode InteractiveServer
 
-<PageTitle>Accounts</PageTitle>
+<PageTitle>Rekeningen</PageTitle>
 
-<h1>Accounts</h1>
+<h1>Rekeningen</h1>
 
 @if (!string.IsNullOrWhiteSpace(errorMessage))
 {
     <div class="alert alert-danger" role="alert">@errorMessage</div>
 }
 
-<div class="mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <a href="/accounts/new" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Create New Account
+        <i class="bi bi-plus-circle"></i> Nieuwe rekening aanmaken
     </a>
+    <select class="form-select" style="width: auto;" @bind="_ownerFilter" @bind:after="StateHasChanged">
+        <option value="all">Alle rekeningen</option>
+        <option value="mine">Mijn rekeningen</option>
+        <option value="shared">Gedeeld met mij</option>
+    </select>
 </div>
 
 @if (accounts == null)
 {
-    <p><em>Loading accounts...</em></p>
+    <p><em>Rekeningen laden...</em></p>
 }
-else if (!accounts.Any())
+else if (!FilteredAccounts.Any())
 {
     <div class="alert alert-info">
-        <p>No accounts found. Create your first account to get started!</p>
+        <p>Geen rekeningen gevonden. Maak uw eerste rekening aan om te beginnen!</p>
     </div>
 }
 else
@@ -41,32 +47,44 @@ else
             <tr>
                 <th>Label</th>
                 <th>Type</th>
-                <th>Currency</th>
+                <th>Valuta</th>
                 <th>IBAN</th>
-                <th class="text-end">Current Balance</th>
-                <th>Actions</th>
+                <th class="text-end">Huidig saldo</th>
+                <th>Acties</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var account in accounts)
+            @foreach (var account in FilteredAccounts)
             {
                 <tr>
-                    <td>@account.Label</td>
+                    <td>
+                        @account.Label
+                        <span class="ms-2 badge @PermissionBadgeClass(account.PermissionLevel)">
+                            @account.PermissionLevel
+                        </span>
+                        @if (account.PermissionLevel != PermissionLevel.Owner && !string.IsNullOrEmpty(account.OwnerEmail))
+                        {
+                            <div class="text-muted small">Gedeeld door @account.OwnerEmail</div>
+                        }
+                    </td>
                     <td>@account.Type</td>
                     <td>@account.Currency</td>
                     <td>@FormatIban(account.IBAN)</td>
                     <td class="text-end">@account.CurrentBalance.ToString("N2")</td>
                     <td>
-                        @if (account.OwnerId == currentUserId)
+                        @if (account.PermissionLevel == PermissionLevel.Owner)
                         {
                             <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i> Edit
+                                <i class="bi bi-pencil"></i> Bewerken
                             </a>
+                        }
+                        @if (account.PermissionLevel == PermissionLevel.Owner)
+                        {
                             <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(account)">
-                                <i class="bi bi-share"></i> Share
+                                <i class="bi bi-share"></i> Delen
                             </button>
                             <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmArchive(account)">
-                                <i class="bi bi-archive"></i> Archive
+                                <i class="bi bi-archive"></i> Archiveren
                             </button>
                         }
                     </td>
@@ -87,16 +105,16 @@ else
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Confirm Archive</h5>
+                    <h5 class="modal-title">Archiveren bevestigen</h5>
                     <button type="button" class="btn-close" @onclick="CancelArchive"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Are you sure you want to archive the account "<strong>@accountToArchive.Label</strong>"?</p>
-                    <p class="text-muted">Archived accounts will be hidden from the list but can be restored later.</p>
+                    <p>Weet u zeker dat u de rekening "<strong>@accountToArchive.Label</strong>" wilt archiveren?</p>
+                    <p class="text-muted">Gearchiveerde rekeningen worden verborgen maar kunnen later worden hersteld.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CancelArchive">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="ArchiveAccount">Archive</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CancelArchive">Annuleren</button>
+                    <button type="button" class="btn btn-danger" @onclick="ArchiveAccount">Archiveren</button>
                 </div>
             </div>
         </div>
@@ -108,10 +126,19 @@ else
     private AccountResponse? accountToArchive;
     private string? errorMessage;
     private Guid currentUserId;
+    private string _ownerFilter = "all";
 
     private bool showShareModal;
     private Guid shareModalAccountId;
     private string shareModalAccountLabel = string.Empty;
+
+    private IEnumerable<AccountResponse> FilteredAccounts => (accounts ?? Enumerable.Empty<AccountResponse>())
+        .Where(a => _ownerFilter switch
+        {
+            "mine" => a.PermissionLevel == PermissionLevel.Owner,
+            "shared" => a.PermissionLevel != PermissionLevel.Owner,
+            _ => true
+        });
 
     protected override async Task OnInitializedAsync()
     {
@@ -133,10 +160,7 @@ else
         }
     }
 
-    private void ConfirmArchive(AccountResponse account)
-    {
-        accountToArchive = account;
-    }
+    private void ConfirmArchive(AccountResponse account) => accountToArchive = account;
 
     private void OpenShareModal(AccountResponse account)
     {
@@ -145,27 +169,19 @@ else
         showShareModal = true;
     }
 
-    private void CloseShareModal()
-    {
-        showShareModal = false;
-    }
+    private void CloseShareModal() => showShareModal = false;
 
-    private void CancelArchive()
-    {
-        accountToArchive = null;
-    }
+    private void CancelArchive() => accountToArchive = null;
 
     private async Task ArchiveAccount()
     {
         if (accountToArchive == null) return;
-
         var accountId = accountToArchive.Id;
-
         try
         {
             await AccountService.ArchiveAsync(accountId);
             accountToArchive = null;
-            await LoadAccounts(); // Reload the list
+            await LoadAccounts();
             errorMessage = null;
         }
         catch (Exception ex)
@@ -175,12 +191,16 @@ else
         }
     }
 
+    private static string PermissionBadgeClass(PermissionLevel level) => level switch
+    {
+        PermissionLevel.Owner => "bg-primary",
+        PermissionLevel.Editor => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+
     private string FormatIban(string iban)
     {
-        // Format IBAN with spaces every 4 characters for readability
-        if (string.IsNullOrWhiteSpace(iban))
-            return iban;
-
+        if (string.IsNullOrWhiteSpace(iban)) return iban;
         return string.Join(" ", Enumerable.Range(0, (iban.Length + 3) / 4)
             .Select(i => iban.Substring(i * 4, Math.Min(4, iban.Length - i * 4))));
     }

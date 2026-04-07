@@ -1,5 +1,6 @@
 @page "/admin/autoapply"
 @page "/settings/auto-apply"
+@attribute [Authorize]
 @using LocalFinanceManager.DTOs.ML
 @using LocalFinanceManager.Data.Repositories
 @using LocalFinanceManager.Data
@@ -60,9 +61,6 @@
 
 <PageTitle>Auto-Apply settings</PageTitle>
 
-<Breadcrumb
-Items="@(new List<Breadcrumb.BreadcrumbItem> { new("Home", "/"), new("Instellingen"), new("Auto-Apply") })" />
-
 <h1>Auto-Apply instellingen</h1>
 
 <p class="lead">Configureer automatische toewijzing van transacties op basis van ML-suggesties.</p>
@@ -101,7 +99,7 @@ else
                         <div class="mb-3">
                             <label for="confidence-threshold" class="form-label">
                                 Betrouwbaarheidsdrempel: <strong data-testid="confidence-value">@((_settings.MinimumConfidence *
-                                                                                                                                                                                                                                                                                                                            100).ToString("F0"))%</strong>
+                                                                                                                                                                                                                                                                                                                                                                                            100).ToString("F0"))%</strong>
                             </label>
                             <input type="range" class="form-range" id="confidence-threshold" min="0.6" max="0.95" step="0.05"
                                    value="@_settings.MinimumConfidence.ToString(System.Globalization.CultureInfo.InvariantCulture)"

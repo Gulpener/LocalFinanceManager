@@ -36,7 +36,16 @@ public class UserContext : IUserContext
         var user = httpContext?.User;
         if (user == null || !(user.Identity?.IsAuthenticated ?? false))
         {
-            return _circuitUser.UserId;
+            if (_circuitUser.IsInitialized)
+                return _circuitUser.UserId;
+
+            // Circuit user not yet initialized — return Guid.Empty rather than
+            // reading an unvalidated token from the sessionStorage token store.
+            // Callers that require an authenticated user (AccountService, CategoryService,
+            // BudgetPlanService, etc.) already guard against Guid.Empty and will throw,
+            // which is the correct behavior when the circuit hasn't been set up yet.
+            _logger.LogDebug("GetCurrentUserId called before circuit user was initialized; returning Guid.Empty");
+            return Guid.Empty;
         }
 
         // API/HTTP path: check cache first to avoid repeated DB lookups per request
