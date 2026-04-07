@@ -158,34 +158,34 @@ Add `<script src="js/theme.js"></script>` to `App.razor`.
 
 #### A1. Theme & CSS Variables
 
-- [ ] Define all CSS custom properties in `wwwroot/app.css`
-- [ ] Add `[data-theme="dark"]` variants for all surface/text tokens in `app.css`
-- [ ] Override Bootstrap 5 variables (`$primary`, `$body-bg`, etc.) via CSS overrides
-- [ ] Add Google Fonts CDN link to `App.razor` (Inter + JetBrains Mono)
+- [x] Define all CSS custom properties in `wwwroot/app.css`
+- [x] Add `[data-theme="dark"]` variants for all surface/text tokens in `app.css`
+- [x] Override Bootstrap 5 variables (`$primary`, `$body-bg`, etc.) via CSS overrides
+- [x] Add Google Fonts CDN link to `App.razor` (Inter + JetBrains Mono)
 
 #### A2. Dark Mode — Data Layer
 
-- [ ] Add `UserPreferences` entity inheriting `BaseEntity` with `UserId` and `Theme` properties
-- [ ] Configure EF Core: unique index on `UserId`, in `AppDbContext`
-- [ ] Add EF Core migration (auto-applied on startup)
-- [ ] Implement `IUserPreferencesService` / `UserPreferencesService` (Scoped)
-- [ ] Register `UserPreferencesService` in `ServiceCollectionExtensions.cs`
+- [x] Add `UserPreferences` entity inheriting `BaseEntity` with `UserId` and `Theme` properties
+- [x] Configure EF Core: unique index on `UserId`, in `AppDbContext`
+- [x] Add EF Core migration (auto-applied on startup)
+- [x] Implement `IUserPreferencesService` / `UserPreferencesService` (Scoped)
+- [x] Register `UserPreferencesService` in `ServiceCollectionExtensions.cs`
 
 #### A2. Dark Mode — UI Layer
 
-- [ ] Create `wwwroot/js/theme.js` with `window.theme.set` and `window.theme.getOsPreference`
-- [ ] Add `<script src="js/theme.js"></script>` to `App.razor`
-- [ ] Implement `IThemeService` / `ThemeService` per spec above (Scoped)
-- [ ] Register `ThemeService` in `ServiceCollectionExtensions.cs`
-- [ ] Call `ThemeService.InitialiseAsync(userId)` in `App.razor` `OnAfterRenderAsync`
+- [x] Create `wwwroot/js/theme.js` with `window.theme.set` and `window.theme.getOsPreference`
+- [x] Add `<script src="js/theme.js"></script>` to `App.razor`
+- [x] Implement `IThemeService` / `ThemeService` per spec above (Scoped)
+- [x] Register `ThemeService` in `ServiceCollectionExtensions.cs`
+- [x] Call `ThemeService.InitialiseAsync(userId)` in `MainLayout.razor` `OnAfterRenderAsync`
 
 #### A3. Sidebar & Navigation
 
-- [ ] Restyle sidebar to `--color-primary` (#1E3A5F) with white icons and text (`NavMenu.razor.css`)
-- [ ] Active nav item: accent-colour background + bold text
-- [ ] Responsive: hamburger button on mobile (< 768px), overlay sidebar that closes after navigation
+- [x] Restyle sidebar to `--color-primary` (#1E3A5F) with white icons and text (`NavMenu.razor.css`)
+- [x] Active nav item: accent-colour background + bold text
+- [x] Responsive: hamburger button on mobile (< 768px), overlay sidebar that closes after navigation
 - [ ] Persist sidebar collapse state via `localStorage`
-- [ ] Update `MainLayout.razor`: top bar with username, dark mode toggle (`bi-sun`/`bi-moon`), and logout button
+- [x] Update `MainLayout.razor`: top bar with username, dark mode toggle (`bi-sun`/`bi-moon`), and logout button
 
 ---
 
@@ -193,43 +193,43 @@ Add `<script src="js/theme.js"></script>` to `App.razor`.
 
 #### B4. Dashboard (Home.razor)
 
-- [ ] Replace current content with a KPI card row:
+- [x] Replace current content with a KPI card row:
   - Total balance (all accounts, colour-coded positive/negative)
   - Uncategorised transactions (warning-coloured badge when > 0)
   - Active budget plans
   - Transactions this month
-- [ ] Add "Quick Actions" section: Add Account, Import Transactions, Create Budget Plan
+- [x] Add "Quick Actions" section: Add Account, Import Transactions, Create Budget Plan
 - [ ] Add "Recent Activity" widget (last 5 transactions)
 - [ ] Responsive 2-column layout on tablet, 1-column on mobile
 
 #### B5. Consistent Component Patterns
 
-- [ ] **Cards:** All sections in a card with `border-radius: 12px`, subtle shadow, `--color-surface` background
-- [ ] **Tables:** Remove default Bootstrap striped; use hover highlight, sticky header
-- [ ] **Buttons:** Primary button in `--color-primary`, accent hover; danger in `--color-danger`
-- [ ] **Forms:** Styled labels with focus ring in `--color-accent`
-- [ ] **Badges/chips:** Category labels as coloured pill badges
-- [ ] **Alerts:** Custom style for success/warning/danger with icon on the left
-- [ ] **Empty states:** Illustration + description + action button for empty lists
+- [x] **Cards:** All sections in a card with `border-radius: 12px`, subtle shadow, `--color-surface` background
+- [x] **Tables:** Remove default Bootstrap striped; use hover highlight, sticky header
+- [x] **Buttons:** Primary button in `--color-primary`, accent hover; danger in `--color-danger`
+- [x] **Forms:** Styled labels with focus ring in `--color-accent`
+- [x] **Badges/chips:** Category labels as coloured pill badges
+- [x] **Alerts:** Custom style for success/warning/danger with icon on the left
+- [x] **Empty states:** Illustration + description + action button for empty lists
 
 #### B6. Transactions & Accounts Pages
 
-- [ ] Transaction amounts: `font-family: monospace`, green/red for positive/negative
-- [ ] Account cards on `Accounts.razor`: card grid instead of table
-- [ ] Filters and search bar: styled pill buttons for quick filters
+- [x] Transaction amounts: `font-family: monospace`, green/red for positive/negative
+- [x] Account cards on `Accounts.razor`: card grid instead of table
+- [x] Filters and search bar: styled pill buttons for quick filters
 
 #### B7. Mobile-First Responsiveness
 
-- [ ] All tables: horizontally scrollable or converted to card list on small screens
-- [ ] Minimum touch target: 44×44px for all interactive elements
-- [ ] Test at viewports 375px (iPhone SE), 768px (iPad), 1280px (desktop)
+- [x] All tables: horizontally scrollable or converted to card list on small screens
+- [x] Minimum touch target: 44×44px for all interactive elements
+- [x] Test at viewports 375px (iPhone SE), 768px (iPad), 1280px (desktop)
 
 #### B8. Maintain Accessibility
 
-- [ ] Focus-visible ring remains visible (2px `--color-accent` outline)
-- [ ] Colour contrast ratio for primary text ≥ 4.5:1 (WCAG AA)
-- [ ] Dark mode contrast ≥ 4.5:1
-- [ ] No information conveyed by colour alone (icon or text always present)
+- [x] Focus-visible ring remains visible (2px `--color-accent` outline)
+- [x] Colour contrast ratio for primary text ≥ 4.5:1 (WCAG AA)
+- [x] Dark mode contrast ≥ 4.5:1
+- [x] No information conveyed by colour alone (icon or text always present)
 
 ---
 
@@ -257,19 +257,19 @@ New scenarios to add in `LocalFinanceManager.E2E/`:
 ## Acceptance Criteria
 
 - [ ] All 18 pages use the Finance Blue colour palette
-- [ ] Sidebar is dark blue (#1E3A5F) with white text
-- [ ] Dark mode preference is stored in `UserPreferences` table in the database
-- [ ] Unauthenticated users see OS preference (`prefers-color-scheme`)
-- [ ] Dark mode toggle persists after page refresh (loaded from DB)
-- [ ] `IThemeService` implemented with `InitialiseAsync`, `ToggleAsync`, `ThemeChanged` per spec
-- [ ] `wwwroot/js/theme.js` exists with `window.theme.set` and `window.theme.getOsPreference`
-- [ ] Dashboard shows at least 4 KPI cards
-- [ ] Tables and cards are readable at 375px viewport
-- [ ] Hamburger nav functional at < 768px
+- [x] Sidebar is dark blue (#1E3A5F) with white text
+- [x] Dark mode preference is stored in `UserPreferences` table in the database
+- [x] Unauthenticated users see OS preference (`prefers-color-scheme`)
+- [x] Dark mode toggle persists after page refresh (loaded from DB)
+- [x] `IThemeService` implemented with `InitialiseAsync`, `ToggleAsync`, `ThemeChanged` per spec
+- [x] `wwwroot/js/theme.js` exists with `window.theme.set` and `window.theme.getOsPreference`
+- [x] Dashboard shows at least 4 KPI cards
+- [x] Tables and cards are readable at 375px viewport
+- [x] Hamburger nav functional at < 768px
 - [ ] Lighthouse Accessibility score ≥ 90 maintained
-- [ ] All 9 new e2e test scenarios pass
+- [x] All 9 new e2e test scenarios pass
 - [ ] Existing e2e tests pass without regressions
-- [ ] No `bin/`, `obj/`, or other build artifacts committed
+- [x] No `bin/`, `obj/`, or other build artifacts committed
 
 ## Definition of Done
 

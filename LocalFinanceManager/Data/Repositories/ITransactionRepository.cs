@@ -69,4 +69,9 @@ public interface ITransactionRepository : IRepository<Transaction>
     /// Used by the dashboard widget without materializing full entities.
     /// </summary>
     Task<int> CountUnassignedAsync();
+
+    /// <summary>
+    /// Returns the count of all transactions in the current calendar month for the current user.
+    /// </summary>
+    Task<int> CountThisMonthAsync();
 }

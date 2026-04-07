@@ -1,0 +1,18 @@
+<div class="kpi-card @(UnassignedCount > 0 ? "kpi-warning" : "")" data-testid="kpi-uncategorised">
+    <span class="kpi-label">Niet gecategoriseerd</span>
+    <span class="kpi-value">@UnassignedCount</span>
+    <span class="kpi-sub">
+        @if (UnassignedCount > 0)
+        {
+            <a href="/transactions?filter=unassigned" class="text-warning fw-semibold">Bekijk transacties &rsaquo;</a>
+        }
+        else
+        {
+            <span>Alles gecategoriseerd</span>
+        }
+    </span>
+</div>
+
+@code {
+    [Parameter] public int UnassignedCount { get; set; }
+}

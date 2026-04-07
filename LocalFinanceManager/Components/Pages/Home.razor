@@ -10,6 +10,7 @@
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ITransactionRepository TransactionRepository
+@inject IBudgetPlanRepository BudgetPlanRepository
 @inject ILogger<Home> Logger
 
 <PageTitle>Dashboard</PageTitle>
@@ -42,6 +43,31 @@
             <div data-testid="dashboard">
                 <h1 class="mb-4">Dashboard</h1>
 
+                <!-- KPI Cards Row -->
+                <div class="kpi-grid mb-4" data-testid="kpi-grid">
+                    <TotalBalanceKpiWidget TotalBalance="_totalBalance" AccountCount="_accounts?.Count ?? 0" />
+                    <UncategorizedKpiWidget UnassignedCount="_unassignedCount ?? 0" />
+                    <ActiveBudgetsKpiWidget Count="_activeBudgetPlanCount" />
+                    <TransactionsThisMonthKpiWidget Count="_transactionsThisMonth" />
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions mb-4" data-testid="quick-actions">
+                    <a href="/accounts/new" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> Rekening aanmaken
+                    </a>
+                    <a href="/transactions/import" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i> Transacties importeren
+                    </a>
+                    <a href="/budgets/new" class="btn btn-primary">
+                        <i class="bi bi-clipboard-plus me-1"></i> Budgetplan aanmaken
+                    </a>
+                    <a href="/transactions" class="btn btn-outline-secondary">
+                        <i class="bi bi-list-ul me-1"></i> Alle transacties
+                    </a>
+                </div>
+
+                <!-- Widgets -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <AccountSummaryWidget Accounts="_accounts" />
@@ -49,62 +75,42 @@
                     <div class="col-md-6">
                         <BudgetStatusWidget Accounts="_accounts" />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <UncategorizedAlertWidget UnassignedCount="_unassignedCount" />
-                    </div>
-                    <div class="col-md-6">
-                        <MLSuggestionWidget Transactions="_transactions" />
                     </div>
                     <div class="col-12">
                         <RecentTransactionsWidget Transactions="_transactions" />
                     </div>
                 </div>
-
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-subtitle mb-3 text-muted text-uppercase small">Snelle acties</h6>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a href="/accounts/new" class="btn btn-outline-primary">
-                                <i class="bi bi-plus-circle"></i> Rekening aanmaken
-                            </a>
-                            <a href="/budgets/new" class="btn btn-outline-primary">
-                                <i class="bi bi-clipboard-plus"></i> Budgetplan aanmaken
-                            </a>
-                            <a href="/transactions/import" class="btn btn-outline-primary">
-                                <i class="bi bi-upload"></i> Transacties importeren
-                            </a>
-                            <a href="/transactions" class="btn btn-outline-secondary">
-                                <i class="bi bi-list-ul"></i> Alle transacties
-                            </a>
-                        </div>
-                    </div>
+            </div>
+            }
+        </Authorized>
+        <NotAuthorized>
+            <div class="container text-center py-5">
+                <h1 class="display-4 mb-3">Local Finance Manager</h1>
+                <p class="lead text-muted mb-4">
+                    Beheer uw financiën eenvoudig en overzichtelijk. Volg uw rekeningen, budgetten en transacties op één
+                    plek.
+                </p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="/login" class="btn btn-primary btn-lg">
+                        <i class="bi bi-box-arrow-in-right"></i> Inloggen
+                    </a>
+                    <a href="/register" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-person-plus"></i> Registreren
+                    </a>
                 </div>
             </div>
-        }
-    </Authorized>
-    <NotAuthorized>
-        <div class="container text-center py-5">
-            <h1 class="display-4 mb-3">Local Finance Manager</h1>
-            <p class="lead text-muted mb-4">
-                Beheer uw financiën eenvoudig en overzichtelijk. Volg uw rekeningen, budgetten en transacties op één
-                plek.
-            </p>
-            <div class="d-flex justify-content-center gap-3">
-                <a href="/login" class="btn btn-primary btn-lg">
-                    <i class="bi bi-box-arrow-in-right"></i> Inloggen
-                </a>
-                <a href="/register" class="btn btn-outline-primary btn-lg">
-                    <i class="bi bi-person-plus"></i> Registreren
-                </a>
-            </div>
-        </div>
-    </NotAuthorized>
-</AuthorizeView>
+        </NotAuthorized>
+    </AuthorizeView>
 
 @code {
     private List<AccountResponse>? _accounts;
     private List<Transaction>? _transactions;
     private int? _unassignedCount;
+    private decimal _totalBalance;
+    private int _activeBudgetPlanCount;
+    private int _transactionsThisMonth;
     private bool _isLoading = true;
     private bool _initialized;
     private bool _afterRenderRetried;
@@ -140,18 +146,23 @@
             }
 
             _accounts = await AccountService.GetAllActiveAsync();
-            // Only load recent transactions when there are accounts; avoids a heavy full-table scan
-            // on first-time users and limits data transfer to what the widgets actually display.
             if (_accounts.Count > 0)
             {
                 _transactions = await TransactionRepository.GetRecentWithSplitsAsync(50);
                 _unassignedCount = await TransactionRepository.CountUnassignedAsync();
+                _transactionsThisMonth = await TransactionRepository.CountThisMonthAsync();
+                var budgetPlans = await BudgetPlanRepository.GetActiveAsync();
+                _activeBudgetPlanCount = budgetPlans.Count;
             }
             else
             {
                 _transactions = new List<Transaction>();
                 _unassignedCount = 0;
+                _transactionsThisMonth = 0;
+                _activeBudgetPlanCount = 0;
             }
+
+            _totalBalance = _accounts.Sum(a => a.CurrentBalance);
         }
         catch (Exception ex)
         {

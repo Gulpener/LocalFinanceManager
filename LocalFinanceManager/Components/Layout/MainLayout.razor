@@ -2,6 +2,8 @@
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.Components.Shared
 @inject IBreadcrumbService BreadcrumbService
+@inject IThemeService ThemeService
+@inject IUserContext UserContext
 @implements IDisposable
 
 <div class="page">
@@ -13,11 +15,33 @@
         <div class="top-row px-4">
             <AuthorizeView>
                 <Authorized>
-                    <span class="me-2 fw-semibold text-body">Ingelogd</span>
-                    <span class="me-3">Hallo, @context.User.Identity?.Name</span>
+                    <span class="me-auto fw-semibold text-body"
+                          data-testid="topbar-username">@context.User.Identity?.Name</span>
+                    <button class="btn btn-link theme-toggle-btn me-2" aria-label="Thema wisselen"
+                            data-testid="theme-toggle" @onclick="() => ToggleThemeAsync(null)">
+                        @if (ThemeService.CurrentTheme == "dark")
+                        {
+                            <i class="bi bi-sun"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-moon"></i>
+                        }
+                    </button>
                     <a href="/logout" class="nav-link">Uitloggen</a>
                 </Authorized>
                 <NotAuthorized>
+                    <button class="btn btn-link theme-toggle-btn me-2" aria-label="Thema wisselen"
+                            data-testid="theme-toggle" @onclick="() => ToggleThemeAsync(null)">
+                        @if (ThemeService.CurrentTheme == "dark")
+                        {
+                            <i class="bi bi-sun"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-moon"></i>
+                        }
+                    </button>
                     <a href="/login" class="nav-link me-2">Inloggen</a>
                     <a href="/register" class="nav-link">Registreren</a>
                 </NotAuthorized>
@@ -34,8 +58,6 @@
     </main>
 </div>
 
-@* ShortcutHelp is rendered on specific pages (e.g., Transactions) to avoid duplicate modal IDs. *@
-
 <div id="blazor-error-ui" data-nosnippet>
     Er is een onverwachte fout opgetreden.
     <a href="." class="reload">Herladen</a>
@@ -44,12 +66,33 @@
 
 @code {
     private List<Breadcrumb.BreadcrumbItem> _breadcrumbs = new();
+    private bool _themeInitialised;
 
     protected override void OnInitialized()
     {
         BreadcrumbService.OnChange += HandleBreadcrumbChange;
+        ThemeService.ThemeChanged += HandleThemeChanged;
         UpdateBreadcrumbs();
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_themeInitialised)
+        {
+            _themeInitialised = true;
+            var userId = UserContext.GetCurrentUserId();
+            await ThemeService.InitialiseAsync(userId);
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleThemeAsync(string? claimUserId)
+    {
+        var userId = UserContext.GetCurrentUserId();
+        await ThemeService.ToggleAsync(userId);
+    }
+
+    private void HandleThemeChanged() => InvokeAsync(StateHasChanged);
 
     private void HandleBreadcrumbChange()
         => InvokeAsync(() => { UpdateBreadcrumbs(); StateHasChanged(); });
@@ -61,5 +104,9 @@
             .ToList();
     }
 
-    public void Dispose() => BreadcrumbService.OnChange -= HandleBreadcrumbChange;
+    public void Dispose()
+    {
+        BreadcrumbService.OnChange -= HandleBreadcrumbChange;
+        ThemeService.ThemeChanged -= HandleThemeChanged;
+    }
 }
