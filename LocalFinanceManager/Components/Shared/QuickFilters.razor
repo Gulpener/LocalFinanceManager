@@ -38,9 +38,8 @@
                 <!-- Assignment Status Filter -->
                 <div class="col-md-6 col-lg-4">
                     <label for="assignmentStatusFilter" class="form-label">Toewijzingsstatus</label>
-                    <select id="assignmentStatusFilter" class="form-select form-select-sm" 
-                            @bind="localFilters.AssignmentStatus" 
-                            @bind:after="OnFilterChanged">
+                    <select id="assignmentStatusFilter" class="form-select form-select-sm"
+                            @bind="localFilters.AssignmentStatus" @bind:after="OnFilterChanged">
                         <option value="all">Alle</option>
                         <option value="assigned">Toegewezen</option>
                         <option value="unassigned">Niet toegewezen</option>
@@ -52,9 +51,8 @@
                 <!-- Suggestion Status Filter -->
                 <div class="col-md-6 col-lg-4">
                     <label for="suggestionStatusFilter" class="form-label">Suggestiestatus</label>
-                    <select id="suggestionStatusFilter" class="form-select form-select-sm" 
-                            @bind="localFilters.SuggestionStatus" 
-                            @bind:after="OnFilterChanged">
+                    <select id="suggestionStatusFilter" class="form-select form-select-sm"
+                            @bind="localFilters.SuggestionStatus" @bind:after="OnFilterChanged">
                         <option value="all">Alle</option>
                         <option value="has-suggestion">Met suggestie</option>
                         <option value="no-suggestion">Zonder suggestie</option>
@@ -64,8 +62,7 @@
                 <!-- Date Range Filter -->
                 <div class="col-md-6 col-lg-4">
                     <label for="dateRangeFilter" class="form-label">Datumbereik</label>
-                    <select id="dateRangeFilter" class="form-select form-select-sm" 
-                            @bind="localFilters.DateRange" 
+                    <select id="dateRangeFilter" class="form-select form-select-sm" @bind="localFilters.DateRange"
                             @bind:after="OnFilterChanged">
                         <option value="all">Alle datums</option>
                         <option value="last7">Laatste 7 dagen</option>
@@ -80,34 +77,28 @@
                 {
                     <div class="col-md-6 col-lg-4">
                         <label for="startDateFilter" class="form-label">Van datum</label>
-                        <input type="date" id="startDateFilter" class="form-control form-control-sm" 
-                               @bind="localFilters.CustomStartDate" 
-                               @bind:after="OnFilterChanged" />
+                        <input type="date" id="startDateFilter" class="form-control form-control-sm"
+                               @bind="localFilters.CustomStartDate" @bind:after="OnFilterChanged" />
                     </div>
 
                     <div class="col-md-6 col-lg-4">
                         <label for="endDateFilter" class="form-label">Tot datum</label>
-                        <input type="date" id="endDateFilter" class="form-control form-control-sm" 
-                               @bind="localFilters.CustomEndDate" 
-                               @bind:after="OnFilterChanged" />
+                        <input type="date" id="endDateFilter" class="form-control form-control-sm"
+                               @bind="localFilters.CustomEndDate" @bind:after="OnFilterChanged" />
                     </div>
                 }
 
                 <!-- Amount Range Filter -->
                 <div class="col-md-6 col-lg-4">
                     <label for="minAmountFilter" class="form-label">Minimaal bedrag</label>
-                    <input type="number" id="minAmountFilter" class="form-control form-control-sm" 
-                           step="0.01" placeholder="€0.00"
-                           @bind="localFilters.MinAmount" 
-                           @bind:after="OnFilterChangedDebounced" />
+                    <input type="number" id="minAmountFilter" class="form-control form-control-sm" step="0.01"
+                           placeholder="€0.00" @bind="localFilters.MinAmount" @bind:after="OnFilterChangedDebounced" />
                 </div>
 
                 <div class="col-md-6 col-lg-4">
                     <label for="maxAmountFilter" class="form-label">Maximaal bedrag</label>
-                    <input type="number" id="maxAmountFilter" class="form-control form-control-sm" 
-                           step="0.01" placeholder="€9999.99"
-                           @bind="localFilters.MaxAmount" 
-                           @bind:after="OnFilterChangedDebounced" />
+                    <input type="number" id="maxAmountFilter" class="form-control form-control-sm" step="0.01"
+                           placeholder="€9999.99" @bind="localFilters.MaxAmount" @bind:after="OnFilterChangedDebounced" />
                 </div>
             </div>
         </div>
