@@ -18,6 +18,35 @@ public class CsvImportParser : IImportParser
         _logger = logger;
     }
 
+    /// <summary>
+    /// Parses the first few rows of a CSV file into header columns and data rows.
+    /// Handles quoted fields, escaped quotes, and auto-detects the delimiter so the
+    /// preview table is accurate even for files that use semicolons, tabs, or commas.
+    /// </summary>
+    /// <param name="content">Raw CSV file content (or the first N lines of it).</param>
+    /// <param name="maxDataRows">Maximum number of data rows to return (default 5).</param>
+    /// <returns>
+    /// A tuple with <c>Headers</c> (the first row parsed as column names) and
+    /// <c>DataRows</c> (each subsequent row as a list of cell strings).
+    /// Both lists are empty when the content has no non-blank lines.
+    /// </returns>
+    public async Task<(List<string> Headers, List<List<string>> DataRows)> ParsePreviewAsync(
+        string content, int maxDataRows = 5)
+    {
+        var lines = await ReadLinesAsync(content);
+        if (lines.Count == 0)
+        {
+            return (new List<string>(), new List<List<string>>());
+        }
+
+        char delimiter = DetectDelimiter(lines[0]);
+        var headers = ParseCsvLine(lines[0], delimiter);
+        var dataRows = lines.Skip(1).Take(maxDataRows)
+            .Select(line => ParseCsvLine(line, delimiter))
+            .ToList();
+        return (headers, dataRows);
+    }
+
     public async Task<List<ParsedTransactionDto>> ParseAsync(string fileContent, ColumnMappingDto mapping)
     {
         var transactions = new List<ParsedTransactionDto>();

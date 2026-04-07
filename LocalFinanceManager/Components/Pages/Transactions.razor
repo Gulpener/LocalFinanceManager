@@ -53,6 +53,10 @@
             <option value="has-suggestion">Heeft ML suggestie</option>
             <option value="no-suggestion">Geen ML suggestie</option>
         </select>
+        @if (_suggestionFilter != "all")
+        {
+            <small class="text-muted">Filter is gebaseerd op de eerste 100 onverdeelde transacties.</small>
+        }
     </div>
     <div class="col-md-3">
         <label for="sort-by" class="form-label">Sorteren op:</label>

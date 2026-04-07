@@ -28,7 +28,10 @@ public class BreadcrumbServiceTests
 
         protected override void NavigateToCore(string uri, NavigationOptions options)
         {
-            NotifyLocationChanged(uri, options.ForceLoad);
+            var absolute = uri.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? uri
+                : "http://localhost" + uri;
+            NotifyLocationChanged(absolute, options.ForceLoad);
         }
 
         private void NotifyLocationChanged(string uri, bool forceLoad)

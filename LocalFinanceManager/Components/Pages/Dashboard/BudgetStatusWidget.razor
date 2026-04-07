@@ -66,8 +66,10 @@
                 if (plan == null) continue;
 
                 // Query only the current month's split transactions in SQL — avoids loading full history.
-                var splitTransactions = await TransactionRepository.GetSplitTransactionsByDateRangeAsync(account.Id, monthStart,
-monthEnd);
+                var splitTransactions = await TransactionRepository.GetSplitTransactionsByDateRangeAsync(
+                    account.Id,
+                    monthStart,
+                    monthEnd);
                 var spentByCategory = splitTransactions
                     .Where(t => t.AssignedParts != null)
                     .SelectMany(t => t.AssignedParts!)

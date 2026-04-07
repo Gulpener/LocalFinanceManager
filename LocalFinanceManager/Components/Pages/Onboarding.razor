@@ -2,11 +2,13 @@
 @attribute [Authorize]
 @rendermode InteractiveServer
 @using LocalFinanceManager.Services
+@using LocalFinanceManager.Services.Import
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Models
 @inject AccountService AccountService
 @inject BudgetPlanService BudgetPlanService
 @inject CategoryService CategoryService
+@inject CsvImportParser CsvImportParser
 @inject NavigationManager Navigation
 @inject ILogger<Onboarding> Logger
 
@@ -182,25 +184,25 @@
                             <InputFile class="form-control" OnChange="HandleFileSelected" accept=".csv" />
                         </div>
 
-                        @if (_csvPreviewRows.Any())
+                        @if (_csvPreviewHeader.Any())
                         {
                             <div class="table-responsive mb-3">
                                 <table class="table table-sm table-bordered">
                                     <thead>
                                         <tr>
-                                            @foreach (var header in _csvPreviewRows[0].Split(','))
+                                            @foreach (var header in _csvPreviewHeader)
                                             {
-                                                <th>@header.Trim('"')</th>
+                                                <th>@header</th>
                                             }
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var row in _csvPreviewRows.Skip(1).Take(5))
+                                        @foreach (var row in _csvPreviewDataRows)
                                         {
                                             <tr>
-                                                @foreach (var cell in row.Split(','))
+                                                @foreach (var cell in row)
                                                 {
-                                                    <td>@cell.Trim('"')</td>
+                                                    <td>@cell</td>
                                                 }
                                             </tr>
                                         }
@@ -305,7 +307,8 @@
     private int _createdCategoryCount;
 
     // Step 5 — CSV preview
-    private List<string> _csvPreviewRows = new();
+    private List<string> _csvPreviewHeader = new();
+    private List<List<string>> _csvPreviewDataRows = new();
 
     private bool _initialized;
     private bool _afterRenderRetried;
@@ -457,16 +460,30 @@
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
-        _csvPreviewRows.Clear();
+        _csvPreviewHeader.Clear();
+        _csvPreviewDataRows.Clear();
         try
         {
             using var stream = e.File.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
             using var reader = new System.IO.StreamReader(stream);
-            while (!reader.EndOfStream && _csvPreviewRows.Count < 6)
+            // Read first 6 non-empty lines to limit memory for the preview
+            var rawLines = new System.Text.StringBuilder();
+            int linesRead = 0;
+            while (!reader.EndOfStream && linesRead < 6)
             {
                 var line = await reader.ReadLineAsync();
-                if (line != null) _csvPreviewRows.Add(line);
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    rawLines.AppendLine(line);
+                    linesRead++;
+                }
             }
+
+            // Use CsvImportParser so the preview correctly handles quoted fields,
+            // escaped quotes, and auto-detects the delimiter (comma, semicolon, tab).
+            var (headers, dataRows) = await CsvImportParser.ParsePreviewAsync(rawLines.ToString(), maxDataRows: 5);
+            _csvPreviewHeader = headers;
+            _csvPreviewDataRows = dataRows;
         }
         catch (Exception ex)
         {
