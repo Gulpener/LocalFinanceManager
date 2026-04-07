@@ -186,8 +186,8 @@
 
     private async Task OnFilterChanged()
     {
-        await FilterStateService.SaveFiltersAsync(localFilters);
         await OnFiltersChanged.InvokeAsync(CloneFilterState(localFilters));
+        await FilterStateService.SaveFiltersAsync(localFilters);
     }
 
     private void OnFilterChangedDebounced()
@@ -236,9 +236,9 @@
     private async Task ClearFilters()
     {
         var clearedFilters = new FilterState();
-        await FilterStateService.ClearFiltersAsync();
         localFilters = CloneFilterState(clearedFilters);
         await OnFiltersChanged.InvokeAsync(clearedFilters);
+        await FilterStateService.ClearFiltersAsync();
     }
 
     private int GetActiveFilterCount()
