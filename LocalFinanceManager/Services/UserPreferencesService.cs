@@ -6,11 +6,13 @@ namespace LocalFinanceManager.Services;
 
 public class UserPreferencesService : IUserPreferencesService
 {
+    private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly AppDbContext _db;
     private readonly ILogger<UserPreferencesService> _logger;
 
-    public UserPreferencesService(AppDbContext db, ILogger<UserPreferencesService> logger)
+    public UserPreferencesService(IDbContextFactory<AppDbContext> dbFactory, AppDbContext db, ILogger<UserPreferencesService> logger)
     {
+        _dbFactory = dbFactory;
         _db = db;
         _logger = logger;
     }
@@ -19,7 +21,8 @@ public class UserPreferencesService : IUserPreferencesService
     {
         if (userId == Guid.Empty) return null;
 
-        return await _db.UserPreferences
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.UserPreferences
             .AsNoTracking()
             .FirstOrDefaultAsync(up => up.UserId == userId);
     }

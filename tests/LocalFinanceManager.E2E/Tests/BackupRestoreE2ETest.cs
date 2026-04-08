@@ -19,7 +19,7 @@ public class BackupRestoreE2ETest : E2ETestBase
     {
         await Page.GotoAsync($"{BaseUrl}/backup", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Backup & Restore" })).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Back-up & herstel" })).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-testid='export-backup-btn']")).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-testid='validate-backup-btn']")).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-testid='restore-backup-btn']")).ToBeVisibleAsync();
@@ -168,7 +168,7 @@ public class BackupRestoreE2ETest : E2ETestBase
                 .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15_000 });
 
             var resultText = await Page.Locator("[data-testid='restore-result']").InnerTextAsync();
-            Assert.That(resultText, Does.Contain("Restore completed successfully"));
+            Assert.That(resultText, Does.Contain("Herstellen geslaagd!"));
         }
         finally
         {

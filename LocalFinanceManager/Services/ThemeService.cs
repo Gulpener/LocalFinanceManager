@@ -27,23 +27,31 @@ public class ThemeService : IThemeService
     {
         string theme;
 
-        if (userId != Guid.Empty)
+        try
         {
-            var prefs = await _preferencesService.GetAsync(userId);
-            if (prefs is not null)
+            if (userId != Guid.Empty)
             {
-                theme = prefs.Theme;
+                var prefs = await _preferencesService.GetAsync(userId);
+                if (prefs is not null)
+                {
+                    theme = prefs.Theme;
+                }
+                else
+                {
+                    // No DB preference — fall back to OS preference
+                    theme = await GetOsPreferenceAsync();
+                }
             }
             else
             {
-                // No DB preference — fall back to OS preference
+                // Unauthenticated: use OS preference
                 theme = await GetOsPreferenceAsync();
             }
         }
-        else
+        catch (Exception ex)
         {
-            // Unauthenticated: use OS preference
-            theme = await GetOsPreferenceAsync();
+            _logger.LogWarning(ex, "Failed to read theme preference; defaulting to light");
+            theme = "light";
         }
 
         _currentTheme = theme;

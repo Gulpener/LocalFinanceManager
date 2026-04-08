@@ -252,6 +252,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 });
             });
 
+            services.AddDbContextFactory<AppDbContext>(options =>
+            {
+                options.UseNpgsql(GetConnectionString(), npgsqlOptions =>
+                {
+                    npgsqlOptions.CommandTimeout(60);
+                });
+            }, ServiceLifetime.Scoped);
+
             services.RemoveAll<IDeviceDetectionService>();
             services.AddScoped<IDeviceDetectionService, DesktopDeviceDetectionService>();
 
@@ -411,7 +419,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
             TRUNCATE TABLE ""TransactionSplits"", ""TransactionAudits"", ""LabeledExamples"",
                            ""Transactions"", ""BudgetLines"", ""Categories"",
                            ""BudgetPlans"", ""AccountShares"", ""BudgetPlanShares"",
-                           ""Accounts"", ""MLModels"", ""AppSettings"" CASCADE;
+                           ""Accounts"", ""MLModels"", ""AppSettings"", ""UserPreferences"" CASCADE;
         ");
     }
 

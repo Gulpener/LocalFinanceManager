@@ -4,6 +4,7 @@
 @inject IBreadcrumbService BreadcrumbService
 @inject IThemeService ThemeService
 @inject IUserContext UserContext
+@inject ILogger<MainLayout> Logger
 @implements IDisposable
 
 <div class="page">
@@ -80,9 +81,18 @@
         if (firstRender && !_themeInitialised)
         {
             _themeInitialised = true;
-            var userId = UserContext.GetCurrentUserId();
-            await ThemeService.InitialiseAsync(userId);
-            StateHasChanged();
+            try
+            {
+                var userId = UserContext.GetCurrentUserId();
+                await ThemeService.InitialiseAsync(userId);
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                // Theme initialisation failure must never crash the Blazor circuit.
+                // Log and continue — the default light theme stays in effect.
+                Logger.LogWarning(ex, "Theme initialisation failed; default light theme will be used");
+            }
         }
     }
 

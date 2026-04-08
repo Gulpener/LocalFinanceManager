@@ -127,7 +127,7 @@
 }
 
 .nav-item ::deep a.active {
-    background-color: var(--color-sidebar-active, #3b82f6);
+    background-color: var(--color-sidebar-active, #1d4ed8);
     color: #ffffff;
     font-weight: 600;
 }

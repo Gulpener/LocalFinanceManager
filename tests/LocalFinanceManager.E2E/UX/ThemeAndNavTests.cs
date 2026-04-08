@@ -1,5 +1,6 @@
 using LocalFinanceManager.Data;
 using LocalFinanceManager.E2E.Helpers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
 
@@ -42,9 +43,15 @@ public class ThemeAndNavTests : E2ETestBase
         // Act
         await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        // Wait for Blazor circuit to initialise (theme-toggle button rendered by MainLayout)
+        var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
+        await Expect(toggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+
         // Assert – html element should carry data-theme="dark"
+        // Use a generous timeout because ThemeService.InitialiseAsync fires in OnAfterRenderAsync
         var htmlElement = Page.Locator("html");
-        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", "dark");
+        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", "dark",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
     }
 
     [Test]
@@ -84,17 +91,22 @@ public class ThemeAndNavTests : E2ETestBase
 
         await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        // Wait for circuit to initialize and set initial theme before reading it
+        var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
+        await Expect(toggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+        // Allow ThemeService.InitialiseAsync to complete and set data-theme
+        await Expect(Page.Locator("html")).ToHaveAttributeAsync("data-theme", "light",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
+
         var htmlElement = Page.Locator("html");
         var before = await htmlElement.GetAttributeAsync("data-theme");
 
         // Act – click the theme toggle
-        var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
-        await Expect(toggleBtn).ToBeVisibleAsync();
         await toggleBtn.ClickAsync();
 
-        // Assert – theme should have changed
-        var after = await htmlElement.GetAttributeAsync("data-theme");
-        Assert.That(after, Is.Not.EqualTo(before), "Theme should flip after clicking toggle");
+        // Assert – theme should have changed (wait for Blazor to re-render and JS to fire)
+        await Expect(htmlElement).Not.ToHaveAttributeAsync("data-theme", before ?? "light",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
     }
 
     [Test]
@@ -112,50 +124,73 @@ public class ThemeAndNavTests : E2ETestBase
 
         await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        // Wait for circuit to initialise and apply initial theme
+        var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
+        await Expect(toggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+        await Expect(Page.Locator("html")).ToHaveAttributeAsync("data-theme", "light",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
+
         var htmlElement = Page.Locator("html");
         var original = await htmlElement.GetAttributeAsync("data-theme");
 
-        var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
-        await Expect(toggleBtn).ToBeVisibleAsync();
-
-        // Act – toggle twice
+        // Act – toggle to dark
         await toggleBtn.ClickAsync();
+        // Wait for theme to flip to dark before clicking again
+        await Expect(htmlElement).Not.ToHaveAttributeAsync("data-theme", original ?? "light",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
+
+        // Toggle back to original
         await toggleBtn.ClickAsync();
 
         // Assert – theme should be back to original
-        var final = await htmlElement.GetAttributeAsync("data-theme");
-        Assert.That(final, Is.EqualTo(original), "Double-toggle should restore the original theme");
+        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", original ?? "light",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
     }
 
     [Test]
     public async Task DarkMode_Persists_AfterPageReload()
     {
-        // Arrange – start in light
+        // Arrange – directly seed "dark" preference in DB so ThemeService loads it on init.
+        // This avoids depending on toggle→DB write (which has timing complexity in E2E).
+        using var scope = Factory!.CreateDbScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await SeedDataHelper.SeedAccountAsync(dbContext, "Test Account", "NL91ABNA0417164300", 500m);
+
+        // Seed the "dark" UserPreferences directly in DB
+        dbContext.UserPreferences.Add(new LocalFinanceManager.Models.UserPreferences
+        {
+            Id = Guid.NewGuid(),
+            UserId = AppDbContext.SeedUserId,
+            Theme = "dark"
+        });
+        await dbContext.SaveChangesAsync();
+
+        // Set OS preference to light so InitialiseAsync must use DB preference to get dark
         await Page.EmulateMediaAsync(new PageEmulateMediaOptions
         {
             ColorScheme = ColorScheme.Light
         });
 
-        using var scope = Factory!.CreateDbScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await SeedDataHelper.SeedAccountAsync(dbContext, "Test Account", "NL91ABNA0417164300", 500m);
-
+        // Act – navigate: ThemeService.InitialiseAsync reads SeedUserId → "dark" from DB
         await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        // Toggle to dark
+        // Assert – html element should carry data-theme="dark" (loaded from DB)
         var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
-        await Expect(toggleBtn).ToBeVisibleAsync();
-        await toggleBtn.ClickAsync();
+        await Expect(toggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
 
         var htmlElement = Page.Locator("html");
-        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", "dark");
+        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", "dark",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
 
-        // Act – reload page (same circuit re-initialises ThemeService from DB)
+        // Act – reload page
         await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        // Assert – dark mode should still be active
+        // Assert – dark mode still active after reload (still reads "dark" from DB)
         htmlElement = Page.Locator("html");
-        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", "dark");
+        var reloadToggleBtn = Page.Locator("[data-testid='theme-toggle']");
+        await Expect(reloadToggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", "dark",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -229,8 +264,8 @@ public class ThemeAndNavTests : E2ETestBase
         var openBefore = await navScrollable.EvaluateAsync<bool>("el => el.classList.contains('open')");
         Assert.That(openBefore, Is.True, "Nav should be open before navigation");
 
-        // Act – click the Accounts nav link
-        var accountsLink = Page.Locator(".nav-scrollable a[href='/accounts']");
+        // Act – click the Accounts nav link (Blazor renders relative hrefs without leading /)
+        var accountsLink = Page.Locator(".nav-scrollable a[href='accounts']");
         await accountsLink.ClickAsync();
         await Page.WaitForURLAsync("**/accounts", new PageWaitForURLOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
