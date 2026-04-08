@@ -24,7 +24,7 @@ public class UserPreferencesService : IUserPreferencesService
         await using var db = await _dbFactory.CreateDbContextAsync();
         return await db.UserPreferences
             .AsNoTracking()
-            .FirstOrDefaultAsync(up => up.UserId == userId);
+            .FirstOrDefaultAsync(up => up.UserId == userId && !up.IsArchived);
     }
 
     public async Task SetThemeAsync(Guid userId, string theme)
@@ -32,7 +32,7 @@ public class UserPreferencesService : IUserPreferencesService
         if (userId == Guid.Empty) return;
 
         var existing = await _db.UserPreferences
-            .FirstOrDefaultAsync(up => up.UserId == userId);
+            .FirstOrDefaultAsync(up => up.UserId == userId && !up.IsArchived);
 
         if (existing is null)
         {

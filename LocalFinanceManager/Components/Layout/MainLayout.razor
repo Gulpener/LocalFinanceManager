@@ -19,7 +19,7 @@
                     <span class="me-auto fw-semibold text-body"
                           data-testid="topbar-username">@context.User.Identity?.Name</span>
                     <button class="btn btn-link theme-toggle-btn me-2" aria-label="Thema wisselen"
-                            data-testid="theme-toggle" @onclick="() => ToggleThemeAsync(null)">
+                            data-testid="theme-toggle" @onclick="ToggleThemeAsync">
                         @if (ThemeService.CurrentTheme == "dark")
                         {
                             <i class="bi bi-sun"></i>
@@ -33,7 +33,7 @@
                 </Authorized>
                 <NotAuthorized>
                     <button class="btn btn-link theme-toggle-btn me-2" aria-label="Thema wisselen"
-                            data-testid="theme-toggle" @onclick="() => ToggleThemeAsync(null)">
+                            data-testid="theme-toggle" @onclick="ToggleThemeAsync">
                         @if (ThemeService.CurrentTheme == "dark")
                         {
                             <i class="bi bi-sun"></i>
@@ -96,7 +96,7 @@
         }
     }
 
-    private async Task ToggleThemeAsync(string? claimUserId)
+    private async Task ToggleThemeAsync()
     {
         var userId = UserContext.GetCurrentUserId();
         await ThemeService.ToggleAsync(userId);

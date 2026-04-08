@@ -134,7 +134,7 @@ public class AppDbContext : DbContext
         // The User navigation is suppressed; SharedWithUserId is configured explicitly below.
         modelBuilder.Entity<AccountShare>().Ignore(e => e.User);
         modelBuilder.Entity<BudgetPlanShare>().Ignore(e => e.User);
-        // UserPreferences: UserId is a string key (local User.Id as string), no FK navigation.
+        // UserPreferences: BaseEntity.UserId is a nullable Guid identifying the owning user; no User FK navigation is configured here.
         modelBuilder.Entity<UserPreferences>().Ignore(e => e.User);
 
         // Configure Account entity
