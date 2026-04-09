@@ -311,8 +311,20 @@ app.MapRazorComponents<App>()
 // Map API controllers
 app.MapControllers();
 
-// Database health check endpoint
-app.MapHealthChecks("/health/db");
+// Health check endpoints
+// `/health` is a liveness endpoint and intentionally does not execute registered health checks.
+app.MapGet(
+    "/health",
+    () => Results.Ok(new
+    {
+        status = "Healthy"
+    }));
+app.MapHealthChecks(
+    "/health/db",
+    new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = registration => registration.Name == "database"
+    });
 
 app.Run();
 

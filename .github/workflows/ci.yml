@@ -67,7 +67,7 @@ jobs:
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
-          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__AnonKey: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Run E2E tests - Phase 2 (Split + Bulk Assignment)
@@ -76,7 +76,7 @@ jobs:
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
-          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__AnonKey: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Run E2E tests - Phase 3 (Integration Workflow + UX + Other)
@@ -85,7 +85,7 @@ jobs:
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
-          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__AnonKey: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Run E2E tests - Phase 4 (ML Suggestions + Auto-Apply + Monitoring)
@@ -94,7 +94,7 @@ jobs:
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
-          Supabase__Key: ${{ secrets.SUPABASE_TEST_KEY }}
+          Supabase__AnonKey: ${{ secrets.SUPABASE_TEST_KEY }}
           Supabase__JwtSecret: ${{ secrets.SUPABASE_TEST_JWT_SECRET }}
 
       - name: Upload test results
