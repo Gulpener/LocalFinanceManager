@@ -320,11 +320,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Retry loading transactions (up to 3 times) when the user context was not yet
-        // initialized during OnInitializedAsync (Blazor Server circuit-user race condition:
-        // GetCurrentUserId() returned Guid.Empty → repository returned empty list).
-        // Using an empty-list signal is avoided because legitimate users may have zero transactions.
-        if (_lastLoadHadEmptyUser && _initialized && !loading && _afterRenderRetries < 3)
+        // Retry loading transactions when the page loaded with an empty result:
+        // • Up to 3 retries while the circuit user is initializing (Guid.Empty race condition).
+        // • Exactly 1 fallback retry for any other reason (e.g., CI/timing edge cases).
+        //   Limiting to one fallback retry reduces redundant loads for users with zero transactions
+        //   (down from 3 to 1) while preserving reliability in E2E and CI environments.
+        var maxRetries = _lastLoadHadEmptyUser ? 3 : 1;
+        if (transactionDtos.Count == 0 && _initialized && !loading && _afterRenderRetries < maxRetries)
         {
             _afterRenderRetries++;
             await LoadTransactionsAsync();
