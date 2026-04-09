@@ -83,6 +83,7 @@
 @inject ISharingService SharingService
 @inject IUserContext UserContext
 @inject ILogger<NavMenu> Logger
+@inject NavigationManager NavigationManager
 @implements IDisposable
 @code {
     private int pendingShareCount;
@@ -93,10 +94,17 @@
     {
         if (firstRender)
         {
+            NavigationManager.LocationChanged += OnLocationChanged;
             await RefreshPendingCountAsync();
             _cts = new CancellationTokenSource();
             _ = RunPeriodicRefreshAsync(_cts.Token);
         }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _menuOpen = false;
+        InvokeAsync(StateHasChanged);
     }
 
     private void ToggleMenu() => _menuOpen = !_menuOpen;
@@ -138,6 +146,7 @@
 
     public void Dispose()
     {
+        NavigationManager.LocationChanged -= OnLocationChanged;
         _cts?.Cancel();
         _cts?.Dispose();
     }
