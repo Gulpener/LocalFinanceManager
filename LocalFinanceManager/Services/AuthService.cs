@@ -215,7 +215,7 @@ public class AuthService : IAuthService
     {
         var client = _httpClientFactory.CreateClient();
         client.BaseAddress = new Uri(_options.Url);
-        client.DefaultRequestHeaders.Add("apikey", _options.Key);
+        client.DefaultRequestHeaders.Add("apikey", _options.AnonKey);
 
         var content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
         return await client.PostAsync(path, content);
