@@ -91,7 +91,7 @@ door de €50/maand recurring Azure credits.
   }
   ```
 - [x] **[User]** Verify production guard in `Program.cs` rejects localhost connection strings (already present)
-- [x] **[User]** Verify health check at `/health` is registered in `Program.cs` (already present)
+- [x] **[User]** Verify this PR registers the health check endpoint at `/health` in `Program.cs`
 
 ### Phase 5: GitHub Actions CD Pipeline
 
