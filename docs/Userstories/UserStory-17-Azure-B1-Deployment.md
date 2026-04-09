@@ -54,31 +54,31 @@ door de €50/maand recurring Azure credits.
   - Runtime stack: **.NET 10**
   - Plan: het B1-plan hierboven
   - Naam: bijv. `localfinancemanager` (bepaalt de `azurewebsites.net` URL)
-- [ ] **[User]** Schakel **Always On** in: App Service → Configuration → General Settings → Always On: **On**
-- [ ] **[User]** Schakel **HTTPS Only** in: App Service → TLS/SSL Settings → HTTPS Only: **On**
+- [x] **[User]** Schakel **Always On** in: App Service → Configuration → General Settings → Always On: **On**
+- [x] **[User]** Schakel **HTTPS Only** in: App Service → TLS/SSL Settings → HTTPS Only: **On**
 
 ### Phase 2: Environment Variables instellen — **[User]**
 
-- [ ] **[User]** Ga naar App Service → Configuration → Application Settings en voeg toe:
+- [x] **[User]** Ga naar App Service → Configuration → Application Settings en voeg toe:
   - `ASPNETCORE_ENVIRONMENT` = `Production`
   - `ConnectionStrings__Local` = (Supabase PostgreSQL connection string)
   - `Supabase__Url` = (Supabase project URL)
   - `Supabase__AnonKey` = (Supabase anon/public key)
-- [ ] **[User]** Klik **Save** en verifieer dat de app herstart
+- [x] **[User]** Klik **Save** en verifieer dat de app herstart
 
 > **Let op:** Azure App Service slaat Application Settings encrypted op.
 > Kopieer nooit secrets naar `appsettings.json` of `appsettings.Production.json`.
 
 ### Phase 3: GitHub Secrets configureren — **[User]**
 
-- [ ] **[User]** Download Publish Profile: App Service overzicht → **Get Publish Profile** → sla `.PublishSettings` file op
-- [ ] **[User]** Voeg GitHub repository secrets toe (Settings → Secrets and Variables → Actions):
+- [x] **[User]** Download Publish Profile: App Service overzicht → **Get Publish Profile** → sla `.PublishSettings` file op
+- [x] **[User]** Voeg GitHub repository secrets toe (Settings → Secrets and Variables → Actions):
   - `AZURE_WEBAPP_NAME` — naam van de App Service (bijv. `localfinancemanager`)
   - `AZURE_WEBAPP_PUBLISH_PROFILE` — volledige inhoud van het `.PublishSettings` bestand
 
 ### Phase 4: Application Configuration
 
-- [ ] **[Copilot]** Create `appsettings.Production.json`:
+- [x] **[Copilot]** Create `appsettings.Production.json`:
   ```json
   {
     "Logging": {
