@@ -57,9 +57,10 @@ Source: Google Stitch export — WealthCurator Personal Finance Dashboard
   --color-sidebar-hover: #f1f5f9;
 
   /* Layout */
-  --font-headline: 'Manrope', 'Inter', sans-serif;
+  --font-headline: "Manrope", "Inter", sans-serif;
   --border-radius-card: 0.75rem;
-  --color-card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --color-card-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="dark"] {
@@ -88,8 +89,14 @@ Source: Google Stitch export — WealthCurator Personal Finance Dashboard
 - **Monospace (amounts):** `JetBrains Mono` (existing)
 - **Google Fonts CDN** — add to `App.razor`:
   ```html
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+    rel="stylesheet"
+  />
   ```
 
 ---
@@ -98,21 +105,21 @@ Source: Google Stitch export — WealthCurator Personal Finance Dashboard
 
 All pages receive updated CSS tokens automatically. The following pages get structural HTML changes:
 
-| Page | Change |
-|---|---|
-| `NavMenu.razor` + `.css` | Light sidebar, rounded active states, "Transactie toevoegen" CTA button |
-| `MainLayout.razor` + `.css` | Frosted-glass top bar, user initials avatar |
-| `Home.razor` | Bento-grid layout (2×2 rows) |
-| `TotalBalanceKpiWidget.razor` | Hero card with large balance, trend badge, decorative blur |
-| `RecentTransactionsWidget.razor` | Grouped date headers, category icon circles |
-| `BudgetStatusWidget.razor` | Coloured progress bars, insight callout card |
-| `UncategorizedKpiWidget.razor` | Compact stat card |
-| `ActiveBudgetsKpiWidget.razor` | Compact stat card |
-| `TransactionsThisMonthKpiWidget.razor` | Compact stat card |
-| `Transactions.razor` | Grouped-by-date rows, category icon circles, colour-coded amounts |
-| `Accounts.razor` | Card-grid layout (3-col desktop, 2-col tablet, 1-col mobile) |
-| `BudgetPlans.razor` | Card-grid with utilisation progress bar per plan |
-| `BudgetPlanEdit.razor` | Sectioned form layout with card containers |
+| Page                                   | Change                                                                  |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| `NavMenu.razor` + `.css`               | Light sidebar, rounded active states, "Transactie toevoegen" CTA button |
+| `MainLayout.razor` + `.css`            | Frosted-glass top bar, user initials avatar                             |
+| `Home.razor`                           | Bento-grid layout (2×2 rows)                                            |
+| `TotalBalanceKpiWidget.razor`          | Hero card with large balance, trend badge, decorative blur              |
+| `RecentTransactionsWidget.razor`       | Grouped date headers, category icon circles                             |
+| `BudgetStatusWidget.razor`             | Coloured progress bars, insight callout card                            |
+| `UncategorizedKpiWidget.razor`         | Compact stat card                                                       |
+| `ActiveBudgetsKpiWidget.razor`         | Compact stat card                                                       |
+| `TransactionsThisMonthKpiWidget.razor` | Compact stat card                                                       |
+| `Transactions.razor`                   | Grouped-by-date rows, category icon circles, colour-coded amounts       |
+| `Accounts.razor`                       | Card-grid layout (3-col desktop, 2-col tablet, 1-col mobile)            |
+| `BudgetPlans.razor`                    | Card-grid with utilisation progress bar per plan                        |
+| `BudgetPlanEdit.razor`                 | Sectioned form layout with card containers                              |
 
 ---
 
