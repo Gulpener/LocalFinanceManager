@@ -312,8 +312,18 @@ app.MapRazorComponents<App>()
 app.MapControllers();
 
 // Health check endpoints
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/health/db");
+app.MapHealthChecks(
+    "/health",
+    new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = _ => false
+    });
+app.MapHealthChecks(
+    "/health/db",
+    new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = registration => registration.Name == "database"
+    });
 
 app.Run();
 
