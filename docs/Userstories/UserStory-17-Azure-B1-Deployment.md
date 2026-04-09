@@ -95,7 +95,7 @@ door de €50/maand recurring Azure credits.
 
 ### Phase 5: GitHub Actions CD Pipeline
 
-- [ ] **[Copilot]** Create `.github/workflows/deploy.yml`:
+- [x] **[Copilot]** Create `.github/workflows/deploy.yml`:
 
   ```yaml
   name: Deploy to Azure
