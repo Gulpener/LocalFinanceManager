@@ -312,12 +312,13 @@ app.MapRazorComponents<App>()
 app.MapControllers();
 
 // Health check endpoints
-app.MapHealthChecks(
+// `/health` is a liveness endpoint and intentionally does not execute registered health checks.
+app.MapGet(
     "/health",
-    new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    () => Results.Ok(new
     {
-        Predicate = _ => false
-    });
+        status = "Healthy"
+    }));
 app.MapHealthChecks(
     "/health/db",
     new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
