@@ -32,6 +32,9 @@ if (!builder.Environment.IsDevelopment() && connectionString.Contains("localhost
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseNpgsql(connectionString), ServiceLifetime.Scoped);
+
 // Add database health check
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("database");

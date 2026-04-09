@@ -95,7 +95,7 @@ public class SharingTests : E2ETestBase
         });
 
         // Assert: pending invitation is visible
-        await Expect(Page.GetByText("Pending Invitations")).ToBeVisibleAsync();
+        await Expect(Page.GetByText("Openstaande uitnodigingen")).ToBeVisibleAsync();
         await Expect(Page.GetByText("Shared Account")).ToBeVisibleAsync();
         await Expect(Page.GetByText("Viewer")).ToBeVisibleAsync();
     }
@@ -145,7 +145,7 @@ public class SharingTests : E2ETestBase
         });
 
         // Click Accept button
-        var acceptButton = Page.Locator("button:has-text('Accept')").First;
+        var acceptButton = Page.Locator("button:has-text('Accepteren')").First;
         await acceptButton.WaitForAsync(new LocatorWaitForOptions { Timeout = 10000 });
         await acceptButton.ClickAsync();
 
@@ -153,7 +153,7 @@ public class SharingTests : E2ETestBase
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert: share moved to "Resources Shared with Me" section
-        await Expect(Page.GetByText("Resources Shared with Me")).ToBeVisibleAsync();
+        await Expect(Page.GetByText("Gedeelde bronnen met mij")).ToBeVisibleAsync();
         await Expect(Page.GetByText("Accept Test Account")).ToBeVisibleAsync();
 
         // Verify it is no longer in Pending section (no Accept button)

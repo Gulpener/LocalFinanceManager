@@ -38,6 +38,7 @@ public class AppDbContext : DbContext
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
     public DbSet<AccountShare> AccountShares => Set<AccountShare>();
     public DbSet<BudgetPlanShare> BudgetPlanShares => Set<BudgetPlanShare>();
+    public DbSet<UserPreferences> UserPreferences => Set<UserPreferences>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -133,6 +134,8 @@ public class AppDbContext : DbContext
         // The User navigation is suppressed; SharedWithUserId is configured explicitly below.
         modelBuilder.Entity<AccountShare>().Ignore(e => e.User);
         modelBuilder.Entity<BudgetPlanShare>().Ignore(e => e.User);
+        // UserPreferences is user-owned. The optional FK allows rows with null UserId
+        // (e.g., legacy/test data) and cascades deletes when the owning User is removed.
 
         // Configure Account entity
         modelBuilder.Entity<Account>(entity =>
@@ -400,6 +403,25 @@ public class AppDbContext : DbContext
             entity.HasIndex(le => le.CategoryId);
             entity.HasIndex(le => le.CreatedAt); // For rolling window queries
             entity.HasIndex(le => new { le.CategoryId, le.CreatedAt }); // Combined for efficient filtering
+        });
+
+        // Configure UserPreferences entity
+        modelBuilder.Entity<UserPreferences>(entity =>
+        {
+            entity.Property(up => up.Theme)
+                .IsRequired()
+                .HasMaxLength(10)
+                .HasDefaultValue("light");
+
+            // UserId (from BaseEntity Guid?) is the unique owner key.
+            entity.HasIndex(up => up.UserId).IsUnique();
+
+            // Optional FK to Users; null allowed for legacy/test rows; cascade-delete when user is removed.
+            entity.HasOne(up => up.User)
+                .WithMany(u => u.UserPreferences)
+                .HasForeignKey(up => up.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

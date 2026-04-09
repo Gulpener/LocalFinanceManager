@@ -383,7 +383,6 @@ public class MonitoringDashboardTests : E2ETestBase
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await SeedDataHelper.SeedAutoApplyHistoryAsync(context, _testAccount.Id, 5, undoCount: 0);
         }
-        await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.NetworkIdle);
 
         await _dashboardPage.NavigateAsync();
 

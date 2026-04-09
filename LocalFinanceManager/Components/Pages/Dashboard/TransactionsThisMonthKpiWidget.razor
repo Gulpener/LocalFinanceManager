@@ -1,0 +1,9 @@
+<div class="kpi-card" data-testid="kpi-transactions-month">
+    <span class="kpi-label">Transacties deze maand</span>
+    <span class="kpi-value">@Count</span>
+    <span class="kpi-sub"><a href="/transactions">Bekijk alles &rsaquo;</a></span>
+</div>
+
+@code {
+    [Parameter] public int Count { get; set; }
+}

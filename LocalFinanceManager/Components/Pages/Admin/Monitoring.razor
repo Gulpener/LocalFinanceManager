@@ -42,7 +42,7 @@
                     <option value="30" selected="@(windowDays == 30)">Laatste 30 dagen</option>
                     <option value="90" selected="@(windowDays == 90)">Laatste 90 dagen</option>
                 </select>
-                <button class="btn btn-primary ms-2" @onclick="LoadStats">
+                <button class="btn btn-primary ms-2" @onclick="() => LoadStats(showSpinner: true)">
                     <i class="bi bi-arrow-clockwise"></i> Vernieuwen
                 </button>
             </div>
@@ -308,8 +308,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadStats();
-        await LoadHistory();
+        await LoadStats(showSpinner: true);
+        await LoadHistory(showSpinner: true);
         StartAutoRefresh();
     }
 
@@ -351,9 +351,15 @@
         }
     }
 
-    private async Task LoadStats()
+    private async Task LoadStats(bool showSpinner = false)
     {
-        isLoading = true;
+        // Only show the loading spinner when explicitly requested (initial load or user-triggered
+        // refresh). Background auto-refresh calls pass showSpinner=false to avoid the spinner
+        // briefly hiding the stats section (which caused a race condition in E2E tests).
+        if (showSpinner)
+        {
+            isLoading = true;
+        }
         errorMessage = null;
 
         try
@@ -371,9 +377,15 @@
         }
     }
 
-    private async Task LoadHistory()
+    private async Task LoadHistory(bool showSpinner = false)
     {
-        loadingHistory = true;
+        // Only show the loading spinner when explicitly requested (initial load or user-triggered
+        // refresh). Background auto-refresh calls pass showSpinner=false to avoid the spinner
+        // briefly hiding the history table (which caused a race condition in E2E tests).
+        if (showSpinner)
+        {
+            loadingHistory = true;
+        }
 
         try
         {
@@ -394,7 +406,7 @@
         if (int.TryParse(e.Value?.ToString(), out var days))
         {
             windowDays = days;
-            await LoadStats();
+            await LoadStats(showSpinner: true);
         }
     }
 

@@ -58,6 +58,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDeviceDetectionService, DeviceDetectionService>();
         services.AddScoped<ISharingService, SharingService>();
         services.AddScoped<IBackupService, BackupService>();
+        services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+        services.AddScoped<IThemeService, ThemeService>();
 
         return services;
     }

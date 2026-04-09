@@ -221,14 +221,17 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             return new List<Transaction>();
         }
 
+        var fromUtc = from.Kind == DateTimeKind.Utc ? from : from.ToUniversalTime();
+        var toUtc = to.Kind == DateTimeKind.Utc ? to : to.ToUniversalTime();
+
         var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
         return await _dbSet
             .Where(t => !t.IsArchived
                 && t.AccountId == accountId
                 && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
                 && t.AssignedParts!.Any(s => !s.IsArchived)
-                && t.Date >= from
-                && t.Date < to)
+                && t.Date >= fromUtc
+                && t.Date < toUtc)
             .Include(t => t.AssignedParts!)
                 .ThenInclude(s => s.BudgetLine)
                     .ThenInclude(bl => bl.Category)
@@ -271,5 +274,25 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             .CountAsync(t => !t.IsArchived
                 && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
                 && !t.AssignedParts!.Any(s => !s.IsArchived));
+    }
+
+    public async Task<int> CountThisMonthAsync()
+    {
+        var userId = _userContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
+        {
+            return 0;
+        }
+
+        var now = DateTime.UtcNow;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var endOfMonth = startOfMonth.AddMonths(1);
+
+        var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
+        return await _dbSet
+            .CountAsync(t => !t.IsArchived
+                && (t.UserId == userId || accessibleAccountIds.Contains(t.AccountId))
+                && t.Date >= startOfMonth
+                && t.Date < endOfMonth);
     }
 }

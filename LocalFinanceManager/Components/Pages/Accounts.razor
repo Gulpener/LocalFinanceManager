@@ -42,56 +42,64 @@ else if (!FilteredAccounts.Any())
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Label</th>
-                <th>Type</th>
-                <th>Valuta</th>
-                <th>IBAN</th>
-                <th class="text-end">Huidig saldo</th>
-                <th>Acties</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var account in FilteredAccounts)
-            {
-                <tr>
-                    <td>
-                        @account.Label
-                        <span class="ms-2 badge @PermissionBadgeClass(account.PermissionLevel)">
-                            @account.PermissionLevel
-                        </span>
+    <div class="row g-3" data-testid="accounts-grid">
+        @foreach (var account in FilteredAccounts)
+        {
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="card h-100" data-testid="account-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">@account.Label</h5>
+                            <span class="badge @PermissionBadgeClass(account.PermissionLevel)">
+                                @account.PermissionLevel
+                            </span>
+                        </div>
+
                         @if (account.PermissionLevel != PermissionLevel.Owner && !string.IsNullOrEmpty(account.OwnerEmail))
                         {
-                            <div class="text-muted small">Gedeeld door @account.OwnerEmail</div>
+                            <div class="text-muted small mb-2">
+                                <i class="bi bi-share me-1" aria-hidden="true"></i> Gedeeld door @account.OwnerEmail
+                            </div>
                         }
-                    </td>
-                    <td>@account.Type</td>
-                    <td>@account.Currency</td>
-                    <td>@FormatIban(account.IBAN)</td>
-                    <td class="text-end">@account.CurrentBalance.ToString("N2")</td>
-                    <td>
-                        @if (account.PermissionLevel == PermissionLevel.Owner)
-                        {
-                            <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-pencil"></i> Bewerken
+
+                        <dl class="row mb-2 small">
+                            <dt class="col-5 text-muted">Type</dt>
+                            <dd class="col-7">@account.Type</dd>
+                            <dt class="col-5 text-muted">Valuta</dt>
+                            <dd class="col-7">@account.Currency</dd>
+                            <dt class="col-5 text-muted">IBAN</dt>
+                            <dd class="col-7 text-break">@FormatIban(account.IBAN)</dd>
+                        </dl>
+
+                        <div class="d-flex align-items-baseline gap-1 mb-3">
+                            <span class="text-muted small">Saldo:</span>
+                            <span class="amount @(account.CurrentBalance >= 0 ? "amount-positive" : "amount-negative") fs-5">
+                                @account.CurrentBalance.ToString("N2") @account.Currency
+                            </span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            @if (account.PermissionLevel == PermissionLevel.Owner)
+                            {
+                                <a href="/accounts/@account.Id/edit" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Bewerken
+                                </a>
+                                <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(account)">
+                                    <i class="bi bi-share"></i> Delen
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmArchive(account)">
+                                    <i class="bi bi-archive"></i> Archiveren
+                                </button>
+                            }
+                            <a href="/transactions?accountId=@account.Id" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-list-ul"></i> Transacties
                             </a>
-                        }
-                        @if (account.PermissionLevel == PermissionLevel.Owner)
-                        {
-                            <button class="btn btn-sm btn-outline-success" @onclick="() => OpenShareModal(account)">
-                                <i class="bi bi-share"></i> Delen
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmArchive(account)">
-                                <i class="bi bi-archive"></i> Archiveren
-                            </button>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 }
 
 <!-- Share Modal -->
