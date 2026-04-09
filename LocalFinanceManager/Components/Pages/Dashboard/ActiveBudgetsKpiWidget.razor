@@ -1,0 +1,9 @@
+<div class="kpi-card" data-testid="kpi-active-budgets">
+    <span class="kpi-label">Actieve budgetplannen</span>
+    <span class="kpi-value">@Count</span>
+    <span class="kpi-sub"><a href="/budgets">Bekijk plannen &rsaquo;</a></span>
+</div>
+
+@code {
+    [Parameter] public int Count { get; set; }
+}

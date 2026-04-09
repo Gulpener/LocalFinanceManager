@@ -3,6 +3,7 @@ using System;
 using LocalFinanceManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LocalFinanceManager.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407105249_AddUserPreferences")]
+    partial class AddUserPreferences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -960,16 +963,6 @@ namespace LocalFinanceManager.Migrations
                     b.Navigation("Transaction");
                 });
 
-            modelBuilder.Entity("LocalFinanceManager.Models.UserPreferences", b =>
-                {
-                    b.HasOne("LocalFinanceManager.Models.User", "User")
-                        .WithMany("UserPreferences")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("LocalFinanceManager.Models.Account", b =>
                 {
                     b.Navigation("Shares");
@@ -1002,8 +995,6 @@ namespace LocalFinanceManager.Migrations
                     b.Navigation("Categories");
 
                     b.Navigation("Transactions");
-
-                    b.Navigation("UserPreferences");
                 });
 #pragma warning restore 612, 618
         }

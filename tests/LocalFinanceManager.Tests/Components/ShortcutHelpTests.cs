@@ -186,6 +186,7 @@ public class ShortcutHelpTests
         var recentCategoriesServiceMock = new Mock<IRecentCategoriesService>();
         var hostEnvironmentMock = new Mock<IWebHostEnvironment>();
         var mlServiceMock = new Mock<IMLService>();
+        var userContextMock = new Mock<IUserContext>();
 
         transactionRepositoryMock
             .Setup(x => x.GetAllWithSplitsAsync())
@@ -215,6 +216,10 @@ public class ShortcutHelpTests
             .Setup(x => x.PredictCategoryAsync(It.IsAny<Guid>()))
             .ReturnsAsync((CategoryPrediction?)null);
 
+        userContextMock
+            .Setup(x => x.GetCurrentUserId())
+            .Returns(Guid.Empty);
+
         services.AddSingleton(transactionRepositoryMock.Object);
         services.AddSingleton(accountRepositoryMock.Object);
         services.AddSingleton(deviceDetectionServiceMock.Object);
@@ -225,6 +230,7 @@ public class ShortcutHelpTests
         services.AddSingleton(recentCategoriesServiceMock.Object);
         services.AddSingleton(hostEnvironmentMock.Object);
         services.AddSingleton(mlServiceMock.Object);
+        services.AddSingleton(userContextMock.Object);
         services.AddOptions();
         services.Configure<BulkAssignUiOptions>(_ => { });
         services.AddLogging();

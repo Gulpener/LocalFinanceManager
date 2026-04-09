@@ -23,4 +23,5 @@ public class User : BaseEntity
     // Shares received by this user
     public ICollection<AccountShare> AccountShares { get; set; } = new List<AccountShare>();
     public ICollection<BudgetPlanShare> BudgetPlanShares { get; set; } = new List<BudgetPlanShare>();
+    public ICollection<UserPreferences> UserPreferences { get; set; } = new List<UserPreferences>();
 }

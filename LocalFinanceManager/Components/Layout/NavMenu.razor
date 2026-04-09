@@ -1,16 +1,23 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">LocalFinanceManager</a>
-    </div>
+﻿<div class="top-row ps-3">
+    <a class="navbar-brand" href="">
+        <i class="bi bi-bar-chart-fill me-2"></i>LocalFinanceManager
+    </a>
+    <button class="hamburger-btn d-md-none" aria-label="Navigatiemenu openen"
+            aria-expanded="@_menuOpen.ToString().ToLower()" data-testid="hamburger-btn" @onclick="ToggleMenu">
+        <i class="bi bi-list"></i>
+    </button>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@if (_menuOpen)
+{
+    <div class="nav-overlay d-md-none" @onclick="CloseMenu" data-testid="nav-overlay"></div>
+}
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
+<div class="nav-scrollable @(_menuOpen ? "open" : "")">
+    <nav class="nav flex-column" @onclick="CloseMenu">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                <i class="bi bi-house-door-fill me-2" aria-hidden="true"></i> Home
             </NavLink>
         </div>
 
@@ -18,54 +25,53 @@
             <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="accounts">
-                        <span class="bi bi-wallet-fill" aria-hidden="true"></span> Rekeningen
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="transactions">
-                        <span class="bi bi-cash-coin" aria-hidden="true"></span> Transacties
+                        <i class="bi bi-wallet-fill me-2" aria-hidden="true"></i> Rekeningen
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="budgets">
-                        <span class="bi bi-calculator-fill" aria-hidden="true"></span> Budgetplannen
+                        <i class="bi bi-calculator-fill me-2" aria-hidden="true"></i> Budgetplannen
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="transactions">
+                        <i class="bi bi-cash-coin me-2" aria-hidden="true"></i> Transacties
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="sharing/shared-with-me">
-                        <span class="bi bi-share-fill" aria-hidden="true"></span> Gedeeld met mij
+                        <i class="bi bi-share-fill me-2" aria-hidden="true"></i> Gedeeld met mij
                         @if (pendingShareCount > 0)
                         {
-                            <span class="badge bg-warning text-dark ms-1"
-                                  data-testid="nav-pending-share-badge">@pendingShareCount</span>
+                            <span class="badge ms-1" data-testid="nav-pending-share-badge">@pendingShareCount</span>
                         }
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/settings">
-                        <span class="bi bi-gear-fill" aria-hidden="true"></span> Beheerinstellingen
+                        <i class="bi bi-gear-fill me-2" aria-hidden="true"></i> Beheerinstellingen
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/autoapply">
-                        <span class="bi bi-robot" aria-hidden="true"></span> Automatisch toewijzen
+                        <i class="bi bi-robot me-2" aria-hidden="true"></i> Automatisch toewijzen
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/monitoring">
-                        <span class="bi bi-speedometer2" aria-hidden="true"></span> Bewaking
+                        <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i> Bewaking
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="backup">
-                        <span class="bi bi-cloud-arrow-down-fill" aria-hidden="true"></span> Back-up &amp; herstel
+                        <i class="bi bi-cloud-arrow-down-fill me-2" aria-hidden="true"></i> Back-up &amp; herstel
                     </NavLink>
                 </div>
             </Authorized>
@@ -77,20 +83,32 @@
 @inject ISharingService SharingService
 @inject IUserContext UserContext
 @inject ILogger<NavMenu> Logger
+@inject NavigationManager NavigationManager
 @implements IDisposable
 @code {
     private int pendingShareCount;
+    private bool _menuOpen;
     private CancellationTokenSource? _cts;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            NavigationManager.LocationChanged += OnLocationChanged;
             await RefreshPendingCountAsync();
             _cts = new CancellationTokenSource();
             _ = RunPeriodicRefreshAsync(_cts.Token);
         }
     }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _menuOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+    private void CloseMenu() => _menuOpen = false;
 
     private async Task RunPeriodicRefreshAsync(CancellationToken cancellationToken)
     {
@@ -128,6 +146,7 @@
 
     public void Dispose()
     {
+        NavigationManager.LocationChanged -= OnLocationChanged;
         _cts?.Cancel();
         _cts?.Dispose();
     }

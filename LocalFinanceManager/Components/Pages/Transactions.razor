@@ -7,6 +7,7 @@
 @inject ITransactionRepository TransactionRepository
 @inject IAccountRepository AccountRepository
 @inject IDeviceDetectionService DeviceDetectionService
+@inject IUserContext UserContext
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 @inject ILogger<Transactions> Logger
@@ -89,128 +90,131 @@
     }
     else
     {
-        <table class="table table-striped" data-testid="transactions-table">
-            <thead>
-                <tr>
-                    <th style="width: 40px;">
-                        <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll"
-                               checked="@(selectedTransactionIds.Count == filteredTransactions.Count && filteredTransactions.Any())"
-                               aria-label="Selecteer alle zichtbare transacties" title="Selecteer alles" />
-                    </th>
-                    <th>Status</th>
-                    <th>Datum</th>
-                    <th>Beschrijving</th>
-                    <th>Tegenpartij</th>
-                    <th>Bedrag</th>
-                    <th>Toewijzing</th>
-                    <th>Acties</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (var index = 0; index < filteredTransactions.Count; index++)
-                {
-                    var transaction = filteredTransactions[index];
-                    <tr @key="transaction.Id"
-                        class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
-                        data-testid="transaction-row" data-row-index="@index" data-transaction-id="@transaction.Id"
-                        tabindex="@(focusedRowIndex == index ? 0 : -1)" @onfocus="() => SetFocusedRow(index)"
-                        @onkeydown="HandleTableKeyDown">
-                        <td>
-                            <input type="checkbox" class="form-check-input"
-                                   checked="@selectedTransactionIds.Contains(transaction.Id)"
-                                   aria-label="@($"Selecteer transactie {transaction.Description}")"
-                                   @onchange="() => ToggleSelectTransaction(transaction.Id)" />
-                        </td>
-                        <td>
-                            @if (!transaction.IsAssigned)
-                            {
-                                <span class="badge bg-warning text-dark" title="Transactie niet toegewezen aan categorie"
-                                      aria-label="Niet toegewezen">
-                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                                    <span class="visually-hidden">Niet toegewezen</span>
-                                </span>
-                            }
-                            else if (transaction.Splits != null && transaction.Splits.Count > 1)
-                            {
-                                <span class="badge bg-info" title="Gesplitste transactie" aria-label="Gesplitst">
-                                    <i class="bi bi-distribute-vertical" aria-hidden="true"></i>
-                                    <span class="visually-hidden">Gesplitst</span>
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-success" title="Transactie toegewezen" aria-label="Toegewezen">
-                                    <i class="bi bi-check-circle" aria-hidden="true"></i>
-                                    <span class="visually-hidden">Toegewezen</span>
-                                </span>
-                            }
-                        </td>
-                        <td>@transaction.Date.ToString("dd-MM-yyyy")</td>
-                        <td>@transaction.Description</td>
-                        <td>@transaction.Counterparty</td>
-                        <td class="@(transaction.Amount >= 0 ? "text-success" : "text-danger")">
-                            @transaction.Amount.ToString("C2")
-                        </td>
-                        <td>
-                            @if (transaction.IsAssigned && transaction.Splits != null)
-                            {
-                                @if (transaction.Splits.Count > 1)
+        <div class="table-responsive">
+            <table class="table table-hover" data-testid="transactions-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" class="form-check-input" @onchange="ToggleSelectAll"
+                                   checked="@(selectedTransactionIds.Count == filteredTransactions.Count && filteredTransactions.Any())"
+                                   aria-label="Selecteer alle zichtbare transacties" title="Selecteer alles" />
+                        </th>
+                        <th>Status</th>
+                        <th>Datum</th>
+                        <th>Beschrijving</th>
+                        <th>Tegenpartij</th>
+                        <th>Bedrag</th>
+                        <th>Toewijzing</th>
+                        <th>Acties</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var index = 0; index < filteredTransactions.Count; index++)
+                    {
+                        var transaction = filteredTransactions[index];
+                        <tr @key="transaction.Id"
+                            class="transaction-row @(selectedTransactionIds.Contains(transaction.Id) ? "table-primary" : "")"
+                            data-testid="transaction-row" data-row-index="@index" data-transaction-id="@transaction.Id"
+                            tabindex="@(focusedRowIndex == index ? 0 : -1)" @onfocus="() => SetFocusedRow(index)"
+                            @onkeydown="HandleTableKeyDown">
+                            <td>
+                                <input type="checkbox" class="form-check-input"
+                                       checked="@selectedTransactionIds.Contains(transaction.Id)"
+                                       aria-label="@($"Selecteer transactie {transaction.Description}")"
+                                       @onchange="() => ToggleSelectTransaction(transaction.Id)" />
+                            </td>
+                            <td>
+                                @if (!transaction.IsAssigned)
                                 {
-                                    <span class="badge bg-info text-dark me-1"
-                                          title="@string.Join(", ", transaction.Splits.Select(s => $"{s.BudgetLineName}: {s.Amount:C2}"))">
-                                        @transaction.Splits.Count splits
+                                    <span class="badge bg-warning text-dark" title="Transactie niet toegewezen aan categorie"
+                                          aria-label="Niet toegewezen">
+                                        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Niet toegewezen</span>
+                                    </span>
+                                }
+                                else if (transaction.Splits != null && transaction.Splits.Count > 1)
+                                {
+                                    <span class="badge bg-info" title="Gesplitste transactie" aria-label="Gesplitst">
+                                        <i class="bi bi-distribute-vertical" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Gesplitst</span>
                                     </span>
                                 }
                                 else
                                 {
-                                    @foreach (var split in transaction.Splits)
+                                    <span class="badge bg-success" title="Transactie toegewezen" aria-label="Toegewezen">
+                                        <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                        <span class="visually-hidden">Toegewezen</span>
+                                    </span>
+                                }
+                            </td>
+                            <td>@transaction.Date.ToString("dd-MM-yyyy")</td>
+                            <td>@transaction.Description</td>
+                            <td>@transaction.Counterparty</td>
+                            <td class="amount @(transaction.Amount >= 0 ? "amount-positive" : "amount-negative")">
+                                @transaction.Amount.ToString("C2")
+                            </td>
+                            <td>
+                                @if (transaction.IsAssigned && transaction.Splits != null)
+                                {
+                                    @if (transaction.Splits.Count > 1)
                                     {
-                                        <span class="badge bg-info text-dark me-1">@split.BudgetLineName</span>
+                                        <span class="badge bg-info text-dark me-1"
+                                              title="@string.Join(", ", transaction.Splits.Select(s => $"{s.BudgetLineName}: {s.Amount:C2}"))">
+                                            @transaction.Splits.Count splits
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var split in transaction.Splits)
+                                        {
+                                            <span class="badge bg-info text-dark me-1">@split.BudgetLineName</span>
+                                        }
                                     }
                                 }
-                            }
-                            else if (!transaction.IsAssigned)
-                            {
-                                <MLSuggestionBadge TransactionId="@transaction.Id"
-                                                   OnSuggestionAccepted="@(async () => await OnSuggestionAccepted(transaction.Id))"
-                                                   OnConfidenceLoaded="@((float conf) => HandleConfidenceLoaded(transaction.Id, conf))" />
-                            }
-                            else
-                            {
-                                <span class="text-muted">-</span>
-                            }
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenAssignModal(transaction)"
-                                    title="@(transaction.IsAssigned ? "Wijzig toewijzing" : "Wijs toe")">
-                                <i class="bi bi-pencil"></i> @(transaction.IsAssigned ? "Wijzig" : "Toewijzen")
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => OpenSplitEditor(transaction)"
-                                    title="Splits transactie">
-                                <i class="bi bi-distribute-vertical"></i> Split
-                            </button>
-                            @if (transaction.IsAssigned)
-                            {
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenAuditTrail(transaction.Id)"
-                                        title="Bekijk toewijzingsgeschiedenis" aria-label="Bekijk toewijzingsgeschiedenis">
-                                    <i class="bi bi-clock-history" aria-hidden="true"></i>
+                                else if (!transaction.IsAssigned)
+                                {
+                                    <MLSuggestionBadge TransactionId="@transaction.Id"
+                                                       OnSuggestionAccepted="@(async () => await OnSuggestionAccepted(transaction.Id))"
+                                                       OnConfidenceLoaded="@((float conf) => HandleConfidenceLoaded(transaction.Id, conf))" />
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1"
+                                        @onclick="() => OpenAssignModal(transaction)"
+                                        title="@(transaction.IsAssigned ? "Wijzig toewijzing" : "Wijs toe")">
+                                    <i class="bi bi-pencil"></i> @(transaction.IsAssigned ? "Wijzig" : "Toewijzen")
                                 </button>
-                            }
-                        </td>
+                                <button class="btn btn-sm btn-outline-secondary me-1"
+                                        @onclick="() => OpenSplitEditor(transaction)" title="Splits transactie">
+                                    <i class="bi bi-distribute-vertical"></i> Split
+                                </button>
+                                @if (transaction.IsAssigned)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenAuditTrail(transaction.Id)"
+                                            title="Bekijk toewijzingsgeschiedenis" aria-label="Bekijk toewijzingsgeschiedenis">
+                                        <i class="bi bi-clock-history" aria-hidden="true"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th></th>
+                        <th colspan="4" class="text-end">Totaal (gefilterd):</th>
+                        <th class="@(filteredTotalAmount >= 0 ? "text-success" : "text-danger")">
+                            @filteredTotalAmount.ToString("C2")
+                        </th>
+                        <th colspan="2"></th>
                     </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th></th>
-                    <th colspan="4" class="text-end">Totaal (gefilterd):</th>
-                    <th class="@(filteredTotalAmount >= 0 ? "text-success" : "text-danger")">
-                        @filteredTotalAmount.ToString("C2")
-                    </th>
-                    <th colspan="2"></th>
-                </tr>
-            </tfoot>
-        </table>
+                </tfoot>
+            </table>
+        </div>
 
         <p class="text-muted">
             @filteredTransactions.Count van @transactionDtos.Count transactie(s) weergegeven
@@ -293,7 +297,8 @@
     private DotNetObjectReference<Transactions>? dotNetRef;
     private bool globalShortcutsRegistered;
     private bool _initialized;
-    private bool _afterRenderRetried;
+    private int _afterRenderRetries;
+    private bool _lastLoadHadEmptyUser;
 
     protected override async Task OnInitializedAsync()
     {
@@ -315,12 +320,15 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Retry loading transactions once on first interactive render if the user context was not
-        // yet initialized during OnInitializedAsync (Blazor Server circuit-user race condition:
-        // GetCurrentUserId() returns Guid.Empty → repository returns empty list → no rows rendered).
-        if (firstRender && transactionDtos.Count == 0 && _initialized && !loading && !_afterRenderRetried)
+        // Retry loading transactions when the page loaded with an empty result:
+        // • Up to 3 retries while the circuit user is initializing (Guid.Empty race condition).
+        // • Exactly 1 fallback retry for any other reason (e.g., CI/timing edge cases).
+        //   Limiting to one fallback retry reduces redundant loads for users with zero transactions
+        //   (down from 3 to 1) while preserving reliability in E2E and CI environments.
+        var maxRetries = _lastLoadHadEmptyUser ? 3 : 1;
+        if (transactionDtos.Count == 0 && _initialized && !loading && _afterRenderRetries < maxRetries)
         {
-            _afterRenderRetried = true;
+            _afterRenderRetries++;
             await LoadTransactionsAsync();
             StateHasChanged();
         }
@@ -409,6 +417,7 @@
 
     private async Task LoadTransactionsAsync()
     {
+        _lastLoadHadEmptyUser = UserContext.GetCurrentUserId() == Guid.Empty;
         loading = true;
         try
         {

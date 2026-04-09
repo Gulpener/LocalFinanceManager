@@ -154,6 +154,12 @@ public class UXEnhancementsTests : E2ETestBase
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        // WaitUntil=NetworkIdle misses SignalR WebSocket traffic; wait explicitly for rows before
+        // counting so that allRows > 0 and the subsequent 'length < allRows' condition can be met.
+        await Page.WaitForSelectorAsync(
+            "tr[data-testid='transaction-row']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
         // Verify all transactions are initially visible
         var allRows = await Page.Locator("tbody tr").CountAsync();
 

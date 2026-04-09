@@ -32,273 +32,276 @@ else
                         <InputText id="name" class="form-control" @bind-Value="updateModel.Name" />
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary">Naam bijwerken</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-pencil me-1"></i>Naam
+                            bijwerken</button>
+                        </div>
                     </div>
-                </div>
-                @if (!string.IsNullOrEmpty(planErrorMessage))
+                    @if (!string.IsNullOrEmpty(planErrorMessage))
+                    {
+                        <div class="alert alert-danger mt-2">@planErrorMessage</div>
+                    }
+                </EditForm>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Categorieën</h5>
+                <a href="/budgets/@Id/categories/new" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Categorie toevoegen
+                </a>
+            </div>
+            <div class="card-body">
+                @if (categories == null)
                 {
-                    <div class="alert alert-danger mt-2">@planErrorMessage</div>
+                    <p><em>Categorieën laden...</em></p>
                 }
-            </EditForm>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5>Categorieën</h5>
-            <a href="/budgets/@Id/categories/new" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-circle"></i> Categorie toevoegen
-            </a>
-        </div>
-        <div class="card-body">
-            @if (categories == null)
-            {
-                <p><em>Categorieën laden...</em></p>
-            }
-            else if (!categories.Any())
-            {
-                <div class="alert alert-info">Nog geen categorieën. Klik op "Categorie toevoegen" om er een aan te maken.</div>
-            }
-            else
-            {
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Naam</th>
-                            <th>Type</th>
-                            <th>Acties</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var category in categories)
-                        {
-                            <tr>
-                                <td>@category.Name</td>
-                                <td>@(category.Type == LocalFinanceManager.Models.CategoryType.Income ? "Inkomsten" : "Uitgaven")
-                                </td>
-                                <td>
-                                    <a href="/budgets/@Id/categories/@category.Id/edit" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ArchiveCategory(category.Id)">
-                                        <i class="bi bi-archive"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5>Budgetregels</h5>
-            <button class="btn btn-sm btn-primary" @onclick="ShowAddLineForm">
-                <i class="bi bi-plus-circle"></i> Budgetregel toevoegen
-            </button>
-        </div>
-        <div class="card-body">
-            @if (showAddLineForm)
-            {
-                <div class="card mb-3 border-primary">
-                    <div class="card-header bg-primary text-white">Nieuwe budgetregel</div>
-                    <div class="card-body">
-                        <EditForm Model="@newLineModel" OnValidSubmit="HandleAddLine">
-                            <div class="mb-3">
-                                <label class="form-label">Categorie</label>
-                                <CategorySelector BudgetPlanId="@Id" SelectedCategoryId="newLineModel.CategoryId"
-                                                  SelectedCategoryIdChanged="EventCallback.Factory.Create<Guid?>(this, value => newLineModel.CategoryId = value ?? Guid.Empty)"
-                                                  IsRequired="true" AllowEmpty="true" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Maandbedragen (of voer uniform bedrag in)</label>
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text">Uniform bedrag</span>
-                                    <input type="number" class="form-control" @bind="uniformAmount" step="0.01" />
-                                    <button type="button" class="btn btn-secondary" @onclick="ApplyUniformAmount">
-                                        Toepassen op alle maanden
-                                    </button>
-                                </div>
-                                <div class="row g-2">
-                                    @for (int i = 0; i < 12; i++)
-                                    {
-                                        var monthIndex = i;
-                                        <div class="col-md-2">
-                                            <label class="form-label small">@GetMonthName(i)</label>
-                                            <input type="number" class="form-control form-control-sm"
-                                                   @bind="newLineMonthlyAmounts[monthIndex]" step="0.01" />
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Notities</label>
-                                <InputText class="form-control" @bind-Value="newLineModel.Notes" />
-                            </div>
-                            @if (!string.IsNullOrEmpty(lineErrorMessage))
-                            {
-                                <div class="alert alert-danger">@lineErrorMessage</div>
-                            }
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary">Rij toevoegen</button>
-                                <button type="button" class="btn btn-secondary" @onclick="CancelAddLine">Annuleren</button>
-                            </div>
-                        </EditForm>
-                    </div>
-                </div>
-            }
-
-            @if (budgetPlan.BudgetLines.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-bordered">
+                else if (!categories.Any())
+                {
+                    <div class="alert alert-info">Nog geen categorieën. Klik op "Categorie toevoegen" om er een aan te maken.</div>
+                }
+                else
+                {
+                    <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Categorie</th>
-                                @for (int i = 0; i < 12; i++)
-                                {
-                                    <th class="text-end">@GetMonthAbbr(i)</th>
-                                }
-                                <th class="text-end">Jaartotaal</th>
+                                <th>Naam</th>
+                                <th>Type</th>
                                 <th>Acties</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var line in budgetPlan.BudgetLines)
+                            @foreach (var category in categories)
                             {
-                                @if (_editingLineId == line.Id)
-                                {
-                                    <tr class="table-warning">
-                                        <td>
-                                            <CategorySelector BudgetPlanId="@Id" SelectedCategoryId="_editCategoryId"
-                                                              SelectedCategoryIdChanged="EventCallback.Factory.Create<Guid?>(this, value => _editCategoryId = value ?? Guid.Empty)"
-                                                              AllowEmpty="false" CssClass="" />
-                                        </td>
+                                <tr>
+                                    <td>@category.Name</td>
+                                    <td>@(category.Type == LocalFinanceManager.Models.CategoryType.Income ? "Inkomsten" : "Uitgaven")
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1 align-items-center">
+                                            <a href="/budgets/@Id/categories/@category.Id/edit" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger" @onclick="() => ArchiveCategory(category.Id)">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Budgetregels</h5>
+                <button class="btn btn-sm btn-primary" @onclick="ShowAddLineForm">
+                    <i class="bi bi-plus-circle"></i> Budgetregel toevoegen
+                </button>
+            </div>
+            <div class="card-body">
+                @if (showAddLineForm)
+                {
+                    <div class="card mb-3 border-primary">
+                        <div class="card-header bg-primary text-white">Nieuwe budgetregel</div>
+                        <div class="card-body">
+                            <EditForm Model="@newLineModel" OnValidSubmit="HandleAddLine">
+                                <div class="mb-3">
+                                    <label class="form-label">Categorie</label>
+                                    <CategorySelector BudgetPlanId="@Id" SelectedCategoryId="newLineModel.CategoryId"
+                                                      SelectedCategoryIdChanged="EventCallback.Factory.Create<Guid?>(this, value => newLineModel.CategoryId = value ?? Guid.Empty)"
+                                                      IsRequired="true" AllowEmpty="true" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Maandbedragen (of voer uniform bedrag in)</label>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text">Uniform bedrag</span>
+                                        <input type="number" class="form-control" @bind="uniformAmount" step="0.01" />
+                                        <button type="button" class="btn btn-secondary" @onclick="ApplyUniformAmount">
+                                            Toepassen op alle maanden
+                                        </button>
+                                    </div>
+                                    <div class="row g-2">
                                         @for (int i = 0; i < 12; i++)
                                         {
                                             var monthIndex = i;
+                                            <div class="col-md-2">
+                                                <label class="form-label small">@GetMonthName(i)</label>
+                                                <input type="number" class="form-control form-control-sm"
+                                                       @bind="newLineMonthlyAmounts[monthIndex]" step="0.01" />
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Notities</label>
+                                    <InputText class="form-control" @bind-Value="newLineModel.Notes" />
+                                </div>
+                                @if (!string.IsNullOrEmpty(lineErrorMessage))
+                                {
+                                    <div class="alert alert-danger">@lineErrorMessage</div>
+                                }
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">Rij toevoegen</button>
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelAddLine">Annuleren</button>
+                                </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                }
+
+                @if (budgetPlan.BudgetLines.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Categorie</th>
+                                    @for (int i = 0; i < 12; i++)
+                                    {
+                                        <th class="text-end">@GetMonthAbbr(i)</th>
+                                    }
+                                    <th class="text-end">Jaartotaal</th>
+                                    <th>Acties</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var line in budgetPlan.BudgetLines)
+                                {
+                                    @if (_editingLineId == line.Id)
+                                    {
+                                        <tr class="table-warning">
                                             <td>
-                                                <input type="number" class="form-control form-control-sm text-end"
-                                                       @bind="_editMonthlyAmounts[monthIndex]" step="0.01" />
+                                                <CategorySelector BudgetPlanId="@Id" SelectedCategoryId="_editCategoryId"
+                                                                  SelectedCategoryIdChanged="EventCallback.Factory.Create<Guid?>(this, value => _editCategoryId = value ?? Guid.Empty)"
+                                                                  AllowEmpty="false" CssClass="" />
                                             </td>
-                                        }
-                                        <td class="text-end fw-bold">@_editMonthlyAmounts.Sum().ToString("F2")</td>
-                                        <td>
-                                            <div class="d-flex gap-1">
-                                                <button class="btn btn-sm btn-success" @onclick="SaveLine">
-                                                    <i class="bi bi-check"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-secondary" @onclick="CancelEditLine">
-                                                    <i class="bi bi-x"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <tr class="table-warning">
-                                        <td colspan="15">
-                                            <div class="row g-2">
-                                                <div class="col-md-4">
-                                                        <label class="form-label small">Notities</label>
-                                                    <input type="text" class="form-control form-control-sm" @bind="_editNotes" />
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <div class="form-check mt-4">
-                                                        <input type="checkbox" class="form-check-input" id="uniformCheckbox-@line.Id"
-                                                               @bind="_useUniformAmount" />
-                                                        <label class="form-check-label" for="uniformCheckbox-@line.Id">
-                                                            Uniform bedrag
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                @if (_useUniformAmount)
-                                                {
-                                                    <div class="col-md-4">
-                                                        <label class="form-label small">Uniform bedrag</label>
-                                                        <input type="number" class="form-control form-control-sm" @bind="_uniformAmount"
-                                                               @bind:event="oninput" @onchange="ApplyUniformAmountToEdit" step="0.01" />
-                                                    </div>
-                                                }
-                                            </div>
-                                            @if (!string.IsNullOrEmpty(editLineErrorMessage))
+                                            @for (int i = 0; i < 12; i++)
                                             {
-                                                <div class="alert alert-danger alert-sm mt-2 mb-0">@editLineErrorMessage</div>
+                                                var monthIndex = i;
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm text-end"
+                                                           @bind="_editMonthlyAmounts[monthIndex]" step="0.01" />
+                                                </td>
                                             }
-                                        </td>
-                                    </tr>
+                                            <td class="text-end fw-bold">@_editMonthlyAmounts.Sum().ToString("F2")</td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <button class="btn btn-sm btn-success" @onclick="SaveLine">
+                                                        <i class="bi bi-check"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-secondary" @onclick="CancelEditLine">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="table-warning">
+                                            <td colspan="15">
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small">Notities</label>
+                                                        <input type="text" class="form-control form-control-sm" @bind="_editNotes" />
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-check mt-4">
+                                                            <input type="checkbox" class="form-check-input" id="uniformCheckbox-@line.Id"
+                                                                   @bind="_useUniformAmount" />
+                                                            <label class="form-check-label" for="uniformCheckbox-@line.Id">
+                                                                Uniform bedrag
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    @if (_useUniformAmount)
+                                                    {
+                                                        <div class="col-md-4">
+                                                            <label class="form-label small">Uniform bedrag</label>
+                                                            <input type="number" class="form-control form-control-sm" @bind="_uniformAmount"
+                                                                   @bind:event="oninput" @onchange="ApplyUniformAmountToEdit" step="0.01" />
+                                                        </div>
+                                                    }
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(editLineErrorMessage))
+                                                {
+                                                    <div class="alert alert-danger alert-sm mt-2 mb-0">@editLineErrorMessage</div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td>@line.CategoryName</td>
+                                            @for (int i = 0; i < 12; i++)
+                                            {
+                                                <td class="text-end">@line.MonthlyAmounts[i].ToString("F2")</td>
+                                            }
+                                            <td class="text-end fw-bold">@line.YearTotal.ToString("F2")</td>
+                                            <td>
+                                                <div class="d-flex gap-1">
+                                                    <button class="btn btn-sm btn-primary" @onclick="() => StartEditLine(line)">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger" @onclick="() => ArchiveLine(line.Id)">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
                                 }
-                                else
-                                {
-                                    <tr>
-                                        <td>@line.CategoryName</td>
-                                        @for (int i = 0; i < 12; i++)
-                                        {
-                                            <td class="text-end">@line.MonthlyAmounts[i].ToString("F2")</td>
-                                        }
-                                        <td class="text-end fw-bold">@line.YearTotal.ToString("F2")</td>
-                                        <td>
-                                            <div class="d-flex gap-1">
-                                                <button class="btn btn-sm btn-primary" @onclick="() => StartEditLine(line)">
-                                                    <i class="bi bi-pencil"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-danger" @onclick="() => ArchiveLine(line.Id)">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                            <tr class="table-secondary fw-bold">
-                                <td>TOTAAL</td>
-                                @for (int i = 0; i < 12; i++)
-                                {
-                                    var monthTotal = budgetPlan.BudgetLines.Sum(l => l.MonthlyAmounts[i]);
-                                    <td class="text-end">@monthTotal.ToString("F2")</td>
-                                }
-                                <td class="text-end">@budgetPlan.BudgetLines.Sum(l => l.YearTotal).ToString("F2")</td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="alert alert-info">
-                    Nog geen budgetregels. Klik op "Budgetregel toevoegen" om er een aan te maken.
-                </div>
-            }
+                                <tr class="table-secondary fw-bold">
+                                    <td>TOTAAL</td>
+                                    @for (int i = 0; i < 12; i++)
+                                    {
+                                        var monthTotal = budgetPlan.BudgetLines.Sum(l => l.MonthlyAmounts[i]);
+                                        <td class="text-end">@monthTotal.ToString("F2")</td>
+                                    }
+                                    <td class="text-end">@budgetPlan.BudgetLines.Sum(l => l.YearTotal).ToString("F2")</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        Nog geen budgetregels. Klik op "Budgetregel toevoegen" om er een aan te maken.
+                    </div>
+                }
+            </div>
         </div>
-    </div>
 
-    <div class="mt-3">
-        <button class="btn btn-secondary" @onclick="GoBack">Terug naar budgetplannen</button>
-    </div>
-}
+        <div class="mt-3">
+            <button class="btn btn-secondary" @onclick="GoBack">Terug naar budgetplannen</button>
+        </div>
+    }
 
-@if (_showConflictDialog)
-{
-    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Concurrency Conflict</h5>
-                    <button type="button" class="btn-close" @onclick="CloseConflictDialog"></button>
-                </div>
-                <div class="modal-body">
-                    <p>De budgetregel is gewijzigd door een ander proces.</p>
-                    <p>Wilt u de laatste versie herladen? (Uw wijzigingen gaan verloren.)</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="ReloadBudgetPlan">Herladen</button>
-                    <button type="button" class="btn btn-secondary" @onclick="CloseConflictDialog">Annuleer</button>
+    @if (_showConflictDialog)
+    {
+        <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Concurrency Conflict</h5>
+                        <button type="button" class="btn-close" @onclick="CloseConflictDialog"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>De budgetregel is gewijzigd door een ander proces.</p>
+                        <p>Wilt u de laatste versie herladen? (Uw wijzigingen gaan verloren.)</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" @onclick="ReloadBudgetPlan">Herladen</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CloseConflictDialog">Annuleer</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
+    }
 
 @code {
     [Parameter]

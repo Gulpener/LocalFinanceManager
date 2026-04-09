@@ -148,6 +148,11 @@ public class KeyboardNavigationTests : E2ETestBase
 
         await Page.GotoAsync($"{BaseUrl}/transactions", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
+        // WaitUntil=NetworkIdle misses SignalR WebSocket traffic; wait explicitly for rows.
+        await Page.WaitForSelectorAsync(
+            "[data-testid='transaction-row']",
+            new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 45_000 });
+
         var seededRows = Page.Locator("tr[data-testid='transaction-row']:has-text('Bulk Esc Tx')");
         var rowCheckboxes = seededRows.Locator("input[type='checkbox']");
         var rowCount = await rowCheckboxes.CountAsync();
