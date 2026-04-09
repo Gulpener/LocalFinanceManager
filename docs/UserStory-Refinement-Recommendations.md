@@ -67,11 +67,11 @@
 
 ---
 
-### ✅ UserStory-16 (Azure Deployment) — COMPLETED
+### ✅ UserStory-16 (Design Overhaul) — COMPLETED
 
-**File:** [docs/Userstories/Archive/UserStory-16-Azure-Deployment.md](docs/Userstories/Archive/UserStory-16-Azure-Deployment.md)
+**File:** [docs/Userstories/Archive/UserStory-16-Design-Overhaul.md](docs/Userstories/Archive/UserStory-16-Design-Overhaul.md)
 
-**Status:** Implemented & archived. (Superseded by UserStory-17-Azure-B1-Deployment for the active B1 deployment work.)
+**Status:** Implemented & archived.
 
 ---
 
@@ -103,7 +103,7 @@
 
 ### ✅ All Phases 1–5: COMPLETED & ARCHIVED
 
-See `docs/Userstories/Archive/` for all 24 completed stories (US-1 through US-15).
+See `docs/Userstories/Archive/` for all 26 completed stories (US-1 through US-16).
 
 ### Active / Next Up
 

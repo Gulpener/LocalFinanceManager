@@ -22,11 +22,11 @@
                             data-testid="theme-toggle" @onclick="ToggleThemeAsync">
                         @if (ThemeService.CurrentTheme == "dark")
                         {
-                            <i class="bi bi-sun"></i>
+                            <i class="bi bi-sun" aria-hidden="true"></i>
                         }
                         else
                         {
-                            <i class="bi bi-moon"></i>
+                            <i class="bi bi-moon" aria-hidden="true"></i>
                         }
                     </button>
                     <a href="/logout" class="nav-link">Uitloggen</a>
@@ -36,11 +36,11 @@
                             data-testid="theme-toggle" @onclick="ToggleThemeAsync">
                         @if (ThemeService.CurrentTheme == "dark")
                         {
-                            <i class="bi bi-sun"></i>
+                            <i class="bi bi-sun" aria-hidden="true"></i>
                         }
                         else
                         {
-                            <i class="bi bi-moon"></i>
+                            <i class="bi bi-moon" aria-hidden="true"></i>
                         }
                     </button>
                     <a href="/login" class="nav-link me-2">Inloggen</a>

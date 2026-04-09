@@ -70,10 +70,14 @@ public class ThemeAndNavTests : E2ETestBase
         // Act
         await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        // Assert – html element should NOT have data-theme="dark"
+        // Wait for Blazor circuit to initialise and set initial theme
+        var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
+        await Expect(toggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+
+        // Assert – html element should carry data-theme="light"
         var htmlElement = Page.Locator("html");
-        var theme = await htmlElement.GetAttributeAsync("data-theme");
-        Assert.That(theme, Is.Not.EqualTo("dark"), "Light OS preference should not apply dark theme");
+        await Expect(htmlElement).ToHaveAttributeAsync("data-theme", "light",
+            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
     }
 
     [Test]

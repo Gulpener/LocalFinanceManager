@@ -36,12 +36,25 @@ public class UserPreferencesService : IUserPreferencesService
 
         if (existing is null)
         {
-            _db.UserPreferences.Add(new UserPreferences
+            // Check for an archived row — if one exists we must reuse it to avoid violating
+            // the unique index on UserId (which covers both active and archived rows).
+            var archived = await _db.UserPreferences
+                .FirstOrDefaultAsync(up => up.UserId == userId && up.IsArchived);
+
+            if (archived is not null)
             {
-                Id = Guid.NewGuid(),
-                UserId = userId,
-                Theme = theme
-            });
+                archived.IsArchived = false;
+                archived.Theme = theme;
+            }
+            else
+            {
+                _db.UserPreferences.Add(new UserPreferences
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Theme = theme
+                });
+            }
         }
         else
         {

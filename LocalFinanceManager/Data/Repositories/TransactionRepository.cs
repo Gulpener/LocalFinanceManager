@@ -221,8 +221,8 @@ public class TransactionRepository : Repository<Transaction>, ITransactionReposi
             return new List<Transaction>();
         }
 
-        var fromUtc = DateTime.SpecifyKind(from, DateTimeKind.Utc);
-        var toUtc = DateTime.SpecifyKind(to, DateTimeKind.Utc);
+        var fromUtc = from.Kind == DateTimeKind.Utc ? from : from.ToUniversalTime();
+        var toUtc = to.Kind == DateTimeKind.Utc ? to : to.ToUniversalTime();
 
         var accessibleAccountIds = GetSharedAccessibleAccountIdsQuery(userId);
         return await _dbSet
