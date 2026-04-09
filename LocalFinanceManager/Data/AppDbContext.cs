@@ -134,8 +134,8 @@ public class AppDbContext : DbContext
         // The User navigation is suppressed; SharedWithUserId is configured explicitly below.
         modelBuilder.Entity<AccountShare>().Ignore(e => e.User);
         modelBuilder.Entity<BudgetPlanShare>().Ignore(e => e.User);
-        // UserPreferences: BaseEntity.UserId is a nullable Guid identifying the owning user; no User FK navigation is configured here.
-        modelBuilder.Entity<UserPreferences>().Ignore(e => e.User);
+        // UserPreferences is user-owned. The optional FK allows rows with null UserId
+        // (e.g., legacy/test data) and cascades deletes when the owning User is removed.
 
         // Configure Account entity
         modelBuilder.Entity<Account>(entity =>
@@ -415,6 +415,13 @@ public class AppDbContext : DbContext
 
             // UserId (from BaseEntity Guid?) is the unique owner key.
             entity.HasIndex(up => up.UserId).IsUnique();
+
+            // Optional FK to Users; null allowed for legacy/test rows; cascade-delete when user is removed.
+            entity.HasOne(up => up.User)
+                .WithMany(u => u.UserPreferences)
+                .HasForeignKey(up => up.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

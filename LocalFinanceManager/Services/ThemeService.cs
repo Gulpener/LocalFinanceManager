@@ -34,7 +34,8 @@ public class ThemeService : IThemeService
                 var prefs = await _preferencesService.GetAsync(userId);
                 if (prefs is not null)
                 {
-                    theme = prefs.Theme;
+                    // Normalise to a known value; ignore any legacy/unexpected stored strings.
+                    theme = prefs.Theme is "light" or "dark" ? prefs.Theme : "light";
                 }
                 else
                 {
@@ -67,7 +68,15 @@ public class ThemeService : IThemeService
 
         if (userId != Guid.Empty)
         {
-            await _preferencesService.SetThemeAsync(userId, newTheme);
+            try
+            {
+                await _preferencesService.SetThemeAsync(userId, newTheme);
+            }
+            catch (Exception ex)
+            {
+                // Persistence failure must not crash the circuit; the theme is still applied locally.
+                _logger.LogError(ex, "Failed to persist toggled theme for user {UserId}; change applied locally only", userId);
+            }
         }
 
         ThemeChanged?.Invoke();

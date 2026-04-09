@@ -3,12 +3,30 @@
 <div class="kpi-card @(TotalBalance < 0 ? "kpi-danger" : "kpi-success")" data-testid="kpi-total-balance">
     <span class="kpi-label">Totaal saldo</span>
     <span class="kpi-value">
-        @(TotalBalance < 0 ? "-" : "")€@Math.Abs(TotalBalance).ToString("N2")
+        @if (Currency is not null)
+        {
+            @($"{(TotalBalance < 0 ? "-" : "")}{Math.Abs(TotalBalance):N2}")
+            <small class="text-muted"> @Currency</small>
+        }
+        else
+        {
+            <span>—</span>
+        }
     </span>
-    <span class="kpi-sub">@AccountCount rekening(en)</span>
+    <span class="kpi-sub">
+        @if (Currency is null && AccountCount > 0)
+        {
+            <span class="text-muted">Meerdere valuta</span>
+        }
+        else
+        {
+            @($"{AccountCount} rekening(en)")
+        }
+    </span>
 </div>
 
 @code {
     [Parameter] public decimal TotalBalance { get; set; }
     [Parameter] public int AccountCount { get; set; }
+    [Parameter] public string? Currency { get; set; }
 }

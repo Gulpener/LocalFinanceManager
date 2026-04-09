@@ -45,7 +45,7 @@
 
                 <!-- KPI Cards Row -->
                 <div class="kpi-grid mb-4" data-testid="kpi-grid">
-                    <TotalBalanceKpiWidget TotalBalance="_totalBalance" AccountCount="_accounts?.Count ?? 0" />
+                    <TotalBalanceKpiWidget TotalBalance="_totalBalance" AccountCount="_accounts?.Count ?? 0" Currency="_balanceCurrency" />
                     <UncategorizedKpiWidget UnassignedCount="_unassignedCount ?? 0" />
                     <ActiveBudgetsKpiWidget Count="_activeBudgetPlanCount" />
                     <TransactionsThisMonthKpiWidget Count="_transactionsThisMonth" />
@@ -109,6 +109,7 @@
     private List<Transaction>? _transactions;
     private int? _unassignedCount;
     private decimal _totalBalance;
+    private string? _balanceCurrency;
     private int _activeBudgetPlanCount;
     private int _transactionsThisMonth;
     private bool _isLoading = true;
@@ -162,7 +163,13 @@
                 _activeBudgetPlanCount = 0;
             }
 
-            _totalBalance = _accounts.Sum(a => a.CurrentBalance);
+            var distinctCurrencies = _accounts
+                .Select(a => string.IsNullOrWhiteSpace(a.Currency) ? string.Empty : a.Currency.Trim().ToUpperInvariant())
+                .Where(c => !string.IsNullOrEmpty(c))
+                .Distinct()
+                .ToList();
+            _balanceCurrency = distinctCurrencies.Count == 1 ? distinctCurrencies[0] : null;
+            _totalBalance = _balanceCurrency is not null ? _accounts.Sum(a => a.CurrentBalance) : 0m;
         }
         catch (Exception ex)
         {

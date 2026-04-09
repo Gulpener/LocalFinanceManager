@@ -65,9 +65,15 @@ public class UserPreferencesService : IUserPreferencesService
         {
             await _db.SaveChangesAsync();
         }
-        catch (Exception ex)
+        catch (DbUpdateConcurrencyException ex)
+        {
+            _logger.LogError(ex, "A concurrency error occurred while persisting theme preference for user {UserId}", userId);
+            throw;
+        }
+        catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "Failed to persist theme preference for user {UserId}", userId);
+            throw;
         }
     }
 }

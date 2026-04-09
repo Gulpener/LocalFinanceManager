@@ -110,7 +110,6 @@ See `docs/Userstories/Archive/` for all 26 completed stories (US-1 through US-16
 1. 🟡 **UserStory-17** (Azure B1 Deployment) — In progress, complete Azure setup + CD pipeline (1–2 days)
 2. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
 3. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3–4 days)
-4. 🟡 **UserStory-16** (Design Overhaul) — Ready to implement (5–7 days)
 
 ---
 

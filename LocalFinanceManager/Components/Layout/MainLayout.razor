@@ -68,6 +68,7 @@
 @code {
     private List<Breadcrumb.BreadcrumbItem> _breadcrumbs = new();
     private bool _themeInitialised;
+    private bool _themeInitialisedWithEmptyUser;
 
     protected override void OnInitialized()
     {
@@ -78,12 +79,14 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !_themeInitialised)
+        var userId = UserContext.GetCurrentUserId();
+
+        if (!_themeInitialised)
         {
             _themeInitialised = true;
+            _themeInitialisedWithEmptyUser = userId == Guid.Empty;
             try
             {
-                var userId = UserContext.GetCurrentUserId();
                 await ThemeService.InitialiseAsync(userId);
                 StateHasChanged();
             }
@@ -92,6 +95,21 @@
                 // Theme initialisation failure must never crash the Blazor circuit.
                 // Log and continue — the default light theme stays in effect.
                 Logger.LogWarning(ex, "Theme initialisation failed; default light theme will be used");
+            }
+        }
+        else if (_themeInitialisedWithEmptyUser && userId != Guid.Empty)
+        {
+            // Circuit user became available after first render; re-initialise so the DB
+            // preference is loaded instead of falling back to OS preference.
+            _themeInitialisedWithEmptyUser = false;
+            try
+            {
+                await ThemeService.InitialiseAsync(userId);
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Theme re-initialisation failed; current theme will be kept");
             }
         }
     }
