@@ -308,7 +308,8 @@ app.MapRazorComponents<App>()
 // Map API controllers
 app.MapControllers();
 
-// Database health check endpoint
+// Health check endpoints
+app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/db");
 
 app.Run();
