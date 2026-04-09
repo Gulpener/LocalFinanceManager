@@ -296,7 +296,7 @@
     private DotNetObjectReference<Transactions>? dotNetRef;
     private bool globalShortcutsRegistered;
     private bool _initialized;
-    private bool _afterRenderRetried;
+    private int _afterRenderRetries;
 
     protected override async Task OnInitializedAsync()
     {
@@ -318,12 +318,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Retry loading transactions once on first interactive render if the user context was not
-        // yet initialized during OnInitializedAsync (Blazor Server circuit-user race condition:
-        // GetCurrentUserId() returns Guid.Empty → repository returns empty list → no rows rendered).
-        if (firstRender && transactionDtos.Count == 0 && _initialized && !loading && !_afterRenderRetried)
+        // Retry loading transactions (up to 3 times) if the user context was not yet initialized
+        // during OnInitializedAsync (Blazor Server circuit-user race condition: GetCurrentUserId()
+        // returns Guid.Empty → repository returns empty list → no rows rendered). Under CI load,
+        // a single retry can also return Guid.Empty; three retries ensure rows appear.
+        if (transactionDtos.Count == 0 && _initialized && !loading && _afterRenderRetries < 3)
         {
-            _afterRenderRetried = true;
+            _afterRenderRetries++;
             await LoadTransactionsAsync();
             StateHasChanged();
         }
