@@ -20,12 +20,13 @@ namespace LocalFinanceManager.Tests.Integration;
 public class AdminControllerIntegrationTests
 {
     private static readonly Guid AdminUserId = Guid.Parse("aaaa0001-0000-0000-0000-000000000001");
+    private static readonly Guid SecondAdminUserId = Guid.Parse("cccc0003-0000-0000-0000-000000000003");
     private static readonly Guid RegularUserId = Guid.Parse("bbbb0002-0000-0000-0000-000000000002");
 
     private AppDbContext _context = null!;
     private AdminService _adminService = null!;
     private AdminController _adminController = null!;
-    private AdminController _nonAdminController = null!;
+    private AdminController _secondAdminController = null!;
 
     [SetUp]
     public void Setup()
@@ -50,9 +51,9 @@ public class AdminControllerIntegrationTests
             HttpContext = new DefaultHttpContext()
         };
 
-        // Non-admin controller (used to test self-demotion guard)
-        _nonAdminController = new AdminController(_adminService, new TestUserContext(RegularUserId), controllerLogger);
-        _nonAdminController.ControllerContext = new ControllerContext
+        // Second admin controller (used to test admin-to-admin role changes)
+        _secondAdminController = new AdminController(_adminService, new TestUserContext(SecondAdminUserId), controllerLogger);
+        _secondAdminController.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
         };
@@ -71,6 +72,7 @@ public class AdminControllerIntegrationTests
     {
         _context.Users.AddRange(
             new User { Id = AdminUserId, SupabaseUserId = AdminUserId.ToString(), Email = "admin@test.com", DisplayName = "Admin", IsAdmin = true },
+            new User { Id = SecondAdminUserId, SupabaseUserId = SecondAdminUserId.ToString(), Email = "admin2@test.com", DisplayName = "Admin Two", IsAdmin = true },
             new User { Id = RegularUserId, SupabaseUserId = RegularUserId.ToString(), Email = "user@test.com", DisplayName = "User", IsAdmin = false }
         );
 
@@ -101,7 +103,7 @@ public class AdminControllerIntegrationTests
         Assert.That(ok, Is.Not.Null);
         var users = ok!.Value as List<UserSummaryResponse>;
         Assert.That(users, Is.Not.Null);
-        Assert.That(users!.Count, Is.EqualTo(2));
+        Assert.That(users!.Count, Is.EqualTo(3));
     }
 
     [Test]
@@ -157,10 +159,9 @@ public class AdminControllerIntegrationTests
     }
 
     [Test]
-    public async Task ToggleAdmin_AdminUser_FlipsToNonAdmin()
+    public async Task ToggleAdmin_AdminUser_RequestedByAnotherAdmin_FlipsToNonAdmin()
     {
-        // Use non-admin as requester (admin flipping admin1 from non-admin context is valid)
-        var result = await _nonAdminController.ToggleAdmin(AdminUserId, CancellationToken.None);
+        var result = await _secondAdminController.ToggleAdmin(AdminUserId, CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<OkResult>());
         var user = await _context.Users.FindAsync(AdminUserId);
