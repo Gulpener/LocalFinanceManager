@@ -359,6 +359,9 @@ public class TransactionAuditDto
     public string ActionType { get; set; } = string.Empty;
     public string ChangedBy { get; set; } = string.Empty;
     public DateTime ChangedAt { get; set; }
+    public bool IsAutoApplied { get; set; }
+    public float? Confidence { get; set; }
+    public int? ModelVersion { get; set; }
     public string? BeforeState { get; set; }
     public string? AfterState { get; set; }
     public string? Reason { get; set; }
