@@ -532,7 +532,7 @@
 
     private Task OnUserRowKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e, Guid userId)
     {
-        if (e.Key is "Enter" or " ")
+        if (e.Key is "Enter" or " " or "Spacebar")
             return ToggleExpandUser(userId);
         return Task.CompletedTask;
     }

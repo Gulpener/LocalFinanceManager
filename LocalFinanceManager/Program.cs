@@ -262,22 +262,27 @@ using (var scope = app.Services.CreateScope())
     var adminEmail = app.Configuration["Seed:AdminEmail"];
     if (!string.IsNullOrWhiteSpace(adminEmail))
     {
-        var normalizedEmail = adminEmail.Trim().ToUpperInvariant();
+        var trimmedAdminEmail = adminEmail.Trim();
         if (!await context.Users.AnyAsync(u => u.IsAdmin && !u.IsArchived))
         {
-            var adminUser = await context.Users.FirstOrDefaultAsync(u =>
-                !u.IsArchived && u.Email != null && u.Email.ToUpper() == normalizedEmail);
+            // Case-insensitive client-side match so the comparison is DB-agnostic.
+            // This bootstrap path runs at most once on startup, so loading all active users is acceptable.
+            var activeUsers = await context.Users
+                .Where(u => !u.IsArchived && u.Email != null)
+                .ToListAsync();
+            var adminUser = activeUsers.FirstOrDefault(u =>
+                string.Equals(u.Email, trimmedAdminEmail, StringComparison.OrdinalIgnoreCase));
             if (adminUser != null)
             {
                 adminUser.IsAdmin = true;
                 await context.SaveChangesAsync();
-                app.Logger.LogInformation("Promoted {Email} to admin (first admin bootstrap)", adminEmail.Trim());
+                app.Logger.LogInformation("Promoted {Email} to admin (first admin bootstrap)", trimmedAdminEmail);
             }
             else
             {
                 app.Logger.LogWarning(
                     "Configured Seed:AdminEmail '{Email}' did not match any active user; first admin bootstrap skipped",
-                    adminEmail.Trim());
+                    trimmedAdminEmail);
             }
         }
     }
