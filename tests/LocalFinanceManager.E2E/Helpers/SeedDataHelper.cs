@@ -477,7 +477,7 @@ public static class SeedDataHelper
         IEnumerable<(string ActionType, string ChangedBy, bool IsAutoApplied, float? Confidence, int? ModelVersion, string? BeforeState, string? AfterState, string? Reason)> entries)
     {
         var entryList = entries.ToList();
-        var baseTimestamp = DateTime.UtcNow;
+        var baseTimestamp = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
         for (var i = 0; i < entryList.Count; i++)
         {
             var e = entryList[i];
