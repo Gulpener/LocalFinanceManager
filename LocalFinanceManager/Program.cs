@@ -260,9 +260,10 @@ using (var scope = app.Services.CreateScope())
 
     // Bootstrap first admin: if no admin exists, promote the configured email to admin
     var adminEmail = app.Configuration["Seed:AdminEmail"];
-    if (!string.IsNullOrEmpty(adminEmail) && !await context.Users.AnyAsync(u => u.IsAdmin))
+    if (!string.IsNullOrEmpty(adminEmail)
+        && !await context.Users.AnyAsync(u => u.IsAdmin && !u.IsArchived))
     {
-        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail && !u.IsArchived);
         if (adminUser != null)
         {
             adminUser.IsAdmin = true;
