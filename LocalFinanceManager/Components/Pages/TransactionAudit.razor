@@ -61,7 +61,7 @@ else
         }
         else
         {
-            <p class="text-muted mb-3">Toont @auditEntries.Count audit @(auditEntries.Count == 1 ? "entry" : "entries") op deze pagina</p>
+            <p class="text-muted mb-3">Toont @auditEntries.Count audit @(auditEntries.Count == 1 ? "vermelding" : "vermeldingen") op deze pagina</p>
 
             <div class="timeline">
                 @foreach (var entry in GetPagedEntries())
@@ -75,13 +75,13 @@ else
                                         <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                                             <span class="badge @GetActionBadgeClass(entry.ActionType)"
                                                   data-testid="audit-action-type">
-                                                <i class="bi @GetActionIcon(entry.ActionType) me-1"></i>
+                                                <i class="bi @GetActionIcon(entry.ActionType) me-1" aria-hidden="true"></i>
                                                 @GetActionText(entry.ActionType)
                                             </span>
                                             @if (entry.IsAutoApplied)
                                             {
                                                 <span class="badge bg-primary" data-testid="auto-applied-badge">
-                                                    🤖 Auto-applied
+                                                    <span aria-hidden="true">🤖</span> Auto-applied
                                                     @if (entry.Confidence.HasValue)
                                                     {
                                                         <span data-testid="confidence-score">

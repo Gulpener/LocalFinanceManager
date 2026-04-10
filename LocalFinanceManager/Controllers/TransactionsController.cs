@@ -376,7 +376,7 @@ public class TransactionsController : ControllerBase
         try
         {
             var audits = await _assignmentService.GetTransactionAuditHistoryAsync(id);
-            if (audits == null || audits.Count == 0)
+            if (audits == null)
             {
                 const string detail = "Transaction not found or not accessible.";
                 _logger.LogWarning("Transaction {TransactionId} not found or not accessible for audit history", id);

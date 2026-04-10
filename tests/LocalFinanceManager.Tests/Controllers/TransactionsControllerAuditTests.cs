@@ -135,7 +135,7 @@ public class TransactionsControllerAuditTests
     }
 
     [Test]
-    public async Task GetAuditHistory_EmptyResult_ReturnsEmptyList()
+    public async Task GetAuditHistory_EmptyResult_ReturnsNotFoundProblemDetails()
     {
         var transactionId = Guid.NewGuid();
 
@@ -145,15 +145,15 @@ public class TransactionsControllerAuditTests
 
         var result = await _controller.GetAuditHistory(transactionId);
 
-        var okResult = result.Result as OkObjectResult;
-        Assert.That(okResult, Is.Not.Null);
-        var returnedAudits = okResult!.Value as List<TransactionAuditDto>;
-        Assert.That(returnedAudits, Is.Not.Null);
-        Assert.That(returnedAudits, Is.Empty);
+        var notFoundResult = result.Result as NotFoundObjectResult;
+        Assert.That(notFoundResult, Is.Not.Null);
+        var problemDetails = notFoundResult!.Value as ProblemDetails;
+        Assert.That(problemDetails, Is.Not.Null);
+        Assert.That(problemDetails!.Status, Is.EqualTo(404));
     }
 
     [Test]
-    public async Task GetAuditHistory_ServiceThrows_ReturnsInternalServerErrorObjectResult()
+    public async Task GetAuditHistory_ServiceThrows_ReturnsNotFoundProblemDetails()
     {
         var transactionId = Guid.NewGuid();
         const string errorMessage = "Transaction not found or not accessible.";
@@ -166,8 +166,11 @@ public class TransactionsControllerAuditTests
 
         var objectResult = result.Result as ObjectResult;
         Assert.That(objectResult, Is.Not.Null);
-        Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
-        Assert.That(objectResult.Value, Is.Not.Null);
-        Assert.That(objectResult.Value, Is.Not.TypeOf<ProblemDetails>());
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(404));
+        Assert.That(objectResult.Value, Is.TypeOf<ProblemDetails>());
+
+        var problemDetails = objectResult.Value as ProblemDetails;
+        Assert.That(problemDetails, Is.Not.Null);
+        Assert.That(problemDetails!.Detail, Is.EqualTo(errorMessage));
     }
 }

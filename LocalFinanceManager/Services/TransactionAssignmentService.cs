@@ -290,7 +290,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             _logger.LogWarning(
                 "Audit history requested for inaccessible or non-existent transaction {TransactionId}",
                 transactionId);
-            return new List<TransactionAuditDto>();
+            throw new InvalidOperationException($"Transaction {transactionId} not found");
         }
 
         if (page < 1)
