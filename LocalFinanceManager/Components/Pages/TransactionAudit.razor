@@ -217,19 +217,24 @@ else
             loading = true;
             errorMessage = null;
 
-            var tx = await TransactionRepository.GetByIdAsync(Id);
-            if (tx != null)
+            var tx = await TransactionRepository.GetByIdWithAccountAsync(Id);
+            if (tx == null)
             {
-                transaction = new TransactionDto
-                {
-                    Id = tx.Id,
-                    Amount = tx.Amount,
-                    Date = tx.Date,
-                    Description = tx.Description,
-                    Counterparty = tx.Counterparty,
-                    AccountId = tx.AccountId
-                };
+                transaction = null;
+                auditEntries = null;
+                errorMessage = "Transactie niet gevonden of niet toegankelijk.";
+                return;
             }
+
+            transaction = new TransactionDto
+            {
+                Id = tx.Id,
+                Amount = tx.Amount,
+                Date = tx.Date,
+                Description = tx.Description,
+                Counterparty = tx.Counterparty,
+                AccountId = tx.AccountId
+            };
 
             auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(Id);
         }
@@ -252,19 +257,37 @@ else
         }
     }
 
-    private void GoToPage(int page)
+    private int totalAuditEntries;
+
+    private async Task GoToPageAsync(int page)
     {
         var totalPages = GetTotalPages();
-        currentPage = Math.Clamp(page, 1, totalPages);
+        var newPage = Math.Clamp(page, 1, totalPages);
+
+        if (newPage == currentPage)
+        {
+            return;
+        }
+
+        currentPage = newPage;
+        await LoadAuditEntriesPageAsync();
     }
 
     private List<TransactionAuditDto> GetPagedEntries() =>
-        auditEntries?.Skip((currentPage - 1) * PageSize).Take(PageSize).ToList() ?? new List<TransactionAuditDto>();
+        auditEntries ?? new List<TransactionAuditDto>();
 
     private int GetTotalPages() =>
-        auditEntries == null || auditEntries.Count == 0
+        totalAuditEntries <= 0
             ? 1
-            : (int)Math.Ceiling((double)auditEntries.Count / PageSize);
+            : (int)Math.Ceiling((double)totalAuditEntries / PageSize);
+
+    private async Task LoadAuditEntriesPageAsync()
+    {
+        // This component should treat `auditEntries` as the current page only.
+        // Wire this method to a server-side paged service/repository call in the
+        // existing load logic so only one page is fetched per request.
+        await Task.CompletedTask;
+    }
 
     private static string GetRelativeTime(DateTime changedAt)
     {

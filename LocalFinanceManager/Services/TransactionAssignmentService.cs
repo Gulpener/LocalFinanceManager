@@ -18,7 +18,7 @@ public interface ITransactionAssignmentService
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default);
     Task<TransactionDto> UndoAssignmentAsync(UndoAssignmentRequest request);
-    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId);
+    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50);
 }
 
 /// <summary>
@@ -242,7 +242,16 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         if (auditEntry == null)
         {
-            throw new InvalidOperationException($"No audit entry found to undo");
+            throw new InvalidOperationException("No audit entry found to undo");
+        }
+
+        if (auditEntry.TransactionId != request.TransactionId)
+        {
+            _logger.LogWarning(
+                "Audit entry {AuditEntryId} does not belong to transaction {TransactionId}",
+                auditEntry.Id,
+                request.TransactionId);
+            throw new InvalidOperationException($"No audit entry found to undo for transaction {request.TransactionId}");
         }
 
         // Clear current splits
@@ -272,23 +281,49 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         return MapToDto(transaction!);
     }
 
-    public async Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId)
+    public async Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50)
     {
-        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId, int.MaxValue);
-        return audits.Select(a => new TransactionAuditDto
+        var transaction = await _transactionRepository.GetByIdAsync(transactionId);
+        if (transaction == null)
         {
-            Id = a.Id,
-            TransactionId = a.TransactionId,
-            ActionType = a.ActionType,
-            ChangedBy = a.ChangedBy,
-            ChangedAt = a.ChangedAt,
-            IsAutoApplied = a.IsAutoApplied,
-            Confidence = a.Confidence,
-            ModelVersion = a.ModelVersion,
-            BeforeState = a.BeforeState,
-            AfterState = a.AfterState,
-            Reason = a.Reason
-        }).ToList();
+            _logger.LogWarning(
+                "Audit history requested for inaccessible or non-existent transaction {TransactionId}",
+                transactionId);
+            throw new InvalidOperationException($"Transaction {transactionId} not found");
+        }
+
+        if (page < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(page), page, "Page must be greater than or equal to 1.");
+        }
+
+        if (pageSize < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageSize), pageSize, "Page size must be greater than or equal to 1.");
+        }
+
+        var fetchCount = checked(page * pageSize);
+        var skip = (page - 1) * pageSize;
+
+        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId, fetchCount);
+        return audits
+            .Skip(skip)
+            .Take(pageSize)
+            .Select(a => new TransactionAuditDto
+            {
+                Id = a.Id,
+                TransactionId = a.TransactionId,
+                ActionType = a.ActionType,
+                ChangedBy = a.ChangedBy,
+                ChangedAt = a.ChangedAt,
+                IsAutoApplied = a.IsAutoApplied,
+                Confidence = a.Confidence,
+                ModelVersion = a.ModelVersion,
+                BeforeState = a.BeforeState,
+                AfterState = a.AfterState,
+                Reason = a.Reason
+            })
+            .ToList();
     }
 
     private async Task RecordAuditAsync(Guid transactionId, string actionType, object? beforeState, object? afterState)

@@ -118,6 +118,74 @@ public class TransactionAuditTests : E2ETestBase
             "Expected at least one auto-applied audit entry so the confidence score can be validated.");
     }
 
+    private async Task<DateTimeOffset> GetComparableTimestampAsync(int index, string visibleTimestamp)
+    {
+        if (DateTimeOffset.TryParse(visibleTimestamp, out var parsedVisibleTimestamp))
+        {
+            return parsedVisibleTimestamp;
+        }
+
+        var machineReadableTimestamp = await GetMachineReadableTimestampAsync(index, visibleTimestamp);
+        Assert.That(
+            machineReadableTimestamp,
+            Is.Not.Null.And.Not.Empty,
+            $"Entry {index} timestamp '{visibleTimestamp}' should expose an absolute timestamp via title, datetime, or data-timestamp attribute for chronological comparison");
+
+        Assert.That(
+            DateTimeOffset.TryParse(machineReadableTimestamp, out var parsedAttributeTimestamp),
+            Is.True,
+            $"Entry {index} machine-readable timestamp '{machineReadableTimestamp}' should be parseable for chronological comparison");
+
+        return parsedAttributeTimestamp;
+    }
+
+    private async Task<string?> GetMachineReadableTimestampAsync(int index, string visibleTimestamp)
+    {
+        var matchingTimestampElements = Page.GetByText(visibleTimestamp, new PageGetByTextOptions { Exact = true });
+        var matchingCount = await matchingTimestampElements.CountAsync();
+        if (matchingCount == 0)
+        {
+            return null;
+        }
+
+        var timestampElement = matchingTimestampElements.Nth(Math.Min(index, matchingCount - 1));
+        return await timestampElement.EvaluateAsync<string?>(@"element => {
+            const attributeNames = ['datetime', 'title', 'data-timestamp', 'data-utc-timestamp'];
+            const readAttributes = (node) => {
+                if (!node) {
+                    return null;
+                }
+
+                for (const attributeName of attributeNames) {
+                    const attributeValue = node.getAttribute?.(attributeName);
+                    if (attributeValue) {
+                        return attributeValue;
+                    }
+                }
+
+                return null;
+            };
+
+            let current = element;
+            while (current) {
+                const directMatch = readAttributes(current);
+                if (directMatch) {
+                    return directMatch;
+                }
+
+                const descendantMatch = current.querySelector?.('[datetime],[title],[data-timestamp],[data-utc-timestamp]');
+                const descendantValue = readAttributes(descendantMatch);
+                if (descendantValue) {
+                    return descendantValue;
+                }
+
+                current = current.parentElement;
+            }
+
+            return null;
+        }");
+    }
+
     [Test]
     public async Task TransactionAudit_Timeline_OrderedChronologically()
     {
@@ -135,11 +203,7 @@ public class TransactionAuditTests : E2ETestBase
             var timestamp = await _auditPage.GetTimestampTextAsync(i);
             Assert.That(timestamp, Is.Not.Empty, $"Entry {i} should have a timestamp");
 
-            Assert.That(
-                DateTimeOffset.TryParse(timestamp, out var parsedTimestamp),
-                Is.True,
-                $"Entry {i} timestamp '{timestamp}' should be parseable for chronological comparison");
-
+            var parsedTimestamp = await GetComparableTimestampAsync(i, timestamp);
             parsedTimestamps.Add(parsedTimestamp);
         }
 
