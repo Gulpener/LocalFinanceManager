@@ -48,8 +48,6 @@ public class AdminService : IAdminService
         var accountShares = await _context.AccountShares
             .AsNoTracking()
             .Where(s => s.UserId == userId && !s.IsArchived)
-            .Include(s => s.Account)
-            .Include(s => s.SharedWithUser)
             .Select(s => new AccountShareDetail(
                 s.Id,
                 s.Account.Label,
@@ -62,8 +60,6 @@ public class AdminService : IAdminService
         var budgetPlanShares = await _context.BudgetPlanShares
             .AsNoTracking()
             .Where(s => s.UserId == userId && !s.IsArchived)
-            .Include(s => s.BudgetPlan)
-            .Include(s => s.SharedWithUser)
             .Select(s => new BudgetPlanShareDetail(
                 s.Id,
                 s.BudgetPlan.Name,
