@@ -36,6 +36,7 @@ Azure App Service returns HTTP 404 because it looks for a physical file or endpo
 Azure App Service (IIS-based) does not have a URL rewrite rule to redirect all unknown paths back to the Blazor entry point. For a Blazor Server app, the server must handle all paths and serve the app shell; missing `web.config` rewrite rules or missing `UseStaticFiles` + fallback routing in `Program.cs` cause 404s on direct navigation/refresh.
 
 Possible causes:
+
 - Missing `web.config` with IIS URL Rewrite rule (`<rule name="SPA Fallback">`)
 - `app.MapFallbackToPage("/_Host")` or `app.MapRazorComponents` fallback not configured in `Program.cs`
 - Static file middleware intercepting requests before Blazor routing
@@ -43,6 +44,7 @@ Possible causes:
 ## Affected Routes
 
 All routes except `/` and `/login`, including but not limited to:
+
 - `/transactions`
 - `/accounts`
 - `/budget`
