@@ -13,7 +13,7 @@ public interface IAdminService
     Task<List<UserSummaryResponse>> GetAllUsersAsync(CancellationToken ct = default);
 
     /// <summary>
-    /// Returns all active shares owned or received by the specified user.
+    /// Returns all active shares owned by the specified user.
     /// </summary>
     Task<UserSharesResponse> GetUserSharesAsync(Guid userId, CancellationToken ct = default);
 
