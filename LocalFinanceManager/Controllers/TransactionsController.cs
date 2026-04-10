@@ -378,6 +378,17 @@ public class TransactionsController : ControllerBase
             var audits = await _assignmentService.GetTransactionAuditHistoryAsync(id);
             return Ok(audits);
         }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Transaction {TransactionId} not found or not accessible for audit history", id);
+            return NotFound(new ProblemDetails
+            {
+                Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                Title = "Not Found",
+                Status = 404,
+                Detail = ex.Message
+            });
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting audit history for transaction {TransactionId}", id);

@@ -10,6 +10,7 @@ public interface ITransactionAuditRepository
 {
     Task<TransactionAudit?> GetByIdAsync(Guid id);
     Task<List<TransactionAudit>> GetByTransactionIdAsync(Guid transactionId, int count = 10);
+    Task<List<TransactionAudit>> GetPagedByTransactionIdAsync(Guid transactionId, int skip, int take);
     Task<int> GetCountByTransactionIdAsync(Guid transactionId);
     Task<TransactionAudit?> GetLatestByTransactionIdAsync(Guid transactionId);
     Task AddAsync(TransactionAudit audit);
@@ -41,6 +42,16 @@ public class TransactionAuditRepository : ITransactionAuditRepository
             .Where(ta => ta.TransactionId == transactionId && !ta.IsArchived)
             .OrderByDescending(ta => ta.ChangedAt)
             .Take(count)
+            .ToListAsync();
+    }
+
+    public async Task<List<TransactionAudit>> GetPagedByTransactionIdAsync(Guid transactionId, int skip, int take)
+    {
+        return await _context.TransactionAudits
+            .Where(ta => ta.TransactionId == transactionId && !ta.IsArchived)
+            .OrderByDescending(ta => ta.ChangedAt)
+            .Skip(skip)
+            .Take(take)
             .ToListAsync();
     }
 
