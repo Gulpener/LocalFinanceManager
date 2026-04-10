@@ -126,7 +126,7 @@ public class TransactionAuditTests : E2ETestBase
             Is.Not.Null.And.Not.Empty,
             $"Entry {index} should display a visible timestamp");
 
-        var machineReadableTimestamp = await GetMachineReadableTimestampAsync(index, visibleTimestamp);
+        var machineReadableTimestamp = await GetMachineReadableTimestampAsync(index);
         Assert.That(
             machineReadableTimestamp,
             Is.Not.Null.And.Not.Empty,
@@ -144,47 +144,24 @@ public class TransactionAuditTests : E2ETestBase
         return parsedAttributeTimestamp;
     }
 
-    private async Task<string?> GetMachineReadableTimestampAsync(int index, string visibleTimestamp)
+    private async Task<string?> GetMachineReadableTimestampAsync(int index)
     {
-        var matchingTimestampElements = Page.GetByText(visibleTimestamp, new PageGetByTextOptions { Exact = true });
-        var matchingCount = await matchingTimestampElements.CountAsync();
-        if (matchingCount == 0)
+        var timestampElements = Page.Locator("[data-testid='audit-timestamp']");
+        var timestampCount = await timestampElements.CountAsync();
+        if (index < 0 || index >= timestampCount)
         {
             return null;
         }
 
-        var timestampElement = matchingTimestampElements.Nth(Math.Min(index, matchingCount - 1));
+        var timestampElement = timestampElements.Nth(index);
         return await timestampElement.EvaluateAsync<string?>(@"element => {
-            const attributeNames = ['datetime', 'title', 'data-timestamp', 'data-utc-timestamp'];
-            const readAttributes = (node) => {
-                if (!node) {
-                    return null;
+            const attributeNames = ['title', 'datetime', 'data-timestamp', 'data-utc-timestamp'];
+
+            for (const attributeName of attributeNames) {
+                const attributeValue = element.getAttribute?.(attributeName);
+                if (attributeValue) {
+                    return attributeValue;
                 }
-
-                for (const attributeName of attributeNames) {
-                    const attributeValue = node.getAttribute?.(attributeName);
-                    if (attributeValue) {
-                        return attributeValue;
-                    }
-                }
-
-                return null;
-            };
-
-            let current = element;
-            while (current) {
-                const directMatch = readAttributes(current);
-                if (directMatch) {
-                    return directMatch;
-                }
-
-                const descendantMatch = current.querySelector?.('[datetime],[title],[data-timestamp],[data-utc-timestamp]');
-                const descendantValue = readAttributes(descendantMatch);
-                if (descendantValue) {
-                    return descendantValue;
-                }
-
-                current = current.parentElement;
             }
 
             return null;

@@ -197,6 +197,7 @@ else
     public Guid Id { get; set; }
 
     private const int PageSize = 20;
+    private const string TransactionNotFoundMessage = "Transactie niet gevonden of niet toegankelijk.";
 
     private List<TransactionAuditDto>? auditEntries;
     private TransactionDto? transaction;
@@ -204,10 +205,23 @@ else
     private bool loading = true;
     private int currentPage = 1;
     private HashSet<Guid> expandedEntries = new();
+    private bool retryAfterFirstRenderAttempted;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || retryAfterFirstRenderAttempted || errorMessage != TransactionNotFoundMessage)
+        {
+            return;
+        }
+
+        retryAfterFirstRenderAttempted = true;
+        await LoadDataAsync();
+        StateHasChanged();
     }
 
     private async Task LoadDataAsync()
@@ -222,7 +236,7 @@ else
             {
                 transaction = null;
                 auditEntries = null;
-                errorMessage = "Transactie niet gevonden of niet toegankelijk.";
+                errorMessage = TransactionNotFoundMessage;
                 return;
             }
 

@@ -135,7 +135,7 @@ public class TransactionsControllerAuditTests
     }
 
     [Test]
-    public async Task GetAuditHistory_EmptyResult_ReturnsNotFoundProblemDetails()
+    public async Task GetAuditHistory_EmptyResult_ReturnsOkWithEmptyCollection()
     {
         var transactionId = Guid.NewGuid();
 
@@ -145,11 +145,11 @@ public class TransactionsControllerAuditTests
 
         var result = await _controller.GetAuditHistory(transactionId);
 
-        var notFoundResult = result.Result as NotFoundObjectResult;
-        Assert.That(notFoundResult, Is.Not.Null);
-        var problemDetails = notFoundResult!.Value as ProblemDetails;
-        Assert.That(problemDetails, Is.Not.Null);
-        Assert.That(problemDetails!.Status, Is.EqualTo(404));
+        var okResult = result.Result as OkObjectResult;
+        Assert.That(okResult, Is.Not.Null);
+        var returnedAudits = okResult!.Value as List<TransactionAuditDto>;
+        Assert.That(returnedAudits, Is.Not.Null);
+        Assert.That(returnedAudits, Is.Empty);
     }
 
     [Test]
