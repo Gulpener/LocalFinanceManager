@@ -302,7 +302,7 @@ else
 app.UseWhen(
     ctx => !ctx.Request.Path.StartsWithSegments("/api")
         && !ctx.Request.Path.StartsWithSegments("/health")
-        && !(ctx.Request.Path.Value?.Contains('.') ?? false),
+        && !System.IO.Path.HasExtension(ctx.Request.Path.Value),
     b => b.UseStatusCodePagesWithReExecute("/", createScopeForStatusCodePages: true));
 app.UseHttpsRedirection();
 
