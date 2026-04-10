@@ -14,6 +14,7 @@ As a user, I want various small improvements across the application so that the 
 - [ ] When logged in, the "Home" navigation item is renamed to "Dashboard" with a dashboard icon
 - [ ] CI build is only triggered by changes in pipelines or code, not documentation
 - [ ] In dark mode, text using `#212529` or `#212529BF` is replaced with a readable color (e.g. Bootstrap `--bs-body-color` or `var(--bs-light)`)
+- [ ] In CI, failing tests are automatically retried (at least once) before the build is marked as failed
 
 ## Tasks
 
@@ -22,6 +23,7 @@ As a user, I want various small improvements across the application so that the 
 - [ ] Replace the home icon with a dashboard icon for the Dashboard nav item
 - [ ] Add path filters to CI pipeline to exclude documentation-only changes (e.g., `docs/**`, `*.md`)
 - [ ] Find all hardcoded `#212529` and `#212529BF` color usages and replace with a CSS variable or Bootstrap utility that adapts to dark mode
+- [ ] Configure test retry in CI pipeline (e.g. `--retry` flag for NUnit / xUnit rerun policy)
 
 ## Notes
 
