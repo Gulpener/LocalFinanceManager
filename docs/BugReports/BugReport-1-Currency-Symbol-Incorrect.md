@@ -1,4 +1,4 @@
-# Bug Report 1 - Currency Symbol Incorrect
+# BugReport-1: Currency Symbol Incorrect
 
 ## Status
 

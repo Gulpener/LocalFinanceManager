@@ -1,4 +1,4 @@
-# Bug Report 2 - Hardcoded Colors Not Readable in Dark Mode
+# BugReport-2: Hardcoded Colors Not Readable in Dark Mode
 
 ## Status
 

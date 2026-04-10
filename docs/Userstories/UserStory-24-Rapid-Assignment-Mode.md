@@ -6,7 +6,7 @@
 
 ## Description
 
-Als gebruiker die veel ongeassignde transacties heeft, wil ik een "Doorlopen-modus" waarbij na het opslaan van een toewijzing automatisch de volgende niet-toegewezen transactie in de modal verschijnt, zodat ik snel door alle transacties heen kan werken zonder steeds de modal handmatig te openen.
+Als gebruiker die veel ongeassigneerde transacties heeft, wil ik een "Doorlopen-modus" waarbij na het opslaan van een toewijzing automatisch de volgende niet-toegewezen transactie in de modal verschijnt, zodat ik snel door alle transacties heen kan werken zonder steeds de modal handmatig te openen.
 
 ## Acceptance Criteria
 

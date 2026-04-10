@@ -1,4 +1,4 @@
-# Bug Report 3 - Unresolved Placeholder in Transaction Assign Title
+# BugReport-3: Unresolved Placeholder in Transaction Assign Title
 
 ## Status
 

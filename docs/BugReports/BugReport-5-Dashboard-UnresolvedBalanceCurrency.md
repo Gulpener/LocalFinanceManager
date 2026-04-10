@@ -1,4 +1,4 @@
-# Bug Report 5 - Dashboard Shows Unresolved Balance Currency Placeholder
+# BugReport-5: Dashboard Shows Unresolved Balance Currency Placeholder
 
 ## Status
 
