@@ -8,9 +8,8 @@
 ## Status Overview
 
 - ✅ **27 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **2 stories ready** for implementation (US-18, US-19)
+- 🟡 **3 stories ready** for implementation (US-18, US-19, US-21)
 - 🔴 **1 story needs refinement** (US-20)
-- 🟡 **2 stories ready** for implementation (US-21)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
 
