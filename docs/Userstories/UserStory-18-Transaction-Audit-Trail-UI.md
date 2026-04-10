@@ -1,4 +1,4 @@
-# UserStory-17: Transaction Audit Trail UI
+# UserStory-18: Transaction Audit Trail UI
 
 **Als** gebruiker van Local Finance Manager  
 **Wil ik** de volledige auditgeschiedenis van een transactie bekijken  

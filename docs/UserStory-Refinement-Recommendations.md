@@ -1,15 +1,15 @@
 # User Story Refinement Recommendations
 
-**Date:** April 9, 2026  
+**Date:** April 10, 2026  
 **Purpose:** Identify which user stories need refinement before implementation
 
 ---
 
 ## Status Overview
 
-- ✅ **27 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **3 stories ready** for implementation (US-16, US-18, US-19)
-- 🔴 **0 stories need refinement**
+- ✅ **28 stories completed & archived** — see `docs/Userstories/Archive/`
+- 🟡 **3 stories ready** for implementation (US-18, US-19, US-21)
+- 🔴 **1 story needs refinement** (US-20)
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
 
@@ -21,7 +21,7 @@
 
 ### � UserStory-16: Design Overhaul
 
-**File:** [docs/Userstories/UserStory-16-Design-Overhaul.md](docs/Userstories/UserStory-16-Design-Overhaul.md)
+**File:** [Userstories/UserStory-16-Design-Overhaul.md](Userstories/UserStory-16-Design-Overhaul.md)
 
 **Status:** New — full specification written. Estimated effort: 5-7 days.
 
@@ -39,17 +39,50 @@
 
 ### 🟡 UserStory-19: Unified Admin Panel
 
-**File:** [docs/Userstories/UserStory-19-Admin-Panel-Unified.md](docs/Userstories/UserStory-19-Admin-Panel-Unified.md)
+**File:** [Userstories/UserStory-19-Admin-Panel-Unified.md](Userstories/UserStory-19-Admin-Panel-Unified.md)
 
-**Status:** New — full specification written. Estimated effort: 3-4 days.
+**Status:** Refined (April 10, 2026) — ready for implementation. Estimated effort: 3–4 days.
 
-**Scope:** Reorganize all existing admin pages (Settings, Auto-Apply, ML, Monitoring) into one tabbed panel with a persistent tab bar. Add a new Users tab for user management (overview, viewing active shares, and revoking them).
+**Scope:** Reorganize all existing admin pages (Settings, Auto-Apply, ML, Monitoring) into one tabbed panel with a persistent tab bar. Add a new Users tab for user management (overview, viewing active shares, and revoking them). Introduces `IsAdmin` role, `AdminPolicy` authorization, and `IUserContext.IsAdminAsync()`.
+
+**Refinements applied (April 10, 2026):**
+
+- Added `IUserContext.IsAdminAsync()` spec (interface + implementation) — required by `AdminRouteGuard` and `NavMenu`
+- Added unit tests for `UserContext.IsAdminAsync()` (admin/non-admin/unauthenticated)
+- Confirmed `User` inherits `BaseEntity.IsArchived` — `.Where(u => !u.IsArchived)` filter is valid
+- Added UI error handling criteria for failed toggle-admin and failed revoke (inline alert, auto-dismiss 5s)
+- Clarified `AutoApplyRedirect.razor` implementation (dedicated page, `replace: true` redirect, no UI rendered)
 
 ---
 
-### 🟡 UserStory-18: Transaction Audit Trail UI
+### 🔴 UserStory-20: Small Improvements
 
-**File:** [docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md](docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md)
+**File:** [Userstories/UserStory-20-Small-Improvements.md](Userstories/UserStory-20-Small-Improvements.md)
+
+**Status:** Needs refinement — too thin to implement safely.
+
+**Scope:** Deploy script build number display name, "Home" → "Dashboard" rename with icon swap, CI path filters to skip doc-only builds.
+
+**Missing before implementation:**
+
+- No technical notes — which deploy script file? Which CI YAML file? Which nav icon (`bi-speedometer2`?)?
+- No acceptance criteria for the icon swap (what icon replaces the home icon?)
+- No tests specified
+- Dashboard rename: is this the same as the `NavMenu.razor` item? Conditional on `@attribute [Authorize]`?
+
+---
+
+### 🟡 UserStory-21: User Profile Page
+
+**File:** [Userstories/UserStory-21-User-Profile-Page.md](Userstories/UserStory-21-User-Profile-Page.md)
+
+**Status:** Ready — full specification written. Estimated effort: 3–4 days.
+
+**Scope:** Profile picture upload (Supabase Storage), first/last name in `UserPreferences`, circular avatar in nav bar with initials fallback, profile dropdown (theme toggle, logout), `/account` profile page.
+
+---
+
+**File:** [Userstories/UserStory-18-Transaction-Audit-Trail-UI.md](Userstories/UserStory-18-Transaction-Audit-Trail-UI.md)
 
 **Status:** Ready — no refinement needed. Estimated effort: 2-3 days.
 
@@ -65,7 +98,7 @@
 
 ### ✅ UserStory-16 (Design Overhaul) — COMPLETED
 
-**File:** [docs/Userstories/Archive/UserStory-16-Design-Overhaul.md](docs/Userstories/Archive/UserStory-16-Design-Overhaul.md)
+**File:** [Userstories/Archive/UserStory-16-Design-Overhaul.md](Userstories/Archive/UserStory-16-Design-Overhaul.md)
 
 **Status:** Implemented & archived.
 
@@ -73,7 +106,7 @@
 
 ### ✅ UserStory-14: Backup & Restore — COMPLETED (April 5, 2026)
 
-**File:** [docs/Userstories/Archive/UserStory-14-Backup-Restore.md](docs/Userstories/Archive/UserStory-14-Backup-Restore.md)
+**File:** [Userstories/Archive/UserStory-14-Backup-Restore.md](Userstories/Archive/UserStory-14-Backup-Restore.md)
 
 **Status:** Implemented & archived.
 
@@ -81,7 +114,7 @@
 
 ### ✅ UserStory-15: Application Flow & Onboarding — COMPLETED (April 6, 2026)
 
-**File:** [docs/Userstories/Archive/UserStory-15-Application-Flow.md](docs/Userstories/Archive/UserStory-15-Application-Flow.md)
+**File:** [Userstories/Archive/UserStory-15-Application-Flow.md](Userstories/Archive/UserStory-15-Application-Flow.md)
 
 **Status:** Implemented & archived.
 
@@ -196,8 +229,10 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
-2. **Immediate:** Implement UserStory-19 (Unified Admin Panel) — fully ready, no refinement needed (3-4 days)
-3. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
+1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
+2. 🟡 **UserStory-19** (Unified Admin Panel) — Refined April 10, implement now (3–4 days)
+3. 🟡 **UserStory-21** (User Profile Page) — Ready, implement after US-19 (3–4 days)
+4. 🔴 **UserStory-20** (Small Improvements) — Refine first (1 day to specify, 1–2 days to implement)
+5. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
 
-**Total Remaining Effort:** ~10–14 days across 3 active stories — all fully specified, no refinement needed.
+**Total Remaining Effort:** ~10–14 days across 3 implementation-ready stories (US-18, US-19, US-21). UserStory-20 is not included in this estimate because it still needs refinement first.
