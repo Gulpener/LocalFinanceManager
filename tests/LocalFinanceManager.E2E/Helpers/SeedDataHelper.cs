@@ -462,4 +462,38 @@ public static class SeedDataHelper
     {
         await factory.TruncateTablesAsync();
     }
+
+    /// <summary>
+    /// Seeds audit entries for a specific transaction.
+    /// </summary>
+    /// <param name="context">Database context for saving entities.</param>
+    /// <param name="transactionId">ID of the transaction to audit.</param>
+    /// <param name="entries">List of audit entry tuples: (actionType, changedBy, isAutoApplied, confidence, modelVersion, beforeState, afterState, reason).</param>
+    public static async Task SeedTransactionAuditsAsync(
+        AppDbContext context,
+        Guid transactionId,
+        IEnumerable<(string ActionType, string ChangedBy, bool IsAutoApplied, float? Confidence, int? ModelVersion, string? BeforeState, string? AfterState, string? Reason)> entries)
+    {
+        foreach (var e in entries)
+        {
+            context.TransactionAudits.Add(new TransactionAudit
+            {
+                Id = Guid.NewGuid(),
+                TransactionId = transactionId,
+                ActionType = e.ActionType,
+                ChangedBy = e.ChangedBy,
+                ChangedAt = DateTime.UtcNow.AddMinutes(-_random.Next(1, 1440)),
+                IsAutoApplied = e.IsAutoApplied,
+                AutoAppliedBy = e.IsAutoApplied ? e.ChangedBy : null,
+                AutoAppliedAt = e.IsAutoApplied ? DateTime.UtcNow : null,
+                Confidence = e.Confidence,
+                ModelVersion = e.ModelVersion,
+                BeforeState = e.BeforeState,
+                AfterState = e.AfterState,
+                Reason = e.Reason
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
 }

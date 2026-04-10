@@ -282,6 +282,9 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             ActionType = a.ActionType,
             ChangedBy = a.ChangedBy,
             ChangedAt = a.ChangedAt,
+            IsAutoApplied = a.IsAutoApplied,
+            Confidence = a.Confidence,
+            ModelVersion = a.ModelVersion,
             BeforeState = a.BeforeState,
             AfterState = a.AfterState,
             Reason = a.Reason
