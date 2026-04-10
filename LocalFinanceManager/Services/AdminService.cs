@@ -78,8 +78,10 @@ public class AdminService : IAdminService
             .Where(s => s.UserId == userId && !s.IsArchived && !s.BudgetPlan.IsArchived && s.Status != ShareStatus.Declined)
             .Select(s => new BudgetPlanShareDetail(
                 s.Id,
-                s.BudgetPlan.Name,
-                s.SharedWithUser.Email,
+        var user = await _context.Users.FirstOrDefaultAsync(
+                u => u.Id == targetUserId && !u.IsArchived,
+                ct)
+            ?? throw new KeyNotFoundException($"Active user {targetUserId} not found.");
                 s.Permission.ToString(),
                 s.Status.ToString()
             ))

@@ -203,12 +203,12 @@
                         }
                     }
                 </tbody>
-            </table>
-        </div>
-    }
-
-    @* Toggle Admin confirmation modal *@
-    @if (_toggleAdminTarget != null)
+        <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="toggle-admin-modal-title" style="background:rgba(0,0,0,.5)">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 id="toggle-admin-modal-title" class="modal-title">Beheerdersrol wijzigen</h5>
+                        <button type="button" class="btn-close" aria-label="Sluiten" @onclick="CancelToggleAdmin"></button>
     {
         <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="toggleAdminModalTitle" style="background:rgba(0,0,0,.5)">
             <div class="modal-dialog" role="document">
