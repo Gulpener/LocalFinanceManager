@@ -47,6 +47,7 @@
 **Scope:** Reorganize all existing admin pages (Settings, Auto-Apply, ML, Monitoring) into one tabbed panel with a persistent tab bar. Add a new Users tab for user management (overview, viewing active shares, and revoking them). Introduces `IsAdmin` role, `AdminPolicy` authorization, and `IUserContext.IsAdminAsync()`.
 
 **Refinements applied (April 10, 2026):**
+
 - Added `IUserContext.IsAdminAsync()` spec (interface + implementation) — required by `AdminRouteGuard` and `NavMenu`
 - Added unit tests for `UserContext.IsAdminAsync()` (admin/non-admin/unauthenticated)
 - Confirmed `User` inherits `BaseEntity.IsArchived` — `.Where(u => !u.IsArchived)` filter is valid
@@ -64,6 +65,7 @@
 **Scope:** Deploy script build number display name, "Home" → "Dashboard" rename with icon swap, CI path filters to skip doc-only builds.
 
 **Missing before implementation:**
+
 - No technical notes — which deploy script file? Which CI YAML file? Which nav icon (`bi-speedometer2`?)?
 - No acceptance criteria for the icon swap (what icon replaces the home icon?)
 - No tests specified
@@ -80,7 +82,6 @@
 **Scope:** Profile picture upload (Supabase Storage), first/last name in `UserPreferences`, circular avatar in nav bar with initials fallback, profile dropdown (theme toggle, logout), `/account` profile page.
 
 ---
-
 
 **File:** [docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md](docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md)
 
@@ -233,6 +234,6 @@ Use this structure for all new stories:
 2. 🟡 **UserStory-19** (Unified Admin Panel) — Refined April 10, implement now (3–4 days)
 3. 🟡 **UserStory-21** (User Profile Page) — Ready, implement after US-19 (3–4 days)
 4. 🔴 **UserStory-20** (Small Improvements) — Refine first (1 day to specify, 1–2 days to implement)
-3. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
+5. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
 
 **Total Remaining Effort:** ~10–14 days across 3 active stories — all fully specified, no refinement needed.

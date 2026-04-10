@@ -49,9 +49,9 @@
   - **Actions** (toggle admin button)
 - [ ] **Toggle Admin button** per user row:
   - Calls `POST /api/admin/users/{id}/toggle-admin`
-  - Shows confirmation modal: *"Grant admin to {email}?"* or *"Revoke admin from {email}?"*
+  - Shows confirmation modal: _"Grant admin to {email}?"_ or _"Revoke admin from {email}?"_
   - After confirmation, row updates inline (badge appears/disappears)
-  - Disabled with tooltip *"Cannot change your own role"* for the currently signed-in user
+  - Disabled with tooltip _"Cannot change your own role"_ for the currently signed-in user
 - [ ] Clicking a user row expands a detail panel showing active shares:
   - Shared accounts: account name, recipient email, permission level, status
   - Shared budget plans: plan name, recipient email, permission level, status
