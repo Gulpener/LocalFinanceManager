@@ -61,7 +61,7 @@ else
         }
         else
         {
-            <p class="text-muted mb-3">@auditEntries.Count audit @(auditEntries.Count == 1 ? "entry" : "entries") gevonden</p>
+            <p class="text-muted mb-3">Toont @auditEntries.Count audit @(auditEntries.Count == 1 ? "entry" : "entries") op deze pagina</p>
 
             <div class="timeline">
                 @foreach (var entry in GetPagedEntries())

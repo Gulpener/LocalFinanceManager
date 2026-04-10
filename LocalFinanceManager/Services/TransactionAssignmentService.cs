@@ -18,7 +18,7 @@ public interface ITransactionAssignmentService
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default);
     Task<TransactionDto> UndoAssignmentAsync(UndoAssignmentRequest request);
-    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 10);
+    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50);
     Task<int> GetTransactionAuditCountAsync(Guid transactionId);
 }
 
@@ -305,8 +305,11 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         var skip = (page - 1) * pageSize;
 
-        var audits = await _auditRepository.GetPagedByTransactionIdAsync(transactionId, skip, pageSize);
+        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId);
         return audits
+            .OrderByDescending(a => a.ChangedAt)
+            .Skip(skip)
+            .Take(pageSize)
             .Select(a => new TransactionAuditDto
             {
                 Id = a.Id,
