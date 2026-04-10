@@ -2,8 +2,6 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
 using NUnit.Framework;
 
 namespace LocalFinanceManager.Tests.Services;
