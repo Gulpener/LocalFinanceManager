@@ -14,12 +14,12 @@ In the **BudgetStatusWidget** on the dashboard, the progress bar colors (`bg-suc
 2. Ensure at least one budget plan with budget lines exists for the current month.
 3. Observe the "Budgetstatus" widget.
 
-## Expected Behavior
+## Expected Behaviour
 
 - Progress bars are **green** (`bg-success`) when spending is within budget.
 - Progress bars are **red** (`bg-danger`) when spending exceeds budget.
 
-## Actual Behavior
+## Actual Behaviour
 
 - Progress bar fills are invisible or not displayed correctly.
 

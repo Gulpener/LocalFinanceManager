@@ -13,7 +13,7 @@ When assigning a transaction to a budget line, an unhandled exception occasional
 ```
 blazor.web.js [2026-04-10T18:22:23.918Z] Error: There was an unhandled exception on the current circuit,
 so this circuit will be terminated. For more details turn on detailed exceptions by setting
-'DetailedErrors: true' in 'appSettings.Development.json' or set 'CircuitOptions.DetailedErrors'.
+'DetailedErrors: true' in 'LocalFinanceManager/appsettings.Development.json' or set 'CircuitOptions.DetailedErrors'.
 ```
 
 Also observed with a different bundle hash:
@@ -21,7 +21,7 @@ Also observed with a different bundle hash:
 ```
 blazor.web.b9228eflpl.js:1 [2026-04-10T18:43:45.673Z] Error: There was an unhandled exception on the current circuit,
 so this circuit will be terminated. For more details turn on detailed exceptions by setting
-'DetailedErrors: true' in 'appSettings.Development.json' or set 'CircuitOptions.DetailedErrors'.
+'DetailedErrors: true' in 'LocalFinanceManager/appsettings.Development.json' or set 'CircuitOptions.DetailedErrors'.
 ```
 
 ## Steps to Reproduce
