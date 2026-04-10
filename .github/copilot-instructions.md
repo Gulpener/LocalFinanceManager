@@ -116,12 +116,20 @@ Definition of Done (kort)
 - Automatic migrations toegepast bij app startup zonder handmatige CLI-stappen.
 - **TODO Tracking:** Na voltooiing van elke taak/stap in een MVP, markeert Copilot de overeenkomstige taak in `docs/TODO.md` als voltooid (`[x]`). Dit handelt Copilot automatisch af na implementatie.
 - **User Story Archiving:** Wanneer een User Story uit `docs/Userstories/` volledig geïmplementeerd en getest is, moet het bestand **onmiddellijk** verplaatst worden naar `docs/Userstories/Archive/` om de actieve backlog overzichtelijk te houden. User stories worden individueel gearchiveerd zodra ze voltooid zijn, onafhankelijk van gerelateerde stories of MVP-status.
+- **Bug Report Archiving:** Wanneer een Bug Report uit `docs/BugReports/` volledig opgelost en geverifieerd is, moet Copilot **vóór het archiveren** een `## Solution` sectie toevoegen aan het bug report met een beschrijving van de geïmplementeerde oplossing (welke bestanden gewijzigd, welke root cause gevonden, wat de fix inhoudt). Daarna wordt het bestand **onmiddellijk** verplaatst naar `docs/BugReports/Archive/` om de actieve buglijst overzichtelijk te houden. Bug reports worden individueel gearchiveerd zodra ze opgelost zijn.
 
 User Story Management
 
 - **Naming Convention:** User stories volgen het formaat `UserStory-[number]-[Title].md` (bijv. `UserStory-1-CI-Pipeline.md`).
 - **Numbering:** Bij het aanmaken van een nieuwe user story, moet Copilot ALTIJD beide `docs/Userstories/` EN `docs/Userstories/Archive/` controleren om het hoogste bestaande nummer te vinden. Het nieuwe nummer is dan hoogste nummer + 1.
 - **Location:** Nieuwe user stories worden aangemaakt in `docs/Userstories/`, voltooide stories worden verplaatst naar `docs/Userstories/Archive/`.
+
+Bug Report Management
+
+- **Naming Convention:** Bug reports volgen het formaat `BugReport-[number]-[Title].md` (bijv. `BugReport-1-Currency-Symbol-Incorrect.md`).
+- **Duplicate Check (VERPLICHT):** Vóór het aanmaken van een nieuw bug report, moet Copilot ALTIJD de inhoud van ZOWEL `docs/BugReports/` ALS `docs/BugReports/Archive/` doorzoeken op gelijksoortige bugs (zelfde symptoom, zelfde foutmelding, zelfde component). Als een bestaand rapport gevonden wordt, wordt dat bijgewerkt (nieuwe foutmelding, extra stappen, aanvullende context) in plaats van een nieuw rapport aan te maken.
+- **Numbering:** Bij het aanmaken van een nieuw bug report (na bevestiging dat het geen duplicaat is), moet Copilot ALTIJD beide `docs/BugReports/` EN `docs/BugReports/Archive/` controleren om het hoogste bestaande nummer te vinden. Het nieuwe nummer is dan hoogste nummer + 1.
+- **Location:** Nieuwe bug reports worden aangemaakt in `docs/BugReports/`, opgeloste reports worden verplaatst naar `docs/BugReports/Archive/`.
 
 Repository & Entity Patterns
 
