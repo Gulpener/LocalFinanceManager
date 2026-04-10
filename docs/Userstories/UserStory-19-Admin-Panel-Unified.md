@@ -60,6 +60,8 @@
 - [ ] Success message after revoke; share row disappears from expanded panel
 - [ ] Empty state: "No users found"
 - [ ] Loading spinner during data fetch
+- [ ] On failed toggle-admin (network error / HTTP 500): show inline error alert "Failed to update admin role. Please try again." Auto-dismisses after 5 seconds
+- [ ] On failed revoke (network error / HTTP 500): show inline error alert "Failed to revoke share. Please try again." Auto-dismisses after 5 seconds
 
 ### Responsiveness & Layout
 
@@ -101,6 +103,31 @@ builder.Services.AddAuthorization(options =>
 // Register IAuthorizationHandler: IsAdminHandler resolves current User from DB and checks IsAdmin
 ```
 
+**Modified file:** `Services/IUserContext.cs` — add method:
+
+```csharp
+/// <summary>
+/// Returns true when the current user has IsAdmin = true in the database.
+/// Returns false for unauthenticated users (GetCurrentUserId() == Guid.Empty) or when user is not found.
+/// </summary>
+Task<bool> IsAdminAsync();
+```
+
+**Modified file:** `Services/UserContext.cs` — implement `IsAdminAsync()`:
+
+```csharp
+public async Task<bool> IsAdminAsync()
+{
+    var userId = GetCurrentUserId();
+    if (userId == Guid.Empty) return false;
+    return await _context.Users
+        .AsNoTracking()
+        .Where(u => u.Id == userId)
+        .Select(u => u.IsAdmin)
+        .FirstOrDefaultAsync();
+}
+```
+
 **New files:** `Services/Authorization/IsAdminRequirement.cs` + `IsAdminHandler.cs`
 
 ```csharp
@@ -122,7 +149,7 @@ public class IsAdminHandler : AuthorizationHandler<IsAdminRequirement>
 // All /admin/* pages wrap their body: <AdminRouteGuard>...</AdminRouteGuard>
 ```
 
-**Modified:** `Components/Layout/NavMenu.razor` — "Admin" link rendered only when `isAdmin == true`
+**Modified:** `Components/Layout/NavMenu.razor` — "Admin" link rendered only when `await userContext.IsAdminAsync() == true`
 
 **Modified:** `Components/Layout/AdminLayout.razor` — tab bar rendered only when admin (guard already redirects, but prevents flash)
 
@@ -184,6 +211,7 @@ public interface IAdminService
 ```
 
 - `GetAllUsersAsync`: query `Users` (`.Where(u => !u.IsArchived)`) with share counts via joins on `AccountShares` and `BudgetPlanShares`
+  > **Note:** `User` inherits `BaseEntity` which includes `IsArchived`; this filter is intentional and correct.
 - `GetUserSharesAsync`: load AccountShares + BudgetPlanShares where owner is `userId` and `!IsArchived`, include navigation props for names
 - `ToggleAdminAsync`: flip `User.IsAdmin`; throw if `targetUserId == requestingUserId`
 - Register as `scoped` via `ServiceCollectionExtensions.cs`
@@ -226,11 +254,13 @@ public class AdminController : ControllerBase
 - [ ] Add EF Core migration for `IsAdmin` column
 - [ ] Add `Seed:AdminEmail` config key to `appsettings.json` + `appsettings.Development.json`
 - [ ] Add startup seed logic in `Program.cs` to promote first admin
+- [ ] Add `Task<bool> IsAdminAsync()` to `Services/IUserContext.cs`
+- [ ] Implement `IsAdminAsync()` in `Services/UserContext.cs` (DB lookup; returns `false` for `Guid.Empty` or unknown user)
 - [ ] Create `Services/Authorization/IsAdminRequirement.cs`
 - [ ] Create `Services/Authorization/IsAdminHandler.cs` (resolves `IsAdmin` from DB; `context.Fail()` → 403)
 - [ ] Register `IsAdminHandler` and `"AdminPolicy"` in `Program.cs`
-- [ ] Create `Components/Shared/AdminRouteGuard.razor` (redirects non-admins to `/`)
-- [ ] Update `NavMenu.razor` to hide "Admin" link for non-admins
+- [ ] Create `Components/Shared/AdminRouteGuard.razor` (calls `IsAdminAsync()`; redirects non-admins to `/`)
+- [ ] Update `NavMenu.razor` to hide "Admin" link via `IsAdminAsync()`
 
 ### Phase 1: AdminLayout + Tab Bar
 
@@ -240,7 +270,7 @@ public class AdminController : ControllerBase
 - [ ] Add `@layout AdminLayout` + `<AdminRouteGuard>` to ML.razor
 - [ ] Add `@layout AdminLayout` + `<AdminRouteGuard>` to Monitoring.razor
 - [ ] Remove `/admin/autoapply` route from AutoApplySettings.razor; keep only `/settings/auto-apply`
-- [ ] Add redirect page at `/admin/autoapply` → `NavigateTo("/settings/auto-apply")`
+- [ ] Create `Components/Pages/Admin/AutoApplyRedirect.razor` — `@page "/admin/autoapply"`, calls `NavigationManager.NavigateTo("/settings/auto-apply", replace: true)` in `OnInitializedAsync`; renders no UI
 - [ ] Update NavMenu.razor: 1 "Admin" link (hidden for non-admins) + "Auto-Apply" link for all users
 
 ### Phase 2: Backend
@@ -261,6 +291,7 @@ public class AdminController : ControllerBase
 - [ ] Implement Toggle Admin button (disabled for current user) + confirmation modal
 - [ ] Implement expandable row for shares
 - [ ] Implement Revoke button + confirmation modal
+- [ ] Implement inline error alerts for failed toggle-admin and failed revoke (auto-dismiss 5s)
 - [ ] Add empty state and loading spinner
 - [ ] Add `data-testid` attributes to all interactive elements
 
@@ -297,6 +328,12 @@ public class AdminController : ControllerBase
 - Admin user → `context.Succeed()` called
 - Non-admin user → `context.Fail()` called
 - Unauthenticated (no sub claim) → `context.Fail()` called
+
+### Unit Tests (`LocalFinanceManager.Tests/Services/UserContextIsAdminTests.cs`)
+
+- Admin user in DB → `IsAdminAsync()` returns `true`
+- Non-admin user in DB → `IsAdminAsync()` returns `false`
+- `GetCurrentUserId()` returns `Guid.Empty` (unauthenticated) → `IsAdminAsync()` returns `false`
 
 ### Integration Tests
 
