@@ -18,7 +18,7 @@ public interface ITransactionAssignmentService
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default);
     Task<TransactionDto> UndoAssignmentAsync(UndoAssignmentRequest request);
-    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50);
+    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 10);
     Task<int> GetTransactionAuditCountAsync(Guid transactionId);
 }
 
@@ -290,7 +290,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             _logger.LogWarning(
                 "Audit history requested for inaccessible or non-existent transaction {TransactionId}",
                 transactionId);
-            throw new InvalidOperationException($"Transaction {transactionId} not found");
+            return new List<TransactionAuditDto>();
         }
 
         if (page < 1)
@@ -305,10 +305,8 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         var skip = (page - 1) * pageSize;
 
-        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId, skip + pageSize);
+        var audits = await _auditRepository.GetPagedByTransactionIdAsync(transactionId, skip, pageSize);
         return audits
-            .Skip(skip)
-            .Take(pageSize)
             .Select(a => new TransactionAuditDto
             {
                 Id = a.Id,

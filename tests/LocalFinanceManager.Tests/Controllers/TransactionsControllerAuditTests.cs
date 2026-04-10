@@ -153,18 +153,23 @@ public class TransactionsControllerAuditTests
     }
 
     [Test]
-    public async Task GetAuditHistory_ServiceThrows_Returns500()
+    public async Task GetAuditHistory_TransactionNotFound_ReturnsNotFoundProblemDetails()
     {
         var transactionId = Guid.NewGuid();
+        const string errorMessage = "Transaction not found or not accessible.";
 
         _assignmentServiceMock
             .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId))
-            .ThrowsAsync(new InvalidOperationException("Database error"));
+            .ThrowsAsync(new InvalidOperationException(errorMessage));
 
         var result = await _controller.GetAuditHistory(transactionId);
 
-        var statusResult = result.Result as ObjectResult;
-        Assert.That(statusResult, Is.Not.Null);
-        Assert.That(statusResult!.StatusCode, Is.EqualTo(500));
+        var notFoundResult = result.Result as NotFoundObjectResult;
+        Assert.That(notFoundResult, Is.Not.Null);
+
+        var problemDetails = notFoundResult!.Value as ProblemDetails;
+        Assert.That(problemDetails, Is.Not.Null);
+        Assert.That(problemDetails!.Status, Is.EqualTo(404));
+        Assert.That(problemDetails.Detail, Is.EqualTo(errorMessage));
     }
 }

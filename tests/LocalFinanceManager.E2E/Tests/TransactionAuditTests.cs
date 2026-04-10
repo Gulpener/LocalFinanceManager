@@ -1,3 +1,4 @@
+using System.Globalization;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
@@ -120,10 +121,10 @@ public class TransactionAuditTests : E2ETestBase
 
     private async Task<DateTimeOffset> GetComparableTimestampAsync(int index, string visibleTimestamp)
     {
-        if (DateTimeOffset.TryParse(visibleTimestamp, out var parsedVisibleTimestamp))
-        {
-            return parsedVisibleTimestamp;
-        }
+        Assert.That(
+            visibleTimestamp,
+            Is.Not.Null.And.Not.Empty,
+            $"Entry {index} should display a visible timestamp");
 
         var machineReadableTimestamp = await GetMachineReadableTimestampAsync(index, visibleTimestamp);
         Assert.That(
@@ -132,7 +133,11 @@ public class TransactionAuditTests : E2ETestBase
             $"Entry {index} timestamp '{visibleTimestamp}' should expose an absolute timestamp via title, datetime, or data-timestamp attribute for chronological comparison");
 
         Assert.That(
-            DateTimeOffset.TryParse(machineReadableTimestamp, out var parsedAttributeTimestamp),
+            DateTimeOffset.TryParse(
+                machineReadableTimestamp,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.RoundtripKind,
+                out var parsedAttributeTimestamp),
             Is.True,
             $"Entry {index} machine-readable timestamp '{machineReadableTimestamp}' should be parseable for chronological comparison");
 

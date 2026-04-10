@@ -284,7 +284,22 @@ else
 
     private async Task LoadAuditEntriesPageAsync()
     {
-        auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(Id, currentPage, PageSize);
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(Id, currentPage, PageSize);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load audit entries page {Page} for transaction {TransactionId}", currentPage, Id);
+            errorMessage = "Er is een fout opgetreden bij het laden van de auditgegevens. Probeer het opnieuw.";
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 
     private static string GetRelativeTime(DateTime changedAt)
