@@ -1,6 +1,7 @@
-﻿<div class="top-row ps-3">
+﻿<div class="sidebar-wrap @(_collapsed ? "collapsed" : "")" data-testid="sidebar-wrap">
+<div class="top-row ps-3">
     <a class="navbar-brand" href="">
-        <i class="bi bi-bar-chart-fill me-2"></i>LocalFinanceManager
+        <i class="bi bi-bar-chart-fill" aria-hidden="true"></i><span class="nav-label ms-2">LocalFinanceManager</span>
     </a>
     <button class="hamburger-btn d-md-none" aria-label="Navigatiemenu openen"
             aria-expanded="@_menuOpen.ToString().ToLower()" data-testid="hamburger-btn" @onclick="ToggleMenu">
@@ -17,7 +18,7 @@
     <nav class="nav flex-column" @onclick="CloseMenu">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <i class="bi bi-house-door-fill me-2" aria-hidden="true"></i> Home
+                <i class="bi bi-house-door-fill" aria-hidden="true"></i><span class="nav-label ms-2">Home</span>
             </NavLink>
         </div>
 
@@ -25,58 +26,63 @@
             <Authorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="accounts">
-                        <i class="bi bi-wallet-fill me-2" aria-hidden="true"></i> Rekeningen
+                        <i class="bi bi-wallet-fill" aria-hidden="true"></i><span class="nav-label ms-2">Rekeningen</span>
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="budgets">
-                        <i class="bi bi-calculator-fill me-2" aria-hidden="true"></i> Budgetplannen
+                        <i class="bi bi-calculator-fill" aria-hidden="true"></i><span class="nav-label ms-2">Budgetplannen</span>
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="transactions">
-                        <i class="bi bi-cash-coin me-2" aria-hidden="true"></i> Transacties
+                        <i class="bi bi-cash-coin" aria-hidden="true"></i><span class="nav-label ms-2">Transacties</span>
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="sharing/shared-with-me">
-                        <i class="bi bi-share-fill me-2" aria-hidden="true"></i> Gedeeld met mij
+                        <i class="bi bi-share-fill" aria-hidden="true"></i><span class="nav-label ms-2">Gedeeld met mij</span>
                         @if (pendingShareCount > 0)
                         {
-                            <span class="badge ms-1" data-testid="nav-pending-share-badge">@pendingShareCount</span>
+                            <span class="badge ms-1 nav-label" data-testid="nav-pending-share-badge">@pendingShareCount</span>
                         }
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/settings">
-                        <i class="bi bi-gear-fill me-2" aria-hidden="true"></i> Beheerinstellingen
+                        <i class="bi bi-gear-fill" aria-hidden="true"></i><span class="nav-label ms-2">Beheerinstellingen</span>
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/autoapply">
-                        <i class="bi bi-robot me-2" aria-hidden="true"></i> Automatisch toewijzen
+                        <i class="bi bi-robot" aria-hidden="true"></i><span class="nav-label ms-2">Automatisch toewijzen</span>
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/monitoring">
-                        <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i> Bewaking
+                        <i class="bi bi-speedometer2" aria-hidden="true"></i><span class="nav-label ms-2">Bewaking</span>
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="backup">
-                        <i class="bi bi-cloud-arrow-down-fill me-2" aria-hidden="true"></i> Back-up &amp; herstel
+                        <i class="bi bi-cloud-arrow-down-fill" aria-hidden="true"></i><span class="nav-label ms-2">Back-up &amp; herstel</span>
                     </NavLink>
                 </div>
             </Authorized>
         </AuthorizeView>
     </nav>
+    <button class="sidebar-collapse-btn" aria-label="@(_collapsed ? "Zijbalk uitklappen" : "Zijbalk inklappen")"
+            data-testid="sidebar-collapse-btn" @onclick="ToggleSidebarAsync">
+        <i class="bi @(_collapsed ? "bi-chevron-right" : "bi-chevron-left")" aria-hidden="true"></i>
+    </button>
+</div>
 </div>
 
 @using LocalFinanceManager.Services
@@ -84,10 +90,12 @@
 @inject IUserContext UserContext
 @inject ILogger<NavMenu> Logger
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 @implements IDisposable
 @code {
     private int pendingShareCount;
     private bool _menuOpen;
+    private bool _collapsed;
     private CancellationTokenSource? _cts;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -98,6 +106,28 @@
             await RefreshPendingCountAsync();
             _cts = new CancellationTokenSource();
             _ = RunPeriodicRefreshAsync(_cts.Token);
+            try
+            {
+                _collapsed = await JS.InvokeAsync<bool>("window.sidebar.getCollapsed");
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Could not read sidebar collapsed state from localStorage");
+            }
+        }
+    }
+
+    private async Task ToggleSidebarAsync()
+    {
+        _collapsed = !_collapsed;
+        try
+        {
+            await JS.InvokeVoidAsync("window.sidebar.setCollapsed", _collapsed);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Could not persist sidebar collapsed state to localStorage");
         }
     }
 

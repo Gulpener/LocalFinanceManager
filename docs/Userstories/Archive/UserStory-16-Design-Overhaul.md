@@ -184,7 +184,7 @@ Add `<script src="js/theme.js"></script>` to `App.razor`.
 - [x] Restyle sidebar to `--color-primary` (#1E3A5F) with white icons and text (`NavMenu.razor.css`)
 - [x] Active nav item: accent-colour background + bold text
 - [x] Responsive: hamburger button on mobile (< 768px), overlay sidebar that closes after navigation
-- [ ] Persist sidebar collapse state via `localStorage`
+- [x] Persist sidebar collapse state via `localStorage`
 - [x] Update `MainLayout.razor`: top bar with username, dark mode toggle (`bi-sun`/`bi-moon`), and logout button
 
 ---
@@ -199,8 +199,8 @@ Add `<script src="js/theme.js"></script>` to `App.razor`.
   - Active budget plans
   - Transactions this month
 - [x] Add "Quick Actions" section: Add Account, Import Transactions, Create Budget Plan
-- [ ] Add "Recent Activity" widget (last 5 transactions)
-- [ ] Responsive 2-column layout on tablet, 1-column on mobile
+- [x] Add "Recent Activity" widget (last 5 transactions)
+- [x] Responsive 2-column layout on tablet, 1-column on mobile
 
 #### B5. Consistent Component Patterns
 
@@ -256,7 +256,7 @@ New scenarios to add in `LocalFinanceManager.E2E/`:
 
 ## Acceptance Criteria
 
-- [ ] All 18 pages use the Finance Blue colour palette
+- [x] All 18 pages use the Finance Blue colour palette
 - [x] Sidebar is dark blue (#1E3A5F) with white text
 - [x] Dark mode preference is stored in `UserPreferences` table in the database
 - [x] Unauthenticated users see OS preference (`prefers-color-scheme`)
@@ -266,9 +266,9 @@ New scenarios to add in `LocalFinanceManager.E2E/`:
 - [x] Dashboard shows at least 4 KPI cards
 - [x] Tables and cards are readable at 375px viewport
 - [x] Hamburger nav functional at < 768px
-- [ ] Lighthouse Accessibility score ≥ 90 maintained
+- [x] Lighthouse Accessibility score ≥ 90 maintained
 - [x] All 9 new e2e test scenarios pass
-- [ ] Existing e2e tests pass without regressions
+- [x] Existing e2e tests pass without regressions
 - [x] No `bin/`, `obj/`, or other build artifacts committed
 
 ## Definition of Done

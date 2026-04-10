@@ -51,7 +51,7 @@
     protected override void OnParametersSet()
     {
         if (Transactions == null) return;
-        _recent = Transactions.OrderByDescending(t => t.Date).Take(10).ToList();
+        _recent = Transactions.OrderByDescending(t => t.Date).Take(5).ToList();
 
         var today = DateTime.Today;
         var startOfCurrentWeek = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));

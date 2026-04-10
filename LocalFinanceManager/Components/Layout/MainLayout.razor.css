@@ -67,7 +67,8 @@ main {
     }
 
     .sidebar {
-        width: 250px;
+        /* Width is controlled by sidebar-wrap inside NavMenu; flex-shrink prevents compression */
+        flex-shrink: 0;
         height: 100vh;
         position: sticky;
         top: 0;
