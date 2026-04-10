@@ -37,14 +37,39 @@ public class MonitoringDashboardPageModel : PageObjectBase
     {
         await NavigateToAsync("/admin/monitoring");
 
-        // Wait for stats spinner (large) to disappear — it is the first .spinner-border in DOM order,
-        // so the generic ".spinner-border" wait resolves here while history may still be loading.
-        await Page.WaitForSelectorAsync(".spinner-border:not(.spinner-border-sm)", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
+        // Blazor Server uses prerender:false — spinners only appear after the SignalR circuit
+        // connects. WaitForSelectorState.Hidden resolves immediately when the element is not yet
+        // in the DOM, so we must first confirm the spinner appeared before waiting for it to go.
+        // A short Visible-first wait guards against the race; catching TimeoutException handles
+        // the rare case where loading completes before we can observe the spinner.
+        try
+        {
+            await Page.WaitForSelectorAsync(".spinner-border:not(.spinner-border-sm)",
+                new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        }
+        catch (TimeoutException)
+        {
+            // Stats loaded before we could observe the spinner — proceed.
+        }
 
-        // Wait for history spinner (small) to disappear — LoadHistory runs after LoadStats in
-        // OnInitializedAsync, so without this second wait IsUndoButtonEnabledForRowAsync (and
-        // any other history-table assertion) could be called before the rows are rendered.
-        await Page.WaitForSelectorAsync(".spinner-border.spinner-border-sm", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
+        // Wait for stats spinner to disappear.
+        await Page.WaitForSelectorAsync(".spinner-border:not(.spinner-border-sm)",
+            new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
+
+        // Wait for history spinner (small) to appear first, then disappear.
+        try
+        {
+            await Page.WaitForSelectorAsync(".spinner-border.spinner-border-sm",
+                new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        }
+        catch (TimeoutException)
+        {
+            // History loaded before we could observe the spinner — proceed.
+        }
+
+        // Wait for history spinner to disappear — guarantees LoadHistory has completed.
+        await Page.WaitForSelectorAsync(".spinner-border.spinner-border-sm",
+            new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
     }
 
     /// <summary>
