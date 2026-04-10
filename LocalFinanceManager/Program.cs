@@ -3,9 +3,11 @@ using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.Extensions;
 using LocalFinanceManager.Services;
+using LocalFinanceManager.Services.Authorization;
 using LocalFinanceManager.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
@@ -182,7 +184,12 @@ builder.Services.AddAuthentication(options =>
         }
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policy =>
+        policy.Requirements.Add(new IsAdminRequirement()));
+});
+builder.Services.AddScoped<IAuthorizationHandler, IsAdminHandler>();
 
 // Register HttpClientFactory (used by AuthService)
 builder.Services.AddHttpClient();
@@ -250,6 +257,19 @@ using (var scope = app.Services.CreateScope())
 
     // Update accounts to reference their current budget plan (all environments)
     await UpdateAccountBudgetPlanReferencesAsync(context);
+
+    // Bootstrap first admin: if no admin exists, promote the configured email to admin
+    var adminEmail = app.Configuration["Seed:AdminEmail"];
+    if (!string.IsNullOrEmpty(adminEmail) && !await context.Users.AnyAsync(u => u.IsAdmin))
+    {
+        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail);
+        if (adminUser != null)
+        {
+            adminUser.IsAdmin = true;
+            await context.SaveChangesAsync();
+            app.Logger.LogInformation("Promoted {Email} to admin (first admin bootstrap)", adminEmail);
+        }
+    }
 }
 
 /// <summary>

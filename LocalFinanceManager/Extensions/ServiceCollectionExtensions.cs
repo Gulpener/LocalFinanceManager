@@ -60,6 +60,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBackupService, BackupService>();
         services.AddScoped<IUserPreferencesService, UserPreferencesService>();
         services.AddScoped<IThemeService, ThemeService>();
+        services.AddScoped<IAdminService, AdminService>();
 
         return services;
     }

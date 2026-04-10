@@ -1,0 +1,547 @@
+@page "/admin/users"
+@layout AdminLayout
+@attribute [Authorize]
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using LocalFinanceManager.Components.Layout
+@using LocalFinanceManager.Components.Shared
+@using LocalFinanceManager.DTOs
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject IUserContext UserContext
+@inject ILogger<UserManagement> Logger
+
+<PageTitle>Gebruikersbeheer</PageTitle>
+
+<AdminRouteGuard>
+
+<h1>Gebruikersbeheer</h1>
+<p class="lead">Overzicht van alle geregistreerde gebruikers en hun actieve gedeelde bronnen.</p>
+
+@if (_errorMessage != null)
+{
+    <div class="alert alert-danger alert-dismissible" role="alert" data-testid="global-error">
+        @_errorMessage
+        <button type="button" class="btn-close" @onclick="() => _errorMessage = null" aria-label="Sluiten"></button>
+    </div>
+}
+
+@if (_loading)
+{
+    <div class="text-center my-4" data-testid="loading-spinner">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+    </div>
+}
+else if (_users.Count == 0)
+{
+    <div class="alert alert-secondary" data-testid="empty-state">Geen gebruikers gevonden</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th @onclick='() => SortBy("email")' style="cursor:pointer">
+                        E-mail @SortIndicator("email")
+                    </th>
+                    <th>Weergavenaam</th>
+                    <th>Admin</th>
+                    <th>Lid sinds</th>
+                    <th>Rekeningen</th>
+                    <th>Shares gegeven</th>
+                    <th>Shares ontvangen</th>
+                    <th>Acties</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in SortedUsers)
+                {
+                    <tr data-testid="user-row-@user.Id" style="cursor:pointer" @onclick="() => ToggleExpandUser(user.Id)">
+                        <td>@user.Email</td>
+                        <td>@user.DisplayName</td>
+                        <td>
+                            @if (user.IsAdmin)
+                            {
+                                <span class="badge bg-danger" data-testid="admin-badge-@user.Id">Admin</span>
+                            }
+                        </td>
+                        <td>
+                            <span title="@user.CreatedAt.ToString("dd-MM-yyyy HH:mm")">
+                                @GetRelativeDate(user.CreatedAt)
+                            </span>
+                        </td>
+                        <td>@user.AccountCount</td>
+                        <td>@user.SharesGiven</td>
+                        <td>@user.SharesReceived</td>
+                        <td @onclick:stopPropagation="true">
+                            @if (user.Id == _currentUserId)
+                            {
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        disabled
+                                        title="Eigen beheerdersrol kan niet worden gewijzigd"
+                                        data-testid="toggle-admin-@user.Id">
+                                    @(user.IsAdmin ? "Admin intrekken" : "Admin verlenen")
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm @(user.IsAdmin ? "btn-outline-warning" : "btn-outline-success")"
+                                        @onclick="() => PromptToggleAdmin(user)"
+                                        data-testid="toggle-admin-@user.Id">
+                                    @(user.IsAdmin ? "Admin intrekken" : "Admin verlenen")
+                                </button>
+                            }
+                            <button class="btn btn-sm btn-outline-info ms-1"
+                                    @onclick="() => ToggleExpandUser(user.Id)"
+                                    data-testid="expand-user-@user.Id"
+                                    title="Shares bekijken">
+                                <i class="bi @(_expandedUserId == user.Id ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    @if (_expandedUserId == user.Id)
+                    {
+                        <tr>
+                            <td colspan="8" class="bg-light">
+                                @if (_loadingShares)
+                                {
+                                    <div class="text-center py-2">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                    </div>
+                                }
+                                else if (_sharesErrorMessage != null)
+                                {
+                                    <div class="alert alert-danger py-2 mb-0">@_sharesErrorMessage</div>
+                                }
+                                else if (_expandedShares != null)
+                                {
+                                    <div class="p-3">
+                                        <h6>Gedeelde rekeningen</h6>
+                                        @if (_expandedShares.AccountShares.Count == 0)
+                                        {
+                                            <p class="text-muted small">Geen gedeelde rekeningen</p>
+                                        }
+                                        else
+                                        {
+                                            <table class="table table-sm mb-3">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Rekening</th>
+                                                        <th>Gedeeld met</th>
+                                                        <th>Rechten</th>
+                                                        <th>Status</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var share in _expandedShares.AccountShares)
+                                                    {
+                                                        <tr>
+                                                            <td>@share.AccountName</td>
+                                                            <td>@share.SharedWithEmail</td>
+                                                            <td>@share.Permission</td>
+                                                            <td>@share.Status</td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-outline-danger"
+                                                                        @onclick="() => PromptRevokeAccountShare(share)"
+                                                                        data-testid="revoke-share-@share.ShareId">
+                                                                    Intrekken
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        }
+
+                                        <h6>Gedeelde budgetplannen</h6>
+                                        @if (_expandedShares.BudgetPlanShares.Count == 0)
+                                        {
+                                            <p class="text-muted small">Geen gedeelde budgetplannen</p>
+                                        }
+                                        else
+                                        {
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Budgetplan</th>
+                                                        <th>Gedeeld met</th>
+                                                        <th>Rechten</th>
+                                                        <th>Status</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var share in _expandedShares.BudgetPlanShares)
+                                                    {
+                                                        <tr>
+                                                            <td>@share.PlanName</td>
+                                                            <td>@share.SharedWithEmail</td>
+                                                            <td>@share.Permission</td>
+                                                            <td>@share.Status</td>
+                                                            <td>
+                                                                <button class="btn btn-sm btn-outline-danger"
+                                                                        @onclick="() => PromptRevokeBudgetPlanShare(share)"
+                                                                        data-testid="revoke-share-@share.ShareId">
+                                                                    Intrekken
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@* Toggle Admin confirmation modal *@
+@if (_toggleAdminTarget != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Beheerdersrol wijzigen</h5>
+                    <button type="button" class="btn-close" @onclick="CancelToggleAdmin"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_toggleAdminTarget.IsAdmin)
+                    {
+                        <p>Beheerdersrol intrekken van <strong>@_toggleAdminTarget.Email</strong>?</p>
+                    }
+                    else
+                    {
+                        <p>Beheerdersrol verlenen aan <strong>@_toggleAdminTarget.Email</strong>?</p>
+                    }
+                    @if (_toggleAdminError != null)
+                    {
+                        <div class="alert alert-danger py-2">@_toggleAdminError</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelToggleAdmin">Annuleren</button>
+                    <button class="btn btn-primary" @onclick="ConfirmToggleAdmin"
+                            data-testid="confirm-toggle-admin-button"
+                            disabled="@_toggleAdminBusy">
+                        @if (_toggleAdminBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        Bevestigen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Revoke share confirmation modal *@
+@if (_revokeTarget != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Share intrekken</h5>
+                    <button type="button" class="btn-close" @onclick="CancelRevoke"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Weet je zeker dat je deze share wilt intrekken?</p>
+                    @if (_revokeError != null)
+                    {
+                        <div class="alert alert-danger py-2">@_revokeError</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CancelRevoke">Annuleren</button>
+                    <button class="btn btn-danger" @onclick="ConfirmRevoke"
+                            data-testid="confirm-revoke-button"
+                            disabled="@_revokeBusy">
+                        @if (_revokeBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                        }
+                        Intrekken
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+</AdminRouteGuard>
+
+@code {
+    private List<UserSummaryResponse> _users = new();
+    private bool _loading = true;
+    private string? _errorMessage;
+
+    // Sorting
+    private string _sortColumn = "email";
+    private bool _sortAscending = true;
+
+    // Expand row
+    private Guid? _expandedUserId;
+    private UserSharesResponse? _expandedShares;
+    private bool _loadingShares;
+    private string? _sharesErrorMessage;
+
+    // Toggle admin modal
+    private UserSummaryResponse? _toggleAdminTarget;
+    private bool _toggleAdminBusy;
+    private string? _toggleAdminError;
+    private CancellationTokenSource? _toggleAdminErrorDismissTimer;
+
+    // Revoke modal
+    private record RevokeTarget(Guid ShareId, bool IsAccountShare);
+    private RevokeTarget? _revokeTarget;
+    private bool _revokeBusy;
+    private string? _revokeError;
+    private CancellationTokenSource? _revokeErrorDismissTimer;
+
+    private Guid _currentUserId;
+
+    private IEnumerable<UserSummaryResponse> SortedUsers => _sortColumn switch
+    {
+        "email" => _sortAscending ? _users.OrderBy(u => u.Email) : _users.OrderByDescending(u => u.Email),
+        _ => _users
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUserId = UserContext.GetCurrentUserId();
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _loading = true;
+        _errorMessage = null;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<UserSummaryResponse>>("api/admin/users");
+            _users = response ?? new List<UserSummaryResponse>();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load users");
+            _errorMessage = "Laden van gebruikers is mislukt.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task ToggleExpandUser(Guid userId)
+    {
+        if (_expandedUserId == userId)
+        {
+            _expandedUserId = null;
+            _expandedShares = null;
+            return;
+        }
+
+        _expandedUserId = userId;
+        _expandedShares = null;
+        _sharesErrorMessage = null;
+        _loadingShares = true;
+
+        try
+        {
+            _expandedShares = await Http.GetFromJsonAsync<UserSharesResponse>($"api/admin/users/{userId}/shares");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load shares for user {UserId}", userId);
+            _sharesErrorMessage = "Laden van shares is mislukt.";
+        }
+        finally
+        {
+            _loadingShares = false;
+        }
+    }
+
+    private void SortBy(string column)
+    {
+        if (_sortColumn == column)
+            _sortAscending = !_sortAscending;
+        else
+        {
+            _sortColumn = column;
+            _sortAscending = true;
+        }
+    }
+
+    private string SortIndicator(string column)
+        => _sortColumn == column ? (_sortAscending ? "▲" : "▼") : string.Empty;
+
+    // Toggle Admin
+    private void PromptToggleAdmin(UserSummaryResponse user)
+    {
+        _toggleAdminTarget = user;
+        _toggleAdminError = null;
+    }
+
+    private void CancelToggleAdmin() => _toggleAdminTarget = null;
+
+    private async Task ConfirmToggleAdmin()
+    {
+        if (_toggleAdminTarget == null) return;
+        _toggleAdminBusy = true;
+        _toggleAdminError = null;
+
+        try
+        {
+            var response = await Http.PostAsync($"api/admin/users/{_toggleAdminTarget.Id}/toggle-admin", null);
+            if (response.IsSuccessStatusCode)
+            {
+                var updated = _toggleAdminTarget with { IsAdmin = !_toggleAdminTarget.IsAdmin };
+                var idx = _users.IndexOf(_toggleAdminTarget);
+                if (idx >= 0) _users[idx] = updated;
+                _toggleAdminTarget = null;
+            }
+            else
+            {
+                _toggleAdminError = "Beheerdersrol wijzigen mislukt. Probeer opnieuw.";
+                _ = DismissToggleAdminErrorAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to toggle admin for user {UserId}", _toggleAdminTarget?.Id);
+            _toggleAdminError = "Beheerdersrol wijzigen mislukt. Probeer opnieuw.";
+            _ = DismissToggleAdminErrorAsync();
+        }
+        finally
+        {
+            _toggleAdminBusy = false;
+        }
+    }
+
+    // Revoke Share
+    private void PromptRevokeAccountShare(AccountShareDetail share)
+    {
+        _revokeTarget = new RevokeTarget(share.ShareId, IsAccountShare: true);
+        _revokeError = null;
+    }
+
+    private void PromptRevokeBudgetPlanShare(BudgetPlanShareDetail share)
+    {
+        _revokeTarget = new RevokeTarget(share.ShareId, IsAccountShare: false);
+        _revokeError = null;
+    }
+
+    private void CancelRevoke() => _revokeTarget = null;
+
+    private async Task ConfirmRevoke()
+    {
+        if (_revokeTarget == null) return;
+        _revokeBusy = true;
+        _revokeError = null;
+
+        var target = _revokeTarget;
+        var endpoint = target.IsAccountShare
+            ? $"api/shares/accounts/{target.ShareId}"
+            : $"api/shares/budgetplans/{target.ShareId}";
+
+        try
+        {
+            var response = await Http.DeleteAsync(endpoint);
+            if (response.IsSuccessStatusCode)
+            {
+                _revokeTarget = null;
+                // Reload expanded shares
+                if (_expandedUserId.HasValue)
+                {
+                    _expandedShares = null;
+                    _loadingShares = true;
+                    try
+                    {
+                        _expandedShares = await Http.GetFromJsonAsync<UserSharesResponse>($"api/admin/users/{_expandedUserId}/shares");
+                    }
+                    catch
+                    {
+                        _sharesErrorMessage = "Shares vernieuwen mislukt.";
+                    }
+                    finally
+                    {
+                        _loadingShares = false;
+                    }
+                }
+                // Refresh user list counts
+                await LoadUsersAsync();
+            }
+            else
+            {
+                _revokeError = "Share intrekken mislukt. Probeer opnieuw.";
+                _ = DismissRevokeErrorAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to revoke share {ShareId}", target.ShareId);
+            _revokeError = "Share intrekken mislukt. Probeer opnieuw.";
+            _ = DismissRevokeErrorAsync();
+        }
+        finally
+        {
+            _revokeBusy = false;
+        }
+    }
+
+    private static string GetRelativeDate(DateTime date)
+    {
+        var diff = DateTime.UtcNow - date;
+        if (diff.TotalDays < 1) return "vandaag";
+        if (diff.TotalDays < 2) return "gisteren";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays} dagen geleden";
+        if (diff.TotalDays < 30) return $"{(int)(diff.TotalDays / 7)} weken geleden";
+        if (diff.TotalDays < 365) return $"{(int)(diff.TotalDays / 30)} maanden geleden";
+        return $"{(int)(diff.TotalDays / 365)} jaar geleden";
+    }
+
+    private async Task DismissToggleAdminErrorAsync()
+    {
+        _toggleAdminErrorDismissTimer?.Cancel();
+        _toggleAdminErrorDismissTimer = new CancellationTokenSource();
+        var token = _toggleAdminErrorDismissTimer.Token;
+        try
+        {
+            await Task.Delay(5000, token);
+            if (!token.IsCancellationRequested)
+            {
+                _toggleAdminError = null;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async Task DismissRevokeErrorAsync()
+    {
+        _revokeErrorDismissTimer?.Cancel();
+        _revokeErrorDismissTimer = new CancellationTokenSource();
+        var token = _revokeErrorDismissTimer.Token;
+        try
+        {
+            await Task.Delay(5000, token);
+            if (!token.IsCancellationRequested)
+            {
+                _revokeError = null;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (TaskCanceledException) { }
+    }
+}

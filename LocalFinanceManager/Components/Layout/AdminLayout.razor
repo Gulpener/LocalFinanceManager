@@ -1,0 +1,66 @@
+@inherits LayoutComponentBase
+@layout MainLayout
+@using LocalFinanceManager.Services
+@inject NavigationManager NavigationManager
+@inject IUserContext UserContext
+
+<div class="admin-layout">
+    @if (_isAdmin)
+    {
+        <ul class="nav nav-tabs mb-3" role="tablist" style="overflow-x: auto; flex-wrap: nowrap;">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link @IsActive("/admin/settings")"
+                   href="/admin/settings"
+                   data-testid="admin-tab-settings"
+                   role="tab">
+                    <i class="bi bi-gear-fill me-1" aria-hidden="true"></i>Instellingen
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link @IsActive("/admin/ml")"
+                   href="/admin/ml"
+                   data-testid="admin-tab-ml"
+                   role="tab">
+                    <i class="bi bi-robot me-1" aria-hidden="true"></i>ML Modellen
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link @IsActive("/admin/monitoring")"
+                   href="/admin/monitoring"
+                   data-testid="admin-tab-monitoring"
+                   role="tab">
+                    <i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Bewaking
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link @IsActive("/admin/users")"
+                   href="/admin/users"
+                   data-testid="admin-tab-users"
+                   role="tab">
+                    <i class="bi bi-people-fill me-1" aria-hidden="true"></i>Gebruikers
+                </a>
+            </li>
+        </ul>
+    }
+
+    @Body
+</div>
+
+@code {
+    private bool _isAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await UserContext.IsAdminAsync();
+    }
+
+    private string IsActive(string path)
+    {
+        var uri = NavigationManager.Uri;
+        var baseUri = NavigationManager.BaseUri.TrimEnd('/');
+        var relativePath = uri.StartsWith(baseUri, StringComparison.OrdinalIgnoreCase)
+            ? uri[baseUri.Length..].TrimEnd('/')
+            : uri;
+        return relativePath.Equals(path.TrimEnd('/'), StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+    }
+}

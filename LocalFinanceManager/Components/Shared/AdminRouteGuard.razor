@@ -1,0 +1,29 @@
+@using LocalFinanceManager.Services
+@inject IUserContext UserContext
+@inject NavigationManager NavigationManager
+
+@if (_isAdmin)
+{
+    @ChildContent
+}
+else if (!_checking)
+{
+    @* Non-admin: content already hidden, redirect happens in OnInitializedAsync *@
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool _checking = true;
+    private bool _isAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await UserContext.IsAdminAsync();
+        _checking = false;
+        if (!_isAdmin)
+        {
+            NavigationManager.NavigateTo("/", forceLoad: false);
+        }
+    }
+}

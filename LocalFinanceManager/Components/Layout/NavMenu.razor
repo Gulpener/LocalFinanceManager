@@ -52,21 +52,18 @@
                     </NavLink>
                 </div>
 
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/settings">
-                        <i class="bi bi-gear-fill" aria-hidden="true"></i><span class="nav-label ms-2">Beheerinstellingen</span>
-                    </NavLink>
-                </div>
+                @if (_isAdmin)
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="admin/settings">
+                            <i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span class="nav-label ms-2">Beheer</span>
+                        </NavLink>
+                    </div>
+                }
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/autoapply">
+                    <NavLink class="nav-link" href="settings/auto-apply">
                         <i class="bi bi-robot" aria-hidden="true"></i><span class="nav-label ms-2">Automatisch toewijzen</span>
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/monitoring">
-                        <i class="bi bi-speedometer2" aria-hidden="true"></i><span class="nav-label ms-2">Bewaking</span>
                     </NavLink>
                 </div>
 
@@ -96,6 +93,7 @@
     private int pendingShareCount;
     private bool _menuOpen;
     private bool _collapsed;
+    private bool _isAdmin;
     private CancellationTokenSource? _cts;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -164,6 +162,7 @@
             if (userId != Guid.Empty)
             {
                 pendingShareCount = await SharingService.GetPendingShareCountAsync(userId);
+                _isAdmin = await UserContext.IsAdminAsync();
                 await InvokeAsync(StateHasChanged);
             }
         }
