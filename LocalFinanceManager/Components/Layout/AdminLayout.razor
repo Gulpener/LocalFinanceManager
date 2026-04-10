@@ -54,6 +54,20 @@
         _isAdmin = await UserContext.IsAdminAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var isAdmin = await UserContext.IsAdminAsync();
+        if (isAdmin != _isAdmin)
+        {
+            _isAdmin = isAdmin;
+            StateHasChanged();
+        }
+    }
     private string IsActive(string path)
     {
         var uri = NavigationManager.Uri;
