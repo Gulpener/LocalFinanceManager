@@ -13,7 +13,7 @@ As a user, I want various small improvements across the application so that the 
 - [ ] Deploy script sets a display name that references the CI build number
 - [ ] When logged in, the "Home" navigation item is renamed to "Dashboard" with a dashboard icon
 - [ ] CI build is only triggered by changes in pipelines or code, not documentation
-- [ ] In dark mode, text using `#212529` or `#212529BF` is replaced with a readable color (e.g. Bootstrap `--bs-body-color` or `var(--bs-light)`)
+- [ ] In dark mode, text using `#212529` or `#212529BF` is replaced with a theme-aware color (e.g. `var(--bs-body-color)`, `var(--bs-secondary-color)`, or Bootstrap utilities `text-body` / `text-body-secondary`)
 - [ ] In CI, failing tests are automatically retried (at least once) before the build is marked as failed
 
 ## Tasks
