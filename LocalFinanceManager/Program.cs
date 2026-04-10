@@ -292,10 +292,18 @@ else
 // Only apply status code pages for non-API and non-health requests; API controllers and health
 // checks must return their own responses without being replaced by the Blazor HTML shell.
 // The /health exclusion is critical: a 503 from a failed DB health check must not be replaced
-// with the Blazor not-found page, which would make the endpoint unusable for monitoring.
+// with the Blazor HTML shell, which would make the endpoint unusable for monitoring.
+// Paths with a file extension (e.g. .js, .css, .png) are also excluded so that missing static
+// asset 404s are not replaced with HTML.
+// Re-execute to "/" instead of "/not-found": "/" always serves the Blazor HTML shell (prerender:
+// false), which bootstraps the Blazor circuit. The circuit then navigates client-side to the
+// original URL. This fixes direct-URL navigation (refresh) returning 404 on Azure App Service
+// for protected routes like /budgets, /accounts, etc.
 app.UseWhen(
-    ctx => !ctx.Request.Path.StartsWithSegments("/api") && !ctx.Request.Path.StartsWithSegments("/health"),
-    b => b.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true));
+    ctx => !ctx.Request.Path.StartsWithSegments("/api")
+        && !ctx.Request.Path.StartsWithSegments("/health")
+        && !(ctx.Request.Path.Value?.Contains('.') ?? false),
+    b => b.UseStatusCodePagesWithReExecute("/", createScopeForStatusCodePages: true));
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
