@@ -1,4 +1,4 @@
-# Bug Report 4 - Blazor Circuit Terminated When Assigning Transaction to Budget Line
+# BugReport-4: Blazor Circuit Terminated When Assigning Transaction to Budget Line
 
 ## Status
 
