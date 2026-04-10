@@ -1,4 +1,4 @@
-# User Story 21 - User Profile Page
+# UserStory-21: User Profile Page
 
 ## Story
 
