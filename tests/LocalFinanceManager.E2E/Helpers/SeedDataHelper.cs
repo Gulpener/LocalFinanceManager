@@ -464,7 +464,8 @@ public static class SeedDataHelper
     }
 
     /// <summary>
-    /// Seeds audit entries for a specific transaction.
+    /// Seeds audit entries for a specific transaction with deterministic timestamps.
+    /// Entries are assigned timestamps in descending order (newest first = index 0).
     /// </summary>
     /// <param name="context">Database context for saving entities.</param>
     /// <param name="transactionId">ID of the transaction to audit.</param>
@@ -474,18 +475,23 @@ public static class SeedDataHelper
         Guid transactionId,
         IEnumerable<(string ActionType, string ChangedBy, bool IsAutoApplied, float? Confidence, int? ModelVersion, string? BeforeState, string? AfterState, string? Reason)> entries)
     {
-        foreach (var e in entries)
+        var entryList = entries.ToList();
+        for (var i = 0; i < entryList.Count; i++)
         {
+            var e = entryList[i];
+            // Assign deterministic timestamps: first entry is oldest, last is newest.
+            // This ensures predictable chronological ordering in tests.
+            var changedAt = DateTime.UtcNow.AddMinutes(-(entryList.Count - i) * 60);
             context.TransactionAudits.Add(new TransactionAudit
             {
                 Id = Guid.NewGuid(),
                 TransactionId = transactionId,
                 ActionType = e.ActionType,
                 ChangedBy = e.ChangedBy,
-                ChangedAt = DateTime.UtcNow.AddMinutes(-_random.Next(1, 1440)),
+                ChangedAt = changedAt,
                 IsAutoApplied = e.IsAutoApplied,
                 AutoAppliedBy = e.IsAutoApplied ? e.ChangedBy : null,
-                AutoAppliedAt = e.IsAutoApplied ? DateTime.UtcNow : null,
+                AutoAppliedAt = e.IsAutoApplied ? changedAt : null,
                 Confidence = e.Confidence,
                 ModelVersion = e.ModelVersion,
                 BeforeState = e.BeforeState,

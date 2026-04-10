@@ -105,8 +105,8 @@ public class TransactionAuditTests : E2ETestBase
             if (await _auditPage.HasAutoAppliedBadgeAsync(i))
             {
                 var confidence = await _auditPage.GetConfidenceScoreAsync(i);
-                Assert.That(confidence, Does.Contain("85").Or.Contain("zekerheid"),
-                    "Confidence score should display percentage");
+                Assert.That(confidence, Does.Contain("85").And.Contain("zekerheid"),
+                    "Confidence score should display percentage with label");
                 break;
             }
         }
