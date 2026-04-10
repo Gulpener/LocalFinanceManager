@@ -7,8 +7,8 @@
 
 ## Status Overview
 
-- ✅ **26 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **4 stories ready** for implementation (US-16, US-17, US-18, US-19)
+- ✅ **27 stories completed & archived** — see `docs/Userstories/Archive/`
+- 🟡 **3 stories ready** for implementation (US-16, US-18, US-19)
 - 🔴 **0 stories need refinement**
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
@@ -29,15 +29,11 @@
 
 ---
 
-### 🟡 UserStory-17: Azure B1 Deployment
+### ✅ UserStory-17: Azure B1 Deployment — COMPLETED (April 10, 2026)
 
-**File:** [docs/Userstories/UserStory-17-Azure-B1-Deployment.md](docs/Userstories/UserStory-17-Azure-B1-Deployment.md)
+**File:** [docs/Userstories/Archive/UserStory-17-Azure-B1-Deployment.md](docs/Userstories/Archive/UserStory-17-Azure-B1-Deployment.md)
 
-**Status:** In progress — Azure resources partially provisioned. Estimated effort: 1-2 days.
-
-**Scope:** Deploy the Blazor Server app to Azure App Service B1 tier via GitHub Actions CD, with `appsettings.Production.json`, health checks, Always-On, and HTTPS-only enforced. Supabase PostgreSQL is unchanged.
-
-**Note:** Azure resources (Resource Group, App Service Plan, App Service) are created. Remaining: Always-On, HTTPS Only, environment variable configuration, GitHub Secrets, and CI/CD pipeline.
+**Status:** Implemented & archived.
 
 ---
 
