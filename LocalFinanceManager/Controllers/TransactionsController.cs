@@ -371,14 +371,38 @@ public class TransactionsController : ControllerBase
     /// </summary>
     [HttpGet]
     [Route("{id}/audit")]
-    public async Task<ActionResult<List<TransactionAuditDto>>> GetAuditHistory(Guid id)
+    public async Task<ActionResult<PagedTransactionAuditResponse>> GetAuditHistory(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
     {
         const string notFoundDetail = "Transaction not found or not accessible.";
 
+        if (page < 1)
+        {
+            ModelState.AddModelError(nameof(page), "Page must be greater than or equal to 1.");
+        }
+
+        if (pageSize < 1)
+        {
+            ModelState.AddModelError(nameof(pageSize), "PageSize must be greater than or equal to 1.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         try
         {
-            var audits = await _assignmentService.GetTransactionAuditHistoryAsync(id);
-            return Ok(audits);
+            var audits = await _assignmentService.GetTransactionAuditHistoryAsync(id, page, pageSize);
+
+            return Ok(new PagedTransactionAuditResponse
+            {
+                Page = page,
+                PageSize = pageSize,
+                Items = audits
+            });
         }
         catch (InvalidOperationException ex)
         {
@@ -411,4 +435,14 @@ public class PreviewImportRequest
 {
     public string FileFormat { get; set; } = "csv";
     public string FileContent { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Paged response for transaction audit history.
+/// </summary>
+public class PagedTransactionAuditResponse
+{
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public List<TransactionAuditDto> Items { get; set; } = new();
 }
