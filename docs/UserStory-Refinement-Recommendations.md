@@ -21,7 +21,7 @@
 
 ### � UserStory-16: Design Overhaul
 
-**File:** [docs/Userstories/UserStory-16-Design-Overhaul.md](docs/Userstories/UserStory-16-Design-Overhaul.md)
+**File:** [Userstories/UserStory-16-Design-Overhaul.md](Userstories/UserStory-16-Design-Overhaul.md)
 
 **Status:** New — full specification written. Estimated effort: 5-7 days.
 
@@ -39,7 +39,7 @@
 
 ### 🟡 UserStory-19: Unified Admin Panel
 
-**File:** [docs/Userstories/UserStory-19-Admin-Panel-Unified.md](docs/Userstories/UserStory-19-Admin-Panel-Unified.md)
+**File:** [Userstories/UserStory-19-Admin-Panel-Unified.md](Userstories/UserStory-19-Admin-Panel-Unified.md)
 
 **Status:** Refined (April 10, 2026) — ready for implementation. Estimated effort: 3–4 days.
 
@@ -57,7 +57,7 @@
 
 ### 🔴 UserStory-20: Small Improvements
 
-**File:** [docs/Userstories/UserStory-20-Small-Improvements.md](docs/Userstories/UserStory-20-Small-Improvements.md)
+**File:** [Userstories/UserStory-20-Small-Improvements.md](Userstories/UserStory-20-Small-Improvements.md)
 
 **Status:** Needs refinement — too thin to implement safely.
 
@@ -74,7 +74,7 @@
 
 ### 🟡 UserStory-21: User Profile Page
 
-**File:** [docs/Userstories/UserStory-21-User-Profile-Page.md](docs/Userstories/UserStory-21-User-Profile-Page.md)
+**File:** [Userstories/UserStory-21-User-Profile-Page.md](Userstories/UserStory-21-User-Profile-Page.md)
 
 **Status:** Ready — full specification written. Estimated effort: 3–4 days.
 
@@ -82,7 +82,7 @@
 
 ---
 
-**File:** [docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md](docs/Userstories/UserStory-18-Transaction-Audit-Trail-UI.md)
+**File:** [Userstories/UserStory-18-Transaction-Audit-Trail-UI.md](Userstories/UserStory-18-Transaction-Audit-Trail-UI.md)
 
 **Status:** Ready — no refinement needed. Estimated effort: 2-3 days.
 
@@ -98,7 +98,7 @@
 
 ### ✅ UserStory-16 (Design Overhaul) — COMPLETED
 
-**File:** [docs/Userstories/Archive/UserStory-16-Design-Overhaul.md](docs/Userstories/Archive/UserStory-16-Design-Overhaul.md)
+**File:** [Userstories/Archive/UserStory-16-Design-Overhaul.md](Userstories/Archive/UserStory-16-Design-Overhaul.md)
 
 **Status:** Implemented & archived.
 
@@ -106,7 +106,7 @@
 
 ### ✅ UserStory-14: Backup & Restore — COMPLETED (April 5, 2026)
 
-**File:** [docs/Userstories/Archive/UserStory-14-Backup-Restore.md](docs/Userstories/Archive/UserStory-14-Backup-Restore.md)
+**File:** [Userstories/Archive/UserStory-14-Backup-Restore.md](Userstories/Archive/UserStory-14-Backup-Restore.md)
 
 **Status:** Implemented & archived.
 
@@ -114,7 +114,7 @@
 
 ### ✅ UserStory-15: Application Flow & Onboarding — COMPLETED (April 6, 2026)
 
-**File:** [docs/Userstories/Archive/UserStory-15-Application-Flow.md](docs/Userstories/Archive/UserStory-15-Application-Flow.md)
+**File:** [Userstories/Archive/UserStory-15-Application-Flow.md](Userstories/Archive/UserStory-15-Application-Flow.md)
 
 **Status:** Implemented & archived.
 
