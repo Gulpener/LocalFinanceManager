@@ -465,23 +465,25 @@ public static class SeedDataHelper
 
     /// <summary>
     /// Seeds audit entries for a specific transaction with deterministic timestamps.
-    /// Entries are assigned timestamps in descending order (newest first = index 0).
+    /// Entries are assigned timestamps in the order provided, where the first entry is the oldest
+    /// and the last entry is the newest.
     /// </summary>
     /// <param name="context">Database context for saving entities.</param>
     /// <param name="transactionId">ID of the transaction to audit.</param>
-    /// <param name="entries">List of audit entry tuples: (actionType, changedBy, isAutoApplied, confidence, modelVersion, beforeState, afterState, reason).</param>
+    /// <param name="entries">List of audit entry tuples in oldest-to-newest order: (actionType, changedBy, isAutoApplied, confidence, modelVersion, beforeState, afterState, reason).</param>
     public static async Task SeedTransactionAuditsAsync(
         AppDbContext context,
         Guid transactionId,
         IEnumerable<(string ActionType, string ChangedBy, bool IsAutoApplied, float? Confidence, int? ModelVersion, string? BeforeState, string? AfterState, string? Reason)> entries)
     {
         var entryList = entries.ToList();
+        var baseTimestamp = DateTime.UtcNow;
         for (var i = 0; i < entryList.Count; i++)
         {
             var e = entryList[i];
             // Assign deterministic timestamps: first entry is oldest, last is newest.
             // This ensures predictable chronological ordering in tests.
-            var changedAt = DateTime.UtcNow.AddMinutes(-(entryList.Count - i) * 60);
+            var changedAt = baseTimestamp.AddMinutes(-(entryList.Count - i) * 60);
             context.TransactionAudits.Add(new TransactionAudit
             {
                 Id = Guid.NewGuid(),

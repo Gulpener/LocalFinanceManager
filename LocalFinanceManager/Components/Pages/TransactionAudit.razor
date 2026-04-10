@@ -5,7 +5,6 @@
 @using LocalFinanceManager.Data.Repositories
 @inject ITransactionAssignmentService AssignmentService
 @inject ITransactionRepository TransactionRepository
-@inject NavigationManager NavigationManager
 @inject ILogger<TransactionAudit> Logger
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
@@ -13,7 +12,7 @@
 
 <div class="d-flex align-items-center mb-3">
     <a href="/transactions" class="btn btn-outline-secondary me-3">
-        <i class="bi bi-arrow-left"></i> Terug
+        <i class="bi bi-arrow-left" aria-hidden="true"></i> Terug
     </a>
     <h1 class="mb-0">Audit Trail</h1>
 </div>
@@ -29,7 +28,7 @@
 else if (!string.IsNullOrEmpty(errorMessage))
 {
     <div class="alert alert-danger" role="alert">
-        <i class="bi bi-exclamation-triangle"></i> @errorMessage
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> @errorMessage
     </div>
 }
 else
@@ -57,7 +56,7 @@ else
         @if (auditEntries == null || !auditEntries.Any())
         {
             <div class="alert alert-info" role="alert">
-                <i class="bi bi-info-circle"></i> Geen auditgeschiedenis gevonden voor deze transactie.
+                <i class="bi bi-info-circle" aria-hidden="true"></i> Geen auditgeschiedenis gevonden voor deze transactie.
             </div>
         }
         else
@@ -255,7 +254,8 @@ else
 
     private void GoToPage(int page)
     {
-        currentPage = page;
+        var totalPages = GetTotalPages();
+        currentPage = Math.Clamp(page, 1, totalPages);
     }
 
     private List<TransactionAuditDto> GetPagedEntries() =>

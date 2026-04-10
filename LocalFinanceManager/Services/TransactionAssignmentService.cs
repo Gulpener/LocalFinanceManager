@@ -274,7 +274,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
     public async Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId)
     {
-        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId);
+        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId, int.MaxValue);
         return audits.Select(a => new TransactionAuditDto
         {
             Id = a.Id,

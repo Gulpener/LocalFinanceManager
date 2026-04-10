@@ -99,17 +99,23 @@ public class TransactionAuditTests : E2ETestBase
         await _auditPage.WaitForPageLoadAsync();
 
         var count = await _auditPage.GetAuditEntryCountAsync();
+        var foundAutoAppliedEntry = false;
 
         for (var i = 0; i < count; i++)
         {
             if (await _auditPage.HasAutoAppliedBadgeAsync(i))
             {
+                foundAutoAppliedEntry = true;
+
                 var confidence = await _auditPage.GetConfidenceScoreAsync(i);
                 Assert.That(confidence, Does.Contain("85").And.Contain("zekerheid"),
                     "Confidence score should display percentage with label");
                 break;
             }
         }
+
+        Assert.That(foundAutoAppliedEntry, Is.True,
+            "Expected at least one auto-applied audit entry so the confidence score can be validated.");
     }
 
     [Test]
@@ -121,11 +127,28 @@ public class TransactionAuditTests : E2ETestBase
         var count = await _auditPage.GetAuditEntryCountAsync();
         Assert.That(count, Is.GreaterThanOrEqualTo(1));
 
-        // All entries should have a timestamp visible
+        var parsedTimestamps = new List<DateTimeOffset>(count);
+
+        // All entries should have a timestamp visible and the timeline should be ordered newest-first.
         for (var i = 0; i < count; i++)
         {
             var timestamp = await _auditPage.GetTimestampTextAsync(i);
             Assert.That(timestamp, Is.Not.Empty, $"Entry {i} should have a timestamp");
+
+            Assert.That(
+                DateTimeOffset.TryParse(timestamp, out var parsedTimestamp),
+                Is.True,
+                $"Entry {i} timestamp '{timestamp}' should be parseable for chronological comparison");
+
+            parsedTimestamps.Add(parsedTimestamp);
+        }
+
+        for (var i = 0; i < parsedTimestamps.Count - 1; i++)
+        {
+            Assert.That(
+                parsedTimestamps[i],
+                Is.GreaterThanOrEqualTo(parsedTimestamps[i + 1]),
+                $"Audit entries should be ordered newest-first, but entry {i} ({parsedTimestamps[i]:O}) was older than entry {i + 1} ({parsedTimestamps[i + 1]:O})");
         }
     }
 
@@ -136,6 +159,9 @@ public class TransactionAuditTests : E2ETestBase
         await _auditPage.WaitForPageLoadAsync();
 
         var count = await _auditPage.GetAuditEntryCountAsync();
+        Assert.That(count, Is.GreaterThanOrEqualTo(1), "Expected at least one audit entry");
+
+        var foundEntryWithStateChanges = false;
 
         // Find an entry with state changes and expand it
         for (var i = 0; i < count; i++)
@@ -144,10 +170,16 @@ public class TransactionAuditTests : E2ETestBase
             var afterState = await _auditPage.GetAfterStateAsync(i);
             if (!string.IsNullOrEmpty(afterState))
             {
+                foundEntryWithStateChanges = true;
                 Assert.That(afterState, Does.Contain("{"), "After state should contain JSON");
                 break;
             }
         }
+
+        Assert.That(
+            foundEntryWithStateChanges,
+            Is.True,
+            "Expected at least one audit entry to expose expandable state changes");
     }
 
     [Test]

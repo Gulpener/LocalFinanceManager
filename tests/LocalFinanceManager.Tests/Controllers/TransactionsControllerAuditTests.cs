@@ -73,7 +73,7 @@ public class TransactionsControllerAuditTests
     }
 
     [Test]
-    public async Task GetAuditHistory_OrdersByDateDescending()
+    public async Task GetAuditHistory_ReturnsAuditHistoryFromService()
     {
         var transactionId = Guid.NewGuid();
         var older = DateTime.UtcNow.AddDays(-2);
