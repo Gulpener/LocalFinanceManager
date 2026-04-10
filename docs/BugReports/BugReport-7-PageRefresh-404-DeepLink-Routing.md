@@ -64,10 +64,10 @@ Implemented an IIS deep-link fallback for Azure App Service by adding a project-
 What was changed:
 
 - Added `LocalFinanceManager/web.config` with URL Rewrite rule:
-   - Rewrites only `GET` requests
-   - Excludes `/api/*` and `/health*`
-   - Excludes existing files/directories
-   - Rewrites all remaining deep links to `/`
+  - Rewrites only `GET` requests
+  - Excludes `/api/*` and `/health*`
+  - Excludes existing files/directories
+  - Rewrites all remaining deep links to `/`
 - Kept ASP.NET Core handler (`AspNetCoreModuleV2`) and `aspNetCore` process configuration intact.
 
 Why this fixes the issue:
