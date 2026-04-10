@@ -1,4 +1,12 @@
-# BugReport-7 - Page Refresh 404 / Dangerous Site Warning on Deep Links
+# BugReport-7: Page Refresh 404 / Dangerous Site Warning on Deep Links
+
+## Status
+
+- [x] Resolved
+
+## Summary
+
+Refreshing the browser on any deep-link route (e.g. `/transactions`, `/accounts`) on Azure App Service resulted in an HTTP 404 error or a "Gevaarlijke site" browser warning. Fixed by adding a `web.config` with an IIS URL Rewrite rule that falls back all non-API, non-file GET requests to `/`, allowing the Blazor Server app to handle routing.
 
 ## Description
 
@@ -18,7 +26,7 @@ Refreshing the browser on any route other than the homepage (`/`) or `/login` re
 
 ## Expected Behaviour
 
-The application loads correctly on refresh for any valid route. For Blazor Server, the server should return the host page (`/_Host`) for app routes so Blazor routing can continue.
+The application loads correctly on refresh for any valid route. For Blazor Server, the server should rewrite app routes back to `/` so Blazor routing can resolve the original URL.
 
 ## Actual Behaviour
 
@@ -35,12 +43,12 @@ Azure App Service returns HTTP 404 on deep links (for example `/transactions`) d
 
 Azure App Service (IIS-based) likely misses fallback handling for deep links. These routes are valid inside the Blazor app, but are unknown to IIS as direct HTTP endpoints unless a fallback/rewrite is configured.
 
-For a Blazor Server app, the server must map non-file, non-API paths back to the host page (`/_Host`). Without this, refresh/direct navigation on app routes returns 404.
+For a Blazor Server app using `MapRazorComponents<App>()`, the server must rewrite non-file, non-API paths back to `/` so the app can bootstrap and handle client-side routing. Without this, refresh/direct navigation on app routes returns 404.
 
 Possible causes:
 
 - Missing `web.config` with IIS URL Rewrite rule for non-file, non-directory requests
-- Missing or incorrect fallback mapping in `Program.cs` (`app.MapFallbackToPage("/_Host")`)
+- Missing or incorrect fallback mapping in `Program.cs` (e.g. `UseStatusCodePagesWithReExecute("/")`)
 - Rewrite rule is too broad and also rewrites API/static files, causing incorrect browser behavior
 
 ## Affected Routes
