@@ -376,6 +376,19 @@ public class TransactionsController : ControllerBase
         try
         {
             var audits = await _assignmentService.GetTransactionAuditHistoryAsync(id);
+            if (audits == null || audits.Count == 0)
+            {
+                const string detail = "Transaction not found or not accessible.";
+                _logger.LogWarning("Transaction {TransactionId} not found or not accessible for audit history", id);
+                return NotFound(new ProblemDetails
+                {
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Title = "Not Found",
+                    Status = 404,
+                    Detail = detail
+                });
+            }
+
             return Ok(audits);
         }
         catch (InvalidOperationException ex)

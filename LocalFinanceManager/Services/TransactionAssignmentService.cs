@@ -305,11 +305,8 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         var skip = (page - 1) * pageSize;
 
-        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId);
+        var audits = await _auditRepository.GetPagedByTransactionIdAsync(transactionId, skip, pageSize);
         return audits
-            .OrderByDescending(a => a.ChangedAt)
-            .Skip(skip)
-            .Take(pageSize)
             .Select(a => new TransactionAuditDto
             {
                 Id = a.Id,
