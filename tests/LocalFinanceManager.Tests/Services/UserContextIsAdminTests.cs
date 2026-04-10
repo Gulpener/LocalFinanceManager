@@ -15,6 +15,7 @@ public class UserContextIsAdminTests
 {
     private static readonly Guid AdminUserId = Guid.Parse("aaaa0001-0000-0000-0000-000000000001");
     private static readonly Guid RegularUserId = Guid.Parse("bbbb0002-0000-0000-0000-000000000002");
+    private static readonly Guid ArchivedAdminUserId = Guid.Parse("dddd0004-0000-0000-0000-000000000004");
 
     private AppDbContext _context = null!;
 
@@ -31,7 +32,8 @@ public class UserContextIsAdminTests
 
         _context.Users.AddRange(
             new User { Id = AdminUserId, SupabaseUserId = AdminUserId.ToString(), Email = "admin@test.com", DisplayName = "Admin", IsAdmin = true },
-            new User { Id = RegularUserId, SupabaseUserId = RegularUserId.ToString(), Email = "user@test.com", DisplayName = "User", IsAdmin = false }
+            new User { Id = RegularUserId, SupabaseUserId = RegularUserId.ToString(), Email = "user@test.com", DisplayName = "User", IsAdmin = false },
+            new User { Id = ArchivedAdminUserId, SupabaseUserId = ArchivedAdminUserId.ToString(), Email = "archived-admin@test.com", DisplayName = "Archived Admin", IsAdmin = true, IsArchived = true }
         );
         _context.SaveChanges();
     }
@@ -82,6 +84,14 @@ public class UserContextIsAdminTests
         Assert.That(result, Is.False);
     }
 
+    [Test]
+    public async Task IsAdminAsync_ArchivedAdminUser_ReturnsFalse()
+    {
+        var ctx = CreateUserContext(ArchivedAdminUserId);
+        var result = await ctx.IsAdminAsync();
+        Assert.That(result, Is.False);
+    }
+
     /// <summary>
     /// Minimal IUserContext implementation that uses the real AppDbContext for IsAdminAsync
     /// without requiring the full HTTP/Blazor circuit infrastructure.
@@ -106,7 +116,7 @@ public class UserContextIsAdminTests
             if (_userId == Guid.Empty) return false;
             return await _context.Users
                 .AsNoTracking()
-                .Where(u => u.Id == _userId)
+                .Where(u => u.Id == _userId && !u.IsArchived)
                 .Select(u => u.IsAdmin)
                 .FirstOrDefaultAsync();
         }

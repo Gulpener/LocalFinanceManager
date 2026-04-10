@@ -4,7 +4,7 @@ using LocalFinanceManager.Services;
 namespace LocalFinanceManager.Tests.Fixtures;
 
 /// <summary>
-/// Test implementation of IUserContext that returns a configurable user ID.
+/// Test implementation of IUserContext that returns a configurable user ID and admin status.
 /// Used in unit and integration tests to simulate an authenticated user without HTTP context.
 /// </summary>
 public sealed class TestUserContext : IUserContext
@@ -17,23 +17,33 @@ public sealed class TestUserContext : IUserContext
     /// </summary>
     public Guid UserId { get; }
 
+    private readonly bool _isAdmin;
+
     /// <summary>
-    /// Creates a TestUserContext with a deterministic non-empty test user ID.
+    /// Creates a TestUserContext with a deterministic non-empty test user ID and non-admin status.
     /// </summary>
-    public TestUserContext() : this(DefaultUserId)
+    public TestUserContext() : this(DefaultUserId, isAdmin: false)
     {
     }
 
     /// <summary>
-    /// Creates a TestUserContext with a specific user ID.
+    /// Creates a TestUserContext with a specific user ID and non-admin status.
     /// </summary>
-    public TestUserContext(Guid userId)
+    public TestUserContext(Guid userId) : this(userId, isAdmin: false)
+    {
+    }
+
+    /// <summary>
+    /// Creates a TestUserContext with a specific user ID and admin status.
+    /// </summary>
+    public TestUserContext(Guid userId, bool isAdmin)
     {
         UserId = userId;
+        _isAdmin = isAdmin;
     }
 
     public Guid GetCurrentUserId() => UserId;
     public string GetCurrentUserEmail() => "test@localfinancemanager.local";
     public bool IsAuthenticated() => UserId != Guid.Empty;
-    public Task<bool> IsAdminAsync() => Task.FromResult(false);
+    public Task<bool> IsAdminAsync() => Task.FromResult(_isAdmin);
 }

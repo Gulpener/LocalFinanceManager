@@ -47,14 +47,14 @@ public class AdminControllerIntegrationTests
         var controllerLogger = new Mock<ILogger<AdminController>>().Object;
 
         // Admin controller (requesting user is admin)
-        _adminController = new AdminController(_adminService, new TestUserContext(AdminUserId), controllerLogger);
+        _adminController = new AdminController(_adminService, new TestUserContext(AdminUserId, isAdmin: true), controllerLogger);
         _adminController.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
         };
 
         // Second admin controller (used to test admin-to-admin role changes)
-        _secondAdminController = new AdminController(_adminService, new TestUserContext(SecondAdminUserId), controllerLogger);
+        _secondAdminController = new AdminController(_adminService, new TestUserContext(SecondAdminUserId, isAdmin: true), controllerLogger);
         _secondAdminController.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
