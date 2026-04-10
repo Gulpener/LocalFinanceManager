@@ -130,8 +130,8 @@ public class AdminPanelTests : E2ETestBase
         var expandBtn = Page.Locator($"[data-testid='expand-user-{AppDbContext.SeedUserId}']");
         await expandBtn.ClickAsync();
 
-        // Wait for share details to load (empty state is acceptable)
-        await Page.WaitForTimeoutAsync(1000);
+        // Wait for the spinner to disappear or the content section to appear (empty or with data)
+        await Page.WaitForFunctionAsync("() => !document.querySelector('.spinner-border.spinner-border-sm')");
     }
 
     [Test]
