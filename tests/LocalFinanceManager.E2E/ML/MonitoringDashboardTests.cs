@@ -325,6 +325,9 @@ public class MonitoringDashboardTests : E2ETestBase
         await _dashboardPage.NavigateAsync();
 
         // Assert - Status column should be present showing "Accepted" or "Undone"
+        // Explicitly wait for at least one row to be present before querying, since NavigateAsync
+        // may return the instant spinners vanish — history rows may still be rendering.
+        await Page.WaitForSelectorAsync("[data-testid='history-row']", new() { Timeout = 15000 });
         var historyRows = await Page.QuerySelectorAllAsync("[data-testid='history-row']");
         Assert.That(historyRows.Count, Is.GreaterThan(0), "History rows should be present");
 

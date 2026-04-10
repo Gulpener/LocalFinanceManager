@@ -37,14 +37,21 @@ public class MonitoringDashboardPageModel : PageObjectBase
     {
         await NavigateToAsync("/admin/monitoring");
 
-        // Wait for stats spinner (large) to disappear — it is the first .spinner-border in DOM order,
-        // so the generic ".spinner-border" wait resolves here while history may still be loading.
-        await Page.WaitForSelectorAsync(".spinner-border:not(.spinner-border-sm)", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
+        // Gate readiness on stable "loaded" elements rather than spinner visibility.
+        // Spinner-based waits are unreliable: the Visible-first wait can time out before the
+        // SignalR circuit establishes in slow CI / cold-start scenarios, causing the subsequent
+        // Hidden wait to resolve immediately (spinner never entered the DOM) and returning before
+        // data has loaded.
 
-        // Wait for history spinner (small) to disappear — LoadHistory runs after LoadStats in
-        // OnInitializedAsync, so without this second wait IsUndoButtonEnabledForRowAsync (and
-        // any other history-table assertion) could be called before the rows are rendered.
-        await Page.WaitForSelectorAsync(".spinner-border.spinner-border-sm", new() { State = WaitForSelectorState.Hidden, Timeout = 15000 });
+        // Wait for stats card — only rendered once LoadStats completes and isLoading becomes false.
+        await Page.WaitForSelectorAsync(TotalCountCardSelector,
+            new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
+
+        // Wait for history section to finish loading: either the table (has rows) or the
+        // empty-state alert (no history). Both are only rendered after loadingHistory becomes false.
+        await Page.WaitForSelectorAsync(
+            $"{HistoryTableSelector}, [data-testid='history-empty']",
+            new() { State = WaitForSelectorState.Visible, Timeout = 30000 });
     }
 
     /// <summary>
