@@ -140,8 +140,7 @@ public class AdminPanelTests : E2ETestBase
         await Page.GotoAsync($"{BaseUrl}/");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Admin nav link uses href="admin/settings"
-        var adminLink = Page.Locator("nav a[href='admin/settings']");
+        var adminLink = Page.GetByTestId("nav-admin-link");
         await Assertions.Expect(adminLink).ToBeVisibleAsync();
     }
 
