@@ -85,7 +85,7 @@
 
     .nav-scrollable {
         display: block;
-        width: 250px;
+        width: 100%;
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
         display: flex;
@@ -178,7 +178,15 @@
     }
 
     .sidebar-wrap.collapsed .nav-label {
-        display: none;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
     }
 
     .sidebar-wrap.collapsed .nav-item ::deep .nav-link {
