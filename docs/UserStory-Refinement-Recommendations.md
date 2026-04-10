@@ -7,8 +7,8 @@
 
 ## Status Overview
 
-- ✅ **26 stories completed & archived** — see `docs/Userstories/Archive/`
-- 🟡 **4 stories ready** for implementation (US-16, US-17, US-18, US-19)
+- ✅ **27 stories completed & archived** — see `docs/Userstories/Archive/`
+- 🟡 **3 stories ready** for implementation (US-16, US-18, US-19)
 - 🔴 **0 stories need refinement**
 
 **Key Finding:** UserStory-5 (Basic Assignment UI) serves as the **gold standard template** for well-structured user stories.
@@ -29,15 +29,11 @@
 
 ---
 
-### 🟡 UserStory-17: Azure B1 Deployment
+### ✅ UserStory-17: Azure B1 Deployment — COMPLETED (April 10, 2026)
 
-**File:** [docs/Userstories/UserStory-17-Azure-B1-Deployment.md](docs/Userstories/UserStory-17-Azure-B1-Deployment.md)
+**File:** [UserStory-17-Azure-B1-Deployment.md](Userstories/Archive/UserStory-17-Azure-B1-Deployment.md)
 
-**Status:** In progress — Azure resources partially provisioned. Estimated effort: 1-2 days.
-
-**Scope:** Deploy the Blazor Server app to Azure App Service B1 tier via GitHub Actions CD, with `appsettings.Production.json`, health checks, Always-On, and HTTPS-only enforced. Supabase PostgreSQL is unchanged.
-
-**Note:** Azure resources (Resource Group, App Service Plan, App Service) are created. Remaining: Always-On, HTTPS Only, environment variable configuration, GitHub Secrets, and CI/CD pipeline.
+**Status:** Implemented & archived.
 
 ---
 
@@ -103,13 +99,12 @@
 
 ### ✅ All Phases 1–5: COMPLETED & ARCHIVED
 
-See `docs/Userstories/Archive/` for all 26 completed stories (US-1 through US-16).
+See `docs/Userstories/Archive/` for all 27 completed stories (US-1 through US-17).
 
 ### Active / Next Up
 
-1. 🟡 **UserStory-17** (Azure B1 Deployment) — In progress, complete Azure setup + CD pipeline (1–2 days)
-2. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
-3. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3–4 days)
+1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
+2. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3–4 days)
 
 ---
 
@@ -201,9 +196,8 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Complete UserStory-17 (Azure B1 Deployment) — in progress, only manual Azure portal + GitHub Secrets steps remain (1-2 days)
-2. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
-3. **Immediate:** Implement UserStory-19 (Unified Admin Panel) — fully ready, no refinement needed (3-4 days)
-4. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
+1. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
+2. **Immediate:** Implement UserStory-19 (Unified Admin Panel) — fully ready, no refinement needed (3-4 days)
+3. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
 
-**Total Remaining Effort:** ~11–16 days across 4 active stories — all fully specified, no refinement needed.
+**Total Remaining Effort:** ~10–14 days across 3 active stories — all fully specified, no refinement needed.

@@ -140,13 +140,13 @@ door de €50/maand recurring Azure credits.
 
 ### Phase 7: Post-Deployment Verification — **[User]**
 
-- [ ] **[User]** Eerste deploy triggeren: push naar `main` of herstart workflow handmatig
-- [ ] **[User]** Health check: `https://<appname>.azurewebsites.net/health` → 200 OK
-- [ ] **[User]** Database migrations automatisch toegepast op startup (via `MigrateAsync`)
-- [ ] **[User]** Login/authenticatie via Supabase werkt
-- [ ] **[User]** Blazor Server circuit verbindt (geen WebSocket fouten in browser DevTools → F12)
-- [ ] **[User]** Alle pagina's laden correct
-- [ ] **[User]** Controleer App Service → Log stream voor eventuele opstartfouten
+- [x] **[User]** Eerste deploy triggeren: push naar `main` of herstart workflow handmatig
+- [x] **[User]** Health check: `https://<appname>.azurewebsites.net/health` → 200 OK
+- [x] **[User]** Database migrations automatisch toegepast op startup (via `MigrateAsync`)
+- [x] **[User]** Login/authenticatie via Supabase werkt
+- [x] **[User]** Blazor Server circuit verbindt (geen WebSocket fouten in browser DevTools → F12)
+- [x] **[User]** Alle pagina's laden correct
+- [x] **[User]** Controleer App Service → Log stream voor eventuele opstartfouten
 
 ## Ownership Split
 
