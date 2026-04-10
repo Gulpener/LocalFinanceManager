@@ -45,11 +45,16 @@ As a user I want a profile page where I can set my name and profile picture, so 
 
 - Extend `SupabaseOptions` with a `StorageBucket` property
 - New `ISupabaseStorageService` for upload/delete/public URL via Supabase Storage REST API (forwarding user JWT)
-- New `IUserProfileService` (Blazor-side) for HTTP calls to `/api/users/me/*`
+- **Extend existing `IUserPreferencesService`** with profile methods: `GetProfileAsync`, `UpdateProfileAsync`, `GetProfileImageUrlAsync`, `UpdateProfileImagePathAsync` — consistent with how `ThemeService` uses it; no separate Blazor-side HTTP client service needed
 - New `UserProfileController` with: `GET`, `PUT`, `POST /profile-picture`, `DELETE /profile-picture`
+  - Apply `[RequestSizeLimit(2_097_152)]` + `[RequestFormLimits(MultipartBodyLengthLimit = 2_097_152)]` on the `POST /profile-picture` action to reject oversized requests before reading the body
+  - Server-side MIME validation: read the first 8 bytes of the uploaded stream (magic bytes) to verify JPEG (`FF D8`), PNG (`89 50 4E 47`), or WebP (`52 49 46 46 ... 57 45 42 50`). Do NOT rely on the `Content-Type` header alone
+  - `POST /profile-picture`: if `ProfileImagePath` is already set, delete the existing Supabase Storage file before uploading the new one
+- Storage path format: `{userId}/{Guid.NewGuid()}.{ext}` — used for both the upload path and the Supabase RLS policy enforcement
 - Shared `ProfileAvatar.razor` component (reusable: small in top bar, large on profile page)
-- `ProfileDropdown.razor` shared component injects `IUserProfileService`, `IThemeService`, `IUserContext`
+- `ProfileDropdown.razor` shared component injects `IUserPreferencesService`, `IThemeService`, `IUserContext` — `IThemeService` and `IUserContext` already exist and are registered
 - Initials fallback: pure CSS, no JavaScript
+- Dropdown close-on-outside-click: requires a JS interop helper (`clickOutsideHandler`) or `ElementRef` + `@onfocusout` approach — must be explicitly implemented, not assumed
 
 ## Tasks
 
@@ -67,14 +72,17 @@ As a user I want a profile page where I can set my name and profile picture, so 
 - [ ] Create and apply EF Core migration
 - [ ] Implement ISupabaseStorageService + SupabaseStorageService
 - [ ] Create UserProfileDTOs + FluentValidation validator
-- [ ] Implement UserProfileController (GET/PUT profile, POST/DELETE profile picture)
-- [ ] Implement IUserProfileService + UserProfileService (Blazor HTTP client)
-- [ ] Register services in ServiceCollectionExtensions
+- [ ] Implement UserProfileController (GET/PUT profile, POST/DELETE profile picture) — with `[RequestSizeLimit]`, magic-byte MIME validation, and auto-delete of old picture on re-upload
+- [ ] Extend IUserPreferencesService + UserPreferencesService with profile methods (GetProfileAsync, UpdateProfileAsync, GetProfileImageUrlAsync, UpdateProfileImagePathAsync)
+- [ ] Register ISupabaseStorageService in ServiceCollectionExtensions
 - [ ] Create ProfileAvatar.razor shared component (picture + initials fallback, CSS)
-- [ ] Create ProfileDropdown.razor shared component (avatar trigger + dropdown menu)
+- [ ] Create ProfileDropdown.razor shared component (avatar trigger + dropdown menu + JS interop for outside-click)
 - [ ] Replace MainLayout.razor Authorized section with ProfileDropdown
-- [ ] Add "My account" nav item to NavMenu.razor (bi-person-circle, authenticated only)
 - [ ] Create AccountProfile.razor page (/account, [Authorize])
 - [ ] Add CSS for avatar-circle and avatar-initials in app.css
-- [ ] Unit tests: UserProfileService (mock HTTP)
-- [ ] Integration tests: UserProfileController validation (>2 MB, wrong type -> 400)
+- [ ] Unit tests: IUserPreferencesService profile methods (mock DbContext)
+- [ ] Integration tests: UserProfileController validation (>2 MB → 400, wrong type → 400, missing auth → 401)
+- [ ] E2E tests:
+  - [ ] Upload profile picture → avatar in nav bar shows photo (not initials)
+  - [ ] Remove profile picture → nav bar falls back to initials
+  - [ ] Navigate to `/account` unauthenticated → redirect to `/login`
