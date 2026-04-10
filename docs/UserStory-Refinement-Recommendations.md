@@ -235,4 +235,4 @@ Use this structure for all new stories:
 4. 🔴 **UserStory-20** (Small Improvements) — Refine first (1 day to specify, 1–2 days to implement)
 5. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
 
-**Total Remaining Effort:** ~10–14 days across 3 active stories — all fully specified, no refinement needed.
+**Total Remaining Effort:** ~10–14 days across 3 implementation-ready stories (US-18, US-19, US-21). UserStory-20 is not included in this estimate because it still needs refinement first.
