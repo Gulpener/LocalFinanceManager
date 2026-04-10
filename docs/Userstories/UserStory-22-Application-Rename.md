@@ -1,4 +1,4 @@
-# User Story 22 - Application Rename
+# UserStory-22: Application Rename
 
 ## Story
 
