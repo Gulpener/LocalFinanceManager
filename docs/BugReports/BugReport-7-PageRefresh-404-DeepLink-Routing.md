@@ -18,11 +18,11 @@ Refreshing the browser on any route other than the homepage (`/`) or `/login` re
 
 ## Expected Behaviour
 
-The application loads correctly on refresh for any valid route. The server should fall back to serving the Blazor app shell (index page), which then handles client-side routing.
+The application loads correctly on refresh for any valid route. For Blazor Server, the server should return the host page (`/_Host`) for app routes so Blazor routing can continue.
 
 ## Actual Behaviour
 
-Azure App Service returns HTTP 404 because it looks for a physical file or endpoint matching `/transactions` and finds none.
+Azure App Service returns HTTP 404 on deep links (for example `/transactions`) during refresh because IIS treats the request as a direct server route and finds no matching physical file or endpoint.
 
 ## Environment
 
@@ -33,13 +33,15 @@ Azure App Service returns HTTP 404 because it looks for a physical file or endpo
 
 ## Root Cause (Suspected)
 
-Azure App Service (IIS-based) does not have a URL rewrite rule to redirect all unknown paths back to the Blazor entry point. For a Blazor Server app, the server must handle all paths and serve the app shell; missing `web.config` rewrite rules or missing `UseStaticFiles` + fallback routing in `Program.cs` cause 404s on direct navigation/refresh.
+Azure App Service (IIS-based) likely misses fallback handling for deep links. These routes are valid inside the Blazor app, but are unknown to IIS as direct HTTP endpoints unless a fallback/rewrite is configured.
+
+For a Blazor Server app, the server must map non-file, non-API paths back to the host page (`/_Host`). Without this, refresh/direct navigation on app routes returns 404.
 
 Possible causes:
 
-- Missing `web.config` with IIS URL Rewrite rule (`<rule name="SPA Fallback">`)
-- `app.MapFallbackToPage("/_Host")` or `app.MapRazorComponents` fallback not configured in `Program.cs`
-- Static file middleware intercepting requests before Blazor routing
+- Missing `web.config` with IIS URL Rewrite rule for non-file, non-directory requests
+- Missing or incorrect fallback mapping in `Program.cs` (`app.MapFallbackToPage("/_Host")`)
+- Rewrite rule is too broad and also rewrites API/static files, causing incorrect browser behavior
 
 ## Affected Routes
 
@@ -54,3 +56,25 @@ All routes except `/` and `/login`, including but not limited to:
 ## Priority
 
 High — affects all authenticated users who refresh or share a direct link.
+
+## Solution
+
+Implemented an IIS deep-link fallback for Azure App Service by adding a project-level `web.config`.
+
+What was changed:
+
+- Added `LocalFinanceManager/web.config` with URL Rewrite rule:
+   - Rewrites only `GET` requests
+   - Excludes `/api/*` and `/health*`
+   - Excludes existing files/directories
+   - Rewrites all remaining deep links to `/`
+- Kept ASP.NET Core handler (`AspNetCoreModuleV2`) and `aspNetCore` process configuration intact.
+
+Why this fixes the issue:
+
+- On refresh, IIS previously treated routes such as `/transactions` as direct server paths and returned 404.
+- The rewrite now serves the Blazor host response for app routes, allowing client-side Blazor routing to resolve the original URL.
+
+Validation:
+
+- `dotnet build LocalFinanceManager.sln` completed successfully after the change.
