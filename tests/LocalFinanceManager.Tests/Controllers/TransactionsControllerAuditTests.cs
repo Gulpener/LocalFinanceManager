@@ -60,7 +60,7 @@ public class TransactionsControllerAuditTests
         };
 
         _assignmentServiceMock
-            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId))
+            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId, 1, 50))
             .ReturnsAsync(expectedAudits);
 
         var result = await _controller.GetAuditHistory(transactionId);
@@ -86,7 +86,7 @@ public class TransactionsControllerAuditTests
         };
 
         _assignmentServiceMock
-            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId))
+            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId, 1, 50))
             .ReturnsAsync(audits);
 
         var result = await _controller.GetAuditHistory(transactionId);
@@ -156,11 +156,12 @@ public class TransactionsControllerAuditTests
     public async Task GetAuditHistory_ServiceThrows_ReturnsNotFoundProblemDetails()
     {
         var transactionId = Guid.NewGuid();
-        const string errorMessage = "Transaction not found or not accessible.";
+        var serviceErrorMessage = $"Transaction {transactionId} not found";
+        const string expectedDetail = "Transaction not found or not accessible.";
 
         _assignmentServiceMock
             .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId))
-            .ThrowsAsync(new InvalidOperationException(errorMessage));
+            .ThrowsAsync(new InvalidOperationException(serviceErrorMessage));
 
         var result = await _controller.GetAuditHistory(transactionId);
 
@@ -171,6 +172,7 @@ public class TransactionsControllerAuditTests
 
         var problemDetails = objectResult.Value as ProblemDetails;
         Assert.That(problemDetails, Is.Not.Null);
-        Assert.That(problemDetails!.Detail, Is.EqualTo(errorMessage));
+        Assert.That(problemDetails!.Detail, Is.EqualTo(expectedDetail));
+        Assert.That(problemDetails.Detail, Is.Not.EqualTo(serviceErrorMessage));
     }
 }
