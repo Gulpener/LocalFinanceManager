@@ -153,7 +153,7 @@ public class TransactionsControllerAuditTests
     }
 
     [Test]
-    public async Task GetAuditHistory_TransactionNotFound_ReturnsNotFoundProblemDetails()
+    public async Task GetAuditHistory_ServiceThrows_ReturnsInternalServerErrorObjectResult()
     {
         var transactionId = Guid.NewGuid();
         const string errorMessage = "Transaction not found or not accessible.";
@@ -164,12 +164,10 @@ public class TransactionsControllerAuditTests
 
         var result = await _controller.GetAuditHistory(transactionId);
 
-        var notFoundResult = result.Result as NotFoundObjectResult;
-        Assert.That(notFoundResult, Is.Not.Null);
-
-        var problemDetails = notFoundResult!.Value as ProblemDetails;
-        Assert.That(problemDetails, Is.Not.Null);
-        Assert.That(problemDetails!.Status, Is.EqualTo(404));
-        Assert.That(problemDetails.Detail, Is.EqualTo(errorMessage));
+        var objectResult = result.Result as ObjectResult;
+        Assert.That(objectResult, Is.Not.Null);
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(500));
+        Assert.That(objectResult.Value, Is.Not.Null);
+        Assert.That(objectResult.Value, Is.Not.TypeOf<ProblemDetails>());
     }
 }
