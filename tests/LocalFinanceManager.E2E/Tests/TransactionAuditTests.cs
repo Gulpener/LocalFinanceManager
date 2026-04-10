@@ -4,6 +4,7 @@ using LocalFinanceManager.E2E.Helpers;
 using LocalFinanceManager.E2E.Pages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Playwright;
+using NUnit.Framework;
 
 namespace LocalFinanceManager.E2E.Tests;
 

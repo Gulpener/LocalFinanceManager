@@ -18,7 +18,7 @@ public interface ITransactionAssignmentService
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default);
     Task<TransactionDto> UndoAssignmentAsync(UndoAssignmentRequest request);
-    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 10);
+    Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50);
     Task<int> GetTransactionAuditCountAsync(Guid transactionId);
 }
 

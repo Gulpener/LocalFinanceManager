@@ -67,9 +67,9 @@ public class TransactionsControllerAuditTests
 
         var okResult = result.Result as OkObjectResult;
         Assert.That(okResult, Is.Not.Null);
-        var audits = okResult!.Value as List<TransactionAuditDto>;
-        Assert.That(audits, Is.Not.Null);
-        Assert.That(audits!.Count, Is.EqualTo(2));
+        var pagedResponse = okResult!.Value as PagedTransactionAuditResponse;
+        Assert.That(pagedResponse, Is.Not.Null);
+        Assert.That(pagedResponse!.Items.Count, Is.EqualTo(2));
     }
 
     [Test]
@@ -93,10 +93,10 @@ public class TransactionsControllerAuditTests
 
         var okResult = result.Result as OkObjectResult;
         Assert.That(okResult, Is.Not.Null);
-        var returnedAudits = okResult!.Value as List<TransactionAuditDto>;
-        Assert.That(returnedAudits, Is.Not.Null);
+        var pagedResponse = okResult!.Value as PagedTransactionAuditResponse;
+        Assert.That(pagedResponse, Is.Not.Null);
         // Service is responsible for ordering; controller just passes through
-        Assert.That(returnedAudits!.Count, Is.EqualTo(2));
+        Assert.That(pagedResponse!.Items.Count, Is.EqualTo(2));
     }
 
     [Test]
@@ -119,16 +119,16 @@ public class TransactionsControllerAuditTests
         };
 
         _assignmentServiceMock
-            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId))
+            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId, 1, 50))
             .ReturnsAsync(audits);
 
         var result = await _controller.GetAuditHistory(transactionId);
 
         var okResult = result.Result as OkObjectResult;
         Assert.That(okResult, Is.Not.Null);
-        var returnedAudits = okResult!.Value as List<TransactionAuditDto>;
-        Assert.That(returnedAudits, Is.Not.Null);
-        var entry = returnedAudits![0];
+        var pagedResponse = okResult!.Value as PagedTransactionAuditResponse;
+        Assert.That(pagedResponse, Is.Not.Null);
+        var entry = pagedResponse!.Items[0];
         Assert.That(entry.IsAutoApplied, Is.True);
         Assert.That(entry.Confidence, Is.EqualTo(0.92f).Within(0.001f));
         Assert.That(entry.ModelVersion, Is.EqualTo(2));
@@ -140,16 +140,16 @@ public class TransactionsControllerAuditTests
         var transactionId = Guid.NewGuid();
 
         _assignmentServiceMock
-            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId))
+            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId, 1, 50))
             .ReturnsAsync(new List<TransactionAuditDto>());
 
         var result = await _controller.GetAuditHistory(transactionId);
 
         var okResult = result.Result as OkObjectResult;
         Assert.That(okResult, Is.Not.Null);
-        var returnedAudits = okResult!.Value as List<TransactionAuditDto>;
-        Assert.That(returnedAudits, Is.Not.Null);
-        Assert.That(returnedAudits, Is.Empty);
+        var pagedResponse = okResult!.Value as PagedTransactionAuditResponse;
+        Assert.That(pagedResponse, Is.Not.Null);
+        Assert.That(pagedResponse!.Items, Is.Empty);
     }
 
     [Test]
@@ -160,7 +160,7 @@ public class TransactionsControllerAuditTests
         const string expectedDetail = "Transaction not found or not accessible.";
 
         _assignmentServiceMock
-            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId))
+            .Setup(s => s.GetTransactionAuditHistoryAsync(transactionId, 1, 50))
             .ThrowsAsync(new InvalidOperationException(serviceErrorMessage));
 
         var result = await _controller.GetAuditHistory(transactionId);
