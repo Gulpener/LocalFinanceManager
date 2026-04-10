@@ -76,6 +76,7 @@ public class AdminController : ControllerBase
     [HttpPost("users/{id:guid}/toggle-admin")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ToggleAdmin(Guid id, CancellationToken ct)

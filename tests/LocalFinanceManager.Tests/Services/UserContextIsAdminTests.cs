@@ -45,10 +45,8 @@ public class UserContextIsAdminTests
 
     private IUserContext CreateUserContext(Guid userId)
     {
-        // Use a TestUserContext that always returns the given userId,
-        // but we verify the DB lookup through a real UserContext-like implementation.
-        // Since UserContext requires HTTP infrastructure, we test the DB logic via AdminService.
-        // For a direct test, we use a partial implementation backed by the DB context.
+        // Uses a minimal IUserContext implementation (DbUserContext below) that calls the real DB
+        // for IsAdminAsync, without requiring the full HTTP/Blazor circuit infrastructure.
         return new DbUserContext(userId, _context);
     }
 

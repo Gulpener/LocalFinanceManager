@@ -50,8 +50,9 @@ public class NavMenuTests
         });
     }
 
-    // Admin link visibility is tested in E2E AdminPanelTests.NavMenu_AdminLink_VisibleForAdminUser
-    // because the link is set asynchronously in OnAfterRenderAsync which bUnit does not trigger.
+    // Admin link visibility is verified in E2E AdminPanelTests.NavMenu_AdminLink_VisibleForAdminUser
+    // because the link is conditionally rendered in OnAfterRenderAsync after the circuit user is
+    // initialized; bUnit does not simulate the full circuit-user lifecycle.
     [Test]
     public void NavMenu_WhenAdminUserIsLoggedIn_RenderWithoutErrors()
     {

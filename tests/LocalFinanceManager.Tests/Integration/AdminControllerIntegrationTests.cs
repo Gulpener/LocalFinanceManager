@@ -14,7 +14,9 @@ using NUnit.Framework;
 namespace LocalFinanceManager.Tests.Integration;
 
 /// <summary>
-/// Integration tests for AdminController verifying authorization and service behaviour.
+/// Integration tests for AdminController verifying controller and service behaviour.
+/// Note: authorization policy ([Authorize(Policy = "AdminPolicy")]) is not executed here because
+/// the controller is instantiated directly; policy enforcement is covered by E2E tests.
 /// </summary>
 [TestFixture]
 public class AdminControllerIntegrationTests

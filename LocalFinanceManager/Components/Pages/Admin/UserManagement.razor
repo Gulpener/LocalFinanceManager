@@ -203,12 +203,12 @@
                         }
                     }
                 </tbody>
-        <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="toggle-admin-modal-title" style="background:rgba(0,0,0,.5)">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 id="toggle-admin-modal-title" class="modal-title">Beheerdersrol wijzigen</h5>
-                        <button type="button" class="btn-close" aria-label="Sluiten" @onclick="CancelToggleAdmin"></button>
+            </table>
+        </div>
+    }
+
+    @* Toggle Admin confirmation modal *@
+    @if (_toggleAdminTarget != null)
     {
         <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="toggleAdminModalTitle" style="background:rgba(0,0,0,.5)">
             <div class="modal-dialog" role="document">
@@ -313,6 +313,7 @@
     private Guid _currentUserId;
     private bool _currentUserIdRetryCompleted;
     private bool _disposed;
+    private bool _adminCheckCompleted;
 
     private IEnumerable<UserSummaryResponse> SortedUsers => _sortColumn switch
     {
@@ -323,12 +324,21 @@
     protected override async Task OnInitializedAsync()
     {
         _currentUserId = UserContext.GetCurrentUserId();
-        await LoadUsersAsync();
+        // Only load data if we already know the user is admin; if user id is empty, defer to OnAfterRenderAsync.
+        if (_currentUserId != Guid.Empty && await UserContext.IsAdminAsync())
+        {
+            _adminCheckCompleted = true;
+            await LoadUsersAsync();
+        }
+        else
+        {
+            _loading = false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _currentUserIdRetryCompleted || _currentUserId != Guid.Empty)
+        if (!firstRender || _currentUserIdRetryCompleted)
         {
             return;
         }
@@ -338,7 +348,18 @@
         if (refreshedUserId != Guid.Empty)
         {
             _currentUserId = refreshedUserId;
-            await InvokeAsync(StateHasChanged);
+            if (!_adminCheckCompleted && await UserContext.IsAdminAsync())
+            {
+                _adminCheckCompleted = true;
+                _loading = true;
+                await InvokeAsync(StateHasChanged);
+                await LoadUsersAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+            else
+            {
+                await InvokeAsync(StateHasChanged);
+            }
         }
     }
 
