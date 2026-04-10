@@ -462,4 +462,46 @@ public static class SeedDataHelper
     {
         await factory.TruncateTablesAsync();
     }
+
+    /// <summary>
+    /// Seeds audit entries for a specific transaction with deterministic timestamps.
+    /// Entries are assigned timestamps in the order provided, where the first entry is the oldest
+    /// and the last entry is the newest.
+    /// </summary>
+    /// <param name="context">Database context for saving entities.</param>
+    /// <param name="transactionId">ID of the transaction to audit.</param>
+    /// <param name="entries">List of audit entry tuples in oldest-to-newest order: (actionType, changedBy, isAutoApplied, confidence, modelVersion, beforeState, afterState, reason).</param>
+    public static async Task SeedTransactionAuditsAsync(
+        AppDbContext context,
+        Guid transactionId,
+        IEnumerable<(string ActionType, string ChangedBy, bool IsAutoApplied, float? Confidence, int? ModelVersion, string? BeforeState, string? AfterState, string? Reason)> entries)
+    {
+        var entryList = entries.ToList();
+        var baseTimestamp = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        for (var i = 0; i < entryList.Count; i++)
+        {
+            var e = entryList[i];
+            // Assign deterministic timestamps: first entry is oldest, last is newest.
+            // This ensures predictable chronological ordering in tests.
+            var changedAt = baseTimestamp.AddMinutes(-(entryList.Count - i) * 60);
+            context.TransactionAudits.Add(new TransactionAudit
+            {
+                Id = Guid.NewGuid(),
+                TransactionId = transactionId,
+                ActionType = e.ActionType,
+                ChangedBy = e.ChangedBy,
+                ChangedAt = changedAt,
+                IsAutoApplied = e.IsAutoApplied,
+                AutoAppliedBy = e.IsAutoApplied ? e.ChangedBy : null,
+                AutoAppliedAt = e.IsAutoApplied ? changedAt : null,
+                Confidence = e.Confidence,
+                ModelVersion = e.ModelVersion,
+                BeforeState = e.BeforeState,
+                AfterState = e.AfterState,
+                Reason = e.Reason
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
 }
