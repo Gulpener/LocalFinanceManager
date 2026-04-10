@@ -31,7 +31,7 @@
 
 ### ✅ UserStory-17: Azure B1 Deployment — COMPLETED (April 10, 2026)
 
-**File:** [docs/Userstories/Archive/UserStory-17-Azure-B1-Deployment.md](docs/Userstories/Archive/UserStory-17-Azure-B1-Deployment.md)
+**File:** [UserStory-17-Azure-B1-Deployment.md](Userstories/Archive/UserStory-17-Azure-B1-Deployment.md)
 
 **Status:** Implemented & archived.
 
@@ -99,13 +99,12 @@
 
 ### ✅ All Phases 1–5: COMPLETED & ARCHIVED
 
-See `docs/Userstories/Archive/` for all 26 completed stories (US-1 through US-16).
+See `docs/Userstories/Archive/` for all 27 completed stories (US-1 through US-17).
 
 ### Active / Next Up
 
-1. 🟡 **UserStory-17** (Azure B1 Deployment) — In progress, complete Azure setup + CD pipeline (1–2 days)
-2. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
-3. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3–4 days)
+1. 🟡 **UserStory-18** (Transaction Audit Trail UI) — Ready, implement now (2–3 days)
+2. 🟡 **UserStory-19** (Unified Admin Panel) — Ready, implement now (3–4 days)
 
 ---
 
@@ -197,9 +196,8 @@ Use this structure for all new stories:
 
 ## Next Actions
 
-1. **Immediate:** Complete UserStory-17 (Azure B1 Deployment) — in progress, only manual Azure portal + GitHub Secrets steps remain (1-2 days)
-2. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
-3. **Immediate:** Implement UserStory-19 (Unified Admin Panel) — fully ready, no refinement needed (3-4 days)
-4. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
+1. **Immediate:** Implement UserStory-18 (Transaction Audit Trail UI) — fully ready, no refinement needed (2-3 days)
+2. **Immediate:** Implement UserStory-19 (Unified Admin Panel) — fully ready, no refinement needed (3-4 days)
+3. **Next:** Implement UserStory-16 (Design Overhaul) — ready to plan and implement (5-7 days)
 
-**Total Remaining Effort:** ~11–16 days across 4 active stories — all fully specified, no refinement needed.
+**Total Remaining Effort:** ~10–14 days across 3 active stories — all fully specified, no refinement needed.
