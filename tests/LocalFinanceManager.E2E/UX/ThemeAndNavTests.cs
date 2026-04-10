@@ -281,7 +281,7 @@ public class ThemeAndNavTests : E2ETestBase
     [Test]
     public async Task ResponsiveNav_Desktop_SidebarAlwaysVisible_HamburgerHidden()
     {
-        // Arrange – desktop viewport (≥768px hides hamburger via d-md-none)
+        // Arrange – desktop viewport (≥641px hides hamburger and shows sidebar)
         await Page.SetViewportSizeAsync(1280, 800);
 
         using var scope = Factory!.CreateDbScope();

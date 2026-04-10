@@ -78,13 +78,12 @@
 }
 
 /* Desktop: always visible */
-@media (min-width: 768px) {
+@media (min-width: 641px) {
     .hamburger-btn {
         display: none;
     }
 
     .nav-scrollable {
-        display: block;
         width: 100%;
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
