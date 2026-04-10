@@ -247,7 +247,8 @@ else
                 Date = tx.Date,
                 Description = tx.Description,
                 Counterparty = tx.Counterparty,
-                AccountId = tx.AccountId
+                AccountId = tx.AccountId,
+                AccountCurrency = tx.Account?.Currency
             };
 
             totalAuditEntries = await AssignmentService.GetTransactionAuditCountAsync(Id);

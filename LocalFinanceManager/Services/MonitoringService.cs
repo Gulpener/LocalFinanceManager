@@ -196,6 +196,7 @@ public class MonitoringService : IMonitoringService
                 TransactionId = audit.TransactionId,
                 Description = audit.Transaction.Description,
                 Amount = audit.Transaction.Amount,
+                AccountCurrency = audit.Transaction.Account?.Currency,
                 CategoryName = categoryName,
                 ConfidenceScore = audit.Confidence ?? 0.0f,
                 AutoAppliedAt = audit.AutoAppliedAt ?? audit.ChangedAt,

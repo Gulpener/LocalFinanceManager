@@ -407,6 +407,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             Description = transaction.Description,
             Counterparty = transaction.Counterparty,
             AccountId = transaction.AccountId,
+            AccountCurrency = transaction.Account?.Currency,
             ExternalId = transaction.ExternalId,
             SourceFileName = transaction.SourceFileName,
             ImportedAt = transaction.ImportedAt,

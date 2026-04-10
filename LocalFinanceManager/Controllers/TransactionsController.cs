@@ -51,6 +51,7 @@ public class TransactionsController : ControllerBase
                 Description = t.Description,
                 Counterparty = t.Counterparty,
                 AccountId = t.AccountId,
+                AccountCurrency = t.Account?.Currency,
                 ExternalId = t.ExternalId,
                 SourceFileName = t.SourceFileName,
                 ImportedAt = t.ImportedAt,
