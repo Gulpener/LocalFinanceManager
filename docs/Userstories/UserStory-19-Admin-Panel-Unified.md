@@ -20,7 +20,7 @@
 - [ ] Initial admin bootstrapped on startup: if no admin exists, the user whose email matches `Seed:AdminEmail` in `appsettings.json` gets `IsAdmin = true`
 - [ ] Non-admin users visiting any `/admin/*` URL are immediately redirected to `/`
 - [ ] The "Admin" nav item in NavMenu is **hidden** for non-admin users
-- [ ] All `/api/admin/*` endpoints return **HTTP 403 ProblemDetails** for authenticated non-admins
+- [ ] All `/api/admin/*` endpoints return **HTTP 403** for authenticated non-admins
 - [ ] Self-demotion is blocked: admin cannot remove their own `IsAdmin` flag (toggle button disabled in UI; API returns **HTTP 400**)
 
 ### Tab Bar Navigation
