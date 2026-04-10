@@ -281,7 +281,7 @@ public class ThemeAndNavTests : E2ETestBase
     [Test]
     public async Task ResponsiveNav_Desktop_SidebarAlwaysVisible_HamburgerHidden()
     {
-        // Arrange – desktop viewport (≥768px hides hamburger via d-md-none)
+        // Arrange – desktop viewport (≥641px hides hamburger and shows sidebar)
         await Page.SetViewportSizeAsync(1280, 800);
 
         using var scope = Factory!.CreateDbScope();
@@ -298,5 +298,107 @@ public class ThemeAndNavTests : E2ETestBase
         // Nav-scrollable visible (sidebar always open on desktop)
         var navItems = Page.Locator(".nav-scrollable .nav-item");
         await Expect(navItems.First).ToBeVisibleAsync();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  Sidebar collapse persistence
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [Test]
+    public async Task SidebarCollapse_Toggle_CollapsedState_PersistedAfterReload()
+    {
+        // Arrange – desktop viewport so the collapse button is visible
+        await Page.SetViewportSizeAsync(1280, 800);
+
+        using var scope = Factory!.CreateDbScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await SeedDataHelper.SeedAccountAsync(dbContext, "Test Account", "NL91ABNA0417164300", 500m);
+
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        // Wait for collapse button to be present and sidebar to be in initial (expanded) state
+        var collapseBtn = Page.Locator("[data-testid='sidebar-collapse-btn']");
+        await Expect(collapseBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+
+        var sidebarWrap = Page.Locator("[data-testid='sidebar-wrap']");
+        var isCollapsedBefore = await sidebarWrap.EvaluateAsync<bool>("el => el.classList.contains('collapsed')");
+        Assert.That(isCollapsedBefore, Is.False, "Sidebar should be expanded initially (localStorage cleared in SetUp)");
+
+        // Act – click the collapse button to collapse the sidebar
+        await collapseBtn.ClickAsync();
+
+        // Assert – sidebar should now have the 'collapsed' class
+        await Expect(sidebarWrap).ToHaveClassAsync(
+            new System.Text.RegularExpressions.Regex("collapsed"),
+            new LocatorAssertionsToHaveClassOptions { Timeout = 5_000 });
+
+        // Verify localStorage was updated
+        var storedValue = await Page.EvaluateAsync<string?>("() => localStorage.getItem('sidebar-collapsed')");
+        Assert.That(storedValue, Is.EqualTo("true"), "localStorage 'sidebar-collapsed' should be 'true' after collapse");
+
+        // Act – reload the page
+        await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        // Wait for the sidebar to be rendered and JS interop to restore state
+        var collapseBtnAfterReload = Page.Locator("[data-testid='sidebar-collapse-btn']");
+        await Expect(collapseBtnAfterReload).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+
+        // Assert – sidebar should still be collapsed after reload (state persisted via localStorage)
+        var sidebarWrapAfterReload = Page.Locator("[data-testid='sidebar-wrap']");
+        await Expect(sidebarWrapAfterReload).ToHaveClassAsync(
+            new System.Text.RegularExpressions.Regex("collapsed"),
+            new LocatorAssertionsToHaveClassOptions { Timeout = 10_000 });
+    }
+
+    [Test]
+    public async Task SidebarCollapse_ExpandAfterCollapse_ExpandedState_PersistedAfterReload()
+    {
+        // Arrange – desktop viewport; pre-seed localStorage so sidebar starts collapsed
+        await Page.SetViewportSizeAsync(1280, 800);
+
+        using var scope = Factory!.CreateDbScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await SeedDataHelper.SeedAccountAsync(dbContext, "Test Account", "NL91ABNA0417164300", 500m);
+
+        // Pre-set collapsed state in localStorage before navigating
+        await Page.GotoAsync(BaseUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        await Page.EvaluateAsync("() => localStorage.setItem('sidebar-collapsed', 'true')");
+
+        // Reload so the Blazor component picks up the localStorage value
+        await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        // Wait for collapse button and assert sidebar is collapsed
+        var collapseBtn = Page.Locator("[data-testid='sidebar-collapse-btn']");
+        await Expect(collapseBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+
+        var sidebarWrap = Page.Locator("[data-testid='sidebar-wrap']");
+        await Expect(sidebarWrap).ToHaveClassAsync(
+            new System.Text.RegularExpressions.Regex("collapsed"),
+            new LocatorAssertionsToHaveClassOptions { Timeout = 10_000 });
+
+        // Act – click expand button to restore expanded state
+        await collapseBtn.ClickAsync();
+
+        // Assert – sidebar should no longer have 'collapsed' class
+        await Expect(sidebarWrap).Not.ToHaveClassAsync(
+            new System.Text.RegularExpressions.Regex("collapsed"),
+            new LocatorAssertionsToHaveClassOptions { Timeout = 5_000 });
+
+        // Verify localStorage was updated
+        var storedValue = await Page.EvaluateAsync<string?>("() => localStorage.getItem('sidebar-collapsed')");
+        Assert.That(storedValue, Is.EqualTo("false"), "localStorage 'sidebar-collapsed' should be 'false' after expanding");
+
+        // Act – reload the page
+        await Page.ReloadAsync(new PageReloadOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+        // Wait for the sidebar to be rendered
+        var collapseBtnAfterReload = Page.Locator("[data-testid='sidebar-collapse-btn']");
+        await Expect(collapseBtnAfterReload).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
+
+        // Assert – sidebar should remain expanded after reload
+        var sidebarWrapAfterReload = Page.Locator("[data-testid='sidebar-wrap']");
+        await Expect(sidebarWrapAfterReload).Not.ToHaveClassAsync(
+            new System.Text.RegularExpressions.Regex("collapsed"),
+            new LocatorAssertionsToHaveClassOptions { Timeout = 10_000 });
     }
 }

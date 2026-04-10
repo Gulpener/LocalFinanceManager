@@ -78,14 +78,21 @@
 }
 
 /* Desktop: always visible */
-@media (min-width: 768px) {
+@media (min-width: 641px) {
     .hamburger-btn {
         display: none;
     }
 
     .nav-scrollable {
-        display: block;
+        width: 100%;
         height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .nav-scrollable nav {
+        flex: 1;
     }
 }
 
@@ -138,9 +145,81 @@
     color: #1e293b;
 }
 
+/* ============================================================
+   Sidebar wrapper
+   ============================================================ */
+.sidebar-wrap {
+    display: contents; /* transparent on mobile */
+}
 
-        /* Allow sidebar to scroll for tall menus */
-        height: calc(100vh - 3.5rem);
-        overflow-y: auto;
+@media (min-width: 641px) {
+    .sidebar-wrap {
+        display: flex;
+        flex-direction: column;
+        width: 250px;
+        height: 100vh;
+        overflow: hidden;
+        transition: width 0.2s ease;
+    }
+}
+
+/* ============================================================
+   Collapsed sidebar — icon-only (desktop only)
+   ============================================================ */
+@media (min-width: 641px) {
+    .sidebar-wrap.collapsed {
+        width: 60px;
+    }
+
+    .sidebar-wrap.collapsed .top-row {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .sidebar-wrap.collapsed .nav-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .sidebar-wrap.collapsed .nav-item ::deep .nav-link {
+        justify-content: center;
+        padding: 0;
+    }
+}
+
+/* ============================================================
+   Sidebar collapse toggle button (desktop only)
+   ============================================================ */
+.sidebar-collapse-btn {
+    display: none;
+}
+
+@media (min-width: 641px) {
+    .sidebar-collapse-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.7);
+        width: 100%;
+        min-height: 44px;
+        cursor: pointer;
+        font-size: 1rem;
+        flex-shrink: 0;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .sidebar-collapse-btn:hover {
+        background-color: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
     }
 }
