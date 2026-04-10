@@ -49,21 +49,17 @@ public class AdminController : ControllerBase
 
     /// <summary>
     /// Returns all active shares given by the specified user.
+    /// Unknown users currently return empty share lists.
     /// </summary>
     [HttpGet("users/{id:guid}/shares")]
     [ProducesResponseType(typeof(UserSharesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserSharesResponse>> GetUserShares(Guid id, CancellationToken ct)
     {
         try
         {
             var shares = await _adminService.GetUserSharesAsync(id, ct);
             return Ok(shares);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new ProblemDetails { Status = 404, Title = "Not found", Detail = ex.Message });
         }
         catch (Exception ex)
         {
