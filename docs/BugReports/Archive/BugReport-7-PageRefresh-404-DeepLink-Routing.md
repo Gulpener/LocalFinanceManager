@@ -73,10 +73,14 @@ What was changed:
 
 - Added `LocalFinanceManager/web.config` with URL Rewrite rule:
   - Rewrites only `GET` requests
-  - Excludes `/api/*` and `/health*`
+  - Excludes `/api` and `/api/*` paths
+  - Excludes `/health*` paths
+  - Excludes `/_blazor` WebSocket connections
+  - Excludes any URL with a file extension (e.g. `.css`, `.js`, `.ico`) regardless of whether the file exists
   - Excludes existing files/directories
   - Rewrites all remaining deep links to `/`
-- Kept ASP.NET Core handler (`AspNetCoreModuleV2`) and `aspNetCore` process configuration intact.
+- Used publish-time placeholders (`%LAUNCHER_PATH%`, `%LAUNCHER_ARGS%`, `%HOSTING_MODEL%`) in `aspNetCore` element to support both framework-dependent and self-contained deploys without hardcoded assembly names.
+- Kept ASP.NET Core handler (`AspNetCoreModuleV2`) configuration intact.
 
 Why this fixes the issue:
 
