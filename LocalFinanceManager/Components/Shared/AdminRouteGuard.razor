@@ -2,26 +2,63 @@
 @inject IUserContext UserContext
 @inject NavigationManager NavigationManager
 
-@if (_isAdmin)
+@if (_accessState == AdminAccessState.Granted)
 {
     @ChildContent
 }
-else if (!_checking)
+else if (_accessState == AdminAccessState.Denied)
 {
-    @* Non-admin: content already hidden, redirect happens in OnInitializedAsync *@
+    @* Non-admin: content hidden, redirect is triggered after access resolution *@
 }
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private bool _checking = true;
-    private bool _isAdmin;
+    private AdminAccessState _accessState = AdminAccessState.Pending;
+    private bool _retryAdminCheckAfterRender;
+    private bool _retriedAdminCheck;
+
+    private enum AdminAccessState
+    {
+        Pending,
+        Granted,
+        Denied
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        _isAdmin = await UserContext.IsAdminAsync();
-        _checking = false;
-        if (!_isAdmin)
+        await ResolveAccessAsync(scheduleRetryIfUnknown: true);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_retryAdminCheckAfterRender || _retriedAdminCheck)
+        {
+            return;
+        }
+
+        _retryAdminCheckAfterRender = false;
+        _retriedAdminCheck = true;
+        await ResolveAccessAsync(scheduleRetryIfUnknown: false);
+        StateHasChanged();
+    }
+
+    private async Task ResolveAccessAsync(bool scheduleRetryIfUnknown)
+    {
+        if (UserContext.GetCurrentUserId() == Guid.Empty)
+        {
+            _accessState = AdminAccessState.Pending;
+            if (scheduleRetryIfUnknown)
+            {
+                _retryAdminCheckAfterRender = true;
+            }
+
+            return;
+        }
+
+        var isAdmin = await UserContext.IsAdminAsync();
+        _accessState = isAdmin ? AdminAccessState.Granted : AdminAccessState.Denied;
+        if (!isAdmin)
         {
             NavigationManager.NavigateTo("/", forceLoad: false);
         }
