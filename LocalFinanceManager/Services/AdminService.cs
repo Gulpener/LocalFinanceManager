@@ -32,10 +32,26 @@ public class AdminService : IAdminService
                 u.IsAdmin,
                 u.CreatedAt,
                 _context.Accounts.Count(a => a.UserId == u.Id && !a.IsArchived),
-                _context.AccountShares.Count(s => s.UserId == u.Id && !s.IsArchived)
-                + _context.BudgetPlanShares.Count(s => s.UserId == u.Id && !s.IsArchived),
-                _context.AccountShares.Count(s => s.SharedWithUserId == u.Id && !s.IsArchived)
-                + _context.BudgetPlanShares.Count(s => s.SharedWithUserId == u.Id && !s.IsArchived)
+                _context.AccountShares.Count(s =>
+                    s.UserId == u.Id
+                    && !s.IsArchived
+                    && s.Status == ShareStatus.Accepted
+                    && !s.Account.IsArchived)
+                + _context.BudgetPlanShares.Count(s =>
+                    s.UserId == u.Id
+                    && !s.IsArchived
+                    && s.Status == ShareStatus.Accepted
+                    && !s.BudgetPlan.IsArchived),
+                _context.AccountShares.Count(s =>
+                    s.SharedWithUserId == u.Id
+                    && !s.IsArchived
+                    && s.Status == ShareStatus.Accepted
+                    && !s.Account.IsArchived)
+                + _context.BudgetPlanShares.Count(s =>
+                    s.SharedWithUserId == u.Id
+                    && !s.IsArchived
+                    && s.Status == ShareStatus.Accepted
+                    && !s.BudgetPlan.IsArchived)
             ))
             .ToListAsync(ct);
 
@@ -47,7 +63,7 @@ public class AdminService : IAdminService
     {
         var accountShares = await _context.AccountShares
             .AsNoTracking()
-            .Where(s => s.UserId == userId && !s.IsArchived)
+            .Where(s => s.UserId == userId && !s.IsArchived && !s.Account.IsArchived && s.Status != ShareStatus.Declined)
             .Select(s => new AccountShareDetail(
                 s.Id,
                 s.Account.Label,
@@ -59,7 +75,7 @@ public class AdminService : IAdminService
 
         var budgetPlanShares = await _context.BudgetPlanShares
             .AsNoTracking()
-            .Where(s => s.UserId == userId && !s.IsArchived)
+            .Where(s => s.UserId == userId && !s.IsArchived && !s.BudgetPlan.IsArchived && s.Status != ShareStatus.Declined)
             .Select(s => new BudgetPlanShareDetail(
                 s.Id,
                 s.BudgetPlan.Name,
@@ -78,7 +94,7 @@ public class AdminService : IAdminService
         if (targetUserId == requestingUserId)
             throw new InvalidOperationException("Cannot change your own admin role.");
 
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == targetUserId, ct)
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == targetUserId && !u.IsArchived, ct)
             ?? throw new KeyNotFoundException($"User {targetUserId} not found.");
 
         user.IsAdmin = !user.IsAdmin;

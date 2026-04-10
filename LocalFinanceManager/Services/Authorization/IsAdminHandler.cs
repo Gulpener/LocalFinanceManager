@@ -23,7 +23,7 @@ public class IsAdminHandler : AuthorizationHandler<IsAdminRequirement>
     {
         if (context.User.Identity?.IsAuthenticated != true)
         {
-            context.Fail();
+            // Let the default 401 challenge flow handle unauthenticated users.
             return;
         }
 

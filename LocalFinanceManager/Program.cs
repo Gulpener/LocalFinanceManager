@@ -260,15 +260,25 @@ using (var scope = app.Services.CreateScope())
 
     // Bootstrap first admin: if no admin exists, promote the configured email to admin
     var adminEmail = app.Configuration["Seed:AdminEmail"];
-    if (!string.IsNullOrEmpty(adminEmail)
-        && !await context.Users.AnyAsync(u => u.IsAdmin && !u.IsArchived))
+    if (!string.IsNullOrWhiteSpace(adminEmail))
     {
-        var adminUser = await context.Users.FirstOrDefaultAsync(u => u.Email == adminEmail && !u.IsArchived);
-        if (adminUser != null)
+        var normalizedEmail = adminEmail.Trim().ToUpperInvariant();
+        if (!await context.Users.AnyAsync(u => u.IsAdmin && !u.IsArchived))
         {
-            adminUser.IsAdmin = true;
-            await context.SaveChangesAsync();
-            app.Logger.LogInformation("Promoted {Email} to admin (first admin bootstrap)", adminEmail);
+            var adminUser = await context.Users.FirstOrDefaultAsync(u =>
+                !u.IsArchived && u.Email != null && u.Email.ToUpper() == normalizedEmail);
+            if (adminUser != null)
+            {
+                adminUser.IsAdmin = true;
+                await context.SaveChangesAsync();
+                app.Logger.LogInformation("Promoted {Email} to admin (first admin bootstrap)", adminEmail.Trim());
+            }
+            else
+            {
+                app.Logger.LogWarning(
+                    "Configured Seed:AdminEmail '{Email}' did not match any active user; first admin bootstrap skipped",
+                    adminEmail.Trim());
+            }
         }
     }
 }

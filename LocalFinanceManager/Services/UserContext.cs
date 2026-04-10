@@ -108,7 +108,7 @@ public class UserContext : IUserContext
         if (userId == Guid.Empty) return false;
         return await _context.Users
             .AsNoTracking()
-            .Where(u => u.Id == userId)
+            .Where(u => u.Id == userId && !u.IsArchived)
             .Select(u => u.IsAdmin)
             .FirstOrDefaultAsync();
     }

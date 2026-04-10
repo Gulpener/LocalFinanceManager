@@ -64,15 +64,16 @@ public class IsAdminHandlerTests
     }
 
     [Test]
-    public async Task HandleRequirementAsync_UnauthenticatedUser_Fails()
+    public async Task HandleRequirementAsync_UnauthenticatedUser_NeitherSucceedsNorFails()
     {
         _userContextMock.Setup(u => u.IsAdminAsync()).ReturnsAsync(false);
         var context = CreateContext(isAuthenticated: false);
 
         await _handler.HandleAsync(context);
 
+        // Unauthenticated users are not explicitly failed; the default 401 challenge flow handles them.
         Assert.That(context.HasSucceeded, Is.False);
-        Assert.That(context.HasFailed, Is.True);
+        Assert.That(context.HasFailed, Is.False);
     }
 
     [Test]

@@ -2,6 +2,7 @@
 @layout AdminLayout
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@implements IAsyncDisposable
 @using LocalFinanceManager.Components.Layout
 @using LocalFinanceManager.Components.Shared
 @using LocalFinanceManager.DTOs
@@ -58,7 +59,13 @@
                 <tbody>
                     @foreach (var user in SortedUsers)
                     {
-                        <tr data-testid="user-row-@user.Id" style="cursor:pointer" @onclick="() => ToggleExpandUser(user.Id)">
+                        <tr data-testid="user-row-@user.Id"
+                            style="cursor:pointer"
+                            tabindex="0"
+                            role="button"
+                            aria-label="Toon of verberg details voor @user.Email"
+                            @onclick="() => ToggleExpandUser(user.Id)"
+                            @onkeydown="(e) => OnUserRowKeyDown(e, user.Id)">
                             <td>@user.Email</td>
                             <td>@user.DisplayName</td>
                             <td>
@@ -203,12 +210,12 @@
     @* Toggle Admin confirmation modal *@
     @if (_toggleAdminTarget != null)
     {
-        <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
+        <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="toggleAdminModalTitle" style="background:rgba(0,0,0,.5)">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Beheerdersrol wijzigen</h5>
-                        <button type="button" class="btn-close" @onclick="CancelToggleAdmin"></button>
+                        <h5 class="modal-title" id="toggleAdminModalTitle">Beheerdersrol wijzigen</h5>
+                        <button type="button" class="btn-close" @onclick="CancelToggleAdmin" aria-label="Sluiten"></button>
                     </div>
                     <div class="modal-body">
                         @if (_toggleAdminTarget.IsAdmin)
@@ -243,12 +250,12 @@
     @* Revoke share confirmation modal *@
     @if (_revokeTarget != null)
     {
-        <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
+        <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="revokeShareModalTitle" style="background:rgba(0,0,0,.5)">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Share intrekken</h5>
-                        <button type="button" class="btn-close" @onclick="CancelRevoke"></button>
+                        <h5 class="modal-title" id="revokeShareModalTitle">Share intrekken</h5>
+                        <button type="button" class="btn-close" @onclick="CancelRevoke" aria-label="Sluiten"></button>
                     </div>
                     <div class="modal-body">
                         <p>Weet je zeker dat je deze share wilt intrekken?</p>
@@ -305,6 +312,7 @@
 
     private Guid _currentUserId;
     private bool _currentUserIdRetryCompleted;
+    private bool _disposed;
 
     private IEnumerable<UserSummaryResponse> SortedUsers => _sortColumn switch
     {
@@ -522,6 +530,13 @@
         return $"{(int)(diff.TotalDays / 365)} jaar geleden";
     }
 
+    private Task OnUserRowKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e, Guid userId)
+    {
+        if (e.Key is "Enter" or " ")
+            return ToggleExpandUser(userId);
+        return Task.CompletedTask;
+    }
+
     private async Task DismissToggleAdminErrorAsync()
     {
         _toggleAdminErrorDismissTimer?.Cancel();
@@ -554,5 +569,23 @@
             }
         }
         catch (TaskCanceledException) { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        if (_toggleAdminErrorDismissTimer != null)
+        {
+            await _toggleAdminErrorDismissTimer.CancelAsync();
+            _toggleAdminErrorDismissTimer.Dispose();
+        }
+
+        if (_revokeErrorDismissTimer != null)
+        {
+            await _revokeErrorDismissTimer.CancelAsync();
+            _revokeErrorDismissTimer.Dispose();
+        }
     }
 }
