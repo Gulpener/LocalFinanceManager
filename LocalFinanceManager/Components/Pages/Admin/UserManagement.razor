@@ -14,270 +14,264 @@
 
 <AdminRouteGuard>
 
-<h1>Gebruikersbeheer</h1>
-<p class="lead">Overzicht van alle geregistreerde gebruikers en hun actieve gedeelde bronnen.</p>
+    <h1>Gebruikersbeheer</h1>
+    <p class="lead">Overzicht van alle geregistreerde gebruikers en hun actieve gedeelde bronnen.</p>
 
-@if (_errorMessage != null)
-{
-    <div class="alert alert-danger alert-dismissible" role="alert" data-testid="global-error">
-        @_errorMessage
-        <button type="button" class="btn-close" @onclick="() => _errorMessage = null" aria-label="Sluiten"></button>
-    </div>
-}
-
-@if (_loading)
-{
-    <div class="text-center my-4" data-testid="loading-spinner">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Laden...</span>
+    @if (_errorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible" role="alert" data-testid="global-error">
+            @_errorMessage
+            <button type="button" class="btn-close" @onclick="() => _errorMessage = null" aria-label="Sluiten"></button>
         </div>
-    </div>
-}
-else if (_users.Count == 0)
-{
-    <div class="alert alert-secondary" data-testid="empty-state">Geen gebruikers gevonden</div>
-}
-else
-{
-    <div class="table-responsive">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th @onclick='() => SortBy("email")' style="cursor:pointer">
-                        E-mail @SortIndicator("email")
-                    </th>
-                    <th>Weergavenaam</th>
-                    <th>Admin</th>
-                    <th>Lid sinds</th>
-                    <th>Rekeningen</th>
-                    <th>Shares gegeven</th>
-                    <th>Shares ontvangen</th>
-                    <th>Acties</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in SortedUsers)
-                {
-                    <tr data-testid="user-row-@user.Id" style="cursor:pointer" @onclick="() => ToggleExpandUser(user.Id)">
-                        <td>@user.Email</td>
-                        <td>@user.DisplayName</td>
-                        <td>
-                            @if (user.IsAdmin)
-                            {
-                                <span class="badge bg-danger" data-testid="admin-badge-@user.Id">Admin</span>
-                            }
-                        </td>
-                        <td>
-                            <span title="@user.CreatedAt.ToString("dd-MM-yyyy HH:mm")">
-                                @GetRelativeDate(user.CreatedAt)
-                            </span>
-                        </td>
-                        <td>@user.AccountCount</td>
-                        <td>@user.SharesGiven</td>
-                        <td>@user.SharesReceived</td>
-                        <td @onclick:stopPropagation="true">
-                            @if (user.Id == _currentUserId)
-                            {
-                                <button class="btn btn-sm btn-outline-secondary"
-                                        disabled
-                                        title="Eigen beheerdersrol kan niet worden gewijzigd"
-                                        data-testid="toggle-admin-@user.Id">
-                                    @(user.IsAdmin ? "Admin intrekken" : "Admin verlenen")
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm @(user.IsAdmin ? "btn-outline-warning" : "btn-outline-success")"
-                                        @onclick="() => PromptToggleAdmin(user)"
-                                        data-testid="toggle-admin-@user.Id">
-                                    @(user.IsAdmin ? "Admin intrekken" : "Admin verlenen")
-                                </button>
-                            }
-                            <button class="btn btn-sm btn-outline-info ms-1"
-                                    @onclick="() => ToggleExpandUser(user.Id)"
-                                    data-testid="expand-user-@user.Id"
-                                    title="Shares bekijken">
-                                <i class="bi @(_expandedUserId == user.Id ? "bi-chevron-up" : "bi-chevron-down")" aria-hidden="true"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    @if (_expandedUserId == user.Id)
-                    {
-                        <tr>
-                            <td colspan="8" class="bg-light">
-                                @if (_loadingShares)
-                                {
-                                    <div class="text-center py-2">
-                                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                                    </div>
-                                }
-                                else if (_sharesErrorMessage != null)
-                                {
-                                    <div class="alert alert-danger py-2 mb-0">@_sharesErrorMessage</div>
-                                }
-                                else if (_expandedShares != null)
-                                {
-                                    <div class="p-3">
-                                        <h6>Gedeelde rekeningen</h6>
-                                        @if (_expandedShares.AccountShares.Count == 0)
-                                        {
-                                            <p class="text-muted small">Geen gedeelde rekeningen</p>
-                                        }
-                                        else
-                                        {
-                                            <table class="table table-sm mb-3">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Rekening</th>
-                                                        <th>Gedeeld met</th>
-                                                        <th>Rechten</th>
-                                                        <th>Status</th>
-                                                        <th></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach (var share in _expandedShares.AccountShares)
-                                                    {
-                                                        <tr>
-                                                            <td>@share.AccountName</td>
-                                                            <td>@share.SharedWithEmail</td>
-                                                            <td>@share.Permission</td>
-                                                            <td>@share.Status</td>
-                                                            <td>
-                                                                <button class="btn btn-sm btn-outline-danger"
-                                                                        @onclick="() => PromptRevokeAccountShare(share)"
-                                                                        data-testid="revoke-share-@share.ShareId">
-                                                                    Intrekken
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        }
+    }
 
-                                        <h6>Gedeelde budgetplannen</h6>
-                                        @if (_expandedShares.BudgetPlanShares.Count == 0)
-                                        {
-                                            <p class="text-muted small">Geen gedeelde budgetplannen</p>
-                                        }
-                                        else
-                                        {
-                                            <table class="table table-sm">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Budgetplan</th>
-                                                        <th>Gedeeld met</th>
-                                                        <th>Rechten</th>
-                                                        <th>Status</th>
-                                                        <th></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach (var share in _expandedShares.BudgetPlanShares)
-                                                    {
-                                                        <tr>
-                                                            <td>@share.PlanName</td>
-                                                            <td>@share.SharedWithEmail</td>
-                                                            <td>@share.Permission</td>
-                                                            <td>@share.Status</td>
-                                                            <td>
-                                                                <button class="btn btn-sm btn-outline-danger"
-                                                                        @onclick="() => PromptRevokeBudgetPlanShare(share)"
-                                                                        data-testid="revoke-share-@share.ShareId">
-                                                                    Intrekken
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        }
-                                    </div>
+    @if (_loading)
+    {
+        <div class="text-center my-4" data-testid="loading-spinner">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Laden...</span>
+            </div>
+        </div>
+    }
+    else if (_users.Count == 0)
+    {
+        <div class="alert alert-secondary" data-testid="empty-state">Geen gebruikers gevonden</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th @onclick='() => SortBy("email")' style="cursor:pointer">
+                            E-mail @SortIndicator("email")
+                        </th>
+                        <th>Weergavenaam</th>
+                        <th>Admin</th>
+                        <th>Lid sinds</th>
+                        <th>Rekeningen</th>
+                        <th>Shares gegeven</th>
+                        <th>Shares ontvangen</th>
+                        <th>Acties</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in SortedUsers)
+                    {
+                        <tr data-testid="user-row-@user.Id" style="cursor:pointer" @onclick="() => ToggleExpandUser(user.Id)">
+                            <td>@user.Email</td>
+                            <td>@user.DisplayName</td>
+                            <td>
+                                @if (user.IsAdmin)
+                                {
+                                    <span class="badge bg-danger" data-testid="admin-badge-@user.Id">Admin</span>
                                 }
                             </td>
+                            <td>
+                                <span title="@user.CreatedAt.ToString("dd-MM-yyyy HH:mm")">
+                                    @GetRelativeDate(user.CreatedAt)
+                                </span>
+                            </td>
+                            <td>@user.AccountCount</td>
+                            <td>@user.SharesGiven</td>
+                            <td>@user.SharesReceived</td>
+                            <td @onclick:stopPropagation="true">
+                                @if (user.Id == _currentUserId)
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" disabled
+                                            title="Eigen beheerdersrol kan niet worden gewijzigd" data-testid="toggle-admin-@user.Id">
+                                        @(user.IsAdmin ? "Admin intrekken" : "Admin verlenen")
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm @(user.IsAdmin ? "btn-outline-warning" : "btn-outline-success")"
+                                            @onclick="() => PromptToggleAdmin(user)" data-testid="toggle-admin-@user.Id">
+                                        @(user.IsAdmin ? "Admin intrekken" : "Admin verlenen")
+                                    </button>
+                                }
+                                <button class="btn btn-sm btn-outline-info ms-1" @onclick="() => ToggleExpandUser(user.Id)"
+                                        data-testid="expand-user-@user.Id" title="Shares bekijken">
+                                    <i class="bi @(_expandedUserId == user.Id ? "bi-chevron-up" : "bi-chevron-down")"
+                                       aria-hidden="true"></i>
+                                </button>
+                            </td>
                         </tr>
-                    }
-                }
-            </tbody>
-        </table>
-    </div>
-}
-
-@* Toggle Admin confirmation modal *@
-@if (_toggleAdminTarget != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Beheerdersrol wijzigen</h5>
-                    <button type="button" class="btn-close" @onclick="CancelToggleAdmin"></button>
-                </div>
-                <div class="modal-body">
-                    @if (_toggleAdminTarget.IsAdmin)
-                    {
-                        <p>Beheerdersrol intrekken van <strong>@_toggleAdminTarget.Email</strong>?</p>
-                    }
-                    else
-                    {
-                        <p>Beheerdersrol verlenen aan <strong>@_toggleAdminTarget.Email</strong>?</p>
-                    }
-                    @if (_toggleAdminError != null)
-                    {
-                        <div class="alert alert-danger py-2">@_toggleAdminError</div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="CancelToggleAdmin">Annuleren</button>
-                    <button class="btn btn-primary" @onclick="ConfirmToggleAdmin"
-                            data-testid="confirm-toggle-admin-button"
-                            disabled="@_toggleAdminBusy">
-                        @if (_toggleAdminBusy)
+                        @if (_expandedUserId == user.Id)
                         {
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <tr>
+                                <td colspan="8" class="bg-light">
+                                    @if (_loadingShares)
+                                    {
+                                        <div class="text-center py-2">
+                                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        </div>
+                                    }
+                                    else if (_sharesErrorMessage != null)
+                                    {
+                                        <div class="alert alert-danger py-2 mb-0">@_sharesErrorMessage</div>
+                                    }
+                                    else if (_expandedShares != null)
+                                    {
+                                        <div class="p-3">
+                                            <h6>Gedeelde rekeningen</h6>
+                                            @if (_expandedShares.AccountShares.Count == 0)
+                                            {
+                                                <p class="text-muted small">Geen gedeelde rekeningen</p>
+                                            }
+                                            else
+                                            {
+                                                <table class="table table-sm mb-3">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Rekening</th>
+                                                            <th>Gedeeld met</th>
+                                                            <th>Rechten</th>
+                                                            <th>Status</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var share in _expandedShares.AccountShares)
+                                                        {
+                                                            <tr>
+                                                                <td>@share.AccountName</td>
+                                                                <td>@share.SharedWithEmail</td>
+                                                                <td>@share.Permission</td>
+                                                                <td>@share.Status</td>
+                                                                <td>
+                                                                    <button class="btn btn-sm btn-outline-danger"
+                                                                            @onclick="() => PromptRevokeAccountShare(share)"
+                                                                            data-testid="revoke-share-@share.ShareId">
+                                                                        Intrekken
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            }
+
+                                            <h6>Gedeelde budgetplannen</h6>
+                                            @if (_expandedShares.BudgetPlanShares.Count == 0)
+                                            {
+                                                <p class="text-muted small">Geen gedeelde budgetplannen</p>
+                                            }
+                                            else
+                                            {
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Budgetplan</th>
+                                                            <th>Gedeeld met</th>
+                                                            <th>Rechten</th>
+                                                            <th>Status</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var share in _expandedShares.BudgetPlanShares)
+                                                        {
+                                                            <tr>
+                                                                <td>@share.PlanName</td>
+                                                                <td>@share.SharedWithEmail</td>
+                                                                <td>@share.Permission</td>
+                                                                <td>@share.Status</td>
+                                                                <td>
+                                                                    <button class="btn btn-sm btn-outline-danger"
+                                                                            @onclick="() => PromptRevokeBudgetPlanShare(share)"
+                                                                            data-testid="revoke-share-@share.ShareId">
+                                                                        Intrekken
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
                         }
-                        Bevestigen
-                    </button>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @* Toggle Admin confirmation modal *@
+    @if (_toggleAdminTarget != null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Beheerdersrol wijzigen</h5>
+                        <button type="button" class="btn-close" @onclick="CancelToggleAdmin"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if (_toggleAdminTarget.IsAdmin)
+                        {
+                            <p>Beheerdersrol intrekken van <strong>@_toggleAdminTarget.Email</strong>?</p>
+                        }
+                        else
+                        {
+                            <p>Beheerdersrol verlenen aan <strong>@_toggleAdminTarget.Email</strong>?</p>
+                        }
+                        @if (_toggleAdminError != null)
+                        {
+                            <div class="alert alert-danger py-2">@_toggleAdminError</div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="CancelToggleAdmin">Annuleren</button>
+                        <button class="btn btn-primary" @onclick="ConfirmToggleAdmin"
+                                data-testid="confirm-toggle-admin-button" disabled="@_toggleAdminBusy">
+                            @if (_toggleAdminBusy)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            Bevestigen
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
+    }
 
-@* Revoke share confirmation modal *@
-@if (_revokeTarget != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Share intrekken</h5>
-                    <button type="button" class="btn-close" @onclick="CancelRevoke"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Weet je zeker dat je deze share wilt intrekken?</p>
-                    @if (_revokeError != null)
-                    {
-                        <div class="alert alert-danger py-2">@_revokeError</div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="CancelRevoke">Annuleren</button>
-                    <button class="btn btn-danger" @onclick="ConfirmRevoke"
-                            data-testid="confirm-revoke-button"
-                            disabled="@_revokeBusy">
-                        @if (_revokeBusy)
+    @* Revoke share confirmation modal *@
+    @if (_revokeTarget != null)
+    {
+        <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background:rgba(0,0,0,.5)">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Share intrekken</h5>
+                        <button type="button" class="btn-close" @onclick="CancelRevoke"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Weet je zeker dat je deze share wilt intrekken?</p>
+                        @if (_revokeError != null)
                         {
-                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <div class="alert alert-danger py-2">@_revokeError</div>
                         }
-                        Intrekken
-                    </button>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @onclick="CancelRevoke">Annuleren</button>
+                        <button class="btn btn-danger" @onclick="ConfirmRevoke" data-testid="confirm-revoke-button"
+                                disabled="@_revokeBusy">
+                            @if (_revokeBusy)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            Intrekken
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-}
+    }
 
 </AdminRouteGuard>
 
@@ -310,6 +304,7 @@ else
     private CancellationTokenSource? _revokeErrorDismissTimer;
 
     private Guid _currentUserId;
+    private bool _currentUserIdRetryCompleted;
 
     private IEnumerable<UserSummaryResponse> SortedUsers => _sortColumn switch
     {
@@ -321,6 +316,22 @@ else
     {
         _currentUserId = UserContext.GetCurrentUserId();
         await LoadUsersAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _currentUserIdRetryCompleted || _currentUserId != Guid.Empty)
+        {
+            return;
+        }
+
+        _currentUserIdRetryCompleted = true;
+        var refreshedUserId = UserContext.GetCurrentUserId();
+        if (refreshedUserId != Guid.Empty)
+        {
+            _currentUserId = refreshedUserId;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task LoadUsersAsync()
