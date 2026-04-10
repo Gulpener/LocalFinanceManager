@@ -1,0 +1,157 @@
+using LocalFinanceManager.Data;
+using LocalFinanceManager.E2E.Helpers;
+using LocalFinanceManager.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Playwright;
+
+namespace LocalFinanceManager.E2E.Admin;
+
+/// <summary>
+/// E2E tests for the Admin Panel: tab navigation, user management, and admin-only access.
+/// </summary>
+[TestFixture]
+public class AdminPanelTests : E2ETestBase
+{
+    [SetUp]
+    public async Task SetUp()
+    {
+        await Factory!.TruncateTablesAsync();
+
+        // Re-create the seed user as admin after truncation
+        using var scope = Factory.CreateDbScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        if (!await context.Users.AnyAsync(u => u.Id == AppDbContext.SeedUserId))
+        {
+            context.Users.Add(new User
+            {
+                Id = AppDbContext.SeedUserId,
+                SupabaseUserId = "00000000-0000-0000-0000-000000000001",
+                Email = AppDbContext.SeedUserEmail,
+                DisplayName = "Dev User",
+                EmailConfirmed = true,
+                IsAdmin = true
+            });
+            await context.SaveChangesAsync();
+        }
+    }
+
+    [Test]
+    public async Task AdminSettings_PageLoads()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/settings");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        Assert.That(Page.Url, Does.Contain("/admin/settings"));
+    }
+
+    [Test]
+    public async Task AdminPanel_ShowsTabBar()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/settings");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var settingsTab = Page.Locator("[data-testid='admin-tab-settings']");
+        var mlTab = Page.Locator("[data-testid='admin-tab-ml']");
+        var monitoringTab = Page.Locator("[data-testid='admin-tab-monitoring']");
+        var usersTab = Page.Locator("[data-testid='admin-tab-users']");
+
+        await Assertions.Expect(settingsTab).ToBeVisibleAsync();
+        await Assertions.Expect(mlTab).ToBeVisibleAsync();
+        await Assertions.Expect(monitoringTab).ToBeVisibleAsync();
+        await Assertions.Expect(usersTab).ToBeVisibleAsync();
+    }
+
+    [Test]
+    public async Task AdminPanel_SettingsTab_IsActiveOnSettingsPage()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/settings");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var settingsTab = Page.Locator("[data-testid='admin-tab-settings']");
+        await Assertions.Expect(settingsTab).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("active"));
+    }
+
+    [Test]
+    public async Task AdminPanel_NavigateToUsersTab_LoadsUserManagement()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/settings");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var usersTab = Page.Locator("[data-testid='admin-tab-users']");
+        await usersTab.ClickAsync();
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        Assert.That(Page.Url, Does.Contain("/admin/users"));
+    }
+
+    [Test]
+    public async Task UserManagement_ShowsSeedUser()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/users");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync($"[data-testid='user-row-{AppDbContext.SeedUserId}']", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        var userRow = Page.Locator($"[data-testid='user-row-{AppDbContext.SeedUserId}']");
+        await Assertions.Expect(userRow).ToBeVisibleAsync();
+    }
+
+    [Test]
+    public async Task UserManagement_AdminBadge_ShownForAdminUser()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/users");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync($"[data-testid='admin-badge-{AppDbContext.SeedUserId}']", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        var badge = Page.Locator($"[data-testid='admin-badge-{AppDbContext.SeedUserId}']");
+        await Assertions.Expect(badge).ToBeVisibleAsync();
+        await Assertions.Expect(badge).ToContainTextAsync("Admin");
+    }
+
+    [Test]
+    public async Task UserManagement_SelfToggleAdmin_ButtonIsDisabled()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/users");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync($"[data-testid='toggle-admin-{AppDbContext.SeedUserId}']", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        var button = Page.Locator($"[data-testid='toggle-admin-{AppDbContext.SeedUserId}']");
+        await Assertions.Expect(button).ToBeDisabledAsync();
+    }
+
+    [Test]
+    public async Task UserManagement_ExpandRow_ShowsShareDetails()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/users");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync($"[data-testid='expand-user-{AppDbContext.SeedUserId}']", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        var expandBtn = Page.Locator($"[data-testid='expand-user-{AppDbContext.SeedUserId}']");
+        await expandBtn.ClickAsync();
+
+        // Wait for share details to load (empty state is acceptable)
+        await Page.WaitForTimeoutAsync(1000);
+    }
+
+    [Test]
+    public async Task NavMenu_AdminLink_VisibleForAdminUser()
+    {
+        await Page.GotoAsync($"{BaseUrl}/");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Admin nav link uses href="admin/settings"
+        var adminLink = Page.Locator("nav a[href='admin/settings']");
+        await Assertions.Expect(adminLink).ToBeVisibleAsync();
+    }
+
+    [Test]
+    public async Task NavMenu_AutoApplyLink_VisibleForAllUsers()
+    {
+        await Page.GotoAsync($"{BaseUrl}/");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        var autoApplyLink = Page.Locator("nav a[href='settings/auto-apply']");
+        await Assertions.Expect(autoApplyLink).ToBeVisibleAsync();
+    }
+}

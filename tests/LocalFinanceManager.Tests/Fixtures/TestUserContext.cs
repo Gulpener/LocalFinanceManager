@@ -35,4 +35,5 @@ public sealed class TestUserContext : IUserContext
     public Guid GetCurrentUserId() => UserId;
     public string GetCurrentUserEmail() => "test@localfinancemanager.local";
     public bool IsAuthenticated() => UserId != Guid.Empty;
+    public Task<bool> IsAdminAsync() => Task.FromResult(false);
 }
