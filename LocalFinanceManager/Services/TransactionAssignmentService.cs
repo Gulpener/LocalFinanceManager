@@ -19,6 +19,7 @@ public interface ITransactionAssignmentService
         CancellationToken cancellationToken = default);
     Task<TransactionDto> UndoAssignmentAsync(UndoAssignmentRequest request);
     Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50);
+    Task<int> GetTransactionAuditCountAsync(Guid transactionId);
 }
 
 /// <summary>
@@ -283,7 +284,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
     public async Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50)
     {
-        var transaction = await _transactionRepository.GetByIdAsync(transactionId);
+        var transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
         if (transaction == null)
         {
             _logger.LogWarning(
@@ -302,10 +303,9 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             throw new ArgumentOutOfRangeException(nameof(pageSize), pageSize, "Page size must be greater than or equal to 1.");
         }
 
-        var fetchCount = checked(page * pageSize);
         var skip = (page - 1) * pageSize;
 
-        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId, fetchCount);
+        var audits = await _auditRepository.GetByTransactionIdAsync(transactionId, skip + pageSize);
         return audits
             .Skip(skip)
             .Take(pageSize)
@@ -324,6 +324,17 @@ public class TransactionAssignmentService : ITransactionAssignmentService
                 Reason = a.Reason
             })
             .ToList();
+    }
+
+    public async Task<int> GetTransactionAuditCountAsync(Guid transactionId)
+    {
+        var transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
+        if (transaction == null)
+        {
+            return 0;
+        }
+
+        return await _auditRepository.GetCountByTransactionIdAsync(transactionId);
     }
 
     private async Task RecordAuditAsync(Guid transactionId, string actionType, object? beforeState, object? afterState)

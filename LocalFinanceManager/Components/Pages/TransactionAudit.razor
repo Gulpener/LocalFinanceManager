@@ -107,7 +107,7 @@ else
                                             <small>
                                                 <i class="bi bi-clock me-1"></i>
                                                 <span data-testid="audit-timestamp"
-                                                      title="@entry.ChangedAt.ToString("dd-MM-yyyy HH:mm:ss")">
+                                                      title="@entry.ChangedAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")">
                                                     @GetRelativeTime(entry.ChangedAt)
                                                 </span>
                                             </small>
@@ -167,7 +167,7 @@ else
                 <nav aria-label="Audit trail paginering" class="mt-3">
                     <ul class="pagination justify-content-center">
                         <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                            <button class="page-link" @onclick="() => GoToPage(currentPage - 1)"
+                            <button class="page-link" @onclick="() => GoToPageAsync(currentPage - 1)"
                                     disabled="@(currentPage == 1)" aria-label="Vorige">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
@@ -176,11 +176,11 @@ else
                         {
                             var pageNum = p;
                             <li class="page-item @(currentPage == pageNum ? "active" : "")">
-                                <button class="page-link" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                                <button class="page-link" @onclick="() => GoToPageAsync(pageNum)">@pageNum</button>
                             </li>
                         }
                         <li class="page-item @(currentPage == GetTotalPages() ? "disabled" : "")">
-                            <button class="page-link" @onclick="() => GoToPage(currentPage + 1)"
+                            <button class="page-link" @onclick="() => GoToPageAsync(currentPage + 1)"
                                     disabled="@(currentPage == GetTotalPages())" aria-label="Volgende">
                                 <i class="bi bi-chevron-right"></i>
                             </button>
@@ -236,7 +236,8 @@ else
                 AccountId = tx.AccountId
             };
 
-            auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(Id);
+            totalAuditEntries = await AssignmentService.GetTransactionAuditCountAsync(Id);
+            auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(Id, currentPage, PageSize);
         }
         catch (Exception ex)
         {
@@ -283,10 +284,7 @@ else
 
     private async Task LoadAuditEntriesPageAsync()
     {
-        // This component should treat `auditEntries` as the current page only.
-        // Wire this method to a server-side paged service/repository call in the
-        // existing load logic so only one page is fetched per request.
-        await Task.CompletedTask;
+        auditEntries = await AssignmentService.GetTransactionAuditHistoryAsync(Id, currentPage, PageSize);
     }
 
     private static string GetRelativeTime(DateTime changedAt)
