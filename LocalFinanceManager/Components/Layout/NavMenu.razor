@@ -133,7 +133,6 @@
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         _menuOpen = false;
-        _ = RefreshPendingCountAsync();
         InvokeAsync(StateHasChanged);
     }
 
