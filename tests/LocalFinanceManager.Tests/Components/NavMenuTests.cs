@@ -50,9 +50,9 @@ public class NavMenuTests
         });
     }
 
-    // Admin link visibility is verified in E2E AdminPanelTests.NavMenu_AdminLink_VisibleForAdminUser
-    // because the link is conditionally rendered in OnAfterRenderAsync after the circuit user is
-    // initialized; bUnit does not simulate the full circuit-user lifecycle.
+    // Admin link visibility is verified in E2E AdminPanelTests.NavMenu_AdminLink_VisibleForAdminUser.
+    // In these unit tests GetCurrentUserId() is mocked to return Guid.Empty, so
+    // RefreshPendingCountAsync returns early before the DB scope is opened or IsAdminAsync is called.
     [Test]
     public void NavMenu_WhenAdminUserIsLoggedIn_RenderWithoutErrors()
     {

@@ -83,11 +83,13 @@
 </div>
 
 @using LocalFinanceManager.Services
-@inject ISharingService SharingService
+@using LocalFinanceManager.Data
+@using Microsoft.EntityFrameworkCore
 @inject IUserContext UserContext
 @inject ILogger<NavMenu> Logger
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@inject IServiceScopeFactory ScopeFactory
 @implements IDisposable
 @code {
     private int pendingShareCount;
@@ -170,11 +172,19 @@
             return;
         }
 
+        // Use a fresh DI scope so these queries get their own AppDbContext instance.
+        // This prevents concurrent-DbContext exceptions when a page (e.g. Transactions)
+        // is also running queries on the circuit-scoped DbContext at the same time.
+        // SharingService only depends on AppDbContext + ILogger, so it is safe to resolve
+        // from a child scope without affecting circuit-scoped services.
+        await using var scope = ScopeFactory.CreateAsyncScope();
+
         var stateChanged = false;
 
         try
         {
-            pendingShareCount = await SharingService.GetPendingShareCountAsync(userId);
+            var sharingService = scope.ServiceProvider.GetRequiredService<ISharingService>();
+            pendingShareCount = await sharingService.GetPendingShareCountAsync(userId);
             stateChanged = true;
         }
         catch (Exception ex)
@@ -185,7 +195,14 @@
 
         try
         {
-            _isAdmin = await UserContext.IsAdminAsync();
+            // Resolve AppDbContext from the fresh scope rather than using IUserContext.IsAdminAsync()
+            // because IUserContext depends on IBlazorCircuitUser, which is circuit-scoped and is not
+            // available in a child scope. The query mirrors the logic in UserContext.IsAdminAsync().
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            _isAdmin = await db.Users
+                .Where(u => u.Id == userId && !u.IsArchived)
+                .Select(u => u.IsAdmin)
+                .FirstOrDefaultAsync();
             stateChanged = true;
         }
         catch (Exception ex)
