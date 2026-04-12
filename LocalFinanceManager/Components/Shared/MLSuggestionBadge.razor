@@ -45,6 +45,13 @@ else if (_noModelAvailable && !_isHidden)
         <i class="bi bi-info-circle"></i> Geen ML-model
     </span>
 }
+else if (_isServiceError && !_isHidden)
+{
+    <span class="badge bg-secondary text-white" title="De ML-suggestieservice is tijdelijk niet beschikbaar."
+          data-testid="service-error-badge">
+        <i class="bi bi-exclamation-circle"></i> ML niet beschikbaar
+    </span>
+}
 else if (_suggestion != null && !_isHidden)
 {
     <span class="ml-suggestion-wrapper">
@@ -102,6 +109,7 @@ else if (_suggestion != null && !_isHidden)
     private bool _isHidden = false;
     private bool _isAutoApplied = false;
     private bool _noModelAvailable = false;
+    private bool _isServiceError = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,24 +122,46 @@ else if (_suggestion != null && !_isHidden)
         try
         {
             _isLoading = true;
-            var response = await Http.GetAsync($"/api/suggestions?transactionId={TransactionId}");
+            _noModelAvailable = false;
+            _isServiceError = false;
+            _suggestion = null;
+            using var response = await Http.GetAsync($"/api/suggestions?transactionId={TransactionId}");
 
             if (response.IsSuccessStatusCode)
             {
                 _suggestion = await response.Content.ReadFromJsonAsync<SuggestionDto>();
-                _noModelAvailable = false;
+
+                // Ensure the row always has a visible ML-state badge, even when the API
+                // returns a success status without a usable suggestion payload.
+                _noModelAvailable = _suggestion == null;
+                _isServiceError = false;
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 // 404 means no ML model is available
                 _noModelAvailable = true;
+                _isServiceError = false;
                 _suggestion = null;
+            }
+            else
+            {
+                // For non-success responses (401/403/500/etc.), show a distinct "service
+                // unavailable" badge rather than the "no model trained" badge to avoid
+                // misrepresenting the cause of the missing suggestion.
+                _isServiceError = true;
+                _noModelAvailable = false;
+                _suggestion = null;
+                Logger.LogDebug(
+                    "Suggestions API returned {StatusCode} for transaction {TransactionId}; rendering service-error badge",
+                    response.StatusCode,
+                    TransactionId);
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading ML suggestion for transaction {TransactionId}", TransactionId);
-            _noModelAvailable = true;
+            _isServiceError = true;
+            _noModelAvailable = false;
         }
         finally
         {

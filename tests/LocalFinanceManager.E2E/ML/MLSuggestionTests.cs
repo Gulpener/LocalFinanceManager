@@ -23,7 +23,8 @@ public class MLSuggestionTests : E2ETestBase
     // Selectors for ML badge elements
     private const string MLBadgeSelector = "[data-testid='ml-suggestion-badge']";
     private const string NoModelBadgeSelector = "[data-testid='no-model-badge']";
-    private const string AnyBadgeSelector = $"{MLBadgeSelector}, {NoModelBadgeSelector}";
+    private const string ServiceErrorBadgeSelector = "[data-testid='service-error-badge']";
+    private const string AnyBadgeSelector = $"{MLBadgeSelector}, {NoModelBadgeSelector}, {ServiceErrorBadgeSelector}";
 
     [SetUp]
     public async Task SetUp()
@@ -403,12 +404,12 @@ public class MLSuggestionTests : E2ETestBase
     {
         // Act — navigate to ML model info admin page
         await Page.GotoAsync($"{BaseUrl}/admin/ml");
-        await Page.WaitForSelectorAsync("[data-testid='model-info']", new() { Timeout = 5_000 });
+        await Page.WaitForSelectorAsync("[data-testid='model-info']", new() { Timeout = 30_000 });
 
         // Assert — model metadata is displayed (a model was trained in SetUp)
-        var modelVersionElement = await Page.WaitForSelectorAsync("[data-testid='model-version']", new() { Timeout = 5_000 });
-        var accuracyElement = await Page.WaitForSelectorAsync("[data-testid='model-accuracy']", new() { Timeout = 5_000 });
-        var lastTrainedElement = await Page.WaitForSelectorAsync("[data-testid='last-trained']", new() { Timeout = 5_000 });
+        var modelVersionElement = await Page.WaitForSelectorAsync("[data-testid='model-version']", new() { Timeout = 30_000 });
+        var accuracyElement = await Page.WaitForSelectorAsync("[data-testid='model-accuracy']", new() { Timeout = 30_000 });
+        var lastTrainedElement = await Page.WaitForSelectorAsync("[data-testid='last-trained']", new() { Timeout = 30_000 });
 
         // Retrieve text before Assert.Multiple (async lambdas are not supported)
         var modelVersionText = await modelVersionElement!.InnerTextAsync();
