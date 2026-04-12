@@ -1,6 +1,7 @@
 @using LocalFinanceManager.Services
 @inject IUserContext UserContext
 @inject NavigationManager NavigationManager
+@inject ILogger<AdminRouteGuard> Logger
 
 @if (_accessState == AdminAccessState.Granted)
 {
@@ -56,10 +57,19 @@ else if (_accessState == AdminAccessState.Denied)
             return;
         }
 
-        var isAdmin = await UserContext.IsAdminAsync();
-        _accessState = isAdmin ? AdminAccessState.Granted : AdminAccessState.Denied;
-        if (!isAdmin)
+        try
         {
+            var isAdmin = await UserContext.IsAdminAsync();
+            _accessState = isAdmin ? AdminAccessState.Granted : AdminAccessState.Denied;
+            if (!isAdmin)
+            {
+                NavigationManager.NavigateTo("/", forceLoad: false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to resolve admin access state in route guard.");
+            _accessState = AdminAccessState.Denied;
             NavigationManager.NavigateTo("/", forceLoad: false);
         }
     }
