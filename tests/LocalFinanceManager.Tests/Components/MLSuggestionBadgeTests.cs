@@ -13,13 +13,38 @@ namespace LocalFinanceManager.Tests.Components;
 public class MLSuggestionBadgeTests
 {
     [Test]
-    public void NonSuccessSuggestionResponse_ShowsNoModelBadgeFallback()
+    public void NonSuccessSuggestionResponse_ShowsServiceErrorBadge()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
 
         var httpClient = new HttpClient(new StubHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.InternalServerError)))
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+
+        context.Services.AddSingleton(httpClient);
+        context.Services.AddSingleton<ILogger<MLSuggestionBadge>>(NullLogger<MLSuggestionBadge>.Instance);
+
+        var cut = context.Render<MLSuggestionBadge>(parameters => parameters
+            .Add(p => p.TransactionId, Guid.NewGuid()));
+
+        cut.WaitForAssertion(() =>
+        {
+            var serviceErrorBadge = cut.Find("[data-testid='service-error-badge']");
+            Assert.That(serviceErrorBadge.TextContent, Does.Contain("ML niet beschikbaar"));
+        });
+    }
+
+    [Test]
+    public void NotFoundSuggestionResponse_ShowsNoModelBadge()
+    {
+        using var context = new BunitContext();
+        context.JSInterop.Mode = JSRuntimeMode.Loose;
+
+        var httpClient = new HttpClient(new StubHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.NotFound)))
         {
             BaseAddress = new Uri("http://localhost")
         };

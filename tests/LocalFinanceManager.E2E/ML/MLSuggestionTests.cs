@@ -23,7 +23,8 @@ public class MLSuggestionTests : E2ETestBase
     // Selectors for ML badge elements
     private const string MLBadgeSelector = "[data-testid='ml-suggestion-badge']";
     private const string NoModelBadgeSelector = "[data-testid='no-model-badge']";
-    private const string AnyBadgeSelector = $"{MLBadgeSelector}, {NoModelBadgeSelector}";
+    private const string ServiceErrorBadgeSelector = "[data-testid='service-error-badge']";
+    private const string AnyBadgeSelector = $"{MLBadgeSelector}, {NoModelBadgeSelector}, {ServiceErrorBadgeSelector}";
 
     [SetUp]
     public async Task SetUp()
