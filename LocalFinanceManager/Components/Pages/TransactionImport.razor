@@ -171,7 +171,7 @@
                                                 <tr>
                                                     <td>@tx.Date.ToString("dd-MM-yyyy")</td>
                                                     <td class="@(tx.Amount >= 0 ? "text-success" : "text-danger")">
-                                                        @tx.Amount.ToString("C2")</td>
+                                                        @CurrencyFormatter.Format(tx.Amount, SelectedImportAccountCurrency)</td>
                                                         <td>@tx.Description</td>
                                                         <td>@tx.Counterparty</td>
                                                     </tr>
@@ -322,6 +322,11 @@
     private string deduplicationStrategy = "exact";
     private bool skipErrors = true;
     private string? fileContentBase64;
+
+    private string? SelectedImportAccountCurrency =>
+        Guid.TryParse(selectedAccountId, out var guid)
+            ? accounts.FirstOrDefault(a => a.Id == guid)?.Currency
+            : null;
 
     protected override async Task OnInitializedAsync()
     {

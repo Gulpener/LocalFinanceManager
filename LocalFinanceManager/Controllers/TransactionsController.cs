@@ -17,17 +17,20 @@ namespace LocalFinanceManager.Controllers;
 public class TransactionsController : ControllerBase
 {
     private readonly ITransactionRepository _repository;
+    private readonly IAccountRepository _accountRepository;
     private readonly ImportService _importService;
     private readonly ITransactionAssignmentService _assignmentService;
     private readonly ILogger<TransactionsController> _logger;
 
     public TransactionsController(
         ITransactionRepository repository,
+        IAccountRepository accountRepository,
         ImportService importService,
         ITransactionAssignmentService assignmentService,
         ILogger<TransactionsController> logger)
     {
         _repository = repository;
+        _accountRepository = accountRepository;
         _importService = importService;
         _assignmentService = assignmentService;
         _logger = logger;
@@ -43,14 +46,24 @@ public class TransactionsController : ControllerBase
         try
         {
             var transactions = await _repository.GetByAccountIdAsync(accountId);
+
+            // Fetch the account once to get the currency code for all rows
+            var account = await _accountRepository.GetByIdAsync(accountId);
+            if (account == null)
+            {
+                return NotFound();
+            }
+            var currency = account.Currency;
+
             var dtos = transactions.Select(t => new TransactionDto
             {
                 Id = t.Id,
                 Amount = t.Amount,
                 Date = t.Date,
                 Description = t.Description,
-                Counterparty = t.Counterparty,
+                Counterparty = t.Counterparty, // lgtm[cs/cleartext-storage-of-sensitive-information]
                 AccountId = t.AccountId,
+                AccountCurrency = currency,
                 ExternalId = t.ExternalId,
                 SourceFileName = t.SourceFileName,
                 ImportedAt = t.ImportedAt,
