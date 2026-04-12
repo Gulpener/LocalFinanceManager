@@ -63,7 +63,6 @@ public class TransactionsPageModel : PageObjectBase
 
         // Under CI load, Blazor can briefly detach/recreate the select element during
         // circuit hydration and first re-render. Retry once to absorb that race.
-        Exception? lastError = null;
         for (var attempt = 1; attempt <= 2; attempt++)
         {
             try
@@ -75,22 +74,15 @@ public class TransactionsPageModel : PageObjectBase
                 });
 
                 await accountFilter.SelectOptionAsync(accountIdStr);
-                lastError = null;
                 break;
             }
-            catch (PlaywrightException ex)
+            catch (PlaywrightException)
             {
-                lastError = ex;
                 if (attempt == 2)
                 {
                     throw;
                 }
             }
-        }
-
-        if (lastError != null)
-        {
-            throw lastError;
         }
 
         // Wait for Blazor to finish re-rendering with data for the selected account.

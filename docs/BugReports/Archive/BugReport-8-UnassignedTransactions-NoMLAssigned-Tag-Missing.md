@@ -2,7 +2,7 @@
 
 ## Status
 
-- [ ] Open
+- [x] Resolved
 
 ## Summary
 

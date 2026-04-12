@@ -116,7 +116,7 @@ else if (_suggestion != null && !_isHidden)
             _isLoading = true;
             _noModelAvailable = false;
             _suggestion = null;
-            var response = await Http.GetAsync($"/api/suggestions?transactionId={TransactionId}");
+            using var response = await Http.GetAsync($"/api/suggestions?transactionId={TransactionId}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -138,7 +138,7 @@ else if (_suggestion != null && !_isHidden)
                 // instead of rendering no badge at all.
                 _noModelAvailable = true;
                 _suggestion = null;
-                Logger.LogWarning(
+                Logger.LogDebug(
                     "Suggestions API returned {StatusCode} for transaction {TransactionId}; rendering no-model badge fallback",
                     response.StatusCode,
                     TransactionId);
