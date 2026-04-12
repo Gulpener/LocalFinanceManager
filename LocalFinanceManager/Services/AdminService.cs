@@ -59,22 +59,22 @@ public class AdminService : IAdminService
             .Select(g => new { UserId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.UserId, x => x.Count, ct);
 
-        var users = await _context.Users
-            .AsNoTracking()
-            .Where(u => !u.IsArchived)
-            .OrderBy(u => u.Email)
-            .ToListAsync(ct);
-
-        return users.Select(u => new UserSummaryResponse(
-            u.Id,
-            u.Email,
-            u.DisplayName,
-            u.IsAdmin,
-            u.CreatedAt,
-            ownedAccountCounts.GetValueOrDefault(u.Id),
-            outgoingAccountShareCounts.GetValueOrDefault(u.Id) + outgoingBudgetPlanShareCounts.GetValueOrDefault(u.Id),
-            incomingAccountShareCounts.GetValueOrDefault(u.Id) + incomingBudgetPlanShareCounts.GetValueOrDefault(u.Id)
-        )).ToList();
+        return (await _context.Users
+                .AsNoTracking()
+                .Where(u => !u.IsArchived)
+                .OrderBy(u => u.Email)
+                .Select(u => new { u.Id, u.Email, u.DisplayName, u.IsAdmin, u.CreatedAt })
+                .ToListAsync(ct))
+            .Select(u => new UserSummaryResponse(
+                u.Id,
+                u.Email,
+                u.DisplayName,
+                u.IsAdmin,
+                u.CreatedAt,
+                ownedAccountCounts.GetValueOrDefault(u.Id),
+                outgoingAccountShareCounts.GetValueOrDefault(u.Id) + outgoingBudgetPlanShareCounts.GetValueOrDefault(u.Id),
+                incomingAccountShareCounts.GetValueOrDefault(u.Id) + incomingBudgetPlanShareCounts.GetValueOrDefault(u.Id)
+            )).ToList();
     }
 
     /// <inheritdoc />
