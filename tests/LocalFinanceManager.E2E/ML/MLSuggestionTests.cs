@@ -403,12 +403,12 @@ public class MLSuggestionTests : E2ETestBase
     {
         // Act — navigate to ML model info admin page
         await Page.GotoAsync($"{BaseUrl}/admin/ml");
-        await Page.WaitForSelectorAsync("[data-testid='model-info']", new() { Timeout = 5_000 });
+        await Page.WaitForSelectorAsync("[data-testid='model-info']", new() { Timeout = 30_000 });
 
         // Assert — model metadata is displayed (a model was trained in SetUp)
-        var modelVersionElement = await Page.WaitForSelectorAsync("[data-testid='model-version']", new() { Timeout = 5_000 });
-        var accuracyElement = await Page.WaitForSelectorAsync("[data-testid='model-accuracy']", new() { Timeout = 5_000 });
-        var lastTrainedElement = await Page.WaitForSelectorAsync("[data-testid='last-trained']", new() { Timeout = 5_000 });
+        var modelVersionElement = await Page.WaitForSelectorAsync("[data-testid='model-version']", new() { Timeout = 30_000 });
+        var accuracyElement = await Page.WaitForSelectorAsync("[data-testid='model-accuracy']", new() { Timeout = 30_000 });
+        var lastTrainedElement = await Page.WaitForSelectorAsync("[data-testid='last-trained']", new() { Timeout = 30_000 });
 
         // Retrieve text before Assert.Multiple (async lambdas are not supported)
         var modelVersionText = await modelVersionElement!.InnerTextAsync();

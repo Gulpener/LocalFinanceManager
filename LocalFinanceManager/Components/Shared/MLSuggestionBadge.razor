@@ -114,18 +114,34 @@ else if (_suggestion != null && !_isHidden)
         try
         {
             _isLoading = true;
+            _noModelAvailable = false;
+            _suggestion = null;
             var response = await Http.GetAsync($"/api/suggestions?transactionId={TransactionId}");
 
             if (response.IsSuccessStatusCode)
             {
                 _suggestion = await response.Content.ReadFromJsonAsync<SuggestionDto>();
-                _noModelAvailable = false;
+
+                // Ensure the row always has a visible ML-state badge, even when the API
+                // returns a success status without a usable suggestion payload.
+                _noModelAvailable = _suggestion == null;
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 // 404 means no ML model is available
                 _noModelAvailable = true;
                 _suggestion = null;
+            }
+            else
+            {
+                // For non-success responses (401/403/500/etc.), show the fallback badge
+                // instead of rendering no badge at all.
+                _noModelAvailable = true;
+                _suggestion = null;
+                Logger.LogWarning(
+                    "Suggestions API returned {StatusCode} for transaction {TransactionId}; rendering no-model badge fallback",
+                    response.StatusCode,
+                    TransactionId);
             }
         }
         catch (Exception ex)
