@@ -3,40 +3,31 @@
 @using LocalFinanceManager.Services
 @inject NavigationManager NavigationManager
 @inject IUserContext UserContext
+@inject ILogger<AdminLayout> Logger
 
 <div class="admin-layout">
     @if (_isAdmin)
     {
         <ul class="nav nav-tabs mb-3" role="tablist" style="overflow-x: auto; flex-wrap: nowrap;">
             <li class="nav-item" role="presentation">
-                <a class="nav-link @IsActive("/admin/settings")"
-                   href="/admin/settings"
-                   data-testid="admin-tab-settings"
-                   role="tab">
+                <a class="nav-link @IsActive("/admin/settings")" href="/admin/settings" data-testid="admin-tab-settings"
+                       role="tab">
                     <i class="bi bi-gear-fill me-1" aria-hidden="true"></i>Instellingen
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link @IsActive("/admin/ml")"
-                   href="/admin/ml"
-                   data-testid="admin-tab-ml"
-                   role="tab">
+                <a class="nav-link @IsActive("/admin/ml")" href="/admin/ml" data-testid="admin-tab-ml" role="tab">
                     <i class="bi bi-robot me-1" aria-hidden="true"></i>ML Modellen
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link @IsActive("/admin/monitoring")"
-                   href="/admin/monitoring"
-                   data-testid="admin-tab-monitoring"
-                   role="tab">
+                <a class="nav-link @IsActive("/admin/monitoring")" href="/admin/monitoring"
+                       data-testid="admin-tab-monitoring" role="tab">
                     <i class="bi bi-speedometer2 me-1" aria-hidden="true"></i>Bewaking
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link @IsActive("/admin/users")"
-                   href="/admin/users"
-                   data-testid="admin-tab-users"
-                   role="tab">
+                <a class="nav-link @IsActive("/admin/users")" href="/admin/users" data-testid="admin-tab-users" role="tab">
                     <i class="bi bi-people-fill me-1" aria-hidden="true"></i>Gebruikers
                 </a>
             </li>
@@ -51,7 +42,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _isAdmin = await UserContext.IsAdminAsync();
+        try
+        {
+            _isAdmin = await UserContext.IsAdminAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize admin layout admin state.");
+            _isAdmin = false;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -61,11 +60,23 @@
             return;
         }
 
-        var isAdmin = await UserContext.IsAdminAsync();
-        if (isAdmin != _isAdmin)
+        try
         {
-            _isAdmin = isAdmin;
-            StateHasChanged();
+            var isAdmin = await UserContext.IsAdminAsync();
+            if (isAdmin != _isAdmin)
+            {
+                _isAdmin = isAdmin;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to refresh admin layout admin state after first render.");
+            if (_isAdmin)
+            {
+                _isAdmin = false;
+                StateHasChanged();
+            }
         }
     }
     private string IsActive(string path)
