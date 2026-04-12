@@ -139,10 +139,9 @@ public class MonitoringService : IMonitoringService
             .Where(a => a.IsAutoApplied)
             .Include(a => a.Transaction)
                 .ThenInclude(t => t.Account)
-            .Include(a => a.Transaction)
-                .ThenInclude(t => t.AssignedParts!)
-                    .ThenInclude(p => p.BudgetLine)
-                        .ThenInclude(bl => bl.Category)
+            .Include(a => a.Transaction.AssignedParts!)
+                .ThenInclude(p => p.BudgetLine)
+                    .ThenInclude(bl => bl.Category)
             .OrderByDescending(a => a.AutoAppliedAt ?? a.ChangedAt)
             .Take(limit)
             .ToListAsync();

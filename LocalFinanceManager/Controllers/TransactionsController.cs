@@ -49,7 +49,11 @@ public class TransactionsController : ControllerBase
 
             // Fetch the account once to get the currency code for all rows
             var account = await _accountRepository.GetByIdAsync(accountId);
-            var currency = account?.Currency;
+            if (account == null)
+            {
+                return NotFound();
+            }
+            var currency = account.Currency;
 
             var dtos = transactions.Select(t => new TransactionDto
             {
