@@ -324,11 +324,11 @@
     protected override async Task OnInitializedAsync()
     {
         _currentUserId = UserContext.GetCurrentUserId();
-        // Only load data if we already know the user is admin; if user id is empty, defer to OnAfterRenderAsync.
         if (_currentUserId != Guid.Empty && await UserContext.IsAdminAsync())
         {
             _adminCheckCompleted = true;
-            await LoadUsersAsync();
+            // _loading stays true; LoadUsersAsync is deferred to OnAfterRenderAsync
+            // so the loading spinner renders on the first paint.
         }
         else
         {
@@ -344,11 +344,20 @@
         }
 
         _currentUserIdRetryCompleted = true;
+
+        if (_adminCheckCompleted)
+        {
+            // User was confirmed admin in OnInitializedAsync; load data now that the first render is done.
+            await LoadUsersAsync();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         var refreshedUserId = UserContext.GetCurrentUserId();
         if (refreshedUserId != Guid.Empty)
         {
             _currentUserId = refreshedUserId;
-            if (!_adminCheckCompleted && await UserContext.IsAdminAsync())
+            if (await UserContext.IsAdminAsync())
             {
                 _adminCheckCompleted = true;
                 _loading = true;
@@ -396,6 +405,7 @@
         _expandedShares = null;
         _sharesErrorMessage = null;
         _loadingShares = true;
+        await InvokeAsync(StateHasChanged); // force an intermediate render so the loading spinner appears
 
         try
         {

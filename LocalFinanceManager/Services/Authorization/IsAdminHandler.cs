@@ -1,3 +1,4 @@
+using LocalFinanceManager.Services;
 using Microsoft.AspNetCore.Authorization;
 
 namespace LocalFinanceManager.Services.Authorization;
