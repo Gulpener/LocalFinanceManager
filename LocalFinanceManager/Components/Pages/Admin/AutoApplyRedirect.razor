@@ -1,0 +1,9 @@
+@page "/admin/autoapply"
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/settings/auto-apply", replace: true);
+    }
+}

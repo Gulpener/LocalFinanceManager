@@ -1,0 +1,66 @@
+@using LocalFinanceManager.Services
+@inject IUserContext UserContext
+@inject NavigationManager NavigationManager
+
+@if (_accessState == AdminAccessState.Granted)
+{
+    @ChildContent
+}
+else if (_accessState == AdminAccessState.Denied)
+{
+    @* Non-admin: content hidden, redirect is triggered after access resolution *@
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private AdminAccessState _accessState = AdminAccessState.Pending;
+    private bool _retryAdminCheckAfterRender;
+    private bool _retriedAdminCheck;
+
+    private enum AdminAccessState
+    {
+        Pending,
+        Granted,
+        Denied
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ResolveAccessAsync(scheduleRetryIfUnknown: true);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_retryAdminCheckAfterRender || _retriedAdminCheck)
+        {
+            return;
+        }
+
+        _retryAdminCheckAfterRender = false;
+        _retriedAdminCheck = true;
+        await ResolveAccessAsync(scheduleRetryIfUnknown: false);
+        StateHasChanged();
+    }
+
+    private async Task ResolveAccessAsync(bool scheduleRetryIfUnknown)
+    {
+        if (UserContext.GetCurrentUserId() == Guid.Empty)
+        {
+            _accessState = AdminAccessState.Pending;
+            if (scheduleRetryIfUnknown)
+            {
+                _retryAdminCheckAfterRender = true;
+            }
+
+            return;
+        }
+
+        var isAdmin = await UserContext.IsAdminAsync();
+        _accessState = isAdmin ? AdminAccessState.Granted : AdminAccessState.Denied;
+        if (!isAdmin)
+        {
+            NavigationManager.NavigateTo("/", forceLoad: false);
+        }
+    }
+}
