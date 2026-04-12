@@ -9,6 +9,7 @@ namespace LocalFinanceManager.E2E.Pages;
 public class TransactionsPageModel : PageObjectBase
 {
     private const int FilterTableUpdateTimeoutMs = 30000;
+    private const int TransactionsPageReadyTimeoutMs = 60000;
 
     // Selectors
     private const string AccountFilterSelector = "#account-filter";
@@ -45,7 +46,8 @@ public class TransactionsPageModel : PageObjectBase
     /// </summary>
     public async Task NavigateAsync()
     {
-        await NavigateToAsync("/transactions");
+        await NavigateToAsync("/transactions", WaitUntilState.DOMContentLoaded);
+        await WaitForTransactionsReadyAsync();
     }
 
     /// <summary>
@@ -54,12 +56,38 @@ public class TransactionsPageModel : PageObjectBase
     /// <param name="accountId">ID of the account to filter by.</param>
     public async Task SelectAccountFilterAsync(Guid accountId)
     {
-        await Page.SelectOptionAsync(AccountFilterSelector, accountId.ToString());
+        await WaitForTransactionsReadyAsync();
+
+        var accountIdStr = accountId.ToString();
+        var accountFilter = Page.Locator(AccountFilterSelector);
+
+        // Under CI load, Blazor can briefly detach/recreate the select element during
+        // circuit hydration and first re-render. Retry once to absorb that race.
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            try
+            {
+                await accountFilter.WaitForAsync(new LocatorWaitForOptions
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = TransactionsPageReadyTimeoutMs
+                });
+
+                await accountFilter.SelectOptionAsync(accountIdStr);
+                break;
+            }
+            catch (PlaywrightException)
+            {
+                if (attempt == 2)
+                {
+                    throw;
+                }
+            }
+        }
 
         // Wait for Blazor to finish re-rendering with data for the selected account.
         // The transactions-list-container always exists and carries data-loaded-account
         // that is updated when the account data finishes loading (loading=false).
-        var accountIdStr = accountId.ToString();
         await Page.WaitForFunctionAsync(
             @"arg => {
                 const container = document.querySelector(arg.containerSelector);
@@ -70,7 +98,16 @@ public class TransactionsPageModel : PageObjectBase
                 containerSelector = TransactionListContainerSelector,
                 accountId = accountIdStr
             },
-            new PageWaitForFunctionOptions { Timeout = 15000 });
+            new PageWaitForFunctionOptions { Timeout = TransactionsPageReadyTimeoutMs });
+    }
+
+    private async Task WaitForTransactionsReadyAsync()
+    {
+        await Page.WaitForSelectorAsync(AccountFilterSelector, new PageWaitForSelectorOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = TransactionsPageReadyTimeoutMs
+        });
     }
 
     /// <summary>
