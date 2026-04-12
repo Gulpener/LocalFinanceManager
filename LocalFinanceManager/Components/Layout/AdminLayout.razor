@@ -72,7 +72,11 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to refresh admin layout admin state after first render.");
-            _isAdmin = false;
+            if (_isAdmin)
+            {
+                _isAdmin = false;
+                StateHasChanged();
+            }
         }
     }
     private string IsActive(string path)

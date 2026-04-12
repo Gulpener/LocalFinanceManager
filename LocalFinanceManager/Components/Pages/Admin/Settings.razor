@@ -234,9 +234,18 @@
                 }
                 catch (Exception ex)
                 {
-                    // If anything goes wrong while querying, keep page alive and show safe defaults.
+                    // Connectivity was already confirmed above, so keep the database reachable state
+                    // and only fall back the detail fields that could not be queried.
                     Logger.LogError(ex, "Admin settings failed to load database details after successful connectivity check.");
-                    ResetDatabaseStatusToUnavailable();
+                    _lastMigration = "Onbekend";
+                    _pendingMigrations = Array.Empty<string>();
+                    _accountCount = 0;
+                    _categoryCount = 0;
+                    _budgetPlanCount = 0;
+                    _budgetLineCount = 0;
+                    _transactionCount = 0;
+                    _transactionSplitCount = 0;
+                    _seedDataLoaded = false;
                     _loadErrorMessage = "Niet alle database-informatie kon worden geladen. Controleer logs voor details.";
                 }
             }
