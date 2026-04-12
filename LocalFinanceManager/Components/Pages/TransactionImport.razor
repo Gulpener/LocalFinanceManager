@@ -324,9 +324,9 @@
     private string? fileContentBase64;
 
     private string? SelectedImportAccountCurrency =>
-        string.IsNullOrEmpty(selectedAccountId)
-            ? null
-            : accounts.FirstOrDefault(a => a.Id.ToString() == selectedAccountId)?.Currency;
+        Guid.TryParse(selectedAccountId, out var guid)
+            ? accounts.FirstOrDefault(a => a.Id == guid)?.Currency
+            : null;
 
     protected override async Task OnInitializedAsync()
     {
