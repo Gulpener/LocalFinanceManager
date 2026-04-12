@@ -181,7 +181,7 @@
                                         </span>
                                     </td>
                                     <td class="@(item.Amount >= 0 ? "text-success" : "text-danger")">
-                                        @item.Amount.ToString("C2")
+                                        @CurrencyFormatter.Format(item.Amount, item.AccountCurrency)
                                     </td>
                                     <td>
                                         <span class="badge bg-info">@item.CategoryName</span>

@@ -40,7 +40,7 @@ else
                 <h5 class="card-title">@transaction.Description</h5>
                 <p class="card-text text-muted">
                     <span class="@(transaction.Amount >= 0 ? "text-success" : "text-danger")">
-                        @transaction.Amount.ToString("C2")
+                        @CurrencyFormatter.Format(transaction.Amount, transaction.AccountCurrency)
                     </span>
                     &bull; @transaction.Date.ToString("dd-MM-yyyy")
                     @if (!string.IsNullOrEmpty(transaction.Counterparty))
