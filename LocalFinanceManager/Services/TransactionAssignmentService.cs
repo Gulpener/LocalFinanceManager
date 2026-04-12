@@ -92,8 +92,8 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         // Record audit trail
         await RecordAuditAsync(transactionId, "Assign", null, new { request.BudgetLineId, request.Note });
 
-        // Reload transaction with splits
-        transaction = await _transactionRepository.GetByIdAsync(transactionId);
+        // Reload transaction with splits and account
+        transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
         return MapToDto(transaction!);
     }
 
@@ -166,8 +166,8 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         // Record audit trail
         await RecordAuditAsync(transactionId, "Split", null, new { Splits = request.Splits });
 
-        // Reload transaction with splits
-        transaction = await _transactionRepository.GetByIdAsync(transactionId);
+        // Reload transaction with splits and account
+        transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
         return MapToDto(transaction!);
     }
 
@@ -277,8 +277,8 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         // Record undo in audit trail
         await RecordAuditAsync(request.TransactionId, "Undo", auditEntry.AfterState, null);
 
-        // Reload transaction
-        transaction = await _transactionRepository.GetByIdAsync(request.TransactionId);
+        // Reload transaction with account
+        transaction = await _transactionRepository.GetByIdWithAccountAsync(request.TransactionId);
         return MapToDto(transaction!);
     }
 

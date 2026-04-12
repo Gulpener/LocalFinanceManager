@@ -12,7 +12,8 @@ public static class CurrencyFormatter
     /// <summary>
     /// Formats <paramref name="amount"/> with the currency symbol that matches
     /// <paramref name="currencyCode"/> (ISO-4217, e.g. "EUR", "USD").
-    /// Falls back to invariant culture formatting when the code is unknown.
+    /// Falls back to <see cref="CultureInfo.CurrentCulture"/> formatting when the code is
+    /// null, empty, or not recognised.
     /// </summary>
     public static string Format(decimal amount, string? currencyCode)
     {
