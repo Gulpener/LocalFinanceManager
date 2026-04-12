@@ -1,12 +1,17 @@
 @page "/admin/settings"
+@layout AdminLayout
 @attribute [Authorize]
 @inject IWebHostEnvironment Environment
 @inject AppDbContext DbContext
+@using LocalFinanceManager.Components.Layout
+@using LocalFinanceManager.Components.Shared
 @using LocalFinanceManager.Data
 @using Microsoft.EntityFrameworkCore
 @using Npgsql
 
 <PageTitle>Beheerinstellingen</PageTitle>
+
+<AdminRouteGuard>
 
 <h3>Systeem Instellingen</h3>
 
@@ -145,6 +150,8 @@
             </table>
         </div>
     </div>
+
+</AdminRouteGuard>
 
 @code {
     private string? _connectionString;

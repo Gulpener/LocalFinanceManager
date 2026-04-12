@@ -1,7 +1,10 @@
 @page "/admin/monitoring"
 @page "/settings/monitoring"
+@layout AdminLayout
 @attribute [Authorize]
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using LocalFinanceManager.Components.Layout
+@using LocalFinanceManager.Components.Shared
 @using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs.ML
 @using LocalFinanceManager.Configuration
@@ -15,6 +18,8 @@
 @implements IAsyncDisposable
 
 <PageTitle>Monitoring Dashboard</PageTitle>
+
+<AdminRouteGuard>
 
 <h1>Auto-Apply Monitoring Dashboard</h1>
 
@@ -282,6 +287,8 @@
             </div>
         </div>
     </div>
+
+</AdminRouteGuard>
 
 @code {
     private static readonly CultureInfo DutchCulture = CultureInfo.GetCultureInfo("nl-NL");

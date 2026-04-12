@@ -1,5 +1,8 @@
 @page "/admin/ml"
+@layout AdminLayout
 @attribute [Authorize]
+@using LocalFinanceManager.Components.Layout
+@using LocalFinanceManager.Components.Shared
 @using LocalFinanceManager.DTOs.ML
 @using System.Globalization
 @using System.Net
@@ -8,6 +11,8 @@
 @inject ILogger<ML> Logger
 
 <PageTitle>ML Model Info</PageTitle>
+
+<AdminRouteGuard>
 
 <h1>ML modelinformatie</h1>
 <p class="lead">Bekijk details van het actieve ML-model en de laatste trainingsresultaten.</p>
@@ -45,6 +50,8 @@
         }
     </div>
 </div>
+
+</AdminRouteGuard>
 
 @code {
     private ModelMetricsDto? _model;

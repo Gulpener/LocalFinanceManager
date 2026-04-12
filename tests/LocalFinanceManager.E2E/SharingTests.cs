@@ -163,7 +163,6 @@ public class SharingTests : E2ETestBase
     }
 
     [Test]
-    [Ignore("Flaky: nav-pending-share-badge element not consistently visible within timeout")]
     public async Task NavMenu_ShowsPendingBadgeCount()
     {
         // Arrange: create 2 pending shares for the seed user
@@ -206,12 +205,9 @@ public class SharingTests : E2ETestBase
             Timeout = 30000
         });
 
-        // The nav badge is rendered after OnAfterRenderAsync; wait a moment
-        await Page.WaitForTimeoutAsync(2000);
-
         // Assert: NavMenu badge for "Shared with Me" shows "2"
         var badge = Page.GetByTestId("nav-pending-share-badge");
-        await Expect(badge).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
-        await Expect(badge).ToHaveTextAsync("2");
+        await Expect(badge).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 15000 });
+        await Expect(badge).ToHaveTextAsync("2", new LocatorAssertionsToHaveTextOptions { Timeout = 15000 });
     }
 }
