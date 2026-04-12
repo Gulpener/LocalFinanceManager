@@ -398,9 +398,20 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 Email = AppDbContext.SeedUserEmail,
                 DisplayName = "Dev User",
                 EmailConfirmed = true,
-                IsArchived = false
+                IsArchived = false,
+                IsAdmin = true
             });
             await context.SaveChangesAsync();
+        }
+        else
+        {
+            // Ensure the existing seed user is an admin (idempotent upgrade)
+            var seedUser = await context.Users.FirstAsync(u => u.Id == AppDbContext.SeedUserId);
+            if (!seedUser.IsAdmin)
+            {
+                seedUser.IsAdmin = true;
+                await context.SaveChangesAsync();
+            }
         }
     }
 
@@ -643,6 +654,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public Guid GetCurrentUserId() => AppDbContext.SeedUserId;
         public string GetCurrentUserEmail() => AppDbContext.SeedUserEmail;
         public bool IsAuthenticated() => true;
+        public Task<bool> IsAdminAsync() => Task.FromResult(true);
     }
 
     private sealed class E2EDevSmokeHeaderHandler : DelegatingHandler

@@ -52,21 +52,18 @@
                     </NavLink>
                 </div>
 
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/settings">
-                        <i class="bi bi-gear-fill" aria-hidden="true"></i><span class="nav-label ms-2">Beheerinstellingen</span>
-                    </NavLink>
-                </div>
+                @if (_isAdmin)
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="admin/settings" data-testid="nav-admin-link">
+                            <i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span class="nav-label ms-2">Beheer</span>
+                        </NavLink>
+                    </div>
+                }
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/autoapply">
+                    <NavLink class="nav-link" href="settings/auto-apply">
                         <i class="bi bi-robot" aria-hidden="true"></i><span class="nav-label ms-2">Automatisch toewijzen</span>
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/monitoring">
-                        <i class="bi bi-speedometer2" aria-hidden="true"></i><span class="nav-label ms-2">Bewaking</span>
                     </NavLink>
                 </div>
 
@@ -86,16 +83,19 @@
 </div>
 
 @using LocalFinanceManager.Services
-@inject ISharingService SharingService
+@using LocalFinanceManager.Data
+@using Microsoft.EntityFrameworkCore
 @inject IUserContext UserContext
 @inject ILogger<NavMenu> Logger
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@inject IServiceScopeFactory ScopeFactory
 @implements IDisposable
 @code {
     private int pendingShareCount;
     private bool _menuOpen;
     private bool _collapsed;
+    private bool _isAdmin;
     private CancellationTokenSource? _cts;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -105,6 +105,7 @@
             NavigationManager.LocationChanged += OnLocationChanged;
             await RefreshPendingCountAsync();
             _cts = new CancellationTokenSource();
+            _ = WarmUpNavStateAsync(_cts.Token);
             _ = RunPeriodicRefreshAsync(_cts.Token);
             try
             {
@@ -158,19 +159,85 @@
 
     private async Task RefreshPendingCountAsync()
     {
-        try
+        var userId = UserContext.GetCurrentUserId();
+        if (userId == Guid.Empty)
         {
-            var userId = UserContext.GetCurrentUserId();
-            if (userId != Guid.Empty)
+            var stateResetNeeded = pendingShareCount != 0 || _isAdmin;
+            pendingShareCount = 0;
+            _isAdmin = false;
+            if (stateResetNeeded)
             {
-                pendingShareCount = await SharingService.GetPendingShareCountAsync(userId);
                 await InvokeAsync(StateHasChanged);
             }
+            return;
+        }
+
+        // Use a fresh DI scope so these queries get their own AppDbContext instance.
+        // This prevents concurrent-DbContext exceptions when a page (e.g. Transactions)
+        // is also running queries on the circuit-scoped DbContext at the same time.
+        // SharingService only depends on AppDbContext + ILogger, so it is safe to resolve
+        // from a child scope without affecting circuit-scoped services.
+        await using var scope = ScopeFactory.CreateAsyncScope();
+
+        var stateChanged = false;
+
+        try
+        {
+            var sharingService = scope.ServiceProvider.GetRequiredService<ISharingService>();
+            pendingShareCount = await sharingService.GetPendingShareCountAsync(userId);
+            stateChanged = true;
         }
         catch (Exception ex)
         {
             // Swallow errors in nav menu to avoid disrupting navigation
             Logger.LogWarning(ex, "Failed to refresh pending share count.");
+        }
+
+        try
+        {
+            // Resolve AppDbContext from the fresh scope rather than using IUserContext.IsAdminAsync()
+            // because IUserContext depends on IBlazorCircuitUser, which is circuit-scoped and is not
+            // available in a child scope. The query mirrors the logic in UserContext.IsAdminAsync().
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            _isAdmin = await db.Users
+                .Where(u => u.Id == userId && !u.IsArchived)
+                .Select(u => u.IsAdmin)
+                .FirstOrDefaultAsync();
+            stateChanged = true;
+        }
+        catch (Exception ex)
+        {
+            // Swallow errors in nav menu to avoid disrupting navigation
+            Logger.LogWarning(ex, "Failed to refresh admin navigation state.");
+        }
+
+        if (stateChanged)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task WarmUpNavStateAsync(CancellationToken cancellationToken)
+    {
+        // Retry for a short period so menu state catches up when circuit user initializes after first render.
+        try
+        {
+            for (var attempt = 0; attempt < 10 && !cancellationToken.IsCancellationRequested; attempt++)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(300), cancellationToken);
+
+                if (UserContext.GetCurrentUserId() == Guid.Empty)
+                {
+                    continue;
+                }
+
+                await RefreshPendingCountAsync();
+                return;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during component disposal.
         }
     }
 

@@ -100,4 +100,16 @@ public class UserContext : IUserContext
             return true;
         return _circuitUser.IsInitialized && _circuitUser.UserId != Guid.Empty;
     }
+
+    /// <inheritdoc />
+    public async Task<bool> IsAdminAsync()
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return false;
+        return await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId && !u.IsArchived)
+            .Select(u => u.IsAdmin)
+            .FirstOrDefaultAsync();
+    }
 }

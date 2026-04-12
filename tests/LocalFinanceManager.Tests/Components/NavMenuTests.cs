@@ -16,7 +16,7 @@ public class NavMenuTests
     public void NavMenu_WhenUserIsNotLoggedIn_ShowsOnlyHomeMenuItem()
     {
         using var context = new BunitContext();
-        var cut = RenderNavMenu(context, isAuthenticated: false);
+        var cut = RenderNavMenu(context, isAuthenticated: false, isAdmin: false);
 
         var navLinks = cut.FindAll("a.nav-link");
 
@@ -27,9 +27,8 @@ public class NavMenuTests
             Assert.That(cut.Markup, Does.Not.Contain("Rekeningen"));
             Assert.That(cut.Markup, Does.Not.Contain("Transacties"));
             Assert.That(cut.Markup, Does.Not.Contain("Budgetplannen"));
-            Assert.That(cut.Markup, Does.Not.Contain("Beheerinstellingen"));
+            Assert.That(cut.Markup, Does.Not.Contain("Beheer"));
             Assert.That(cut.Markup, Does.Not.Contain("Automatisch toewijzen"));
-            Assert.That(cut.Markup, Does.Not.Contain("Bewaking"));
         });
     }
 
@@ -37,7 +36,7 @@ public class NavMenuTests
     public void NavMenu_WhenUserIsLoggedIn_ShowsAuthenticatedMenuItems()
     {
         using var context = new BunitContext();
-        var cut = RenderNavMenu(context, isAuthenticated: true);
+        var cut = RenderNavMenu(context, isAuthenticated: true, isAdmin: false);
 
         Assert.Multiple(() =>
         {
@@ -45,13 +44,25 @@ public class NavMenuTests
             Assert.That(cut.Markup, Does.Contain("Rekeningen"));
             Assert.That(cut.Markup, Does.Contain("Transacties"));
             Assert.That(cut.Markup, Does.Contain("Budgetplannen"));
-            Assert.That(cut.Markup, Does.Contain("Beheerinstellingen"));
             Assert.That(cut.Markup, Does.Contain("Automatisch toewijzen"));
-            Assert.That(cut.Markup, Does.Contain("Bewaking"));
+            // Admin link is not shown for non-admin users
+            Assert.That(cut.Markup, Does.Not.Contain("Beheer"));
         });
     }
 
-    private static IRenderedComponent<CascadingAuthenticationState> RenderNavMenu(BunitContext context, bool isAuthenticated)
+    // Admin link visibility is verified in E2E AdminPanelTests.NavMenu_AdminLink_VisibleForAdminUser.
+    // In these unit tests GetCurrentUserId() is mocked to return Guid.Empty, so
+    // RefreshPendingCountAsync returns early before the DB scope is opened or IsAdminAsync is called.
+    [Test]
+    public void NavMenu_WhenAdminUserIsLoggedIn_RenderWithoutErrors()
+    {
+        using var context = new BunitContext();
+        // Simply confirm the component renders without exceptions when user is admin.
+        var cut = RenderNavMenu(context, isAuthenticated: true, isAdmin: true);
+        Assert.That(cut.Markup, Does.Contain("Home"));
+    }
+
+    private static IRenderedComponent<CascadingAuthenticationState> RenderNavMenu(BunitContext context, bool isAuthenticated, bool isAdmin)
     {
         context.Services.AddAuthorizationCore();
         context.Services.AddSingleton<IAuthorizationService>(new TestAuthorizationService(isAuthenticated));
@@ -60,6 +71,7 @@ public class NavMenuTests
         var userContextMock = new Mock<IUserContext>();
         userContextMock.Setup(x => x.GetCurrentUserId()).Returns(Guid.Empty);
         userContextMock.Setup(x => x.IsAuthenticated()).Returns(isAuthenticated);
+        userContextMock.Setup(x => x.IsAdminAsync()).ReturnsAsync(isAdmin);
         context.Services.AddSingleton(userContextMock.Object);
 
         var sharingServiceMock = new Mock<ISharingService>();

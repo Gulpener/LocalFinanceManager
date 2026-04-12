@@ -20,4 +20,10 @@ public interface IUserContext
     /// Indicates whether the current request is authenticated.
     /// </summary>
     bool IsAuthenticated();
+
+    /// <summary>
+    /// Returns true when the current user has IsAdmin = true in the database.
+    /// Returns false for unauthenticated users (GetCurrentUserId() == Guid.Empty) or when user is not found.
+    /// </summary>
+    Task<bool> IsAdminAsync();
 }

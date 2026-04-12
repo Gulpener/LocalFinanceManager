@@ -13,6 +13,7 @@ public class User : BaseEntity
     public string Email { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
     public bool EmailConfirmed { get; set; } = false;
+    public bool IsAdmin { get; set; } = false;
 
     // Navigation properties
     public ICollection<Account> Accounts { get; set; } = new List<Account>();
