@@ -6,7 +6,7 @@
 
 ## Summary
 
-When assigning a transaction, the page/dialog title is displayed as `Transactie toewijzen@TransactionYearSuffix` instead of the resolved value (e.g. `Transactie toewijzen 2026`).
+When assigning a transaction, the page/dialog title is displayed as `Transactie toewijzen@TransactionYearSuffix` instead of the resolved value (e.g. `Transactie toewijzen (2026)`).
 
 ## Steps to Reproduce
 
@@ -16,7 +16,7 @@ When assigning a transaction, the page/dialog title is displayed as `Transactie 
 
 ## Expected Behaviour
 
-The title displays the resolved text, e.g. `Transactie toewijzen 2026`.
+The title displays the resolved text, e.g. `Transactie toewijzen (2026)`.
 
 ## Actual Behaviour
 

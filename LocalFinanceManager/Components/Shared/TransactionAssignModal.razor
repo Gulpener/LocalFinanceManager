@@ -180,7 +180,7 @@
 
     private string AssignModalTitle => $"Transactie toewijzen{TransactionYearSuffix}";
 
-    private string TransactionYearSuffix => Transaction?.Date.Year > 0
+    private string TransactionYearSuffix => Transaction != null && Transaction.Date.Year > 0
         ? $" ({Transaction.Date.Year})"
         : string.Empty;
 
