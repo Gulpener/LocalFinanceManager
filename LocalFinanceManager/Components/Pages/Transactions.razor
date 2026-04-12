@@ -213,7 +213,14 @@
                         <th></th>
                         <th colspan="4" class="text-end">Totaal (gefilterd):</th>
                         <th class="@(filteredTotalAmount >= 0 ? "text-success" : "text-danger")">
-                            @CurrencyFormatter.Format(filteredTotalAmount, SelectedAccountCurrency)
+                            @if (SelectedAccountCurrency != null)
+                            {
+                                @CurrencyFormatter.Format(filteredTotalAmount, SelectedAccountCurrency)
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">meerdere valuta</span>
+                            }
                         </th>
                         <th colspan="2"></th>
                     </tr>
@@ -276,10 +283,27 @@
     private int unassignedCount = 0;
     private FilterState filterState = new();
 
-    private string? SelectedAccountCurrency =>
-        selectedAccountId.HasValue
-            ? accounts.FirstOrDefault(a => a.Id == selectedAccountId.Value)?.Currency
-            : filteredTransactions.FirstOrDefault()?.AccountCurrency;
+    private string? SelectedAccountCurrency
+    {
+        get
+        {
+            if (selectedAccountId.HasValue)
+            {
+                return accounts.FirstOrDefault(a => a.Id == selectedAccountId.Value)?.Currency;
+            }
+
+            var distinctCurrencies = filteredTransactions
+                .Select(t => t.AccountCurrency)
+                .Where(currency => !string.IsNullOrWhiteSpace(currency))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(2)
+                .ToList();
+
+            return distinctCurrencies.Count == 1
+                ? distinctCurrencies[0]
+                : null;
+        }
+    }
 
     // ML suggestion filter and sort state
     private string _suggestionFilter = "all";

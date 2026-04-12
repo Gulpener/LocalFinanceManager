@@ -44,14 +44,15 @@ public static class CurrencyFormatter
     {
         var map = new Dictionary<string, CultureInfo>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures))
+        foreach (var culture in CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+                     .OrderBy(c => c.Name, StringComparer.Ordinal))
         {
             try
             {
                 var region = new RegionInfo(culture.Name);
                 var code = region.ISOCurrencySymbol;
 
-                // Keep the first match per currency code (deterministic ordering)
+                // Keep the first match per currency code (ordered by culture Name for determinism)
                 if (!map.ContainsKey(code))
                 {
                     map[code] = culture;

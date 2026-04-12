@@ -94,7 +94,12 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         // Reload transaction with splits and account
         transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
-        return MapToDto(transaction!);
+        if (transaction == null)
+        {
+            throw new InvalidOperationException($"Transaction {transactionId} could not be reloaded after assign");
+        }
+
+        return MapToDto(transaction);
     }
 
     public async Task<TransactionDto> SplitTransactionAsync(Guid transactionId, SplitTransactionRequest request)
@@ -168,7 +173,12 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         // Reload transaction with splits and account
         transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
-        return MapToDto(transaction!);
+        if (transaction == null)
+        {
+            throw new InvalidOperationException($"Transaction {transactionId} not found after split operation");
+        }
+
+        return MapToDto(transaction);
     }
 
     public async Task<BulkAssignResultDto> BulkAssignTransactionsAsync(
@@ -279,7 +289,12 @@ public class TransactionAssignmentService : ITransactionAssignmentService
 
         // Reload transaction with account
         transaction = await _transactionRepository.GetByIdWithAccountAsync(request.TransactionId);
-        return MapToDto(transaction!);
+        if (transaction == null)
+        {
+            throw new InvalidOperationException($"Transaction {request.TransactionId} not found after undo operation");
+        }
+
+        return MapToDto(transaction);
     }
 
     public async Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50)

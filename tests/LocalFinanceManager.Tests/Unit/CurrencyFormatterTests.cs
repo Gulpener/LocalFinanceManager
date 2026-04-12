@@ -1,3 +1,4 @@
+using System.Globalization;
 using LocalFinanceManager.Helpers;
 using NUnit.Framework;
 
@@ -76,6 +77,8 @@ public class CurrencyFormatterTests
     {
         var culture = CurrencyFormatter.GetCulture("XYZ");
 
-        Assert.That(culture, Is.Not.Null);
+        Assert.That(culture, Is.EqualTo(CultureInfo.CurrentCulture));
+        Assert.That(culture.NumberFormat.CurrencySymbol,
+            Is.EqualTo(CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol));
     }
 }
