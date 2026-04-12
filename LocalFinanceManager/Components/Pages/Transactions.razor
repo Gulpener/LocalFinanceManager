@@ -151,7 +151,7 @@
                             <td>@transaction.Description</td>
                             <td>@transaction.Counterparty</td>
                             <td class="amount @(transaction.Amount >= 0 ? "amount-positive" : "amount-negative")">
-                                @transaction.Amount.ToString("C2")
+                                @CurrencyFormatter.Format(transaction.Amount, transaction.AccountCurrency)
                             </td>
                             <td>
                                 @if (transaction.IsAssigned && transaction.Splits != null)
@@ -159,7 +159,7 @@
                                     @if (transaction.Splits.Count > 1)
                                     {
                                         <span class="badge bg-info text-dark me-1"
-                                              title="@string.Join(", ", transaction.Splits.Select(s => $"{s.BudgetLineName}: {s.Amount:C2}"))">
+                                              title="@string.Join(", ", transaction.Splits.Select(s => $"{s.BudgetLineName}: {CurrencyFormatter.Format(s.Amount, transaction.AccountCurrency)}"))">
                                             @transaction.Splits.Count splits
                                         </span>
                                     }
@@ -213,7 +213,14 @@
                         <th></th>
                         <th colspan="4" class="text-end">Totaal (gefilterd):</th>
                         <th class="@(filteredTotalAmount >= 0 ? "text-success" : "text-danger")">
-                            @filteredTotalAmount.ToString("C2")
+                            @if (SelectedAccountCurrency != null)
+                            {
+                                @CurrencyFormatter.Format(filteredTotalAmount, SelectedAccountCurrency)
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">meerdere valuta</span>
+                            }
                         </th>
                         <th colspan="2"></th>
                     </tr>
@@ -275,6 +282,28 @@
     private decimal filteredTotalAmount = 0;
     private int unassignedCount = 0;
     private FilterState filterState = new();
+
+    private string? SelectedAccountCurrency
+    {
+        get
+        {
+            if (selectedAccountId.HasValue)
+            {
+                return accounts.FirstOrDefault(a => a.Id == selectedAccountId.Value)?.Currency;
+            }
+
+            var distinctCurrencies = filteredTransactions
+                .Select(t => t.AccountCurrency)
+                .Where(currency => !string.IsNullOrWhiteSpace(currency))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(2)
+                .ToList();
+
+            return distinctCurrencies.Count == 1
+                ? distinctCurrencies[0]
+                : null;
+        }
+    }
 
     // ML suggestion filter and sort state
     private string _suggestionFilter = "all";
@@ -445,6 +474,7 @@
                 Description = t.Description,
                 Counterparty = t.Counterparty,
                 AccountId = t.AccountId,
+                AccountCurrency = t.Account?.Currency,
                 ExternalId = t.ExternalId,
                 SourceFileName = t.SourceFileName,
                 ImportedAt = t.ImportedAt,

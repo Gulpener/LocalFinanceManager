@@ -11,6 +11,7 @@ public class TransactionDto
     public string Description { get; set; } = string.Empty;
     public string? Counterparty { get; set; }
     public Guid AccountId { get; set; }
+    public string? AccountCurrency { get; set; }
     public string? ExternalId { get; set; }
     public string? SourceFileName { get; set; }
     public DateTime? ImportedAt { get; set; }

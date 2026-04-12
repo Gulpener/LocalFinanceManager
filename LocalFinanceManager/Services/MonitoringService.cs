@@ -138,9 +138,10 @@ public class MonitoringService : IMonitoringService
             .Where(a => !a.IsArchived)
             .Where(a => a.IsAutoApplied)
             .Include(a => a.Transaction)
-                .ThenInclude(t => t.AssignedParts!)
-                    .ThenInclude(p => p.BudgetLine)
-                        .ThenInclude(bl => bl.Category)
+                .ThenInclude(t => t.Account)
+            .Include(a => a.Transaction.AssignedParts!)
+                .ThenInclude(p => p.BudgetLine)
+                    .ThenInclude(bl => bl.Category)
             .OrderByDescending(a => a.AutoAppliedAt ?? a.ChangedAt)
             .Take(limit)
             .ToListAsync();
@@ -196,6 +197,7 @@ public class MonitoringService : IMonitoringService
                 TransactionId = audit.TransactionId,
                 Description = audit.Transaction.Description,
                 Amount = audit.Transaction.Amount,
+                AccountCurrency = audit.Transaction.Account?.Currency,
                 CategoryName = categoryName,
                 ConfidenceScore = audit.Confidence ?? 0.0f,
                 AutoAppliedAt = audit.AutoAppliedAt ?? audit.ChangedAt,

@@ -92,9 +92,14 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         // Record audit trail
         await RecordAuditAsync(transactionId, "Assign", null, new { request.BudgetLineId, request.Note });
 
-        // Reload transaction with splits
-        transaction = await _transactionRepository.GetByIdAsync(transactionId);
-        return MapToDto(transaction!);
+        // Reload transaction with splits and account
+        transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
+        if (transaction == null)
+        {
+            throw new InvalidOperationException($"Transaction {transactionId} could not be reloaded after assign");
+        }
+
+        return MapToDto(transaction);
     }
 
     public async Task<TransactionDto> SplitTransactionAsync(Guid transactionId, SplitTransactionRequest request)
@@ -166,9 +171,14 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         // Record audit trail
         await RecordAuditAsync(transactionId, "Split", null, new { Splits = request.Splits });
 
-        // Reload transaction with splits
-        transaction = await _transactionRepository.GetByIdAsync(transactionId);
-        return MapToDto(transaction!);
+        // Reload transaction with splits and account
+        transaction = await _transactionRepository.GetByIdWithAccountAsync(transactionId);
+        if (transaction == null)
+        {
+            throw new InvalidOperationException($"Transaction {transactionId} not found after split operation");
+        }
+
+        return MapToDto(transaction);
     }
 
     public async Task<BulkAssignResultDto> BulkAssignTransactionsAsync(
@@ -277,9 +287,14 @@ public class TransactionAssignmentService : ITransactionAssignmentService
         // Record undo in audit trail
         await RecordAuditAsync(request.TransactionId, "Undo", auditEntry.AfterState, null);
 
-        // Reload transaction
-        transaction = await _transactionRepository.GetByIdAsync(request.TransactionId);
-        return MapToDto(transaction!);
+        // Reload transaction with account
+        transaction = await _transactionRepository.GetByIdWithAccountAsync(request.TransactionId);
+        if (transaction == null)
+        {
+            throw new InvalidOperationException($"Transaction {request.TransactionId} not found after undo operation");
+        }
+
+        return MapToDto(transaction);
     }
 
     public async Task<List<TransactionAuditDto>> GetTransactionAuditHistoryAsync(Guid transactionId, int page = 1, int pageSize = 50)
@@ -407,6 +422,7 @@ public class TransactionAssignmentService : ITransactionAssignmentService
             Description = transaction.Description,
             Counterparty = transaction.Counterparty,
             AccountId = transaction.AccountId,
+            AccountCurrency = transaction.Account?.Currency,
             ExternalId = transaction.ExternalId,
             SourceFileName = transaction.SourceFileName,
             ImportedAt = transaction.ImportedAt,

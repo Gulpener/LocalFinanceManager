@@ -156,6 +156,11 @@ public class AutoApplyHistoryDto
     public decimal Amount { get; set; }
 
     /// <summary>
+    /// ISO-4217 currency code of the account the transaction belongs to.
+    /// </summary>
+    public string? AccountCurrency { get; set; }
+
+    /// <summary>
     /// Category name assigned.
     /// </summary>
     public string CategoryName { get; set; } = string.Empty;

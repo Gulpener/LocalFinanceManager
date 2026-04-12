@@ -48,7 +48,7 @@
                                 <div class="col-md-4 text-end">
                                     <strong>Totaal bedrag:</strong><br />
                                     <span class="fs-4 @(Transaction.Amount >= 0 ? "text-success" : "text-danger")">
-                                        @TransactionAbsAmount.ToString("C2")
+                                        @CurrencyFormatter.Format(TransactionAbsAmount, Transaction?.AccountCurrency)
                                     </span>
                                 </div>
                             </div>
@@ -124,7 +124,7 @@
                                 <div class="col-md-4">
                                     <strong>Som van splits:</strong>
                                     <span class="fs-5 @(IsValidSum ? "text-success" : "text-danger")">
-                                        @TotalSplitAmount.ToString("C2")
+                                        @CurrencyFormatter.Format(TotalSplitAmount, Transaction?.AccountCurrency)
                                     </span>
                                 </div>
                                 <div class="col-md-4 text-center">
@@ -137,14 +137,14 @@
                                     else
                                     {
                                         <i class="bi bi-exclamation-triangle-fill text-danger fs-3" title="Som klopt niet"></i>
-                                        <div class="text-danger small">Som moet @TransactionAbsAmount.ToString("C2") zijn</div>
+                                        <div class="text-danger small">Som moet @CurrencyFormatter.Format(TransactionAbsAmount, Transaction?.AccountCurrency) zijn</div>
                                     }
                                     </span>
                                 </div>
                                 <div class="col-md-4 text-end">
                                     <strong>Restant:</strong>
                                     <span class="fs-5 @(Difference >= 0 ? "text-warning" : "text-danger")">
-                                        @Difference.ToString("C2")
+                                        @CurrencyFormatter.Format(Difference, Transaction?.AccountCurrency)
                                     </span>
                                 </div>
                             </div>

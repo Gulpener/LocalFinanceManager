@@ -26,6 +26,7 @@ public class TransactionsControllerAuditTests
 
         _controller = new TransactionsController(
             _repositoryMock.Object,
+            null!,  // IAccountRepository not used by GetAuditHistory
             null!,  // ImportService not used by GetAuditHistory
             _assignmentServiceMock.Object,
             _loggerMock.Object);
