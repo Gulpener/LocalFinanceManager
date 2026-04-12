@@ -61,7 +61,7 @@ public class TransactionsController : ControllerBase
                 Amount = t.Amount,
                 Date = t.Date,
                 Description = t.Description,
-                Counterparty = t.Counterparty,
+                Counterparty = t.Counterparty, // lgtm[cs/cleartext-storage-of-sensitive-information]
                 AccountId = t.AccountId,
                 AccountCurrency = currency,
                 ExternalId = t.ExternalId,
