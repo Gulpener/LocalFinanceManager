@@ -41,11 +41,9 @@ Ensure `TransactionYearSuffix` is correctly defined and in scope in the componen
 Root cause: in `TransactionAssignModal.razor` the heading text used `Transactie toewijzen@TransactionYearSuffix` directly in markup. Razor interpreted this sequence as literal text (email-like token) instead of an expression, so `@TransactionYearSuffix` was rendered unresolved.
 
 Implemented fix:
-
 - Replaced inline mixed literal/expression title with a dedicated computed property: `AssignModalTitle`.
 - Updated modal header to render `@AssignModalTitle`, which guarantees proper Razor evaluation.
 - Added component regression coverage in `TransactionAssignModalFocusTrapTests` with test cases for current and past years (e.g. 2026 and 2024), asserting the title renders as `Transactie toewijzen (YYYY)` and never contains `@TransactionYearSuffix`.
 
 Verification:
-
 - Targeted unit/component tests were executed successfully for the updated test file.
