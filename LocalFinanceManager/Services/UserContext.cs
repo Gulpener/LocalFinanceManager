@@ -1,5 +1,6 @@
 using LocalFinanceManager.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LocalFinanceManager.Services;
 
@@ -15,19 +16,38 @@ public class UserContext : IUserContext
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IBlazorCircuitUser _circuitUser;
     private readonly AppDbContext _context;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<UserContext> _logger;
+    private readonly object _adminStateLock = new();
 
-    public UserContext(IHttpContextAccessor httpContextAccessor, IBlazorCircuitUser circuitUser, AppDbContext context, ILogger<UserContext> logger)
+    private Guid _cachedAdminUserId = Guid.Empty;
+    private bool? _cachedAdminValue;
+    private Task<bool>? _cachedAdminLookupTask;
+
+    public UserContext(
+        IHttpContextAccessor httpContextAccessor,
+        IBlazorCircuitUser circuitUser,
+        AppDbContext context,
+        IServiceScopeFactory scopeFactory,
+        ILogger<UserContext> logger)
     {
         _httpContextAccessor = httpContextAccessor;
         _circuitUser = circuitUser;
         _context = context;
+        _scopeFactory = scopeFactory;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public Guid GetCurrentUserId()
     {
+        // In interactive Blazor circuits, the circuit user is the most reliable identity source.
+        // Prefer it when available to avoid transient HttpContext claim inconsistency during navigation.
+        if (_circuitUser.IsInitialized && _circuitUser.UserId != Guid.Empty)
+        {
+            return _circuitUser.UserId;
+        }
+
         var httpContext = _httpContextAccessor.HttpContext;
 
         // In Blazor Server the HttpContext belongs to the SignalR hub connection and its
@@ -105,11 +125,84 @@ public class UserContext : IUserContext
     public async Task<bool> IsAdminAsync()
     {
         var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return false;
-        return await _context.Users
-            .AsNoTracking()
-            .Where(u => u.Id == userId && !u.IsArchived)
-            .Select(u => u.IsAdmin)
-            .FirstOrDefaultAsync();
+        if (userId == Guid.Empty)
+        {
+            InvalidateAdminState();
+            return false;
+        }
+
+        Task<bool>? pendingLookup;
+        bool? cachedValue;
+
+        lock (_adminStateLock)
+        {
+            cachedValue = _cachedAdminUserId == userId ? _cachedAdminValue : null;
+            if (cachedValue.HasValue)
+            {
+                return cachedValue.Value;
+            }
+
+            if (_cachedAdminUserId != userId)
+            {
+                _cachedAdminUserId = userId;
+                _cachedAdminValue = null;
+                _cachedAdminLookupTask = null;
+            }
+
+            _cachedAdminLookupTask ??= LoadAdminStateAsync(userId);
+            pendingLookup = _cachedAdminLookupTask;
+        }
+
+        return await pendingLookup;
+    }
+
+    /// <inheritdoc />
+    public void InvalidateAdminState()
+    {
+        lock (_adminStateLock)
+        {
+            _cachedAdminUserId = Guid.Empty;
+            _cachedAdminValue = null;
+            _cachedAdminLookupTask = null;
+        }
+    }
+
+    private async Task<bool> LoadAdminStateAsync(Guid userId)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var isAdmin = await dbContext.Users
+                .AsNoTracking()
+                .Where(u => u.Id == userId && !u.IsArchived)
+                .Select(u => u.IsAdmin)
+                .FirstOrDefaultAsync();
+
+            lock (_adminStateLock)
+            {
+                if (_cachedAdminUserId == userId)
+                {
+                    _cachedAdminValue = isAdmin;
+                    _cachedAdminLookupTask = null;
+                }
+            }
+
+            return isAdmin;
+        }
+        catch
+        {
+            lock (_adminStateLock)
+            {
+                if (_cachedAdminUserId == userId)
+                {
+                    _cachedAdminValue = null;
+                    _cachedAdminLookupTask = null;
+                }
+            }
+
+            throw;
+        }
     }
 }

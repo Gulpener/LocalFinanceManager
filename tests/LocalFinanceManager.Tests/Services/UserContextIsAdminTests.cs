@@ -120,5 +120,7 @@ public class UserContextIsAdminTests
                 .Select(u => u.IsAdmin)
                 .FirstOrDefaultAsync();
         }
+
+        public void InvalidateAdminState() { }
     }
 }

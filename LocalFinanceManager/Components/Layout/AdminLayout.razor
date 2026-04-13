@@ -40,7 +40,7 @@
 @code {
     private bool _isAdmin;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
         try
         {
@@ -48,37 +48,11 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize admin layout admin state.");
+            Logger.LogError(ex, "Failed to resolve admin layout admin state.");
             _isAdmin = false;
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-        {
-            return;
-        }
-
-        try
-        {
-            var isAdmin = await UserContext.IsAdminAsync();
-            if (isAdmin != _isAdmin)
-            {
-                _isAdmin = isAdmin;
-                StateHasChanged();
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to refresh admin layout admin state after first render.");
-            if (_isAdmin)
-            {
-                _isAdmin = false;
-                StateHasChanged();
-            }
-        }
-    }
     private string IsActive(string path)
     {
         var uri = NavigationManager.Uri;

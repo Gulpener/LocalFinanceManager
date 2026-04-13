@@ -153,4 +153,89 @@ public class AdminPanelTests : E2ETestBase
         var autoApplyLink = Page.Locator("nav a[href='settings/auto-apply']");
         await Assertions.Expect(autoApplyLink).ToBeVisibleAsync();
     }
+
+    [Test]
+    public async Task AdminPanel_RepeatedCrossTabNavigation_DoesNotRedirectAwayFromAdminPages()
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await Page.GotoAsync($"{BaseUrl}/admin/settings");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Assert.That(Page.Url, Does.Contain("/admin/settings"));
+            await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions
+            {
+                Name = "Systeem Instellingen"
+            })).ToBeVisibleAsync();
+
+            await Page.ClickAsync("[data-testid='admin-tab-monitoring']");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Assert.That(Page.Url, Does.Contain("/admin/monitoring"));
+            await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions
+            {
+                Name = "Auto-Apply Monitoring Dashboard"
+            })).ToBeVisibleAsync();
+
+            await Page.ClickAsync("[data-testid='admin-tab-users']");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Assert.That(Page.Url, Does.Contain("/admin/users"));
+            await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions
+            {
+                Name = "Gebruikersbeheer"
+            })).ToBeVisibleAsync();
+        }
+    }
+
+    [Test]
+    public async Task AdminPanel_MlToMonitoring_DoesNotRedirectToDashboard()
+    {
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            await Page.GotoAsync($"{BaseUrl}/admin/ml");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            Assert.That(Page.Url, Does.Contain("/admin/ml"));
+            await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions
+            {
+                Name = "ML modelinformatie"
+            })).ToBeVisibleAsync();
+
+            await Page.ClickAsync("[data-testid='admin-tab-monitoring']");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            Assert.That(Page.Url, Does.Contain("/admin/monitoring"));
+            Assert.That(Page.Url, Does.Not.Contain("/dashboard"));
+            await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new PageGetByRoleOptions
+            {
+                Name = "Auto-Apply Monitoring Dashboard"
+            })).ToBeVisibleAsync();
+        }
+    }
+
+    [Test]
+    public async Task AdminPanel_MlMonitoringUsers_StressNavigation_NoDashboardRedirect()
+    {
+        const int iterations = 30;
+
+        for (var attempt = 0; attempt < iterations; attempt++)
+        {
+            await Page.GotoAsync($"{BaseUrl}/admin/ml");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Assert.That(Page.Url, Does.Contain("/admin/ml"));
+
+            await Page.ClickAsync("[data-testid='admin-tab-monitoring']");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Assert.That(Page.Url, Does.Contain("/admin/monitoring"));
+            Assert.That(Page.Url, Does.Not.Contain("/dashboard"));
+
+            await Page.ClickAsync("[data-testid='admin-tab-users']");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Assert.That(Page.Url, Does.Contain("/admin/users"));
+            Assert.That(Page.Url, Does.Not.Contain("/dashboard"));
+
+            await Page.ClickAsync("[data-testid='admin-tab-settings']");
+            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            Assert.That(Page.Url, Does.Contain("/admin/settings"));
+            Assert.That(Page.Url, Does.Not.Contain("/dashboard"));
+        }
+    }
 }
