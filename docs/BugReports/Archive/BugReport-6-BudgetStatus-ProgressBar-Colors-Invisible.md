@@ -2,7 +2,7 @@
 
 ## Status
 
-- [ ] Open
+- [x] Resolved
 
 ## Description
 
@@ -34,3 +34,17 @@ The Bootstrap `progress-bar` color utility classes (`bg-success`, `bg-danger`) m
 ## Notes
 
 <!-- Add screenshots or additional context here -->
+
+## Solution
+
+**Root cause:** Bootstrap's `bg-success` and `bg-danger` utility classes apply background color via `rgba(var(--bs-success-rgb), ...)`, which conflicts with the app's custom CSS design system that uses different custom properties (`--color-success`, `--color-danger`). The Bootstrap variables don't match the app's color palette and could render incorrectly or be invisible.
+
+**Fix applied in:** `LocalFinanceManager/Components/Pages/Dashboard/BudgetStatusWidget.razor`
+
+Replaced Bootstrap utility classes on `.progress-bar` with an inline `style` attribute that references the app's own CSS custom properties directly:
+```html
+<div class="progress-bar" role="progressbar"
+     style="width: @pct%; background-color: @(isOver ? "var(--color-danger)" : "var(--color-success)");"
+     aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+```
+This ensures the fill color always uses the design-system colours (`#10b981` green / `#ef4444` red) in both light and dark mode. Added `role="progressbar"` and ARIA attributes for accessibility.
