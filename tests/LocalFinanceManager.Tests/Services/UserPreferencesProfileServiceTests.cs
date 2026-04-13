@@ -2,6 +2,7 @@ using LocalFinanceManager.Data;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using NUnit.Framework;
@@ -17,29 +18,46 @@ public class UserPreferencesProfileServiceTests
 {
     private static readonly Guid UserId = Guid.Parse("aaaabbbb-0000-0000-0000-000000000001");
 
+    private SqliteConnection _connection = null!;
     private AppDbContext _context = null!;
     private UserPreferencesService _service = null!;
 
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("DataSource=:memory:")
-            .Options;
+        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection.Open();
 
-        _context = new AppDbContext(options);
-        _context.Database.OpenConnection();
+        _context = CreateContext();
         _context.Database.EnsureCreated();
 
-        var factory = new MockDbContextFactory(_context);
+        // Seed the owning user so FK constraints are satisfied
+        _context.Users.Add(new User
+        {
+            Id = UserId,
+            SupabaseUserId = UserId.ToString(),
+            Email = "test@profile.local",
+            DisplayName = "Test User"
+        });
+        _context.SaveChanges();
+
+        var factory = new ConnectionDbContextFactory(_connection);
         _service = new UserPreferencesService(factory, _context, NullLogger<UserPreferencesService>.Instance);
     }
 
     [TearDown]
     public void TearDown()
     {
-        _context.Database.CloseConnection();
         _context.Dispose();
+        _connection.Dispose();
+    }
+
+    private AppDbContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(_connection)
+            .Options;
+        return new AppDbContext(options);
     }
 
     // ── GetProfileAsync ──────────────────────────────────────────────────────
@@ -221,14 +239,24 @@ public class UserPreferencesProfileServiceTests
     }
 
     /// <summary>
-    /// Wraps a single AppDbContext so it can be used as IDbContextFactory in tests.
+    /// Creates a new AppDbContext on the shared SQLite connection each time,
+    /// matching the production pattern where each factory call creates an independent scope.
     /// </summary>
-    private sealed class MockDbContextFactory : IDbContextFactory<AppDbContext>
+    private sealed class ConnectionDbContextFactory : IDbContextFactory<AppDbContext>
     {
-        private readonly AppDbContext _context;
-        public MockDbContextFactory(AppDbContext context) => _context = context;
-        public AppDbContext CreateDbContext() => _context;
+        private readonly SqliteConnection _connection;
+
+        public ConnectionDbContextFactory(SqliteConnection connection) => _connection = connection;
+
+        public AppDbContext CreateDbContext()
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(_connection)
+                .Options;
+            return new AppDbContext(options);
+        }
+
         public Task<AppDbContext> CreateDbContextAsync(CancellationToken ct = default)
-            => Task.FromResult(_context);
+            => Task.FromResult(CreateDbContext());
     }
 }

@@ -9,6 +9,7 @@ using LocalFinanceManager.Services;
 using LocalFinanceManager.Tests.Fixtures;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -27,6 +28,7 @@ public class UserProfileControllerIntegrationTests
 {
     private static readonly Guid UserId = Guid.Parse("aaaabbbb-0000-0000-0000-000000000001");
 
+    private SqliteConnection _connection = null!;
     private AppDbContext _context = null!;
     private UserPreferencesService _prefsService = null!;
     private Mock<ISupabaseStorageService> _storageMock = null!;
@@ -35,15 +37,23 @@ public class UserProfileControllerIntegrationTests
     [SetUp]
     public void Setup()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("DataSource=:memory:")
-            .Options;
+        _connection = new SqliteConnection("DataSource=:memory:");
+        _connection.Open();
 
-        _context = new AppDbContext(options);
-        _context.Database.OpenConnection();
+        _context = CreateContext();
         _context.Database.EnsureCreated();
 
-        var factory = new MockDbContextFactory(_context);
+        // Seed the owning user so FK constraints are satisfied
+        _context.Users.Add(new User
+        {
+            Id = UserId,
+            SupabaseUserId = UserId.ToString(),
+            Email = "test@profile.local",
+            DisplayName = "Test User"
+        });
+        _context.SaveChanges();
+
+        var factory = new ConnectionDbContextFactory(_connection);
         _prefsService = new UserPreferencesService(factory, _context, new Mock<ILogger<UserPreferencesService>>().Object);
 
         _storageMock = new Mock<ISupabaseStorageService>();
@@ -77,8 +87,16 @@ public class UserProfileControllerIntegrationTests
     [TearDown]
     public void TearDown()
     {
-        _context.Database.CloseConnection();
         _context.Dispose();
+        _connection.Dispose();
+    }
+
+    private AppDbContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(_connection)
+            .Options;
+        return new AppDbContext(options);
     }
 
     // ── GET /api/profile ─────────────────────────────────────────────────────
@@ -256,12 +274,21 @@ public class UserProfileControllerIntegrationTests
         };
     }
 
-    private sealed class MockDbContextFactory : IDbContextFactory<AppDbContext>
+    private sealed class ConnectionDbContextFactory : IDbContextFactory<AppDbContext>
     {
-        private readonly AppDbContext _context;
-        public MockDbContextFactory(AppDbContext context) => _context = context;
-        public AppDbContext CreateDbContext() => _context;
+        private readonly SqliteConnection _connection;
+
+        public ConnectionDbContextFactory(SqliteConnection connection) => _connection = connection;
+
+        public AppDbContext CreateDbContext()
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(_connection)
+                .Options;
+            return new AppDbContext(options);
+        }
+
         public Task<AppDbContext> CreateDbContextAsync(CancellationToken ct = default)
-            => Task.FromResult(_context);
+            => Task.FromResult(CreateDbContext());
     }
 }
