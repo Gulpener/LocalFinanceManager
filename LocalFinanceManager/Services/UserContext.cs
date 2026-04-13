@@ -20,6 +20,9 @@ public class UserContext : IUserContext
     private readonly ILogger<UserContext> _logger;
     private readonly object _adminStateLock = new();
 
+    // 5-minute TTL balances freshness with DB load. Admin privilege revocation takes effect
+    // within this window even without a circuit restart. Explicit InvalidateAdminState()
+    // provides immediate invalidation on logout or auth state changes.
     private static readonly TimeSpan AdminCacheTtl = TimeSpan.FromMinutes(5);
 
     private Guid _cachedAdminUserId = Guid.Empty;
@@ -134,7 +137,7 @@ public class UserContext : IUserContext
             return false;
         }
 
-        Task<bool> pendingLookup;
+        Task<bool> pendingLookup = null!;
 
         lock (_adminStateLock)
         {
