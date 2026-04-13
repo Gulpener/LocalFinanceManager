@@ -279,6 +279,7 @@ public class ThemeAndNavTests : E2ETestBase
         // Assert – sidebar should be closed again (allow rerender tick after navigation)
         await Page.WaitForFunctionAsync(
             "() => !document.querySelector('.nav-scrollable')?.classList.contains('open')",
+            null,
             new PageWaitForFunctionOptions { Timeout = 5000 });
 
         var isOpenAfter = await navScrollable.EvaluateAsync<bool>("el => el.classList.contains('open')");

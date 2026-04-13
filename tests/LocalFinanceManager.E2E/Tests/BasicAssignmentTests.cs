@@ -58,6 +58,7 @@ public class BasicAssignmentTests : E2ETestBase
 
         await Page.WaitForFunctionAsync(
             "() => document.querySelectorAll(\"tr[data-testid='transaction-row'] .badge.bg-warning\").length >= 2",
+            null,
             new PageWaitForFunctionOptions { Timeout = 15000 });
 
         var warnings = await Page.Locator("tr[data-testid='transaction-row'] .badge.bg-warning").CountAsync();

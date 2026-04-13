@@ -218,6 +218,7 @@ public class TransactionAuditTests : E2ETestBase
 
         await Page.WaitForFunctionAsync(
             "() => document.querySelectorAll(\"[data-testid='before-state'], [data-testid='after-state']\").length > 0",
+            null,
             new PageWaitForFunctionOptions { Timeout = 5000 });
 
         var stateDiffText = await Page.Locator("[data-testid='after-state'], [data-testid='before-state']")
