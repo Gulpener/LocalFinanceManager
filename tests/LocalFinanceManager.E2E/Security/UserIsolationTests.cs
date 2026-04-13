@@ -332,5 +332,6 @@ public class UserIsolationTests : E2ETestBase
         public string GetCurrentUserEmail() => string.Empty;
         public bool IsAuthenticated() => _userId != Guid.Empty;
         public Task<bool> IsAdminAsync() => Task.FromResult(false);
+        public void InvalidateAdminState() { }
     }
 }

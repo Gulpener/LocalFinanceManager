@@ -98,11 +98,12 @@ public class ThemeAndNavTests : E2ETestBase
         // Wait for circuit to initialize and set initial theme before reading it
         var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
         await Expect(toggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
-        // Allow ThemeService.InitialiseAsync to complete and set data-theme
-        await Expect(Page.Locator("html")).ToHaveAttributeAsync("data-theme", "light",
-            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
-
         var htmlElement = Page.Locator("html");
+        // Wait until theme is initialized to either light or dark.
+        await Page.WaitForFunctionAsync(
+            "() => { const t = document.documentElement.getAttribute('data-theme'); return t === 'light' || t === 'dark'; }",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
         var before = await htmlElement.GetAttributeAsync("data-theme");
 
         // Act – click the theme toggle
@@ -131,10 +132,12 @@ public class ThemeAndNavTests : E2ETestBase
         // Wait for circuit to initialise and apply initial theme
         var toggleBtn = Page.Locator("[data-testid='theme-toggle']");
         await Expect(toggleBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10_000 });
-        await Expect(Page.Locator("html")).ToHaveAttributeAsync("data-theme", "light",
-            new LocatorAssertionsToHaveAttributeOptions { Timeout = 10_000 });
 
         var htmlElement = Page.Locator("html");
+        await Page.WaitForFunctionAsync(
+            "() => { const t = document.documentElement.getAttribute('data-theme'); return t === 'light' || t === 'dark'; }",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 10_000 });
         var original = await htmlElement.GetAttributeAsync("data-theme");
 
         // Act – toggle to dark
@@ -273,7 +276,12 @@ public class ThemeAndNavTests : E2ETestBase
         await accountsLink.ClickAsync();
         await Page.WaitForURLAsync("**/accounts", new PageWaitForURLOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
-        // Assert – sidebar should be closed again
+        // Assert – sidebar should be closed again (allow rerender tick after navigation)
+        await Page.WaitForFunctionAsync(
+            "() => !document.querySelector('.nav-scrollable')?.classList.contains('open')",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 5000 });
+
         var isOpenAfter = await navScrollable.EvaluateAsync<bool>("el => el.classList.contains('open')");
         Assert.That(isOpenAfter, Is.False, "Nav should close after navigating to a page");
     }

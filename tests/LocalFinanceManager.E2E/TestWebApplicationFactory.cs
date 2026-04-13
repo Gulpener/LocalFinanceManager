@@ -655,6 +655,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
         public string GetCurrentUserEmail() => AppDbContext.SeedUserEmail;
         public bool IsAuthenticated() => true;
         public Task<bool> IsAdminAsync() => Task.FromResult(true);
+        public void InvalidateAdminState() { }
     }
 
     private sealed class E2EDevSmokeHeaderHandler : DelegatingHandler

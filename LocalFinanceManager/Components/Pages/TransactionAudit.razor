@@ -61,136 +61,138 @@ else
         }
         else
         {
-            <p class="text-muted mb-3">Toont @auditEntries.Count audit @(auditEntries.Count == 1 ? "vermelding" : "vermeldingen") op deze pagina</p>
+            <p class="text-muted mb-3">Toont @auditEntries.Count audit @(auditEntries.Count == 1 ? "vermelding" :
+                        "vermeldingen") op deze pagina</p>
 
-            <div class="timeline">
-                @foreach (var entry in GetPagedEntries())
-                {
-                    var entryClass = entry.IsAutoApplied ? "border-primary" : "border-secondary";
-                    <div class="timeline-item mb-3" data-testid="audit-entry" data-entry-id="@entry.Id">
-                        <div class="card @entryClass" style="border-left-width: 4px;">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                                    <div>
-                                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                            <span class="badge @GetActionBadgeClass(entry.ActionType)"
-                                                  data-testid="audit-action-type">
-                                                <i class="bi @GetActionIcon(entry.ActionType) me-1" aria-hidden="true"></i>
-                                                @GetActionText(entry.ActionType)
-                                            </span>
-                                            @if (entry.IsAutoApplied)
-                                            {
-                                                <span class="badge bg-primary" data-testid="auto-applied-badge">
-                                                    <span aria-hidden="true">🤖</span> Auto-applied
-                                                    @if (entry.Confidence.HasValue)
+                <div class="timeline">
+                    @foreach (var entry in GetPagedEntries())
+                    {
+                        var entryClass = entry.IsAutoApplied ? "border-primary" : "border-secondary";
+                        <div class="timeline-item mb-3" data-testid="audit-entry" data-entry-id="@entry.Id">
+                            <div class="card @entryClass" style="border-left-width: 4px;">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                                <span class="badge @GetActionBadgeClass(entry.ActionType)"
+                                                      data-testid="audit-action-type">
+                                                    <i class="bi @GetActionIcon(entry.ActionType) me-1" aria-hidden="true"></i>
+                                                    @GetActionText(entry.ActionType)
+                                                </span>
+                                                @if (entry.IsAutoApplied)
+                                                {
+                                                    <span class="badge bg-primary" data-testid="auto-applied-badge">
+                                                        <span aria-hidden="true">🤖</span> Auto-applied
+                                                        @if (entry.Confidence.HasValue)
+                                                        {
+                                                            <span data-testid="confidence-score">
+                                                                (@((entry.Confidence.Value * 100).ToString("F0"))% zekerheid)
+                                                            </span>
+                                                        }
+                                                    </span>
+                                                    @if (entry.ModelVersion.HasValue)
                                                     {
-                                                        <span data-testid="confidence-score">
-                                                            (@((entry.Confidence.Value * 100).ToString("F0"))% zekerheid)
+                                                        <span class="badge bg-light text-dark border" data-testid="model-version">
+                                                            Model v@entry.ModelVersion
                                                         </span>
                                                     }
-                                                </span>
-                                                @if (entry.ModelVersion.HasValue)
-                                                {
-                                                    <span class="badge bg-light text-dark border" data-testid="model-version">
-                                                        Model v@entry.ModelVersion
-                                                    </span>
-                                                }
-                                            }
-                                        </div>
-                                        <p class="card-text text-muted mb-1">
-                                            <small>
-                                                <i class="bi bi-person me-1"></i>
-                                                <span data-testid="audit-actor">@entry.ChangedBy</span>
-                                            </small>
-                                        </p>
-                                        <p class="card-text text-muted mb-0">
-                                            <small>
-                                                <i class="bi bi-clock me-1"></i>
-                                                <span data-testid="audit-timestamp"
-                                                      title="@entry.ChangedAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")">
-                                                    @GetRelativeTime(entry.ChangedAt)
-                                                </span>
-                                            </small>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                @if (!string.IsNullOrEmpty(entry.Reason))
-                                {
-                                    <div class="mt-2">
-                                        <strong>Reden:</strong>
-                                        <p class="mb-0" data-testid="audit-reason">@entry.Reason</p>
-                                    </div>
-                                }
-
-                                @if (!string.IsNullOrEmpty(entry.BeforeState) || !string.IsNullOrEmpty(entry.AfterState))
-                                {
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-secondary"
-                                                @onclick="() => ToggleStateExpanded(entry.Id)"
-                                                aria-expanded="@expandedEntries.Contains(entry.Id)">
-                                            <i class="bi @(expandedEntries.Contains(entry.Id) ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
-                                            @(expandedEntries.Contains(entry.Id) ? "Verberg" : "Toon") statuswijzigingen
-                                        </button>
-
-                                        @if (expandedEntries.Contains(entry.Id))
-                                        {
-                                            <div class="mt-2 row">
-                                                @if (!string.IsNullOrEmpty(entry.BeforeState))
-                                                {
-                                                    <div class="col-md-6 mb-2">
-                                                        <strong class="text-danger">Voor:</strong>
-                                                        <pre class="mt-1 mb-0 p-2 bg-light border rounded small"
-                                                             data-testid="before-state"><code>@entry.BeforeState</code></pre>
-                                                    </div>
-                                                }
-                                                @if (!string.IsNullOrEmpty(entry.AfterState))
-                                                {
-                                                    <div class="col-md-6 mb-2">
-                                                        <strong class="text-success">Na:</strong>
-                                                        <pre class="mt-1 mb-0 p-2 bg-light border rounded small"
-                                                             data-testid="after-state"><code>@entry.AfterState</code></pre>
-                                                    </div>
                                                 }
                                             </div>
-                                        }
+                                            <p class="card-text text-muted mb-1">
+                                                <small>
+                                                    <i class="bi bi-person me-1"></i>
+                                                    <span data-testid="audit-actor">@entry.ChangedBy</span>
+                                                </small>
+                                            </p>
+                                            <p class="card-text text-muted mb-0">
+                                                <small>
+                                                    <i class="bi bi-clock me-1"></i>
+                                                    <span data-testid="audit-timestamp"
+                                                          title="@entry.ChangedAt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")">
+                                                        @GetRelativeTime(entry.ChangedAt)
+                                                    </span>
+                                                </small>
+                                            </p>
+                                        </div>
                                     </div>
-                                }
+
+                                    @if (!string.IsNullOrEmpty(entry.Reason))
+                                    {
+                                        <div class="mt-2">
+                                            <strong>Reden:</strong>
+                                            <p class="mb-0" data-testid="audit-reason">@entry.Reason</p>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(entry.BeforeState) || !string.IsNullOrEmpty(entry.AfterState))
+                                    {
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-outline-secondary" data-testid="state-changes-toggle"
+                                                    @onclick="() => ToggleStateExpanded(entry.Id)"
+                                                    aria-expanded="@expandedEntries.Contains(entry.Id)">
+                                                <i
+                                                class="bi @(expandedEntries.Contains(entry.Id) ? "bi-chevron-up" : "bi-chevron-down") me-1"></i>
+                                                @(expandedEntries.Contains(entry.Id) ? "Verberg" : "Toon") statuswijzigingen
+                                            </button>
+
+                                            @if (expandedEntries.Contains(entry.Id))
+                                            {
+                                                <div class="mt-2 row">
+                                                    @if (!string.IsNullOrEmpty(entry.BeforeState))
+                                                    {
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong class="text-danger">Voor:</strong>
+                                                            <pre class="mt-1 mb-0 p-2 bg-light border rounded small"
+                                                                 data-testid="before-state"><code>@entry.BeforeState</code></pre>
+                                                        </div>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(entry.AfterState))
+                                                    {
+                                                        <div class="col-md-6 mb-2">
+                                                            <strong class="text-success">Na:</strong>
+                                                            <pre class="mt-1 mb-0 p-2 bg-light border rounded small"
+                                                                 data-testid="after-state"><code>@entry.AfterState</code></pre>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
-                    </div>
-                }
-            </div>
+                    }
+                </div>
 
-            @if (GetTotalPages() > 1)
-            {
-                <nav aria-label="Audit trail paginering" class="mt-3">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
-                            <button class="page-link" @onclick="() => GoToPageAsync(currentPage - 1)"
-                                    disabled="@(currentPage == 1)" aria-label="Vorige">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                        </li>
-                        @for (var p = 1; p <= GetTotalPages(); p++)
-                        {
-                            var pageNum = p;
-                            <li class="page-item @(currentPage == pageNum ? "active" : "")">
-                                <button class="page-link" @onclick="() => GoToPageAsync(pageNum)">@pageNum</button>
+                @if (GetTotalPages() > 1)
+                {
+                    <nav aria-label="Audit trail paginering" class="mt-3">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => GoToPageAsync(currentPage - 1)" disabled="@(currentPage == 1)"
+                                        aria-label="Vorige">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
                             </li>
-                        }
-                        <li class="page-item @(currentPage == GetTotalPages() ? "disabled" : "")">
-                            <button class="page-link" @onclick="() => GoToPageAsync(currentPage + 1)"
-                                    disabled="@(currentPage == GetTotalPages())" aria-label="Volgende">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </li>
-                    </ul>
-                </nav>
+                            @for (var p = 1; p <= GetTotalPages(); p++)
+                            {
+                                var pageNum = p;
+                                <li class="page-item @(currentPage == pageNum ? "active" : "")">
+                                    <button class="page-link" @onclick="() => GoToPageAsync(pageNum)">@pageNum</button>
+                                </li>
+                            }
+                            <li class="page-item @(currentPage == GetTotalPages() ? "disabled" : "")">
+                                <button class="page-link" @onclick="() => GoToPageAsync(currentPage + 1)"
+                                        disabled="@(currentPage == GetTotalPages())" aria-label="Volgende">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                }
             }
-        }
-    </div>
-}
+        </div>
+    }
 
 @code {
     [Parameter]

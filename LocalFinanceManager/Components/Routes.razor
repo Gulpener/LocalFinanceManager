@@ -5,6 +5,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @inject IBlazorCircuitUser CircuitUser
+@inject IUserContext UserContext
 @inject AppDbContext DbContext
 @inject ILogger<Routes> Logger
 @implements IDisposable
@@ -86,6 +87,7 @@
         if (!isAuthenticated)
         {
             CircuitUser.Reset();
+            UserContext.InvalidateAdminState();
             // No circuit user is initialized for anonymous users.
             return;
         }
@@ -96,6 +98,7 @@
             // If we cannot identify the remote user, reset any existing circuit user
             // to avoid using a stale identity.
             CircuitUser.Reset();
+            UserContext.InvalidateAdminState();
             return;
         }
 
@@ -107,11 +110,13 @@
             // If there is no corresponding local user, reset any existing circuit user
             // to avoid using a stale identity.
             CircuitUser.Reset();
+            UserContext.InvalidateAdminState();
             return;
         }
 
         var email = user.FindFirst("email")?.Value ?? localUser.Email;
         CircuitUser.Initialize(localUser.Id, email);
+        UserContext.InvalidateAdminState();
     }
 
     private async void OnAuthenticationStateChanged(Task<AuthenticationState> authenticationStateTask)

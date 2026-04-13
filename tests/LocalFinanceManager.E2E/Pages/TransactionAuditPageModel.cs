@@ -13,6 +13,7 @@ public class TransactionAuditPageModel : PageObjectBase
     private const string ConfidenceScoreSelector = "[data-testid='confidence-score']";
     private const string ModelVersionSelector = "[data-testid='model-version']";
     private const string ActionTypeSelector = "[data-testid='audit-action-type']";
+    private const string StateChangesToggleSelector = "[data-testid='state-changes-toggle']";
     private const string ActorSelector = "[data-testid='audit-actor']";
     private const string TimestampSelector = "[data-testid='audit-timestamp']";
     private const string BeforeStateSelector = "[data-testid='before-state']";
@@ -116,10 +117,27 @@ public class TransactionAuditPageModel : PageObjectBase
     public async Task ExpandStateChangesAsync(int entryIndex)
     {
         var entry = Page.Locator(AuditEntrySelector).Nth(entryIndex);
-        var expandButton = entry.Locator("button:has-text('Toon statuswijzigingen')");
+        var expandButton = entry.Locator(StateChangesToggleSelector);
         if (await expandButton.CountAsync() > 0)
         {
+            await expandButton.First.WaitForAsync(new LocatorWaitForOptions
+            {
+                State = WaitForSelectorState.Visible,
+                Timeout = 2000
+            });
+
             await expandButton.ClickAsync();
+
+            // Rendering can lag one UI tick; wait briefly for either side of the state diff to appear.
+            var stateContent = entry.Locator($"{BeforeStateSelector}, {AfterStateSelector}");
+            if (await stateContent.CountAsync() > 0)
+            {
+                await stateContent.First.WaitForAsync(new LocatorWaitForOptions
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = 2000
+                });
+            }
         }
     }
 

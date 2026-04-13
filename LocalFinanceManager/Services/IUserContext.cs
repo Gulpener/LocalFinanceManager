@@ -26,4 +26,10 @@ public interface IUserContext
     /// Returns false for unauthenticated users (GetCurrentUserId() == Guid.Empty) or when user is not found.
     /// </summary>
     Task<bool> IsAdminAsync();
+
+    /// <summary>
+    /// Clears any cached admin access state for the current circuit.
+    /// Call this when authentication state changes or when a fresh admin lookup is required.
+    /// </summary>
+    void InvalidateAdminState();
 }

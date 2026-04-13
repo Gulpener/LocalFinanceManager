@@ -7,17 +7,31 @@
 {
     @ChildContent
 }
+else if (_accessState == AdminAccessState.Pending)
+{
+    <div class="text-center my-4" data-testid="admin-guard-pending">
+        <div class="spinner-border spinner-border-sm" role="status">
+            <span class="visually-hidden">Laden...</span>
+        </div>
+    </div>
+}
 else if (_accessState == AdminAccessState.Denied)
 {
-    @* Non-admin: content hidden, redirect is triggered after access resolution *@
+    <div class="alert alert-warning" role="alert" data-testid="admin-guard-denied">
+        <i class="bi bi-shield-exclamation me-2" aria-hidden="true"></i>
+        Geen toegang tot deze beheerpagina.
+    </div>
 }
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    private const int MaxResolveAttempts = 8;
+    private const int ConsecutiveFalseBeforeDeny = 2;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(100);
     private AdminAccessState _accessState = AdminAccessState.Pending;
-    private bool _retryAdminCheckAfterRender;
-    private bool _retriedAdminCheck;
+    private int _resolveAttempts;
+    private int _consecutiveFalseResults;
 
     private enum AdminAccessState
     {
@@ -28,49 +42,62 @@ else if (_accessState == AdminAccessState.Denied)
 
     protected override async Task OnInitializedAsync()
     {
-        await ResolveAccessAsync(scheduleRetryIfUnknown: true);
+        await ResolveAccessAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_retryAdminCheckAfterRender || _retriedAdminCheck)
+        if (_accessState != AdminAccessState.Pending || _resolveAttempts >= MaxResolveAttempts)
         {
             return;
         }
 
-        _retryAdminCheckAfterRender = false;
-        _retriedAdminCheck = true;
-        await ResolveAccessAsync(scheduleRetryIfUnknown: false);
+        await Task.Delay(RetryDelay);
+        await ResolveAccessAsync();
         StateHasChanged();
     }
 
-    private async Task ResolveAccessAsync(bool scheduleRetryIfUnknown)
+    private async Task ResolveAccessAsync()
     {
+        _resolveAttempts++;
+        var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         if (UserContext.GetCurrentUserId() == Guid.Empty)
         {
-            _accessState = AdminAccessState.Pending;
-            if (scheduleRetryIfUnknown)
-            {
-                _retryAdminCheckAfterRender = true;
-            }
-
+            _consecutiveFalseResults = 0;
+            _accessState = _resolveAttempts >= MaxResolveAttempts
+                ? AdminAccessState.Denied
+                : AdminAccessState.Pending;
             return;
         }
 
         try
         {
             var isAdmin = await UserContext.IsAdminAsync();
-            _accessState = isAdmin ? AdminAccessState.Granted : AdminAccessState.Denied;
-            if (!isAdmin)
+            if (isAdmin)
             {
-                NavigationManager.NavigateTo("/", forceLoad: false);
+                _accessState = AdminAccessState.Granted;
+                _consecutiveFalseResults = 0;
+                return;
             }
+
+            _consecutiveFalseResults++;
+
+            _accessState = _consecutiveFalseResults >= ConsecutiveFalseBeforeDeny
+                ? AdminAccessState.Denied
+                : AdminAccessState.Pending;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to resolve admin access state in route guard.");
-            _accessState = AdminAccessState.Denied;
-            NavigationManager.NavigateTo("/", forceLoad: false);
+            Logger.LogError(
+                ex,
+                "Failed to resolve admin access state in route guard on {Path} (attempt {Attempt}/{MaxAttempts}).",
+                currentPath,
+                _resolveAttempts,
+                MaxResolveAttempts);
+            _accessState = _resolveAttempts >= MaxResolveAttempts
+                ? AdminAccessState.Denied
+                : AdminAccessState.Pending;
         }
     }
+
 }

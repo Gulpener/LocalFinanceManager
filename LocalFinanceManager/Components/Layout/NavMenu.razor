@@ -1,96 +1,105 @@
 ﻿<div class="sidebar-wrap @(_collapsed ? "collapsed" : "")" data-testid="sidebar-wrap">
-<div class="top-row ps-3">
-    <a class="navbar-brand" href="">
-        <i class="bi bi-bar-chart-fill" aria-hidden="true"></i><span class="nav-label ms-2">LocalFinanceManager</span>
-    </a>
-    <button class="hamburger-btn d-md-none" aria-label="Navigatiemenu openen"
-            aria-expanded="@_menuOpen.ToString().ToLower()" data-testid="hamburger-btn" @onclick="ToggleMenu">
-        <i class="bi bi-list"></i>
-    </button>
-</div>
+    <div class="top-row ps-3">
+        <a class="navbar-brand" href="">
+            <i class="bi bi-bar-chart-fill" aria-hidden="true"></i><span
+            class="nav-label ms-2">LocalFinanceManager</span>
+        </a>
+        <button class="hamburger-btn d-md-none" aria-label="Navigatiemenu openen"
+                aria-expanded="@_menuOpen.ToString().ToLower()" data-testid="hamburger-btn" @onclick="ToggleMenu">
+            <i class="bi bi-list"></i>
+        </button>
+    </div>
 
-@if (_menuOpen)
-{
-    <div class="nav-overlay d-md-none" @onclick="CloseMenu" data-testid="nav-overlay"></div>
-}
+    @if (_menuOpen)
+    {
+        <div class="nav-overlay d-md-none" @onclick="CloseMenu" data-testid="nav-overlay"></div>
+    }
 
-<div class="nav-scrollable @(_menuOpen ? "open" : "")">
-    <nav class="nav flex-column" @onclick="CloseMenu">
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                        <i class="bi bi-speedometer2" aria-hidden="true"></i><span class="nav-label ms-2">Dashboard</span>
-                    </NavLink>
-                </div>
-            </Authorized>
-            <NotAuthorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                        <i class="bi bi-house-door-fill" aria-hidden="true"></i><span class="nav-label ms-2">Home</span>
-                    </NavLink>
-                </div>
-            </NotAuthorized>
-        </AuthorizeView>
-
-        <AuthorizeView>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="accounts">
-                        <i class="bi bi-wallet-fill" aria-hidden="true"></i><span class="nav-label ms-2">Rekeningen</span>
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="budgets">
-                        <i class="bi bi-calculator-fill" aria-hidden="true"></i><span class="nav-label ms-2">Budgetplannen</span>
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="transactions">
-                        <i class="bi bi-cash-coin" aria-hidden="true"></i><span class="nav-label ms-2">Transacties</span>
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="sharing/shared-with-me">
-                        <i class="bi bi-share-fill" aria-hidden="true"></i><span class="nav-label ms-2">Gedeeld met mij</span>
-                        @if (pendingShareCount > 0)
-                        {
-                            <span class="badge ms-1" data-testid="nav-pending-share-badge">@pendingShareCount</span>
-                        }
-                    </NavLink>
-                </div>
-
-                @if (_isAdmin)
-                {
+    <div class="nav-scrollable @(_menuOpen ? "open" : "")">
+        <nav class="nav flex-column">
+            <AuthorizeView>
+                <Authorized>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="admin/settings" data-testid="nav-admin-link">
-                            <i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span class="nav-label ms-2">Beheer</span>
+                        <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                            <i class="bi bi-speedometer2" aria-hidden="true"></i><span class="nav-label ms-2">Dashboard</span>
                         </NavLink>
                     </div>
-                }
+                </Authorized>
+                <NotAuthorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                            <i class="bi bi-house-door-fill" aria-hidden="true"></i><span class="nav-label ms-2">Home</span>
+                        </NavLink>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
 
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="settings/auto-apply">
-                        <i class="bi bi-robot" aria-hidden="true"></i><span class="nav-label ms-2">Automatisch toewijzen</span>
-                    </NavLink>
-                </div>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="accounts" @onclick="CloseMenu">
+                            <i class="bi bi-wallet-fill" aria-hidden="true"></i><span
+                            class="nav-label ms-2">Rekeningen</span>
+                        </NavLink>
+                    </div>
 
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="backup">
-                        <i class="bi bi-cloud-arrow-down-fill" aria-hidden="true"></i><span class="nav-label ms-2">Back-up &amp; herstel</span>
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-    </nav>
-    <button class="sidebar-collapse-btn" aria-label="@(_collapsed ? "Zijbalk uitklappen" : "Zijbalk inklappen")"
-            data-testid="sidebar-collapse-btn" @onclick="ToggleSidebarAsync">
-        <i class="bi @(_collapsed ? "bi-chevron-right" : "bi-chevron-left")" aria-hidden="true"></i>
-    </button>
-</div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="budgets" @onclick="CloseMenu">
+                            <i class="bi bi-calculator-fill" aria-hidden="true"></i><span
+                            class="nav-label ms-2">Budgetplannen</span>
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="transactions" @onclick="CloseMenu">
+                            <i class="bi bi-cash-coin" aria-hidden="true"></i><span
+                            class="nav-label ms-2">Transacties</span>
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="sharing/shared-with-me" @onclick="CloseMenu">
+                            <i class="bi bi-share-fill" aria-hidden="true"></i><span class="nav-label ms-2">Gedeeld met
+                            mij</span>
+                            @if (pendingShareCount > 0)
+                            {
+                                <span class="badge ms-1" data-testid="nav-pending-share-badge">@pendingShareCount</span>
+                            }
+                        </NavLink>
+                    </div>
+
+                    @if (_isAdmin)
+                    {
+                        <div class="nav-item px-3">
+                            <NavLink class="nav-link" href="admin/settings" data-testid="nav-admin-link"
+                                     @onclick="CloseMenu">
+                                <i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span
+                                class="nav-label ms-2">Beheer</span>
+                            </NavLink>
+                        </div>
+                    }
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="settings/auto-apply" @onclick="CloseMenu">
+                            <i class="bi bi-robot" aria-hidden="true"></i><span class="nav-label ms-2">Automatisch
+                            toewijzen</span>
+                        </NavLink>
+                    </div>
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="backup" @onclick="CloseMenu">
+                            <i class="bi bi-cloud-arrow-down-fill" aria-hidden="true"></i><span
+                            class="nav-label ms-2">Back-up &amp; herstel</span>
+                        </NavLink>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </nav>
+        <button class="sidebar-collapse-btn" aria-label="@(_collapsed ? "Zijbalk uitklappen" : "Zijbalk inklappen")"
+                data-testid="sidebar-collapse-btn" @onclick="ToggleSidebarAsync">
+            <i class="bi @(_collapsed ? "bi-chevron-right" : "bi-chevron-left")" aria-hidden="true"></i>
+        </button>
+    </div>
 </div>
 
 @using LocalFinanceManager.Services
@@ -206,14 +215,7 @@
 
         try
         {
-            // Resolve AppDbContext from the fresh scope rather than using IUserContext.IsAdminAsync()
-            // because IUserContext depends on IBlazorCircuitUser, which is circuit-scoped and is not
-            // available in a child scope. The query mirrors the logic in UserContext.IsAdminAsync().
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            _isAdmin = await db.Users
-                .Where(u => u.Id == userId && !u.IsArchived)
-                .Select(u => u.IsAdmin)
-                .FirstOrDefaultAsync();
+            _isAdmin = await UserContext.IsAdminAsync();
             stateChanged = true;
         }
         catch (Exception ex)

@@ -208,25 +208,25 @@ public class TransactionAuditTests : E2ETestBase
         var count = await _auditPage.GetAuditEntryCountAsync();
         Assert.That(count, Is.GreaterThanOrEqualTo(1), "Expected at least one audit entry");
 
-        var foundEntryWithStateChanges = false;
+        // Find any expandable state-diff entry and verify expanded JSON is shown.
+        var toggles = Page.Locator("[data-testid='state-changes-toggle']");
+        var toggleCount = await toggles.CountAsync();
+        Assert.That(toggleCount, Is.GreaterThanOrEqualTo(1),
+            "Expected at least one audit entry with expandable state changes");
 
-        // Find an entry with state changes and expand it
-        for (var i = 0; i < count; i++)
-        {
-            await _auditPage.ExpandStateChangesAsync(i);
-            var afterState = await _auditPage.GetAfterStateAsync(i);
-            if (!string.IsNullOrEmpty(afterState))
-            {
-                foundEntryWithStateChanges = true;
-                Assert.That(afterState, Does.Contain("{"), "After state should contain JSON");
-                break;
-            }
-        }
+        await toggles.First.ClickAsync();
 
-        Assert.That(
-            foundEntryWithStateChanges,
-            Is.True,
-            "Expected at least one audit entry to expose expandable state changes");
+        await Page.WaitForFunctionAsync(
+            "() => document.querySelectorAll(\"[data-testid='before-state'], [data-testid='after-state']\").length > 0",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 5000 });
+
+        var stateDiffText = await Page.Locator("[data-testid='after-state'], [data-testid='before-state']")
+            .First
+            .TextContentAsync();
+
+        Assert.That(stateDiffText, Is.Not.Null.And.Contain("{"),
+            "Expanded state diff should contain JSON");
     }
 
     [Test]
