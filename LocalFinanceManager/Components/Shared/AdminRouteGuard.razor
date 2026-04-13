@@ -64,7 +64,9 @@ else if (_accessState == AdminAccessState.Denied)
         if (UserContext.GetCurrentUserId() == Guid.Empty)
         {
             _consecutiveFalseResults = 0;
-            _accessState = AdminAccessState.Pending;
+            _accessState = _resolveAttempts >= MaxResolveAttempts
+                ? AdminAccessState.Denied
+                : AdminAccessState.Pending;
             return;
         }
 
