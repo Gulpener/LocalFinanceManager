@@ -1,0 +1,119 @@
+@namespace LocalFinanceManager.Components.Shared
+@using LocalFinanceManager.Services
+@inject IUserPreferencesService UserPrefsService
+@inject IThemeService ThemeService
+@inject IUserContext UserContext
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div class="profile-dropdown-wrapper" id="@_elementId">
+    <button class="btn btn-link p-0 d-flex align-items-center gap-2"
+            aria-label="Profile menu"
+            aria-expanded="@_isOpen"
+            @onclick="ToggleDropdown">
+        <ProfileAvatar FirstName="@_firstName"
+                       LastName="@_lastName"
+                       ProfileImageUrl="@_profileImageUrl"
+                       Email="@_email"
+                       Size="small" />
+    </button>
+
+    @if (_isOpen)
+    {
+        <div class="profile-dropdown-menu" role="menu">
+            <a class="profile-dropdown-item" href="/account" role="menuitem">
+                <i class="bi bi-person-circle" aria-hidden="true"></i>
+                My account
+            </a>
+            <div class="profile-dropdown-divider"></div>
+            <button class="profile-dropdown-item" role="menuitem" @onclick="ToggleThemeAsync"
+                    aria-label="Toggle theme">
+                @if (ThemeService.CurrentTheme == "dark")
+                {
+                    <i class="bi bi-sun" aria-hidden="true"></i>
+                    <span>Light mode</span>
+                }
+                else
+                {
+                    <i class="bi bi-moon" aria-hidden="true"></i>
+                    <span>Dark mode</span>
+                }
+            </button>
+            <div class="profile-dropdown-divider"></div>
+            <a class="profile-dropdown-item" href="/logout" role="menuitem">
+                <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                Logout
+            </a>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+    private string? _firstName;
+    private string? _lastName;
+    private string? _profileImageUrl;
+    private string? _email;
+    private readonly string _elementId = $"profile-dropdown-{Guid.NewGuid():N}";
+    private DotNetObjectReference<ProfileDropdown>? _dotNetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _email = UserContext.GetCurrentUserEmail();
+            var userId = UserContext.GetCurrentUserId();
+            if (userId != Guid.Empty)
+            {
+                try
+                {
+                    var profile = await UserPrefsService.GetProfileAsync(userId);
+                    _firstName = profile.FirstName;
+                    _lastName = profile.LastName;
+                    _profileImageUrl = profile.ProfileImageUrl;
+                    StateHasChanged();
+                }
+                catch (Exception)
+                {
+                    // Profile load failure must not crash the layout
+                }
+            }
+        }
+    }
+
+    private async Task ToggleDropdown()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("profileDropdown.init", _dotNetRef, _elementId);
+            }
+            catch (Exception)
+            {
+                // JS interop unavailable (pre-render) — continue without outside-click handler
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void CloseDropdown()
+    {
+        _isOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        _isOpen = false;
+        var userId = UserContext.GetCurrentUserId();
+        await ThemeService.ToggleAsync(userId);
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+    }
+}

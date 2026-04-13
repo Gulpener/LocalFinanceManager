@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserPreferencesService, UserPreferencesService>();
         services.AddScoped<IThemeService, ThemeService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<ISupabaseStorageService, SupabaseStorageService>();
 
         return services;
     }
@@ -186,6 +187,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IValidator<UndoAssignmentRequest>, UndoAssignmentRequestValidator>();
         services.AddScoped<IValidator<AutoApplySettingsDto>, AutoApplySettingsValidator>();
         services.AddScoped<IValidator<SuggestionFeedbackDto>, SuggestionFeedbackValidator>();
+        services.AddScoped<IValidator<UpdateProfileRequest>, UpdateProfileRequestValidator>();
 
         // IbanNet validator
         services.AddSingleton<IIbanValidator, IbanValidator>();

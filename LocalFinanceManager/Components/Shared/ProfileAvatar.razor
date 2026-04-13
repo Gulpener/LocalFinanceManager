@@ -1,0 +1,51 @@
+@namespace LocalFinanceManager.Components.Shared
+
+<div class="avatar-circle @SizeCssClass" title="@TooltipText" aria-label="@TooltipText">
+    @if (!string.IsNullOrEmpty(ProfileImageUrl))
+    {
+        <img src="@ProfileImageUrl" alt="Profile picture" />
+    }
+    else
+    {
+        <span>@Initials</span>
+    }
+</div>
+
+@code {
+    [Parameter] public string? FirstName { get; set; }
+    [Parameter] public string? LastName { get; set; }
+    [Parameter] public string? ProfileImageUrl { get; set; }
+    [Parameter] public string? Email { get; set; }
+    /// <summary>"small" (32px) or "large" (96px)</summary>
+    [Parameter] public string Size { get; set; } = "small";
+
+    private string SizeCssClass => Size == "large" ? "avatar-lg" : "avatar-sm";
+
+    private string Initials
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(FirstName) || !string.IsNullOrWhiteSpace(LastName))
+            {
+                var first = string.IsNullOrWhiteSpace(FirstName) ? "" : FirstName[..1];
+                var last = string.IsNullOrWhiteSpace(LastName) ? "" : LastName[..1];
+                return (first + last).ToUpperInvariant();
+            }
+
+            if (!string.IsNullOrWhiteSpace(Email) && Email.Length >= 2)
+                return Email[..2].ToUpperInvariant();
+
+            return "?";
+        }
+    }
+
+    private string TooltipText
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(FirstName) || !string.IsNullOrWhiteSpace(LastName))
+                return $"{FirstName} {LastName}".Trim();
+            return Email ?? "Profile";
+        }
+    }
+}

@@ -16,8 +16,6 @@
         <div class="top-row px-4">
             <AuthorizeView>
                 <Authorized>
-                    <span class="me-auto fw-semibold text-body"
-                          data-testid="topbar-username">@context.User.Identity?.Name</span>
                     <button class="btn btn-link theme-toggle-btn me-2" aria-label="Thema wisselen"
                             data-testid="theme-toggle" @onclick="ToggleThemeAsync">
                         @if (ThemeService.CurrentTheme == "dark")
@@ -29,7 +27,7 @@
                             <i class="bi bi-moon" aria-hidden="true"></i>
                         }
                     </button>
-                    <a href="/logout" class="nav-link">Uitloggen</a>
+                    <ProfileDropdown />
                 </Authorized>
                 <NotAuthorized>
                     <button class="btn btn-link theme-toggle-btn me-2" aria-label="Thema wisselen"
