@@ -69,8 +69,24 @@ jobs:
       - name: Build E2E project (prepares Playwright)
         run: dotnet build tests/LocalFinanceManager.E2E/ --configuration Release --no-restore
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-${{ runner.arch }}-
+            playwright-${{ runner.os }}-
+
       - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pwsh -Command "cd tests/LocalFinanceManager.E2E; pwsh bin/Release/net10.0/playwright.ps1 install --with-deps chromium"
+        shell: pwsh
+
+      - name: Install Playwright OS dependencies only (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pwsh -Command "cd tests/LocalFinanceManager.E2E; pwsh bin/Release/net10.0/playwright.ps1 install-deps chromium"
         shell: pwsh
 
       - name: Run E2E tests - Phase 1 (Import + Basic Assignment)
