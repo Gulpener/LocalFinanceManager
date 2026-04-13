@@ -1,4 +1,4 @@
-# BugReport-10: Dashboard Totaal Saldo Shows Generic Currency Symbol Instead of Euro
+# BugReport-10: Dashboard Total Balance Shows Generic Currency Symbol Instead of Euro
 
 ## Status
 
@@ -6,7 +6,7 @@
 
 ## Summary
 
-On the dashboard, the "Totaal saldo" amount shows the generic currency symbol `¤` instead of the euro symbol `€`.
+On the dashboard, the "Total balance" amount shows the generic currency symbol `¤` instead of the euro symbol `€`.
 
 ## Environment
 
@@ -17,7 +17,7 @@ On the dashboard, the "Totaal saldo" amount shows the generic currency symbol `�
 
 1. Log in to the application.
 2. Open the dashboard.
-3. Check the "Totaal saldo" value.
+3. Check the "Total balance" value.
 
 ## Expected Behaviour
 
@@ -51,6 +51,6 @@ Likely dashboard-specific formatting path for total balance that bypasses shared
 
 ## Acceptance Criteria
 
-- [ ] Dashboard "Totaal saldo" renders `€` for EUR amounts
+- [ ] Dashboard "Total balance" renders `€` for EUR amounts
 - [ ] Dashboard no longer renders generic `¤` for EUR
 - [ ] Regression test added/updated and passing

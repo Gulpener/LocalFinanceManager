@@ -1,4 +1,4 @@
-# BugReport-11: Login Beheer Button Not Shown
+# BugReport-11: Login Admin Button Not Shown
 
 ## Status
 
@@ -6,7 +6,7 @@
 
 ## Summary
 
-After logging in, the "Beheer" button is sometimes not shown in the navigation, even for users with admin rights.
+After logging in, the "Admin" button is sometimes not shown in the navigation, even for users with admin rights.
 
 ## Environment
 
@@ -22,11 +22,11 @@ After logging in, the "Beheer" button is sometimes not shown in the navigation, 
 
 ## Expected Behaviour
 
-The "Beheer" button is immediately visible for admin users after a successful login.
+The "Admin" button is immediately visible for admin users after a successful login.
 
 ## Actual Behaviour
 
-The "Beheer" button is sometimes missing immediately after login.
+The "Admin" button is sometimes missing immediately after login.
 
 ## Workaround
 
@@ -64,7 +64,7 @@ Possible cause: admin status is evaluated too early as false during startup/warm
 
 ## Acceptance Criteria
 
-- [ ] "Beheer" is immediately visible after login for admin users, including after a fresh deploy/cold start
+- [ ] "Admin" is immediately visible after login for admin users, including after a fresh deploy/cold start
 - [ ] No manual refresh is required to make the button visible
 - [ ] Non-admin users do not see the button
 - [ ] Regression test added/updated and passing

@@ -11,14 +11,14 @@ The dashboard displays `0.00_balanceCurrency` instead of a properly formatted ba
 ## Steps to Reproduce
 
 1. Log in and navigate to the dashboard.
-2. Observe the "Totaal saldo" widget.
+2. Observe the "Total balance" widget.
 
 ## Expected Behaviour
 
 The total balance is displayed as a formatted amount with the correct currency symbol, e.g.:
 
 ```
-Totaal saldo
+Total balance
 €0.00
 1 rekening(en)
 ```
@@ -28,7 +28,7 @@ Totaal saldo
 The total balance is displayed as:
 
 ```
-Totaal saldo
+Total balance
 0.00_balanceCurrency
 1 rekening(en)
 ```
@@ -45,7 +45,7 @@ Locate the dashboard component that renders the total balance and fix the string
 
 ## Tasks
 
-- [ ] Locate the dashboard component/razor file rendering "Totaal saldo"
+- [ ] Locate the dashboard component/razor file rendering "Total balance"
 - [ ] Fix the string interpolation or binding for the balance + currency
 - [ ] Verify the dashboard displays a correctly formatted balance (e.g. `€0.00`) for all supported currencies
 
