@@ -54,6 +54,7 @@ Locate the dashboard component that renders the total balance and fix the string
 **Root cause:** `TotalBalanceKpiWidget.razor` formatted the balance using a raw `N2` number format string with the ISO-4217 currency code appended in a separate `<small>` HTML tag, instead of using the shared `CurrencyFormatter.Format()` helper. This produced output like `0.00 EUR` instead of the expected `€0.00`.
 
 **Files changed:**
+
 - `LocalFinanceManager/Components/Pages/Dashboard/TotalBalanceKpiWidget.razor`
 
 **Fix:** Replaced the manual `@($"{(TotalBalance < 0 ? "-" : "")}{Math.Abs(TotalBalance):N2}")` + `<small> @Currency</small>` rendering with a single call to `@CurrencyFormatter.Format(TotalBalance, Currency)`. Added `@using LocalFinanceManager.Helpers` at the top of the component. `CurrencyFormatter.Format` maps the ISO-4217 currency code to the correct `CultureInfo` via `RegionInfo`, so the output now correctly displays e.g. `€0.00` for EUR.

@@ -14,8 +14,8 @@ Refreshing the browser on any route other than the homepage (`/`) or `/login` re
 
 1. A **"Dangerous site"** warning in Chrome — indicating the browser received an unexpected or invalid response.
 2. An **HTTP 404** error from Azure App Service:
-  > This page on `localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net` could not be found  
-  > No webpage was found for the web address: `https://localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net/transactions`  
+   > This page on `localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net` could not be found  
+   > No webpage was found for the web address: `https://localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net/transactions`  
    > HTTP ERROR 404
 
 ## Steps to Reproduce
