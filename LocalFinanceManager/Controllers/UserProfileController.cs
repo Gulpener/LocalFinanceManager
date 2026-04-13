@@ -151,8 +151,9 @@ public class UserProfileController : ControllerBase
                 }
             }
 
-            // Upload new picture
-            var newPath = $"{userId}/avatar{extension}";
+            // Upload new picture (include timestamp for cache-busting)
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var newPath = $"{userId}/avatar-{timestamp}{extension}";
             await using var stream = file.OpenReadStream();
             await _storageService.UploadAsync(_supabaseOptions.StorageBucket, newPath, stream, contentType, jwt, ct);
 

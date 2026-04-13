@@ -1,9 +1,7 @@
 @page "/account"
 @attribute [Authorize]
-@using LocalFinanceManager.Services
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Components.Shared
-@inject IUserPreferencesService UserPrefsService
 @inject IUserContext UserContext
 @inject HttpClient Http
 @inject ILogger<AccountProfile> Logger
@@ -158,16 +156,13 @@
             {
                 try
                 {
-                    var profile = await UserPrefsService.GetProfileAsync(userId);
-                    _firstName = profile.FirstName;
-                    _lastName = profile.LastName;
-
-                    var imagePath = await UserPrefsService.GetProfileImagePathAsync(userId);
-                    if (imagePath is not null)
+                    // Use the API to get the full profile including image URL
+                    var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
+                    if (profile is not null)
                     {
-                        // Build URL via the API to avoid injecting ISupabaseStorageService in the page
-                        var profileData = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
-                        _profileImageUrl = profileData?.ProfileImageUrl;
+                        _firstName = profile.FirstName;
+                        _lastName = profile.LastName;
+                        _profileImageUrl = profile.ProfileImageUrl;
                     }
                 }
                 catch (Exception ex)

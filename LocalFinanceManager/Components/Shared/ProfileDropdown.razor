@@ -1,9 +1,10 @@
 @namespace LocalFinanceManager.Components.Shared
 @using LocalFinanceManager.Services
-@inject IUserPreferencesService UserPrefsService
+@using LocalFinanceManager.DTOs
 @inject IThemeService ThemeService
 @inject IUserContext UserContext
 @inject IJSRuntime JS
+@inject HttpClient Http
 @implements IDisposable
 
 <div class="profile-dropdown-wrapper" id="@_elementId">
@@ -67,10 +68,13 @@
             {
                 try
                 {
-                    var profile = await UserPrefsService.GetProfileAsync(userId);
-                    _firstName = profile.FirstName;
-                    _lastName = profile.LastName;
-                    _profileImageUrl = profile.ProfileImageUrl;
+                    var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
+                    if (profile is not null)
+                    {
+                        _firstName = profile.FirstName;
+                        _lastName = profile.LastName;
+                        _profileImageUrl = profile.ProfileImageUrl;
+                    }
                     StateHasChanged();
                 }
                 catch (Exception)
