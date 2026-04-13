@@ -81,4 +81,32 @@ public class CurrencyFormatterTests
         Assert.That(culture.NumberFormat.CurrencySymbol,
             Is.EqualTo(CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol));
     }
+
+    /// <summary>
+    /// Regression test for BugReport-10: Dashboard total balance must always render € for EUR,
+    /// even when CultureInfo.GetCultures() returns an empty set (invariant globalization mode).
+    /// The formatter must use the hardcoded symbol fallback in that scenario.
+    /// </summary>
+    [Test]
+    public void Format_EUR_NeverShowsGenericCurrencyPlaceholder()
+    {
+        var result = CurrencyFormatter.Format(123.45m, "EUR");
+
+        Assert.That(result, Does.Not.Contain("¤"),
+            $"EUR must never render the generic ¤ placeholder. Got: '{result}'.");
+        Assert.That(result, Does.Contain("€"),
+            $"EUR must always render the € symbol. Got: '{result}'.");
+    }
+
+    [TestCase("USD")]
+    [TestCase("GBP")]
+    [TestCase("JPY")]
+    [TestCase("CHF")]
+    public void Format_CommonCurrencies_NeverShowsGenericPlaceholder(string currencyCode)
+    {
+        var result = CurrencyFormatter.Format(100m, currencyCode);
+
+        Assert.That(result, Does.Not.Contain("¤"),
+            $"{currencyCode} must never render the generic ¤ placeholder. Got: '{result}'.");
+    }
 }
