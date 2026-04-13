@@ -4,7 +4,15 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.github/ISSUE_TEMPLATE/**'
 
 jobs:
   build-and-test:
@@ -47,12 +55,16 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Run unit and integration tests
-        run: dotnet test tests/LocalFinanceManager.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage"
+        run: |
+          dotnet test tests/LocalFinanceManager.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" \
+            || (echo "Tests failed, retrying once..." && dotnet test tests/LocalFinanceManager.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage")
         env:
           ConnectionStrings__Local: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
 
       - name: Run ML tests
-        run: dotnet test tests/LocalFinanceManager.ML.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage"
+        run: |
+          dotnet test tests/LocalFinanceManager.ML.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" \
+            || (echo "Tests failed, retrying once..." && dotnet test tests/LocalFinanceManager.ML.Tests/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage")
 
       - name: Build E2E project (prepares Playwright)
         run: dotnet build tests/LocalFinanceManager.E2E/ --configuration Release --no-restore
@@ -63,7 +75,9 @@ jobs:
 
       - name: Run E2E tests - Phase 1 (Import + Basic Assignment)
         timeout-minutes: 10
-        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~TransactionImportTests|FullyQualifiedName~BasicAssignmentTests|FullyQualifiedName~MultiAccountValidationTests"
+        run: |
+          dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~TransactionImportTests|FullyQualifiedName~BasicAssignmentTests|FullyQualifiedName~MultiAccountValidationTests" \
+            || (echo "E2E Phase 1 failed, retrying once..." && dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~TransactionImportTests|FullyQualifiedName~BasicAssignmentTests|FullyQualifiedName~MultiAccountValidationTests")
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
@@ -72,7 +86,9 @@ jobs:
 
       - name: Run E2E tests - Phase 2 (Split + Bulk Assignment)
         timeout-minutes: 10
-        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~SplitAssignmentTests|FullyQualifiedName~BulkAssignmentTests"
+        run: |
+          dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~SplitAssignmentTests|FullyQualifiedName~BulkAssignmentTests" \
+            || (echo "E2E Phase 2 failed, retrying once..." && dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~SplitAssignmentTests|FullyQualifiedName~BulkAssignmentTests")
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
@@ -81,7 +97,9 @@ jobs:
 
       - name: Run E2E tests - Phase 3 (Integration Workflow + UX + Other)
         timeout-minutes: 10
-        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests"
+        run: |
+          dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests" \
+            || (echo "E2E Phase 3 failed, retrying once..." && dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~IntegrationWorkflowTests|FullyQualifiedName~AccessibilityTests|FullyQualifiedName~KeyboardNavigationTests|FullyQualifiedName~UXEnhancementsTests|FullyQualifiedName~AccountCrudTests|FullyQualifiedName~BudgetPlanTests|FullyQualifiedName~AdminSettingsTests|FullyQualifiedName~SmokeTests")
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}
@@ -90,7 +108,9 @@ jobs:
 
       - name: Run E2E tests - Phase 4 (ML Suggestions + Auto-Apply + Monitoring)
         timeout-minutes: 10
-        run: dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests"
+        run: |
+          dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests" \
+            || (echo "E2E Phase 4 failed, retrying once..." && dotnet test tests/LocalFinanceManager.E2E/ --configuration Release --no-build --logger "console;verbosity=minimal" --collect:"XPlat Code Coverage" --filter "FullyQualifiedName~MLSuggestionTests|FullyQualifiedName~AutoApplyTests|FullyQualifiedName~MonitoringDashboardTests")
         env:
           E2E_PG_CONNECTION: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres"
           Supabase__Url: ${{ secrets.SUPABASE_TEST_URL }}

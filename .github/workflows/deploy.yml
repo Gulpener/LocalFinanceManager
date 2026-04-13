@@ -1,5 +1,7 @@
 name: Deploy to Azure
 
+run-name: "Deploy CI #${{ github.event.workflow_run.run_number }} (${{ github.event.workflow_run.head_sha }})"
+
 on:
   workflow_run:
     workflows: ["CI"]
@@ -32,3 +34,4 @@ jobs:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./publish
+          app-settings-json: '[{"name":"BUILD_NUMBER","value":"${{ github.event.workflow_run.run_number }}","slotSetting":false}]'
