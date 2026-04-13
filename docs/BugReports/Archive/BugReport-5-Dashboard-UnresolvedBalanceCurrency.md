@@ -2,7 +2,7 @@
 
 ## Status
 
-- [ ] Open
+- [x] Resolved
 
 ## Summary
 
@@ -45,6 +45,14 @@ Locate the dashboard component that renders the total balance and fix the string
 
 ## Tasks
 
-- [ ] Locate the dashboard component/razor file rendering "Totaal saldo"
-- [ ] Fix the string interpolation or binding for the balance + currency
-- [ ] Verify the dashboard displays a correctly formatted balance (e.g. `€0.00`) for all supported currencies
+- [x] Locate the dashboard component/razor file rendering "Totaal saldo"
+- [x] Fix the string interpolation or binding for the balance + currency
+- [x] Verify the dashboard displays a correctly formatted balance (e.g. `€0.00`) for all supported currencies
+
+## Solution
+
+**Files changed:** `LocalFinanceManager/Components/Pages/Dashboard/TotalBalanceKpiWidget.razor`
+
+**Root cause:** The widget was using a manual format string (`$"{(TotalBalance < 0 ? "-" : "")}{Math.Abs(TotalBalance):N2}"`) combined with a separate `<small>` element showing the raw currency code (e.g. `EUR`), instead of using the shared `CurrencyFormatter` helper. This produced output like `0.00 EUR` rather than the expected `€0.00`.
+
+**Fix:** Replaced the manual format + currency-code display with a single call to `CurrencyFormatter.Format(TotalBalance, Currency)`, which maps ISO-4217 codes to the correct `CultureInfo` via `RegionInfo` and returns a properly symbol-prefixed formatted value (e.g. `€0.00`).
