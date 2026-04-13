@@ -120,12 +120,14 @@ Definition of Done (kort)
 
 User Story Management
 
+- **Language (MANDATORY):** User stories must always be written in English, including titles, acceptance criteria, and task lists.
 - **Naming Convention:** User stories volgen het formaat `UserStory-[number]-[Title].md` (bijv. `UserStory-1-CI-Pipeline.md`).
 - **Numbering:** Bij het aanmaken van een nieuwe user story, moet Copilot ALTIJD beide `docs/Userstories/` EN `docs/Userstories/Archive/` controleren om het hoogste bestaande nummer te vinden. Het nieuwe nummer is dan hoogste nummer + 1.
 - **Location:** Nieuwe user stories worden aangemaakt in `docs/Userstories/`, voltooide stories worden verplaatst naar `docs/Userstories/Archive/`.
 
 Bug Report Management
 
+- **Language (MANDATORY):** Bug reports must always be written in English, including titles, summaries, reproduction steps, and solution sections.
 - **Naming Convention:** Bug reports volgen het formaat `BugReport-[number]-[Title].md` (bijv. `BugReport-1-Currency-Symbol-Incorrect.md`).
 - **Duplicate Check (VERPLICHT):** Vóór het aanmaken van een nieuw bug report, moet Copilot ALTIJD de inhoud van ZOWEL `docs/BugReports/` ALS `docs/BugReports/Archive/` doorzoeken op gelijksoortige bugs (zelfde symptoom, zelfde foutmelding, zelfde component). Als een bestaand rapport gevonden wordt, wordt dat bijgewerkt (nieuwe foutmelding, extra stappen, aanvullende context) in plaats van een nieuw rapport aan te maken.
 - **Numbering:** Bij het aanmaken van een nieuw bug report (na bevestiging dat het geen duplicaat is), moet Copilot ALTIJD beide `docs/BugReports/` EN `docs/BugReports/Archive/` controleren om het hoogste bestaande nummer te vinden. Het nieuwe nummer is dan hoogste nummer + 1.
