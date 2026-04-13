@@ -45,7 +45,7 @@ public class NavMenuTests
             Assert.That(cut.Markup, Does.Contain("Transacties"));
             Assert.That(cut.Markup, Does.Contain("Budgetplannen"));
             // Allow for whitespace/newlines between 'Automatisch' and 'toewijzen'
-            StringAssert.IsMatch("Automatisch\\s*toewijzen", cut.Markup);
+            Assert.That(cut.Markup, Does.Match("Automatisch\\s*toewijzen"));
             // Admin link is not shown for non-admin users
             Assert.That(cut.Markup, Does.Not.Contain("Beheer"));
         });
