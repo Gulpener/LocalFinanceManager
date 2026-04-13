@@ -113,7 +113,10 @@ Verification notes:
 - `dotnet test tests/LocalFinanceManager.Tests/LocalFinanceManager.Tests.csproj --filter "FullyQualifiedName~UserContextCurrentUserIdTests"` passed (3/3).
 - `dotnet test tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj --filter "FullyQualifiedName~AdminSettings_RepeatedNavigation_DoesNotShowCircuitErrorUI"` passed (1/1).
 
-## Follow-up Regression (2026-04-13)
+## Follow-up Regression (2026-04-13) — Resolved
+
+> **Note:** This section is part of the completed, archived resolution history for BugReport-9.
+> A duplicate active tracking file (`docs/BugReports/BugReport-9-BlazorCircuit-AdminSettings.md`) was removed; this archived record is the canonical source for the full resolution history.
 
 Additional user-reported path still showed intermittent redirect behavior:
 
