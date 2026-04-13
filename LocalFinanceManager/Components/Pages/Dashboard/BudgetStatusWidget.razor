@@ -29,7 +29,9 @@
                         <span>@item.Spent.ToString("N2") / @item.Budget.ToString("N2")</span>
                     </div>
                     <div class="progress" style="height: 6px;">
-                        <div class="progress-bar @(isOver ? "bg-danger" : "bg-success")" style="width: @pct%"></div>
+                        <div class="progress-bar" role="progressbar"
+                             style="width: @pct%; background-color: @(isOver ? "var(--color-danger)" : "var(--color-success)");"
+                             aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
             }
