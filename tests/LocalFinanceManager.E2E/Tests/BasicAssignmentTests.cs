@@ -50,6 +50,16 @@ public class BasicAssignmentTests : E2ETestBase
         await _transactionsPage.NavigateAsync();
         await _transactionsPage.SelectAccountFilterAsync(_accountId);
 
+        // Wait until seeded transactions are visible before asserting badge counts.
+        await Page.WaitForSelectorAsync("tr[data-testid='transaction-row']:has-text('Unassigned Tx A')",
+            new PageWaitForSelectorOptions { Timeout = 15000 });
+        await Page.WaitForSelectorAsync("tr[data-testid='transaction-row']:has-text('Unassigned Tx B')",
+            new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        await Page.WaitForFunctionAsync(
+            "() => document.querySelectorAll(\"tr[data-testid='transaction-row'] .badge.bg-warning\").length >= 2",
+            new PageWaitForFunctionOptions { Timeout = 15000 });
+
         var warnings = await Page.Locator("tr[data-testid='transaction-row'] .badge.bg-warning").CountAsync();
         Assert.That(warnings, Is.GreaterThanOrEqualTo(2));
     }

@@ -18,7 +18,7 @@
     <div class="nav-scrollable @(_menuOpen ? "open" : "")">
         <nav class="nav flex-column" @onclick="CloseMenu">
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All" @onclick="CloseMenu">
                     <i class="bi bi-house-door-fill" aria-hidden="true"></i><span class="nav-label ms-2">Home</span>
                 </NavLink>
             </div>
@@ -26,28 +26,28 @@
             <AuthorizeView>
                 <Authorized>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="accounts">
+                        <NavLink class="nav-link" href="accounts" @onclick="CloseMenu">
                             <i class="bi bi-wallet-fill" aria-hidden="true"></i><span
                             class="nav-label ms-2">Rekeningen</span>
                         </NavLink>
                     </div>
 
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="budgets">
+                        <NavLink class="nav-link" href="budgets" @onclick="CloseMenu">
                             <i class="bi bi-calculator-fill" aria-hidden="true"></i><span
                             class="nav-label ms-2">Budgetplannen</span>
                         </NavLink>
                     </div>
 
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="transactions">
+                        <NavLink class="nav-link" href="transactions" @onclick="CloseMenu">
                             <i class="bi bi-cash-coin" aria-hidden="true"></i><span
                             class="nav-label ms-2">Transacties</span>
                         </NavLink>
                     </div>
 
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="sharing/shared-with-me">
+                        <NavLink class="nav-link" href="sharing/shared-with-me" @onclick="CloseMenu">
                             <i class="bi bi-share-fill" aria-hidden="true"></i><span class="nav-label ms-2">Gedeeld met
                             mij</span>
                             @if (pendingShareCount > 0)
@@ -60,7 +60,8 @@
                     @if (_isAdmin)
                     {
                         <div class="nav-item px-3">
-                            <NavLink class="nav-link" href="admin/settings" data-testid="nav-admin-link">
+                            <NavLink class="nav-link" href="admin/settings" data-testid="nav-admin-link"
+                                     @onclick="CloseMenu">
                                 <i class="bi bi-shield-lock-fill" aria-hidden="true"></i><span
                                 class="nav-label ms-2">Beheer</span>
                             </NavLink>
@@ -68,14 +69,14 @@
                     }
 
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="settings/auto-apply">
+                        <NavLink class="nav-link" href="settings/auto-apply" @onclick="CloseMenu">
                             <i class="bi bi-robot" aria-hidden="true"></i><span class="nav-label ms-2">Automatisch
                             toewijzen</span>
                         </NavLink>
                     </div>
 
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="backup">
+                        <NavLink class="nav-link" href="backup" @onclick="CloseMenu">
                             <i class="bi bi-cloud-arrow-down-fill" aria-hidden="true"></i><span
                             class="nav-label ms-2">Back-up &amp; herstel</span>
                         </NavLink>
