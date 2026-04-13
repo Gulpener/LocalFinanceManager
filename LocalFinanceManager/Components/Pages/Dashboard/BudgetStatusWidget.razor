@@ -31,6 +31,7 @@
                     <div class="progress" style="height: 6px;">
                         <div class="progress-bar" role="progressbar"
                              style="width: @pct%; background-color: @(isOver ? "var(--color-danger)" : "var(--color-success)");"
+                             aria-label="@($"{item.Name} budget status")"
                              aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
