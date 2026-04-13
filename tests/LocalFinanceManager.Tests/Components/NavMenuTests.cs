@@ -40,7 +40,7 @@ public class NavMenuTests
 
         Assert.Multiple(() =>
         {
-            Assert.That(cut.Markup, Does.Contain("Home"));
+            Assert.That(cut.Markup, Does.Contain("Dashboard"));
             Assert.That(cut.Markup, Does.Contain("Rekeningen"));
             Assert.That(cut.Markup, Does.Contain("Transacties"));
             Assert.That(cut.Markup, Does.Contain("Budgetplannen"));
@@ -60,7 +60,7 @@ public class NavMenuTests
         using var context = new BunitContext();
         // Simply confirm the component renders without exceptions when user is admin.
         var cut = RenderNavMenu(context, isAuthenticated: true, isAdmin: true);
-        Assert.That(cut.Markup, Does.Contain("Home"));
+        Assert.That(cut.Markup, Does.Contain("Dashboard"));
     }
 
     private static IRenderedComponent<CascadingAuthenticationState> RenderNavMenu(BunitContext context, bool isAuthenticated, bool isAdmin)

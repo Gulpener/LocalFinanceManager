@@ -1,0 +1,7 @@
+.budget-status-bar--ok {
+    background-color: var(--color-success);
+}
+
+.budget-status-bar--over {
+    background-color: var(--color-danger);
+}
