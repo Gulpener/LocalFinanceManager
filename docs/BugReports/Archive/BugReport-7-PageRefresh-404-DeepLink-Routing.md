@@ -6,16 +6,16 @@
 
 ## Summary
 
-Refreshing the browser on any deep-link route (e.g. `/transactions`, `/accounts`) on Azure App Service resulted in an HTTP 404 error or a "Gevaarlijke site" browser warning. Fixed by adding a `web.config` with an IIS URL Rewrite rule that falls back all non-API, non-file GET requests to `/`, allowing the Blazor Server app to handle routing.
+Refreshing the browser on any deep-link route (e.g. `/transactions`, `/accounts`) on Azure App Service resulted in an HTTP 404 error or a "Dangerous site" browser warning. Fixed by adding a `web.config` with an IIS URL Rewrite rule that falls back all non-API, non-file GET requests to `/`, allowing the Blazor Server app to handle routing.
 
 ## Description
 
 Refreshing the browser on any route other than the homepage (`/`) or `/login` results in either:
 
-1. A **"Gevaarlijke site" (Dangerous site)** warning in Chrome — indicating the browser received an unexpected or invalid response.
+1. A **"Dangerous site"** warning in Chrome — indicating the browser received an unexpected or invalid response.
 2. An **HTTP 404** error from Azure App Service:
-   > Deze pagina op `localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net` kan niet worden gevonden  
-   > Er is geen webpagina gevonden voor het webadres: `https://localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net/transactions`  
+   > This page on `localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net` could not be found  
+   > No webpage was found for the web address: `https://localfinancemanager-g8h4euamcfc3ewcs.westeurope-01.azurewebsites.net/transactions`  
    > HTTP ERROR 404
 
 ## Steps to Reproduce
