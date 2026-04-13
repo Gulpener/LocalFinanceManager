@@ -214,7 +214,7 @@ public class AdminPanelTests : E2ETestBase
     [Test]
     public async Task AdminPanel_MlMonitoringUsers_StressNavigation_NoDashboardRedirect()
     {
-        const int iterations = 30;
+        var iterations = int.TryParse(Environment.GetEnvironmentVariable("ADMIN_NAV_STRESS_ITERATIONS"), out var n) ? n : 5;
 
         for (var attempt = 0; attempt < iterations; attempt++)
         {

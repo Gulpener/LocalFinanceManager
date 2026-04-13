@@ -20,8 +20,11 @@ public class UserContext : IUserContext
     private readonly ILogger<UserContext> _logger;
     private readonly object _adminStateLock = new();
 
+    private static readonly TimeSpan AdminCacheTtl = TimeSpan.FromMinutes(5);
+
     private Guid _cachedAdminUserId = Guid.Empty;
     private bool? _cachedAdminValue;
+    private DateTime _adminValueCachedAt = DateTime.MinValue;
     private Task<bool>? _cachedAdminLookupTask;
 
     public UserContext(
@@ -131,21 +134,22 @@ public class UserContext : IUserContext
             return false;
         }
 
-        Task<bool>? pendingLookup;
-        bool? cachedValue;
+        Task<bool> pendingLookup;
 
         lock (_adminStateLock)
         {
-            cachedValue = _cachedAdminUserId == userId ? _cachedAdminValue : null;
-            if (cachedValue.HasValue)
+            if (_cachedAdminUserId == userId
+                && _cachedAdminValue.HasValue
+                && DateTime.UtcNow - _adminValueCachedAt < AdminCacheTtl)
             {
-                return cachedValue.Value;
+                return _cachedAdminValue.Value;
             }
 
             if (_cachedAdminUserId != userId)
             {
                 _cachedAdminUserId = userId;
                 _cachedAdminValue = null;
+                _adminValueCachedAt = DateTime.MinValue;
                 _cachedAdminLookupTask = null;
             }
 
@@ -163,6 +167,7 @@ public class UserContext : IUserContext
         {
             _cachedAdminUserId = Guid.Empty;
             _cachedAdminValue = null;
+            _adminValueCachedAt = DateTime.MinValue;
             _cachedAdminLookupTask = null;
         }
     }
@@ -185,6 +190,7 @@ public class UserContext : IUserContext
                 if (_cachedAdminUserId == userId)
                 {
                     _cachedAdminValue = isAdmin;
+                    _adminValueCachedAt = DateTime.UtcNow;
                     _cachedAdminLookupTask = null;
                 }
             }
