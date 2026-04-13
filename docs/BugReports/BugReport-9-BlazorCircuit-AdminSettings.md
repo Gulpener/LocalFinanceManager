@@ -1,7 +1,8 @@
-## Historical Root Cause and Fix (2026-04-12)
+## Follow-up Regression Report (2026-04-13)
 
-The previous issue was fixed with defensive exception handling in admin entry points. The current report indicates a likely related but different regression (intermittent redirect without guaranteed circuit termination).
+This document describes a new active follow-up/regression related to the previously resolved Admin Settings circuit issue. It must be tracked as a new bug report with the next available bug report number instead of reusing archived `BugReport-9`.
 
+The earlier issue was fixed with defensive exception handling in admin entry points. This follow-up report captures a likely related but distinct regression: intermittent redirect behavior caused by unstable user identity resolution during Blazor circuit navigation.
 ## Diagnosis Steps
 
 1. Enable detailed Blazor errors locally (`DetailedErrors: true`) and reproduce.
