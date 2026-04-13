@@ -5,8 +5,7 @@
     <span class="kpi-value">
         @if (Currency is not null)
         {
-            @($"{(TotalBalance < 0 ? "-" : "")}{Math.Abs(TotalBalance):N2}")
-            <small class="text-muted"> @Currency</small>
+            @CurrencyFormatter.Format(TotalBalance, Currency)
         }
         else
         {
