@@ -83,12 +83,11 @@ public class CurrencyFormatterTests
     }
 
     /// <summary>
-    /// Regression test for BugReport-10: Dashboard total balance must always render € for EUR,
-    /// even when CultureInfo.GetCultures() returns an empty set (invariant globalization mode).
-    /// The formatter must use the hardcoded symbol fallback in that scenario.
+    /// Regression test for BugReport-10: formatting EUR must render the euro symbol
+    /// and must not show the generic currency placeholder.
     /// </summary>
     [Test]
-    public void Format_EUR_NeverShowsGenericCurrencyPlaceholder()
+    public void Format_EUR_UsesEuroSymbolInsteadOfGenericCurrencyPlaceholder()
     {
         var result = CurrencyFormatter.Format(123.45m, "EUR");
 
