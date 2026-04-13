@@ -62,7 +62,10 @@ jobs:
         id: playwright-cache
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-1.57.0
+          key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tests/LocalFinanceManager.E2E/LocalFinanceManager.E2E.csproj') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-${{ runner.arch }}-
+            playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
