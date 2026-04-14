@@ -262,6 +262,70 @@ public class UserProfileControllerIntegrationTests
         Assert.That(prefs!.ProfileImagePath, Is.Null);
     }
 
+    // ── POST /api/profile/picture – Authorization header validation ──────────
+
+    [Test]
+    public async Task UploadProfilePicture_MissingAuthorizationHeader_Returns401()
+    {
+        var jpegBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01 };
+        var file = CreateFormFile(jpegBytes, "photo.jpg", "image/jpeg");
+
+        // No Authorization header set
+        var result = await _controller.UploadProfilePicture(file, CancellationToken.None);
+
+        Assert.That(result.Result, Is.InstanceOf<UnauthorizedResult>());
+    }
+
+    [Test]
+    public async Task UploadProfilePicture_InvalidAuthorizationHeader_Returns401()
+    {
+        var jpegBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01 };
+        var file = CreateFormFile(jpegBytes, "photo.jpg", "image/jpeg");
+
+        // Malformed — not "Bearer <token>"
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Basic dXNlcjpwYXNz";
+
+        var result = await _controller.UploadProfilePicture(file, CancellationToken.None);
+
+        Assert.That(result.Result, Is.InstanceOf<UnauthorizedResult>());
+    }
+
+    [Test]
+    public async Task DeleteProfilePicture_MissingAuthorizationHeader_Returns401()
+    {
+        _context.UserPreferences.Add(new UserPreferences
+        {
+            Id = Guid.NewGuid(),
+            UserId = UserId,
+            ProfileImagePath = $"{UserId}/avatar.jpg"
+        });
+        await _context.SaveChangesAsync();
+
+        // No Authorization header set
+        var result = await _controller.DeleteProfilePicture(CancellationToken.None);
+
+        Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
+    }
+
+    [Test]
+    public async Task DeleteProfilePicture_InvalidAuthorizationHeader_Returns401()
+    {
+        _context.UserPreferences.Add(new UserPreferences
+        {
+            Id = Guid.NewGuid(),
+            UserId = UserId,
+            ProfileImagePath = $"{UserId}/avatar.jpg"
+        });
+        await _context.SaveChangesAsync();
+
+        // Malformed — not "Bearer <token>"
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Basic dXNlcjpwYXNz";
+
+        var result = await _controller.DeleteProfilePicture(CancellationToken.None);
+
+        Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static IFormFile CreateFormFile(byte[] content, string fileName, string contentType)

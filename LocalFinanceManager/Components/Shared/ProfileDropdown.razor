@@ -90,6 +90,8 @@
         _isOpen = !_isOpen;
         if (_isOpen)
         {
+            // Dispose any previous reference before creating a new one
+            _dotNetRef?.Dispose();
             _dotNetRef = DotNetObjectReference.Create(this);
             try
             {
@@ -100,6 +102,10 @@
                 // JS interop unavailable (pre-render) — continue without outside-click handler
             }
         }
+        else
+        {
+            await CleanupJsHandlerAsync();
+        }
     }
 
     [JSInvokable]
@@ -109,15 +115,37 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private async Task CleanupJsHandlerAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("profileDropdown.dispose", _elementId);
+        }
+        catch (Exception)
+        {
+            // JS interop unavailable — ignore
+        }
+    }
+
     private async Task ToggleThemeAsync()
     {
         _isOpen = false;
+        await CleanupJsHandlerAsync();
         var userId = UserContext.GetCurrentUserId();
         await ThemeService.ToggleAsync(userId);
     }
 
     public void Dispose()
     {
+        // Best-effort JS cleanup (fire-and-forget; component is being torn down)
+        try
+        {
+            JS.InvokeVoidAsync("profileDropdown.dispose", _elementId);
+        }
+        catch (Exception)
+        {
+            // Ignore — component is already disposing
+        }
         _dotNetRef?.Dispose();
     }
 }

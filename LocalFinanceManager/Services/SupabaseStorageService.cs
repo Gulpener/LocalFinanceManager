@@ -45,7 +45,7 @@ public class SupabaseStorageService : ISupabaseStorageService
         streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
         request.Content = streamContent;
 
-        var response = await client.SendAsync(request, ct);
+        using var response = await client.SendAsync(request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -70,7 +70,7 @@ public class SupabaseStorageService : ISupabaseStorageService
         var body = JsonSerializer.Serialize(new { prefixes = new[] { path } });
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-        var response = await client.SendAsync(request, ct);
+        using var response = await client.SendAsync(request, ct);
 
         if (!response.IsSuccessStatusCode)
         {
