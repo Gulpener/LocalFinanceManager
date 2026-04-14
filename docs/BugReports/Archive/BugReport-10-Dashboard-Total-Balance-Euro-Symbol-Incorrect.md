@@ -73,6 +73,8 @@ Previous fix documented that `CurrencyFormatter.BuildCurrencyMap()` may return n
 
 ## Solution
 
+### Fix 1 (original – commit a7e2f10)
+
 **Root cause:** The formatter fallback was only triggered when the resolved culture symbol was exactly `¤`. If callers passed a non-ISO value (for example a symbol such as `€`) or if the resolved culture produced a different symbol string than expected, the fallback path was bypassed and formatting could still render the wrong currency marker.
 
 **Implemented fix:**
@@ -88,6 +90,17 @@ Previous fix documented that `CurrencyFormatter.BuildCurrencyMap()` may return n
   - Added regression test for mismatched culture symbols (`FormatWithCulture_WhenCultureSymbolDoesNotMatchKnownCurrency_UsesFallbackSymbol`).
   - Existing currency formatter regression suite remains green.
 
+### Fix 2 (regression fix – 2026-04-14)
+
+**Root cause:** `CurrencyFormatter.GetCulture(string)` violated its contract in invariant-globalization mode (e.g. Docker/Alpine containers without ICU data). When `CultureInfo.GetCultures(CultureTypes.SpecificCultures)` returns an empty array, `_cultureCache` is empty, so `GetCulture("EUR")` fell through to `CultureInfo.CurrentCulture` (InvariantCulture with `¤` symbol). The `Format` path was protected by the `FormatWithCulture` fallback, but any caller using `GetCulture` directly (including the `GetCulture_EUR_ReturnsEuroSymbol` test) received a culture with `¤`.
+
+**Implemented fix:**
+
+- `LocalFinanceManager/Helpers/CurrencyFormatter.cs`
+  - Added `_fallbackCultures` static dictionary: pre-built synthetic `CultureInfo` instances (InvariantCulture clones with `CurrencySymbol` overridden) for every known ISO-4217 code.
+  - Updated `GetCulture` to consult `_fallbackCultures` before falling back to `CultureInfo.CurrentCulture`, ensuring `GetCulture("EUR").NumberFormat.CurrencySymbol == "€"` in all environments.
+
 **Verification:**
 
-- Targeted unit tests passed: `CurrencyFormatterTests` (13 passed, 0 failed).
+- Targeted unit tests passed with `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1`: `CurrencyFormatterTests` (30 passed, 0 failed).
+- Full test suite: 437 passed, 0 failed.

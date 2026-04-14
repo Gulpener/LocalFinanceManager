@@ -56,6 +56,16 @@ public static class CurrencyFormatter
     private static readonly Dictionary<string, string> _symbolToCode = BuildSymbolToCodeMap();
 
     /// <summary>
+    /// Pre-built synthetic <see cref="CultureInfo"/> instances for each entry in <see cref="_knownSymbols"/>,
+    /// used as a fallback in <see cref="GetCulture(string)"/> when <see cref="_cultureCache"/> is empty
+    /// (e.g. invariant-globalization mode). Each synthetic culture is a clone of
+    /// <see cref="CultureInfo.InvariantCulture"/> with the currency symbol overridden so that
+    /// callers always receive a culture whose <c>NumberFormat.CurrencySymbol</c> matches the
+    /// requested ISO-4217 code.
+    /// </summary>
+    private static readonly Dictionary<string, CultureInfo> _fallbackCultures = BuildFallbackCultures();
+
+    /// <summary>
     /// Formats <paramref name="amount"/> with the currency symbol that matches
     /// <paramref name="currencyCode"/> (ISO-4217, e.g. "EUR", "USD").
     /// Falls back to <see cref="CultureInfo.CurrentCulture"/> formatting when the code is
@@ -112,7 +122,32 @@ public static class CurrencyFormatter
             return culture;
         }
 
+        // In invariant-globalization mode (e.g. Docker/Alpine without ICU data),
+        // _cultureCache is empty because CultureInfo.GetCultures() returns no specific cultures.
+        // Return a pre-built synthetic culture so that GetCulture() still honours its contract
+        // (CurrencySymbol matches the requested code) for all known ISO-4217 codes.
+        if (_fallbackCultures.TryGetValue(normalizedCode, out var fallbackCulture))
+        {
+            return fallbackCulture;
+        }
+
         return CultureInfo.CurrentCulture;
+    }
+
+    private static Dictionary<string, CultureInfo> BuildFallbackCultures()
+    {
+        // Pre-build a synthetic CultureInfo per known code for use in GetCulture() when
+        // _cultureCache is empty (invariant-globalization mode). Each culture is a clone of
+        // InvariantCulture with only CurrencySymbol overridden so the symbol contract is met
+        // without requiring any ICU/platform locale data.
+        var result = new Dictionary<string, CultureInfo>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (code, symbol) in _knownSymbols)
+        {
+            var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+            culture.NumberFormat.CurrencySymbol = symbol;
+            result[code] = culture;
+        }
+        return result;
     }
 
     private static Dictionary<string, NumberFormatInfo> BuildFallbackFormats()
