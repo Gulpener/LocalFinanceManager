@@ -62,7 +62,7 @@ Likely dashboard-specific formatting path for total balance that bypasses shared
 **Files changed:**
 
 - `LocalFinanceManager/Helpers/CurrencyFormatter.cs`  
-  Added a `_knownSymbols` dictionary that maps 24 common ISO-4217 codes (EUR, USD, GBP, JPY, etc.) to their symbols. `Format()` now checks whether the resolved `CultureInfo` still carries the generic `¤` symbol and, if so, creates a cloned `NumberFormatInfo` with the correct hardcoded symbol. This ensures EUR (and the other common currencies) always render the correct symbol regardless of the server's globalization configuration.
+  Added a `_knownSymbols` dictionary that maps common ISO-4217 codes (EUR, USD, GBP, JPY, etc.) to their symbols. `Format()` now checks whether the resolved `CultureInfo` still carries the generic `¤` symbol and, if so, creates a cloned `NumberFormatInfo` with the correct hardcoded symbol. This ensures EUR (and other common currencies) always render the correct symbol regardless of the server's globalization configuration.
 
 - `tests/LocalFinanceManager.Tests/Unit/CurrencyFormatterTests.cs`  
-  Added `Format_EUR_NeverShowsGenericCurrencyPlaceholder` (regression test for this exact bug) and `Format_CommonCurrencies_NeverShowsGenericPlaceholder` (parameterised test for USD, GBP, JPY, CHF). Both assert that the `¤` placeholder is never produced. All 18 unit tests pass.
+  Added `Format_EUR_NeverShowsGenericCurrencyPlaceholder` (regression test for this exact bug) and `Format_CommonCurrencies_NeverShowsGenericPlaceholder` (parameterised test for USD, GBP, JPY, CHF). Both assert that the `¤` placeholder is never produced. Tests were added and are passing.
