@@ -2,7 +2,7 @@
 
 ## Status
 
-- [ ] Open
+- [x] Resolved
 
 ## Summary
 
@@ -64,7 +64,21 @@ Possible cause: admin status is evaluated too early as false during startup/warm
 
 ## Acceptance Criteria
 
-- [ ] "Admin" is immediately visible after login for admin users, including after a fresh deploy/cold start
-- [ ] No manual refresh is required to make the button visible
-- [ ] Non-admin users do not see the button
-- [ ] Regression test added/updated and passing
+- [x] "Admin" is immediately visible after login for admin users, including after a fresh deploy/cold start
+- [x] No manual refresh is required to make the button visible
+- [x] Non-admin users do not see the button
+- [x] Regression test added/updated and passing
+
+## Solution
+
+**Root cause:** After a user logs in, Routes.razor calls `InitializeCircuitUserFromAuthStateAsync` via the `OnAuthenticationStateChanged` event handler, which initializes `IBlazorCircuitUser`. However, NavMenu only checked admin state during its own `OnAfterRenderAsync(firstRender)` and via a one-shot `WarmUpNavStateAsync` (10 retries × 300 ms). By the time the user completed login, `WarmUpNavStateAsync` had already expired, so `_isAdmin` was never re-evaluated and the Admin button stayed hidden.
+
+**Fix:**
+- Added `event Action? UserChanged` to `IBlazorCircuitUser` (and `BlazorCircuitUser`). The event fires at the end of `Initialize()` and `Reset()`.
+- `NavMenu.razor` now subscribes to `CircuitUser.UserChanged` in `OnAfterRenderAsync(firstRender)`. The handler (`OnCircuitUserChanged`) calls `InvokeAsync(RefreshPendingCountAsync)` to re-evaluate admin state on the Blazor synchronization context immediately after the circuit user changes.
+- Unsubscription is added to `NavMenu.Dispose()` to avoid memory leaks.
+
+**Files changed:**
+- `LocalFinanceManager/Services/BlazorCircuitUser.cs` – added `UserChanged` event
+- `LocalFinanceManager/Components/Layout/NavMenu.razor` – subscribe/unsubscribe to `UserChanged`, refresh on change
+- `tests/LocalFinanceManager.Tests/Components/NavMenuTests.cs` – registered `IBlazorCircuitUser` in all unit tests; added `NavMenu_WhenCircuitUserInitializes_AdminStateIsRefreshed` regression test

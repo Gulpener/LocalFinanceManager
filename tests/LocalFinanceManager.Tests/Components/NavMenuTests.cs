@@ -63,6 +63,49 @@ public class NavMenuTests
         Assert.That(cut.Markup, Does.Contain("Dashboard"));
     }
 
+    [Test]
+    public async Task NavMenu_WhenCircuitUserInitializes_AdminStateIsRefreshed()
+    {
+        // Arrange: start with an unauthenticated user (GetCurrentUserId returns Guid.Empty)
+        using var context = new BunitContext();
+        context.Services.AddAuthorizationCore();
+        context.Services.AddSingleton<IAuthorizationService>(new TestAuthorizationService(isAuthenticated: true));
+        context.Services.AddScoped<AuthenticationStateProvider>(_ => new TestAuthenticationStateProvider(isAuthenticated: true));
+
+        var userId = Guid.NewGuid();
+        var currentUserId = Guid.Empty;
+        var userContextMock = new Mock<IUserContext>();
+        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(() => currentUserId);
+        userContextMock.Setup(x => x.IsAuthenticated()).Returns(true);
+        userContextMock.Setup(x => x.IsAdminAsync()).ReturnsAsync(true);
+        context.Services.AddSingleton(userContextMock.Object);
+
+        var circuitUser = new BlazorCircuitUser();
+        context.Services.AddSingleton<IBlazorCircuitUser>(circuitUser);
+
+        var sharingServiceMock = new Mock<ISharingService>();
+        sharingServiceMock.Setup(x => x.GetPendingShareCountAsync(It.IsAny<Guid>())).ReturnsAsync(0);
+        context.Services.AddSingleton(sharingServiceMock.Object);
+
+        var cut = context.Render<CascadingAuthenticationState>(parameters => parameters
+            .AddChildContent<NavMenu>());
+
+        // Initially the admin link is NOT shown (userId was Guid.Empty on first render)
+        Assert.That(cut.Markup, Does.Not.Contain("nav-admin-link"));
+
+        // Act: circuit user initializes (simulates login completing)
+        currentUserId = userId;
+        circuitUser.Initialize(userId, "admin@example.com");
+
+        // Assert: admin link becomes visible after the UserChanged event triggers a refresh.
+        // Dependencies are all mocked so the state update is nearly instantaneous.
+        await cut.WaitForStateAsync(
+            () => cut.Markup.Contains("nav-admin-link"),
+            TimeSpan.FromMilliseconds(500));
+
+        Assert.That(cut.Markup, Does.Contain("nav-admin-link"));
+    }
+
     private static IRenderedComponent<CascadingAuthenticationState> RenderNavMenu(BunitContext context, bool isAuthenticated, bool isAdmin)
     {
         context.Services.AddAuthorizationCore();
@@ -74,6 +117,8 @@ public class NavMenuTests
         userContextMock.Setup(x => x.IsAuthenticated()).Returns(isAuthenticated);
         userContextMock.Setup(x => x.IsAdminAsync()).ReturnsAsync(isAdmin);
         context.Services.AddSingleton(userContextMock.Object);
+
+        context.Services.AddSingleton<IBlazorCircuitUser>(new BlazorCircuitUser());
 
         var sharingServiceMock = new Mock<ISharingService>();
         sharingServiceMock.Setup(x => x.GetPendingShareCountAsync(It.IsAny<Guid>())).ReturnsAsync(0);
