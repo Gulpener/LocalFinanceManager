@@ -59,7 +59,7 @@ Previous fix documented that `CurrencyFormatter.BuildCurrencyMap()` may return n
 ## Tasks
 
 - [x] Reproduce locally and capture exact rendered value and account currency code
-- [ ] Reproduce in deployed environment and capture runtime globalization/culture settings
+- [x] Reproduce in deployed environment and capture runtime globalization/culture settings
 - [x] Verify dashboard total balance always uses `CurrencyFormatter.Format(...)`
 - [x] Verify no bypass paths in dashboard/account widgets for currency rendering
 - [x] Add or update regression tests to assert EUR shows `€` (including zero values)
