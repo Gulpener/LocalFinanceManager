@@ -522,12 +522,12 @@ tr[data-testid="transaction-row"]:focus {
    Profile Avatar
    ============================================================ */
 :root {
-    --avatar-bg: #3b82f6;
+    --avatar-bg: #1d4ed8;
     --avatar-text: #ffffff;
 }
 
 [data-theme="dark"] {
-    --avatar-bg: #1d4ed8;
+    --avatar-bg: #1e40af;
 }
 
 .avatar-circle {
