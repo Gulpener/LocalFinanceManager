@@ -146,4 +146,29 @@ public class CurrencyFormatterTests
         Assert.That(result, Does.Not.Contain("¤"),
             $"EUR with surrounding whitespace must not render ¤. Got: '{result}'.");
     }
+
+    [Test]
+    public void Format_CurrencySymbolInput_StillFormatsCorrectly()
+    {
+        var result = CurrencyFormatter.Format(50m, "€");
+
+        Assert.That(result, Does.Contain("€"),
+            $"Currency symbol input must render €. Got: '{result}'.");
+        Assert.That(result, Does.Not.Contain("¤"),
+            $"Currency symbol input must not render ¤. Got: '{result}'.");
+    }
+
+    [Test]
+    public void FormatWithCulture_WhenCultureSymbolDoesNotMatchKnownCurrency_UsesFallbackSymbol()
+    {
+        var testCulture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+        testCulture.NumberFormat.CurrencySymbol = "EUR";
+
+        var result = CurrencyFormatter.FormatWithCulture(123.45m, "EUR", testCulture);
+
+        Assert.That(result, Does.Contain("€"),
+            $"Expected EUR to render €. Got: '{result}'.");
+        Assert.That(result, Does.Not.Contain("¤"),
+            $"Expected EUR to never render ¤. Got: '{result}'.");
+    }
 }
