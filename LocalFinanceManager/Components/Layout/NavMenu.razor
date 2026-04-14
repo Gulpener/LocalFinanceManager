@@ -154,11 +154,18 @@
         }
     }
 
-    private void OnCircuitUserChanged()
+    private async void OnCircuitUserChanged()
     {
-        // Fire-and-forget is safe here: RefreshPendingCountAsync contains its own try-catch
-        // blocks that swallow errors to avoid disrupting navigation.
-        _ = InvokeAsync(RefreshPendingCountAsync);
+        // RefreshPendingCountAsync handles its own refresh errors, and awaiting InvokeAsync here
+        // ensures renderer/disposal exceptions are also observed and do not become unobserved tasks.
+        try
+        {
+            await InvokeAsync(RefreshPendingCountAsync);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Could not refresh pending share count after circuit user change");
+        }
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
