@@ -131,6 +131,7 @@
     private bool _isLoading = true;
     private bool _isSaving;
     private bool _isUploading;
+    private bool _afterRenderRetried;
 
     private string? _firstName;
     private string? _lastName;
@@ -150,30 +151,49 @@
     {
         if (firstRender)
         {
-            _email = UserContext.GetCurrentUserEmail();
+            await LoadProfileAsync();
+            return;
+        }
+
+        // Retry once if userId was not yet available on the first render
+        if (!_afterRenderRetried && !_isLoading)
+        {
             var userId = UserContext.GetCurrentUserId();
-            if (userId != Guid.Empty)
+            if (userId == Guid.Empty)
+                return;
+
+            _afterRenderRetried = true;
+            _isLoading = true;
+            StateHasChanged();
+            await LoadProfileAsync();
+        }
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        _email = UserContext.GetCurrentUserEmail();
+        var userId = UserContext.GetCurrentUserId();
+        if (userId != Guid.Empty)
+        {
+            try
             {
-                try
+                // Use the API to get the full profile including image URL
+                var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
+                if (profile is not null)
                 {
-                    // Use the API to get the full profile including image URL
-                    var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
-                    if (profile is not null)
-                    {
-                        _firstName = profile.FirstName;
-                        _lastName = profile.LastName;
-                        _profileImageUrl = profile.ProfileImageUrl;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogWarning(ex, "Failed to load profile data");
+                    _firstName = profile.FirstName;
+                    _lastName = profile.LastName;
+                    _profileImageUrl = profile.ProfileImageUrl;
                 }
             }
-
-            _isLoading = false;
-            StateHasChanged();
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to load profile data");
+            }
         }
+
+        _isLoading = false;
+        StateHasChanged();
     }
 
     private async Task SaveProfileAsync()
@@ -184,7 +204,7 @@
 
         try
         {
-            var response = await Http.PutAsJsonAsync("/api/profile", new UpdateProfileRequest
+            using var response = await Http.PutAsJsonAsync("/api/profile", new UpdateProfileRequest
             {
                 FirstName = string.IsNullOrWhiteSpace(_firstName) ? null : _firstName.Trim(),
                 LastName = string.IsNullOrWhiteSpace(_lastName) ? null : _lastName.Trim()
@@ -237,7 +257,7 @@
             fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
             content.Add(fileContent, "file", file.Name);
 
-            var response = await Http.PostAsync("/api/profile/picture", content);
+            using var response = await Http.PostAsync("/api/profile/picture", content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -273,7 +293,7 @@
 
         try
         {
-            var response = await Http.DeleteAsync("/api/profile/picture");
+            using var response = await Http.DeleteAsync("/api/profile/picture");
 
             if (response.IsSuccessStatusCode)
             {

@@ -176,7 +176,7 @@ public class UserProfileControllerIntegrationTests
         var invalidBytes = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
         var file = CreateFormFile(invalidBytes, "fake.jpg", "image/jpeg");
 
-        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer test-jwt-token";
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer header.payload.signature";
 
         var result = await _controller.UploadProfilePicture(file, CancellationToken.None);
 
@@ -190,7 +190,7 @@ public class UserProfileControllerIntegrationTests
         var jpegBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01 };
         var file = CreateFormFile(jpegBytes, "photo.jpg", "image/jpeg");
 
-        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer test-jwt-token";
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer header.payload.signature";
 
         _storageMock.Setup(s => s.UploadAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Stream>(),
@@ -201,7 +201,7 @@ public class UserProfileControllerIntegrationTests
 
         _storageMock.Verify(s => s.UploadAsync(
             "profile-pictures", It.IsAny<string>(), It.IsAny<Stream>(),
-            "image/jpeg", "test-jwt-token", It.IsAny<CancellationToken>()), Times.Once);
+            "image/jpeg", "header.payload.signature", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
@@ -211,7 +211,7 @@ public class UserProfileControllerIntegrationTests
         var pngBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D };
         var file = CreateFormFile(pngBytes, "photo.png", "image/png");
 
-        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer test-jwt-token";
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer header.payload.signature";
 
         _storageMock.Setup(s => s.UploadAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Stream>(),
@@ -229,7 +229,7 @@ public class UserProfileControllerIntegrationTests
     [Test]
     public async Task DeleteProfilePicture_NoImageSet_Returns404()
     {
-        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer test-jwt-token";
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer header.payload.signature";
 
         var result = await _controller.DeleteProfilePicture(CancellationToken.None);
 
@@ -247,7 +247,7 @@ public class UserProfileControllerIntegrationTests
         });
         await _context.SaveChangesAsync();
 
-        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer test-jwt-token";
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer header.payload.signature";
 
         _storageMock.Setup(s => s.DeleteAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -324,6 +324,33 @@ public class UserProfileControllerIntegrationTests
         var result = await _controller.DeleteProfilePicture(CancellationToken.None);
 
         Assert.That(result, Is.InstanceOf<UnauthorizedResult>());
+    }
+
+    [Test]
+    public async Task UploadProfilePicture_BearerTokenCaseInsensitive_IsAccepted()
+    {
+        // Uppercase "BEARER" should work with the case-insensitive helper
+        var jpegBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01 };
+        var file = CreateFormFile(jpegBytes, "photo.jpg", "image/jpeg");
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "BEARER header.payload.signature";
+
+        // Storage service will throw (no real Supabase), but the 401 guard must pass first
+        var result = await _controller.UploadProfilePicture(file, CancellationToken.None);
+
+        Assert.That(result.Result, Is.Not.InstanceOf<UnauthorizedResult>());
+    }
+
+    [Test]
+    public async Task UploadProfilePicture_MalformedJwt_Returns401()
+    {
+        // Token with wrong segment count (not 3 dot-separated parts) must be rejected
+        var jpegBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01 };
+        var file = CreateFormFile(jpegBytes, "photo.jpg", "image/jpeg");
+        _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "Bearer not-a-valid-jwt";
+
+        var result = await _controller.UploadProfilePicture(file, CancellationToken.None);
+
+        Assert.That(result.Result, Is.InstanceOf<UnauthorizedResult>());
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

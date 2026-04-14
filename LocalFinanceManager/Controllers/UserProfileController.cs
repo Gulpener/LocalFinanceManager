@@ -130,10 +130,8 @@ public class UserProfileController : ControllerBase
             return BadRequest(new ProblemDetails { Status = 400, Title = "Invalid image format. Only JPEG, PNG, and WebP are allowed." });
 
         // Get JWT from Authorization header
-        var authHeader = Request.Headers.Authorization.FirstOrDefault();
-        if (authHeader is null || !authHeader.StartsWith("Bearer "))
+        if (!TryGetBearerToken(out var jwt))
             return Unauthorized();
-        var jwt = authHeader["Bearer ".Length..];
 
         try
         {
@@ -187,10 +185,8 @@ public class UserProfileController : ControllerBase
         if (imagePath is null)
             return NotFound(new ProblemDetails { Status = 404, Title = "No profile picture set" });
 
-        var authHeader = Request.Headers.Authorization.FirstOrDefault();
-        if (authHeader is null || !authHeader.StartsWith("Bearer "))
+        if (!TryGetBearerToken(out var jwt))
             return Unauthorized();
-        var jwt = authHeader["Bearer ".Length..];
 
         try
         {
@@ -204,6 +200,40 @@ public class UserProfileController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError,
                 new ProblemDetails { Status = 500, Title = "Unexpected error during deletion" });
         }
+    }
+
+    /// <summary>
+    /// Extracts the Bearer JWT from the Authorization header in a case-insensitive,
+    /// whitespace-tolerant manner. Returns false if the header is absent, not a Bearer token,
+    /// or obviously malformed (fewer than 3 dot-separated segments).
+    /// </summary>
+    private bool TryGetBearerToken(out string jwt)
+    {
+        var authHeader = Request.Headers.Authorization.FirstOrDefault();
+        if (authHeader is null)
+        {
+            jwt = string.Empty;
+            return false;
+        }
+
+        var trimmed = authHeader.Trim();
+        const string bearerPrefix = "bearer ";
+        if (!trimmed.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            jwt = string.Empty;
+            return false;
+        }
+
+        jwt = trimmed[bearerPrefix.Length..].Trim();
+
+        // Basic sanity check: a JWT must have exactly 3 dot-separated segments
+        if (jwt.Length == 0 || jwt.Count(c => c == '.') != 2)
+        {
+            jwt = string.Empty;
+            return false;
+        }
+
+        return true;
     }
 
     private static async Task<(bool isValid, string contentType, string extension)> ValidateImageMagicBytesAsync(IFormFile file)
