@@ -133,11 +133,20 @@ public static class CurrencyFormatter
 
     private static Dictionary<string, string> BuildSymbolToCodeMap()
     {
+        // Count how many ISO codes share each symbol.
+        var symbolCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (_, symbol) in _knownSymbols)
+        {
+            symbolCounts[symbol] = symbolCounts.GetValueOrDefault(symbol) + 1;
+        }
+
+        // Only map symbols that are unambiguous (used by exactly one currency code).
+        // Ambiguous symbols like "¥" (JPY/CNY) and "kr" (SEK/NOK) are intentionally excluded
+        // to prevent silently normalizing to the wrong ISO code.
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (code, symbol) in _knownSymbols)
         {
-            // Keep first code per symbol for deterministic behavior (e.g. both CNY/JPY use yen).
-            if (!result.ContainsKey(symbol))
+            if (symbolCounts[symbol] == 1)
             {
                 result[symbol] = code;
             }
