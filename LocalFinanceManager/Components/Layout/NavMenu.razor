@@ -156,6 +156,8 @@
 
     private void OnCircuitUserChanged()
     {
+        // Fire-and-forget is safe here: RefreshPendingCountAsync contains its own try-catch
+        // blocks that swallow errors to avoid disrupting navigation.
         _ = InvokeAsync(RefreshPendingCountAsync);
     }
 

@@ -73,9 +73,10 @@ public class NavMenuTests
         context.Services.AddScoped<AuthenticationStateProvider>(_ => new TestAuthenticationStateProvider(isAuthenticated: true));
 
         var userId = Guid.NewGuid();
-        var callCount = 0;
         var userContextMock = new Mock<IUserContext>();
-        userContextMock.Setup(x => x.GetCurrentUserId()).Returns(() => callCount++ == 0 ? Guid.Empty : userId);
+        userContextMock.SetupSequence(x => x.GetCurrentUserId())
+            .Returns(Guid.Empty)
+            .Returns(userId);
         userContextMock.Setup(x => x.IsAuthenticated()).Returns(true);
         userContextMock.Setup(x => x.IsAdminAsync()).ReturnsAsync(true);
         context.Services.AddSingleton(userContextMock.Object);
@@ -96,10 +97,11 @@ public class NavMenuTests
         // Act: circuit user initializes (simulates login completing)
         circuitUser.Initialize(userId, "admin@example.com");
 
-        // Assert: admin link becomes visible after the UserChanged event triggers a refresh
+        // Assert: admin link becomes visible after the UserChanged event triggers a refresh.
+        // Dependencies are all mocked so the state update is nearly instantaneous.
         await cut.WaitForStateAsync(
             () => cut.Markup.Contains("nav-admin-link"),
-            TimeSpan.FromSeconds(2));
+            TimeSpan.FromMilliseconds(500));
 
         Assert.That(cut.Markup, Does.Contain("nav-admin-link"));
     }
