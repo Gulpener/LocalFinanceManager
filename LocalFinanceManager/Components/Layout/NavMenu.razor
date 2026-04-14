@@ -106,6 +106,7 @@
 @using LocalFinanceManager.Data
 @using Microsoft.EntityFrameworkCore
 @inject IUserContext UserContext
+@inject IBlazorCircuitUser CircuitUser
 @inject ILogger<NavMenu> Logger
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
@@ -123,6 +124,7 @@
         if (firstRender)
         {
             NavigationManager.LocationChanged += OnLocationChanged;
+            CircuitUser.UserChanged += OnCircuitUserChanged;
             await RefreshPendingCountAsync();
             _cts = new CancellationTokenSource();
             _ = WarmUpNavStateAsync(_cts.Token);
@@ -150,6 +152,11 @@
         {
             Logger.LogDebug(ex, "Could not persist sidebar collapsed state to localStorage");
         }
+    }
+
+    private void OnCircuitUserChanged()
+    {
+        _ = InvokeAsync(RefreshPendingCountAsync);
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -257,6 +264,7 @@
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        CircuitUser.UserChanged -= OnCircuitUserChanged;
         _cts?.Cancel();
         _cts?.Dispose();
     }
