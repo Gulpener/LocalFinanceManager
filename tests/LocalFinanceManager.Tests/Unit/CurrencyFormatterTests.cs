@@ -108,4 +108,42 @@ public class CurrencyFormatterTests
         Assert.That(result, Does.Not.Contain("¤"),
             $"{currencyCode} must never render the generic ¤ placeholder. Got: '{result}'.");
     }
+
+    /// <summary>
+    /// True regression test for the invariant-globalization fallback path (BugReport-10).
+    /// Injects a culture whose CurrencySymbol is "¤" to exercise FormatWithCulture's
+    /// symbol-replacement branch directly, regardless of whether ICU data is available.
+    /// </summary>
+    [TestCase("EUR", "€")]
+    [TestCase("USD", "$")]
+    [TestCase("GBP", "£")]
+    public void FormatWithCulture_WhenCultureHasGenericPlaceholder_UsesFallbackSymbol(
+        string currencyCode, string expectedSymbol)
+    {
+        // Arrange: build a culture whose CurrencySymbol is the generic ¤ placeholder,
+        // simulating what GetCulture() returns in invariant-globalization mode.
+        var testCulture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+        testCulture.NumberFormat.CurrencySymbol = "¤"; // Explicitly set to trigger the fallback
+
+        // Act
+        var result = CurrencyFormatter.FormatWithCulture(123.45m, currencyCode, testCulture);
+
+        // Assert
+        Assert.That(result, Does.Not.Contain("¤"),
+            $"FormatWithCulture must replace ¤ with the known symbol for '{currencyCode}'. Got: '{result}'.");
+        Assert.That(result, Does.Contain(expectedSymbol),
+            $"FormatWithCulture must use '{expectedSymbol}' for '{currencyCode}'. Got: '{result}'.");
+    }
+
+    [Test]
+    public void Format_CurrencyCodeWithWhitespace_StillFormatsCorrectly()
+    {
+        // Verifies the normalization path (Trim) in Format()
+        var result = CurrencyFormatter.Format(50m, "  EUR  ");
+
+        Assert.That(result, Does.Contain("€"),
+            $"EUR with surrounding whitespace must still render €. Got: '{result}'.");
+        Assert.That(result, Does.Not.Contain("¤"),
+            $"EUR with surrounding whitespace must not render ¤. Got: '{result}'.");
+    }
 }

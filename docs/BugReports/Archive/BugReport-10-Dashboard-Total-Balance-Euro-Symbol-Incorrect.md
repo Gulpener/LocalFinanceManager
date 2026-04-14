@@ -62,7 +62,7 @@ Likely dashboard-specific formatting path for total balance that bypasses shared
 **Files changed:**
 
 - `LocalFinanceManager/Helpers/CurrencyFormatter.cs`  
-  Added a `_knownSymbols` dictionary that maps common ISO-4217 codes (EUR, USD, GBP, JPY, etc.) to their symbols. `Format()` now checks whether the resolved `CultureInfo` still carries the generic `¤` symbol and, if so, creates a cloned `NumberFormatInfo` with the correct hardcoded symbol. This ensures EUR (and other common currencies) always render the correct symbol regardless of the server's globalization configuration.
+  Added a `_knownSymbols` dictionary that maps common ISO-4217 codes (EUR, USD, GBP, JPY, etc.) to their symbols. Added `_fallbackFormats` (pre-built, cached `NumberFormatInfo` per currency code) so the fallback path never allocates on each call. `Format()` normalizes `currencyCode` (trim + uppercase) once before all lookups. The new `internal FormatWithCulture()` helper holds the core fallback logic, making the `¤`-replacement branch directly testable. `InternalsVisibleTo("LocalFinanceManager.Tests")` added via `Properties/AssemblyInfo.cs`.
 
 - `tests/LocalFinanceManager.Tests/Unit/CurrencyFormatterTests.cs`  
-  Added `Format_EUR_NeverShowsGenericCurrencyPlaceholder` (regression test for this exact bug) and `Format_CommonCurrencies_NeverShowsGenericPlaceholder` (parameterised test for USD, GBP, JPY, CHF). Both assert that the `¤` placeholder is never produced. Tests were added and are passing.
+  Added `FormatWithCulture_WhenCultureHasGenericPlaceholder_UsesFallbackSymbol` (true regression test that injects a culture with `¤` to exercise the fallback branch directly), `Format_CurrencyCodeWithWhitespace_StillFormatsCorrectly` (normalization test), and `Format_CommonCurrencies_NeverShowsGenericPlaceholder` (parameterised guard for USD, GBP, JPY, CHF). All tests are passing.
