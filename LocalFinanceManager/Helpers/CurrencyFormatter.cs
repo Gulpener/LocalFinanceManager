@@ -53,6 +53,8 @@ public static class CurrencyFormatter
     private static readonly Dictionary<string, NumberFormatInfo> _fallbackFormats =
         BuildFallbackFormats();
 
+    private static readonly Dictionary<string, string> _symbolToCode = BuildSymbolToCodeMap();
+
     /// <summary>
     /// Formats <paramref name="amount"/> with the currency symbol that matches
     /// <paramref name="currencyCode"/> (ISO-4217, e.g. "EUR", "USD").
@@ -66,9 +68,9 @@ public static class CurrencyFormatter
             return amount.ToString("C2", CultureInfo.CurrentCulture);
         }
 
-        // Normalize once so both GetCulture and _knownSymbols lookups use the same value,
-        // even when the caller passes codes with leading/trailing whitespace or mixed casing.
-        var normalizedCode = currencyCode.Trim().ToUpperInvariant();
+        // Normalize once so lookups are stable even when callers pass whitespace,
+        // mixed casing, or a currency symbol (e.g. "€") instead of ISO code ("EUR").
+        var normalizedCode = NormalizeCurrencyCode(currencyCode);
         var culture = GetCulture(normalizedCode);
         return FormatWithCulture(amount, normalizedCode, culture);
     }
@@ -87,11 +89,10 @@ public static class CurrencyFormatter
     /// </remarks>
     internal static string FormatWithCulture(decimal amount, string normalizedCode, CultureInfo culture)
     {
-        // If the resolved culture still uses the generic placeholder (e.g. in invariant
-        // globalization mode) and we have a hardcoded symbol, use the pre-cached
-        // NumberFormatInfo so the correct symbol is always displayed without extra allocations.
-        if (culture.NumberFormat.CurrencySymbol == "¤" &&
-            _fallbackFormats.TryGetValue(normalizedCode, out var fallbackNfi))
+        // If we know the intended symbol for this code, prefer that symbol whenever the
+        // resolved culture does not match (including invariant-globalization "¤" cases).
+        if (_fallbackFormats.TryGetValue(normalizedCode, out var fallbackNfi) &&
+            !string.Equals(culture.NumberFormat.CurrencySymbol, fallbackNfi.CurrencySymbol, StringComparison.Ordinal))
         {
             return amount.ToString("C2", fallbackNfi);
         }
@@ -105,7 +106,8 @@ public static class CurrencyFormatter
     /// </summary>
     public static CultureInfo GetCulture(string currencyCode)
     {
-        if (_cultureCache.TryGetValue(currencyCode.Trim().ToUpperInvariant(), out var culture))
+        var normalizedCode = NormalizeCurrencyCode(currencyCode);
+        if (_cultureCache.TryGetValue(normalizedCode, out var culture))
         {
             return culture;
         }
@@ -127,6 +129,41 @@ public static class CurrencyFormatter
             result[code] = nfi;
         }
         return result;
+    }
+
+    private static Dictionary<string, string> BuildSymbolToCodeMap()
+    {
+        // Count how many ISO codes share each symbol.
+        var symbolCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (_, symbol) in _knownSymbols)
+        {
+            symbolCounts[symbol] = symbolCounts.GetValueOrDefault(symbol) + 1;
+        }
+
+        // Only map symbols that are unambiguous (used by exactly one currency code).
+        // Ambiguous symbols like "¥" (JPY/CNY) and "kr" (SEK/NOK) are intentionally excluded
+        // to prevent silently normalizing to the wrong ISO code.
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (code, symbol) in _knownSymbols)
+        {
+            if (symbolCounts[symbol] == 1)
+            {
+                result[symbol] = code;
+            }
+        }
+
+        return result;
+    }
+
+    private static string NormalizeCurrencyCode(string currencyCode)
+    {
+        var trimmed = currencyCode.Trim();
+        if (_symbolToCode.TryGetValue(trimmed, out var codeFromSymbol))
+        {
+            return codeFromSymbol;
+        }
+
+        return trimmed.ToUpperInvariant();
     }
 
     private static Dictionary<string, CultureInfo> BuildCurrencyMap()
