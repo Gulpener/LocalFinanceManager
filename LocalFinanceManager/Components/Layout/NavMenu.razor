@@ -106,6 +106,7 @@
 @using LocalFinanceManager.Data
 @using Microsoft.EntityFrameworkCore
 @inject IUserContext UserContext
+@inject IBlazorCircuitUser CircuitUser
 @inject ILogger<NavMenu> Logger
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
@@ -123,6 +124,7 @@
         if (firstRender)
         {
             NavigationManager.LocationChanged += OnLocationChanged;
+            CircuitUser.UserChanged += OnCircuitUserChanged;
             await RefreshPendingCountAsync();
             _cts = new CancellationTokenSource();
             _ = WarmUpNavStateAsync(_cts.Token);
@@ -149,6 +151,20 @@
         catch (Exception ex)
         {
             Logger.LogDebug(ex, "Could not persist sidebar collapsed state to localStorage");
+        }
+    }
+
+    private async void OnCircuitUserChanged()
+    {
+        // RefreshPendingCountAsync handles its own refresh errors, and awaiting InvokeAsync here
+        // ensures renderer/disposal exceptions are also observed and do not become unobserved tasks.
+        try
+        {
+            await InvokeAsync(RefreshPendingCountAsync);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogDebug(ex, "Could not refresh pending share count after circuit user change");
         }
     }
 
@@ -257,6 +273,7 @@
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        CircuitUser.UserChanged -= OnCircuitUserChanged;
         _cts?.Cancel();
         _cts?.Dispose();
     }

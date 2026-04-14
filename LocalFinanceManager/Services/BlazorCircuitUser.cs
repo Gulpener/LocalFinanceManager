@@ -12,6 +12,13 @@ public interface IBlazorCircuitUser
     bool IsInitialized { get; }
     void Initialize(Guid userId, string email);
     void Reset();
+
+    /// <summary>
+    /// Raised whenever the circuit user identity changes (login or logout).
+    /// Components that display user-specific state (e.g. NavMenu) should subscribe
+    /// and refresh their state when this event fires.
+    /// </summary>
+    event Action? UserChanged;
 }
 
 public class BlazorCircuitUser : IBlazorCircuitUser
@@ -20,11 +27,14 @@ public class BlazorCircuitUser : IBlazorCircuitUser
     public string Email { get; private set; } = string.Empty;
     public bool IsInitialized { get; private set; }
 
+    public event Action? UserChanged;
+
     public void Initialize(Guid userId, string email)
     {
         UserId = userId;
         Email = email;
         IsInitialized = true;
+        UserChanged?.Invoke();
     }
 
     public void Reset()
@@ -32,5 +42,6 @@ public class BlazorCircuitUser : IBlazorCircuitUser
         UserId = Guid.Empty;
         Email = string.Empty;
         IsInitialized = false;
+        UserChanged?.Invoke();
     }
 }
