@@ -1,0 +1,156 @@
+@namespace LocalFinanceManager.Components.Shared
+@using LocalFinanceManager.Services
+@using LocalFinanceManager.DTOs
+@inject IUserContext UserContext
+@inject IJSRuntime JS
+@inject HttpClient Http
+@implements IAsyncDisposable
+
+<div class="profile-dropdown-wrapper" id="@_elementId">
+    <button class="btn btn-link p-0 d-flex align-items-center gap-2"
+            aria-label="Profile menu"
+            aria-expanded="@_isOpen"
+            @onclick="ToggleDropdown">
+        <ProfileAvatar FirstName="@_firstName"
+                       LastName="@_lastName"
+                       ProfileImageUrl="@_profileImageUrl"
+                       Email="@_email"
+                       Size="small" />
+    </button>
+
+    @if (_isOpen)
+    {
+        <div class="profile-dropdown-menu">
+            <a class="profile-dropdown-item" href="/account">
+                <i class="bi bi-person-circle" aria-hidden="true"></i>
+                My account
+            </a>
+            <div class="profile-dropdown-divider"></div>
+            <a class="profile-dropdown-item" href="/logout">
+                <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                Logout
+            </a>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isOpen;
+    private string? _firstName;
+    private string? _lastName;
+    private string? _profileImageUrl;
+    private string? _email;
+    private readonly string _elementId = $"profile-dropdown-{Guid.NewGuid():N}";
+    private DotNetObjectReference<ProfileDropdown>? _dotNetRef;
+    private bool _profileLoaded;
+    private bool _afterRenderRetried;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_profileLoaded)
+            return;
+
+        var userId = UserContext.GetCurrentUserId();
+
+        if (userId == Guid.Empty)
+        {
+            // Circuit user not yet initialized — trigger one retry on the next render
+            if (!_afterRenderRetried)
+            {
+                _afterRenderRetried = true;
+                await InvokeAsync(StateHasChanged);
+            }
+            return;
+        }
+
+        _profileLoaded = true;
+        _email = UserContext.GetCurrentUserEmail();
+        try
+        {
+            var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
+            if (profile is not null)
+            {
+                _firstName = profile.FirstName;
+                _lastName = profile.LastName;
+                _profileImageUrl = profile.ProfileImageUrl;
+            }
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            // Profile load failure must not crash the layout
+        }
+    }
+
+    private async Task ToggleDropdown()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            // Dispose any previous reference before creating a new one
+            CleanupDotNetRef();
+            _dotNetRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("profileDropdown.init", _dotNetRef, _elementId);
+            }
+            catch (Exception)
+            {
+                // JS interop unavailable (pre-render) — continue without outside-click handler
+            }
+        }
+        else
+        {
+            await CleanupJsHandlerAsync();
+            // Release the GCHandle; it is only needed while the outside-click handler is active
+            CleanupDotNetRef();
+        }
+    }
+
+    [JSInvokable]
+    public void CloseDropdown()
+    {
+        _isOpen = false;
+        CleanupDotNetRef();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CleanupJsHandlerAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("profileDropdown.dispose", _elementId);
+        }
+        catch (Exception)
+        {
+            // JS interop unavailable — ignore
+        }
+    }
+
+    private void CleanupDotNetRef()
+    {
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("profileDropdown.dispose", _elementId);
+        }
+        catch (Microsoft.JSInterop.JSDisconnectedException)
+        {
+            // Circuit was torn down — JS interop is no longer available
+        }
+        catch (Microsoft.JSInterop.JSException)
+        {
+            // Ignore other JS interop errors during disposal
+        }
+        catch (Exception)
+        {
+            // Ignore any remaining errors during disposal
+        }
+        CleanupDotNetRef();
+    }
+}

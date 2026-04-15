@@ -1,0 +1,323 @@
+@page "/account"
+@attribute [Authorize]
+@using LocalFinanceManager.DTOs
+@using LocalFinanceManager.Components.Shared
+@inject IUserContext UserContext
+@inject HttpClient Http
+@inject ILogger<AccountProfile> Logger
+@rendermode InteractiveServer
+
+<PageTitle>My account</PageTitle>
+
+<div class="container-lg py-4" data-testid="account-profile-page">
+    <h1 class="mb-4">My account</h1>
+
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Profile picture section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Profile picture</h5>
+            </div>
+            <div class="card-body d-flex align-items-center gap-4">
+                <ProfileAvatar FirstName="@_firstName"
+                               LastName="@_lastName"
+                               ProfileImageUrl="@_profileImageUrl"
+                               Email="@_email"
+                               Size="large" />
+
+                <div class="d-flex flex-column gap-2">
+                    <InputFile id="profilePictureInput"
+                               OnChange="HandleFileSelected"
+                               accept=".jpg,.jpeg,.png,.webp"
+                               class="form-control"
+                               data-testid="profile-picture-input"
+                               style="max-width: 320px;" />
+                    <small class="text-muted">Max 2 MB. JPEG, PNG or WebP.</small>
+
+                    @if (_profileImageUrl is not null)
+                    {
+                        <button class="btn btn-outline-danger btn-sm"
+                                style="max-width: 200px;"
+                                @onclick="RemoveProfilePictureAsync"
+                                disabled="@_isUploading"
+                                data-testid="remove-picture-btn">
+                            <i class="bi bi-trash me-1" aria-hidden="true"></i>
+                            Remove picture
+                        </button>
+                    }
+
+                    @if (_isUploading)
+                    {
+                        <div class="d-flex align-items-center gap-2 text-muted">
+                            <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                            <span>Uploading...</span>
+                        </div>
+                    }
+
+                    @if (_pictureMessage is not null)
+                    {
+                        <div class="alert @(_pictureError ? "alert-danger" : "alert-success") py-2 mb-0"
+                             role="alert" data-testid="picture-message">
+                            @_pictureMessage
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile info section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Personal information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3" style="max-width: 480px;">
+                    <div class="col-12 col-sm-6">
+                        <label for="firstName" class="form-label">First name</label>
+                        <input id="firstName"
+                               class="form-control"
+                               type="text"
+                               maxlength="100"
+                               @bind="_firstName"
+                               data-testid="first-name-input" />
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label for="lastName" class="form-label">Last name</label>
+                        <input id="lastName"
+                               class="form-control"
+                               type="text"
+                               maxlength="100"
+                               @bind="_lastName"
+                               data-testid="last-name-input" />
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary"
+                                @onclick="SaveProfileAsync"
+                                disabled="@_isSaving"
+                                data-testid="save-profile-btn">
+                            @if (_isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            }
+                            Save
+                        </button>
+                    </div>
+
+                    @if (_profileMessage is not null)
+                    {
+                        <div class="col-12">
+                            <div class="alert @(_profileError ? "alert-danger" : "alert-success") py-2 mb-0"
+                                 role="alert" data-testid="profile-message">
+                                @_profileMessage
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private bool _isUploading;
+    private bool _afterRenderRetried;
+
+    private string? _firstName;
+    private string? _lastName;
+    private string? _profileImageUrl;
+    private string? _email;
+
+    private string? _profileMessage;
+    private bool _profileError;
+    private string? _pictureMessage;
+    private bool _pictureError;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var userId = UserContext.GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                // Circuit user not yet initialized — schedule one retry render
+                _afterRenderRetried = true;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            await LoadProfileAsync();
+            return;
+        }
+
+        // Retry from the re-render scheduled above when userId was initially unavailable
+        if (_afterRenderRetried && _isLoading)
+        {
+            await LoadProfileAsync();
+        }
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        _email = UserContext.GetCurrentUserEmail();
+        var userId = UserContext.GetCurrentUserId();
+        if (userId != Guid.Empty)
+        {
+            try
+            {
+                // Use the API to get the full profile including image URL
+                var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
+                if (profile is not null)
+                {
+                    _firstName = profile.FirstName;
+                    _lastName = profile.LastName;
+                    _profileImageUrl = profile.ProfileImageUrl;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to load profile data");
+            }
+        }
+
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        _isSaving = true;
+        _profileMessage = null;
+        _profileError = false;
+
+        try
+        {
+            using var response = await Http.PutAsJsonAsync("/api/profile", new UpdateProfileRequest
+            {
+                FirstName = string.IsNullOrWhiteSpace(_firstName) ? null : _firstName.Trim(),
+                LastName = string.IsNullOrWhiteSpace(_lastName) ? null : _lastName.Trim()
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                _profileMessage = "Profile saved successfully.";
+            }
+            else
+            {
+                _profileMessage = "Failed to save profile. Please try again.";
+                _profileError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving profile");
+            _profileMessage = "An unexpected error occurred.";
+            _profileError = true;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        const long maxSize = 2 * 1024 * 1024;
+        if (file.Size > maxSize)
+        {
+            _pictureMessage = "File is too large. Maximum size is 2 MB.";
+            _pictureError = true;
+            return;
+        }
+
+        _isUploading = true;
+        _pictureMessage = null;
+        _pictureError = false;
+
+        try
+        {
+            using var content = new MultipartFormDataContent();
+            var stream = file.OpenReadStream(maxSize);
+            var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+            content.Add(fileContent, "file", file.Name);
+
+            using var response = await Http.PostAsync("/api/profile/picture", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
+                _profileImageUrl = result?.ProfileImageUrl;
+                _pictureMessage = "Profile picture updated.";
+            }
+            else
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                _pictureMessage = "Upload failed. Make sure the file is a valid JPEG, PNG or WebP image.";
+                _pictureError = true;
+                Logger.LogWarning("Profile picture upload failed: {Status} {Body}", response.StatusCode, body);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error uploading profile picture");
+            _pictureMessage = "An unexpected error occurred during upload.";
+            _pictureError = true;
+        }
+        finally
+        {
+            _isUploading = false;
+        }
+    }
+
+    private async Task RemoveProfilePictureAsync()
+    {
+        _isUploading = true;
+        _pictureMessage = null;
+        _pictureError = false;
+
+        try
+        {
+            using var response = await Http.DeleteAsync("/api/profile/picture");
+
+            if (response.IsSuccessStatusCode)
+            {
+                _profileImageUrl = null;
+                _pictureMessage = "Profile picture removed.";
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _pictureMessage = "No profile picture found.";
+                _pictureError = true;
+            }
+            else
+            {
+                _pictureMessage = "Failed to remove picture. Please try again.";
+                _pictureError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error removing profile picture");
+            _pictureMessage = "An unexpected error occurred.";
+            _pictureError = true;
+        }
+        finally
+        {
+            _isUploading = false;
+        }
+    }
+}

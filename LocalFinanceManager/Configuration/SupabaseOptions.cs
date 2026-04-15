@@ -1,7 +1,7 @@
 namespace LocalFinanceManager.Configuration;
 
 /// <summary>
-/// Configuration options for Supabase integration (Auth + JWT validation).
+/// Configuration options for Supabase integration (Auth + JWT validation + Storage).
 /// </summary>
 public class SupabaseOptions
 {
@@ -15,4 +15,7 @@ public class SupabaseOptions
         set => AnonKey = value;
     }
     public string JwtSecret { get; set; } = string.Empty;
+
+    /// <summary>Name of the Supabase Storage bucket for profile pictures.</summary>
+    public string StorageBucket { get; set; } = "profile-pictures";
 }
