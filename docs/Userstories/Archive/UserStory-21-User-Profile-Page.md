@@ -63,7 +63,7 @@ As a user I want a profile page where I can set my name and profile picture, so 
 - [x] Create Supabase Storage bucket `profile-pictures` in the Supabase dashboard
 - [x] Set bucket visibility to **public** (so profile picture URLs are publicly accessible without auth)
 - [x] Add RLS policy on the bucket: users can only upload/delete their own files (path starts with their `user_id`)
-- [x] Add `Supabase:StorageBucket` = `profile-pictures` to environment variables / Azure App Service configuration
+- [x] Add `Supabase__StorageBucket` = `profile-pictures` to environment variables / Azure App Service configuration
 
 ### 🤖 Copilot tasks (implemented in code)
 
