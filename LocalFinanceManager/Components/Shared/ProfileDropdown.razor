@@ -42,31 +42,45 @@
     private string? _email;
     private readonly string _elementId = $"profile-dropdown-{Guid.NewGuid():N}";
     private DotNetObjectReference<ProfileDropdown>? _dotNetRef;
+    private bool _profileLoaded;
+    private bool _afterRenderRetried;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (_profileLoaded)
+            return;
+
+        if (!firstRender && _afterRenderRetried)
+            return;
+
+        _email = UserContext.GetCurrentUserEmail();
+        var userId = UserContext.GetCurrentUserId();
+
+        if (userId == Guid.Empty)
         {
-            _email = UserContext.GetCurrentUserEmail();
-            var userId = UserContext.GetCurrentUserId();
-            if (userId != Guid.Empty)
+            // Circuit user not yet initialized — retry once on the next render
+            if (firstRender)
+                _afterRenderRetried = false;
+            else
+                _afterRenderRetried = true;
+            return;
+        }
+
+        _profileLoaded = true;
+        try
+        {
+            var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
+            if (profile is not null)
             {
-                try
-                {
-                    var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
-                    if (profile is not null)
-                    {
-                        _firstName = profile.FirstName;
-                        _lastName = profile.LastName;
-                        _profileImageUrl = profile.ProfileImageUrl;
-                    }
-                    StateHasChanged();
-                }
-                catch (Exception)
-                {
-                    // Profile load failure must not crash the layout
-                }
+                _firstName = profile.FirstName;
+                _lastName = profile.LastName;
+                _profileImageUrl = profile.ProfileImageUrl;
             }
+            StateHasChanged();
+        }
+        catch (Exception)
+        {
+            // Profile load failure must not crash the layout
         }
     }
 

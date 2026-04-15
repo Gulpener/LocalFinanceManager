@@ -220,8 +220,10 @@ public class UserProfileControllerIntegrationTests
 
         var result = await _controller.UploadProfilePicture(file, CancellationToken.None);
 
-        // Should not be a bad request
-        Assert.That(result.Result, Is.Not.InstanceOf<BadRequestObjectResult>());
+        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        _storageMock.Verify(s => s.UploadAsync(
+            "profile-pictures", It.IsAny<string>(), It.IsAny<Stream>(),
+            "image/png", "header.payload.signature", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     // ── DELETE /api/profile/picture ──────────────────────────────────────────
@@ -334,10 +336,17 @@ public class UserProfileControllerIntegrationTests
         var file = CreateFormFile(jpegBytes, "photo.jpg", "image/jpeg");
         _controller.ControllerContext.HttpContext.Request.Headers.Authorization = "BEARER header.payload.signature";
 
-        // Storage service will throw (no real Supabase), but the 401 guard must pass first
+        _storageMock.Setup(s => s.UploadAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Stream>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync($"{UserId}/photo.jpg");
+
         var result = await _controller.UploadProfilePicture(file, CancellationToken.None);
 
-        Assert.That(result.Result, Is.Not.InstanceOf<UnauthorizedResult>());
+        Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        _storageMock.Verify(s => s.UploadAsync(
+            "profile-pictures", It.IsAny<string>(), It.IsAny<Stream>(),
+            It.IsAny<string>(), "header.payload.signature", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]

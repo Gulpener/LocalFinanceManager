@@ -4,7 +4,7 @@ namespace LocalFinanceManager.Models;
 
 /// <summary>
 /// Stores per-user UI preferences (theme, profile info, etc.).
-/// Keyed on the inherited BaseEntity.UserId (local User.Id Guid).
+/// Uses the inherited BaseEntity.Id as the primary key and is logically one-per-user via a unique UserId owner reference.
 /// </summary>
 public class UserPreferences : BaseEntity
 {

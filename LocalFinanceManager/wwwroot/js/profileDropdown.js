@@ -28,7 +28,10 @@ window.profileDropdown = {
                 var el = document.getElementById(elementId);
                 if (el && !el.contains(e.target)) {
                     cleanupProfileDropdown(elementId);
-                    dotNetRef.invokeMethodAsync('CloseDropdown');
+                    dotNetRef.invokeMethodAsync('CloseDropdown').catch(function () {
+                        // Ignore expected failures when the Blazor component has
+                        // already been disposed during navigation/circuit teardown.
+                    });
                 }
             };
 
