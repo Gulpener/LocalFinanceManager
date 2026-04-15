@@ -50,23 +50,21 @@
         if (_profileLoaded)
             return;
 
-        if (!firstRender && _afterRenderRetried)
-            return;
-
-        _email = UserContext.GetCurrentUserEmail();
         var userId = UserContext.GetCurrentUserId();
 
         if (userId == Guid.Empty)
         {
-            // Circuit user not yet initialized — retry once on the next render
-            if (firstRender)
-                _afterRenderRetried = false;
-            else
+            // Circuit user not yet initialized — trigger one retry on the next render
+            if (!_afterRenderRetried)
+            {
                 _afterRenderRetried = true;
+                await InvokeAsync(StateHasChanged);
+            }
             return;
         }
 
         _profileLoaded = true;
+        _email = UserContext.GetCurrentUserEmail();
         try
         {
             var profile = await Http.GetFromJsonAsync<UserProfileResponse>("/api/profile");
