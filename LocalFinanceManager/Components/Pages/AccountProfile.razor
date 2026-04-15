@@ -143,28 +143,26 @@
     private string? _pictureMessage;
     private bool _pictureError;
 
-    protected override void OnInitialized()
-    {
-    }
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+            var userId = UserContext.GetCurrentUserId();
+            if (userId == Guid.Empty)
+            {
+                // Circuit user not yet initialized — schedule one retry render
+                _afterRenderRetried = true;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
             await LoadProfileAsync();
             return;
         }
 
-        // Retry once if userId was not yet available on the first render
-        if (!_afterRenderRetried && !_isLoading)
+        // Retry from the re-render scheduled above when userId was initially unavailable
+        if (_afterRenderRetried && _isLoading)
         {
-            var userId = UserContext.GetCurrentUserId();
-            if (userId == Guid.Empty)
-                return;
-
-            _afterRenderRetried = true;
-            _isLoading = true;
-            StateHasChanged();
             await LoadProfileAsync();
         }
     }

@@ -91,7 +91,8 @@ public class UserPreferencesService : IUserPreferencesService
         return new UserProfileResponse
         {
             FirstName = prefs?.FirstName,
-            LastName = prefs?.LastName
+            LastName = prefs?.LastName,
+            ProfileImageUrl = prefs?.ProfileImagePath
         };
     }
 

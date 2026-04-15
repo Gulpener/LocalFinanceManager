@@ -54,10 +54,9 @@ public class UserProfileController : ControllerBase
         try
         {
             var profile = await _prefsService.GetProfileAsync(userId);
-            var imagePath = await _prefsService.GetProfileImagePathAsync(userId);
 
-            if (imagePath is not null)
-                profile.ProfileImageUrl = _storageService.GetPublicUrl(_supabaseOptions.StorageBucket, imagePath);
+            if (!string.IsNullOrWhiteSpace(profile.ProfileImageUrl))
+                profile.ProfileImageUrl = _storageService.GetPublicUrl(_supabaseOptions.StorageBucket, profile.ProfileImageUrl);
 
             return Ok(profile);
         }
@@ -149,9 +148,10 @@ public class UserProfileController : ControllerBase
                 }
             }
 
-            // Upload new picture (include timestamp for cache-busting)
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var newPath = $"{userId}/avatar-{timestamp}{extension}";
+            // Upload new picture (include millisecond timestamp + unique suffix for cache-busting and collision avoidance)
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var uniqueSuffix = Guid.NewGuid().ToString("N");
+            var newPath = $"{userId}/avatar-{timestamp}-{uniqueSuffix}{extension}";
             await using var stream = file.OpenReadStream();
             await _storageService.UploadAsync(_supabaseOptions.StorageBucket, newPath, stream, contentType, jwt, ct);
 
