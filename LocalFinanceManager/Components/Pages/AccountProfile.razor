@@ -1,12 +1,10 @@
 @page "/useraccount"
-@page "/account"
 @attribute [Authorize]
 @using LocalFinanceManager.DTOs
 @using LocalFinanceManager.Components.Shared
 @inject IUserContext UserContext
 @inject HttpClient Http
 @inject ILogger<AccountProfile> Logger
-@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>My account</PageTitle>
@@ -144,15 +142,6 @@
     private bool _profileError;
     private string? _pictureMessage;
     private bool _pictureError;
-
-    protected override void OnInitialized()
-    {
-        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
-        if (string.Equals(relativePath, "account", StringComparison.OrdinalIgnoreCase))
-        {
-            Navigation.NavigateTo("/useraccount", replace: true);
-        }
-    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
