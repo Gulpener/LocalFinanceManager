@@ -270,7 +270,7 @@
                 {
                     System.Net.HttpStatusCode.BadRequest => "Upload failed. Make sure the file is a valid JPEG, PNG or WebP image.",
                     System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden => "Upload failed due to an authentication issue. Please sign in again.",
-                    System.Net.HttpStatusCode.NotFound => "Upload failed because the profile picture service could not be found.",
+                    System.Net.HttpStatusCode.NotFound => "Upload failed because a required profile picture endpoint could not be reached.",
                     _ => "Upload failed. Please try again."
                 };
                 _pictureError = true;
