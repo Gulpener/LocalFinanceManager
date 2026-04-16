@@ -87,19 +87,24 @@ public class AdminService : IAdminService
                 .OrderBy(u => u.Email)
                 .Select(u => new { u.Id, u.Email, u.DisplayName, u.IsAdmin, u.CreatedAt })
                 .ToListAsync(ct))
-            .Select(u => new UserSummaryResponse(
-                u.Id,
-                u.Email,
-                BuildDisplayName(u.DisplayName, profilePreferences.GetValueOrDefault(u.Id)?.FirstName, profilePreferences.GetValueOrDefault(u.Id)?.LastName),
-                profilePreferences.GetValueOrDefault(u.Id)?.FirstName,
-                profilePreferences.GetValueOrDefault(u.Id)?.LastName,
-                BuildProfileImageUrl(profilePreferences.GetValueOrDefault(u.Id)?.ProfileImagePath),
-                u.IsAdmin,
-                u.CreatedAt,
-                ownedAccountCounts.GetValueOrDefault(u.Id),
-                outgoingAccountShareCounts.GetValueOrDefault(u.Id) + outgoingBudgetPlanShareCounts.GetValueOrDefault(u.Id),
-                incomingAccountShareCounts.GetValueOrDefault(u.Id) + incomingBudgetPlanShareCounts.GetValueOrDefault(u.Id)
-            )).ToList();
+            .Select(u =>
+            {
+                var preference = profilePreferences.GetValueOrDefault(u.Id);
+
+                return new UserSummaryResponse(
+                    u.Id,
+                    u.Email,
+                    BuildDisplayName(u.DisplayName, preference?.FirstName, preference?.LastName),
+                    preference?.FirstName,
+                    preference?.LastName,
+                    BuildProfileImageUrl(preference?.ProfileImagePath),
+                    u.IsAdmin,
+                    u.CreatedAt,
+                    ownedAccountCounts.GetValueOrDefault(u.Id),
+                    outgoingAccountShareCounts.GetValueOrDefault(u.Id) + outgoingBudgetPlanShareCounts.GetValueOrDefault(u.Id),
+                    incomingAccountShareCounts.GetValueOrDefault(u.Id) + incomingBudgetPlanShareCounts.GetValueOrDefault(u.Id)
+                );
+            }).ToList();
     }
 
     private string BuildDisplayName(string fallbackDisplayName, string? firstName, string? lastName)
