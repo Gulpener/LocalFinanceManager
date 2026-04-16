@@ -13,6 +13,8 @@ namespace LocalFinanceManager.E2E.Admin;
 [TestFixture]
 public class AdminPanelTests : E2ETestBase
 {
+    private static readonly Guid AdditionalUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
     [SetUp]
     public async Task SetUp()
     {
@@ -35,6 +37,44 @@ public class AdminPanelTests : E2ETestBase
             });
             await context.SaveChangesAsync();
         }
+
+        if (!await context.Users.AnyAsync(u => u.Id == AdditionalUserId))
+        {
+            context.Users.Add(new User
+            {
+                Id = AdditionalUserId,
+                SupabaseUserId = "11111111-1111-1111-1111-111111111111",
+                Email = "second.user@localfinancemanager.local",
+                DisplayName = "Second User",
+                EmailConfirmed = true,
+                IsAdmin = false
+            });
+        }
+
+        context.UserPreferences.RemoveRange(context.UserPreferences.Where(p =>
+            p.UserId == AppDbContext.SeedUserId || p.UserId == AdditionalUserId));
+
+        context.UserPreferences.AddRange(
+            new UserPreferences
+            {
+                Id = Guid.NewGuid(),
+                UserId = AppDbContext.SeedUserId,
+                FirstName = "Dev",
+                LastName = "Admin",
+                ProfileImagePath = "profiles/dev-admin.png",
+                Theme = "light"
+            },
+            new UserPreferences
+            {
+                Id = Guid.NewGuid(),
+                UserId = AdditionalUserId,
+                FirstName = "Solo",
+                LastName = null,
+                ProfileImagePath = null,
+                Theme = "light"
+            });
+
+        await context.SaveChangesAsync();
     }
 
     [Test]
@@ -132,6 +172,39 @@ public class AdminPanelTests : E2ETestBase
 
         // Wait for the spinner to disappear or the content section to appear (empty or with data)
         await Page.WaitForFunctionAsync("() => !document.querySelector('.spinner-border.spinner-border-sm')");
+    }
+
+    [Test]
+    public async Task UserManagement_DisplaysAvatarImage_WhenProfilePhotoExists()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/users");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync($"[data-testid='user-avatar-{AppDbContext.SeedUserId}'] img", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        var avatarImage = Page.Locator($"[data-testid='user-avatar-{AppDbContext.SeedUserId}'] img");
+        await Assertions.Expect(avatarImage).ToBeVisibleAsync();
+    }
+
+    [Test]
+    public async Task UserManagement_UsesInitialsFallback_WhenProfilePhotoMissing()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/users");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync($"[data-testid='user-avatar-{AdditionalUserId}'] span", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        var avatarInitials = Page.Locator($"[data-testid='user-avatar-{AdditionalUserId}'] span");
+        await Assertions.Expect(avatarInitials).ToContainTextAsync("S");
+    }
+
+    [Test]
+    public async Task UserManagement_DisplayName_PrefersFirstAndLastName()
+    {
+        await Page.GotoAsync($"{BaseUrl}/admin/users");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync($"[data-testid='user-row-{AppDbContext.SeedUserId}']", new PageWaitForSelectorOptions { Timeout = 15000 });
+
+        var userRow = Page.Locator($"[data-testid='user-row-{AppDbContext.SeedUserId}']");
+        await Assertions.Expect(userRow).ToContainTextAsync("Dev Admin");
     }
 
     [Test]

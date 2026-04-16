@@ -44,6 +44,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th>Avatar</th>
                         <th @onclick='() => SortBy("email")' style="cursor:pointer">
                             E-mail @SortIndicator("email")
                         </th>
@@ -66,6 +67,13 @@
                             aria-label="Toon of verberg details voor @user.Email"
                             @onclick="() => ToggleExpandUser(user.Id)"
                             @onkeydown="(e) => OnUserRowKeyDown(e, user.Id)">
+                            <td data-testid="user-avatar-@user.Id">
+                                <ProfileAvatar FirstName="@user.FirstName"
+                                               LastName="@user.LastName"
+                                               ProfileImageUrl="@user.ProfileImageUrl"
+                                               Email="@user.Email"
+                                               Size="small" />
+                            </td>
                             <td>@user.Email</td>
                             <td>@user.DisplayName</td>
                             <td>
@@ -107,7 +115,7 @@
                         @if (_expandedUserId == user.Id)
                         {
                             <tr>
-                                <td colspan="8" class="bg-light">
+                                <td colspan="9" class="bg-light">
                                     @if (_loadingShares)
                                     {
                                         <div class="text-center py-2">

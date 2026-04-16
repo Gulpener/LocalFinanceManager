@@ -1,4 +1,5 @@
 using LocalFinanceManager.Controllers;
+using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Data;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.Models;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 
@@ -42,7 +44,12 @@ public class AdminControllerIntegrationTests
         _context.Database.EnsureCreated();
 
         var serviceLogger = new Mock<ILogger<AdminService>>().Object;
-        _adminService = new AdminService(_context, serviceLogger);
+        var storageServiceMock = new Mock<ISupabaseStorageService>();
+        storageServiceMock
+            .Setup(s => s.GetPublicUrl(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string bucket, string path) => $"https://cdn.example/{bucket}/{path}");
+        var supabaseOptions = Options.Create(new SupabaseOptions { StorageBucket = "profile-pictures" });
+        _adminService = new AdminService(_context, serviceLogger, storageServiceMock.Object, supabaseOptions);
 
         var controllerLogger = new Mock<ILogger<AdminController>>().Object;
 
@@ -76,6 +83,23 @@ public class AdminControllerIntegrationTests
             new User { Id = AdminUserId, SupabaseUserId = AdminUserId.ToString(), Email = "admin@test.com", DisplayName = "Admin", IsAdmin = true },
             new User { Id = SecondAdminUserId, SupabaseUserId = SecondAdminUserId.ToString(), Email = "admin2@test.com", DisplayName = "Admin Two", IsAdmin = true },
             new User { Id = RegularUserId, SupabaseUserId = RegularUserId.ToString(), Email = "user@test.com", DisplayName = "User", IsAdmin = false }
+        );
+
+        _context.UserPreferences.AddRange(
+            new UserPreferences
+            {
+                Id = Guid.NewGuid(),
+                UserId = AdminUserId,
+                FirstName = "Alice",
+                LastName = "Admin",
+                ProfileImagePath = "profiles/admin.png"
+            },
+            new UserPreferences
+            {
+                Id = Guid.NewGuid(),
+                UserId = RegularUserId,
+                FirstName = "OnlyFirstName"
+            }
         );
 
         var account = new Account { Id = Guid.NewGuid(), Label = "Account 1", IBAN = "NL91ABNA0417164300", Currency = "EUR", UserId = AdminUserId, Type = AccountType.Checking };
@@ -120,6 +144,33 @@ public class AdminControllerIntegrationTests
 
         Assert.That(admin.IsAdmin, Is.True);
         Assert.That(regular.IsAdmin, Is.False);
+    }
+
+    [Test]
+    public async Task GetUsers_AppliesDisplayNamePrecedence_FromUserPreferences()
+    {
+        var result = await _adminController.GetUsers(CancellationToken.None);
+        var ok = result.Result as OkObjectResult;
+        var users = (ok!.Value as List<UserSummaryResponse>)!;
+
+        var admin = users.Single(u => u.Id == AdminUserId);
+        var regular = users.Single(u => u.Id == RegularUserId);
+        var secondAdmin = users.Single(u => u.Id == SecondAdminUserId);
+
+        Assert.That(admin.DisplayName, Is.EqualTo("Alice Admin"));
+        Assert.That(regular.DisplayName, Is.EqualTo("OnlyFirstName"));
+        Assert.That(secondAdmin.DisplayName, Is.EqualTo("Admin Two"));
+    }
+
+    [Test]
+    public async Task GetUsers_IncludesProfileImageUrl_WhenPreferenceImagePathExists()
+    {
+        var result = await _adminController.GetUsers(CancellationToken.None);
+        var ok = result.Result as OkObjectResult;
+        var users = (ok!.Value as List<UserSummaryResponse>)!;
+
+        var admin = users.Single(u => u.Id == AdminUserId);
+        Assert.That(admin.ProfileImageUrl, Is.EqualTo("https://cdn.example/profile-pictures/profiles/admin.png"));
     }
 
     // GET /api/admin/users/{id}/shares
