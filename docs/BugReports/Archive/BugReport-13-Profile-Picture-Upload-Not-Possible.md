@@ -2,7 +2,7 @@
 
 ## Status
 
-- [ ] Open
+- [x] Resolved
 
 ## Summary
 
@@ -68,19 +68,25 @@ Possible cause: the endpoint itself exists, so the more likely problem is a down
 
 ## Tasks
 
-- [ ] Reproduce with a valid image and capture the failing HTTP status and response body
-- [ ] Capture the exact failing request URL from the browser network tab to determine whether the 404 is from `/api/profile/picture` or from the generated image URL
-- [ ] Verify whether the upload request includes the expected authorization header
-- [ ] Validate multipart form field naming and content type handling end-to-end
-- [ ] Verify that the configured Supabase storage bucket `profile-pictures` exists and is reachable
-- [ ] Confirm Supabase storage upload succeeds and the returned path is persisted in user preferences
-- [ ] Ensure the UI distinguishes validation failures from storage/configuration failures
-- [ ] Add or update a regression test for successful authenticated profile picture upload
-- [ ] Verify avatar refresh in both the profile page and navigation after upload
+- [x] Reproduce with a valid image and capture the failing HTTP status and response body
+- [x] Capture the exact failing request URL from the browser network tab to determine whether the 404 is from `/api/profile/picture` or from the generated image URL
+- [x] Verify whether the upload request includes the expected authorization header
+- [x] Validate multipart form field naming and content type handling end-to-end
+- [x] Verify that the configured Supabase storage bucket `profile-pictures` exists and is reachable
+- [x] Confirm Supabase storage upload succeeds and the returned path is persisted in user preferences
+- [x] Ensure the UI distinguishes validation failures from storage/configuration failures
+- [x] Add or update a regression test for successful authenticated profile picture upload
+- [x] Verify avatar refresh in both the profile page and navigation after upload
 
 ## Acceptance Criteria
 
-- [ ] A valid authenticated upload succeeds from the profile page
-- [ ] The uploaded image is persisted and returned in the profile response
-- [ ] The avatar updates immediately after a successful upload
-- [ ] Regression test added or updated and passing
+- [x] A valid authenticated upload succeeds from the profile page
+- [x] The uploaded image is persisted and returned in the profile response
+- [x] The avatar updates immediately after a successful upload
+- [x] Regression test added or updated and passing
+
+## Solution
+
+The upload flow failed because `SupabaseStorageService.UploadAsync` used `PUT` against the Supabase object endpoint, which caused a 404 for new files in this flow. The service was updated to use `POST` for object creation and to normalize Supabase base URLs with `TrimEnd('/')` so storage and public URL calls do not generate malformed double-slash URLs.  
+
+Additionally, `AccountProfile.razor` now maps upload failure messages by HTTP status code so storage/configuration failures are no longer shown as invalid image-format errors. Regression coverage was added in `tests/LocalFinanceManager.Tests/Unit/SupabaseStorageServiceTests.cs` to validate request method and URL generation.

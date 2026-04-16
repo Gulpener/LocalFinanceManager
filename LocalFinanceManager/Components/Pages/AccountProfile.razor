@@ -266,7 +266,13 @@
             else
             {
                 var body = await response.Content.ReadAsStringAsync();
-                _pictureMessage = "Upload failed. Make sure the file is a valid JPEG, PNG or WebP image.";
+                _pictureMessage = response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.BadRequest => "Upload failed. Make sure the file is a valid JPEG, PNG or WebP image.",
+                    System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden => "Upload failed due to an authentication issue. Please sign in again.",
+                    System.Net.HttpStatusCode.NotFound => "Upload failed because profile picture storage is not reachable.",
+                    _ => "Upload failed. Please try again."
+                };
                 _pictureError = true;
                 Logger.LogWarning("Profile picture upload failed: {Status} {Body}", response.StatusCode, body);
             }
