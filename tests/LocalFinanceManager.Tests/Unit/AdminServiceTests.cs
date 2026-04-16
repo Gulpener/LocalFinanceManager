@@ -1,8 +1,10 @@
 using LocalFinanceManager.Data;
+using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Models;
 using LocalFinanceManager.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using NUnit.Framework;
 
@@ -30,7 +32,12 @@ public class AdminServiceTests
         _context.Database.EnsureCreated();
 
         var logger = new Mock<ILogger<AdminService>>().Object;
-        _service = new AdminService(_context, logger);
+        var storageServiceMock = new Mock<ISupabaseStorageService>();
+        storageServiceMock
+            .Setup(s => s.GetPublicUrl(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string bucket, string path) => $"https://cdn.example/{bucket}/{path}");
+        var supabaseOptions = Options.Create(new SupabaseOptions { StorageBucket = "profile-pictures" });
+        _service = new AdminService(_context, logger, storageServiceMock.Object, supabaseOptions);
 
         SeedTestData();
     }

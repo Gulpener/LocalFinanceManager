@@ -19,14 +19,14 @@ public class UserProfileTests : E2ETestBase
     // ── Unauthenticated access ───────────────────────────────────────────────
 
     [Test]
-    [Description("Visiting /account without authentication must redirect to /login.")]
-    public async Task UnauthenticatedBrowser_Account_RedirectsToLogin()
+    [Description("Visiting /useraccount without authentication must redirect to /login.")]
+    public async Task UnauthenticatedBrowser_UserAccount_RedirectsToLogin()
     {
         // Use a fresh browser context with no auth cookie so the request is anonymous.
         await using var context = await Browser.NewContextAsync(ContextOptions());
         var page = await context.NewPageAsync();
 
-        await page.GotoAsync($"{BaseUrl}/account", new PageGotoOptions
+        await page.GotoAsync($"{BaseUrl}/useraccount", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.NetworkIdle,
             Timeout = 30_000
@@ -37,17 +37,17 @@ public class UserProfileTests : E2ETestBase
             new() { Timeout = 20_000 });
 
         Assert.That(page.Url, Does.Contain("/login"),
-            "Unauthenticated access to /account must redirect to /login");
+            "Unauthenticated access to /useraccount must redirect to /login");
     }
 
     // ── Authenticated access ─────────────────────────────────────────────────
 
     [Test]
-    [Description("Authenticated user visiting /account sees the profile page.")]
-    public async Task AuthenticatedUser_Account_ShowsProfilePage()
+    [Description("Authenticated user visiting /useraccount sees the profile page.")]
+    public async Task AuthenticatedUser_UserAccount_ShowsProfilePage()
     {
         // The default Page in E2ETestBase includes the auth cookie set by TestWebApplicationFactory.
-        await Page.GotoAsync($"{BaseUrl}/account", new PageGotoOptions
+        await Page.GotoAsync($"{BaseUrl}/useraccount", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.NetworkIdle,
             Timeout = 30_000
@@ -70,9 +70,9 @@ public class UserProfileTests : E2ETestBase
 
     [Test]
     [Description("Page title contains 'My account'.")]
-    public async Task AuthenticatedUser_Account_PageTitleIsCorrect()
+    public async Task AuthenticatedUser_UserAccount_PageTitleIsCorrect()
     {
-        await Page.GotoAsync($"{BaseUrl}/account", new PageGotoOptions
+        await Page.GotoAsync($"{BaseUrl}/useraccount", new PageGotoOptions
         {
             WaitUntil = WaitUntilState.NetworkIdle,
             Timeout = 30_000

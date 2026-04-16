@@ -1,7 +1,9 @@
 using LocalFinanceManager.Data;
 using LocalFinanceManager.DTOs;
 using LocalFinanceManager.Models;
+using LocalFinanceManager.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace LocalFinanceManager.Services;
 
@@ -12,11 +14,19 @@ public class AdminService : IAdminService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<AdminService> _logger;
+    private readonly ISupabaseStorageService _storageService;
+    private readonly SupabaseOptions _supabaseOptions;
 
-    public AdminService(AppDbContext context, ILogger<AdminService> logger)
+    public AdminService(
+        AppDbContext context,
+        ILogger<AdminService> logger,
+        ISupabaseStorageService storageService,
+        IOptions<SupabaseOptions> supabaseOptions)
     {
         _context = context;
         _logger = logger;
+        _storageService = storageService;
+        _supabaseOptions = supabaseOptions.Value;
     }
 
     /// <inheritdoc />
@@ -59,22 +69,75 @@ public class AdminService : IAdminService
             .Select(g => new { UserId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.UserId, x => x.Count, ct);
 
+        var profilePreferences = await _context.UserPreferences
+            .AsNoTracking()
+            .Where(p => !p.IsArchived && p.UserId != null)
+            .Select(p => new
+            {
+                UserId = p.UserId!.Value,
+                p.FirstName,
+                p.LastName,
+                p.ProfileImagePath
+            })
+            .ToDictionaryAsync(p => p.UserId, ct);
+
         return (await _context.Users
                 .AsNoTracking()
                 .Where(u => !u.IsArchived)
                 .OrderBy(u => u.Email)
                 .Select(u => new { u.Id, u.Email, u.DisplayName, u.IsAdmin, u.CreatedAt })
                 .ToListAsync(ct))
-            .Select(u => new UserSummaryResponse(
-                u.Id,
-                u.Email,
-                u.DisplayName,
-                u.IsAdmin,
-                u.CreatedAt,
-                ownedAccountCounts.GetValueOrDefault(u.Id),
-                outgoingAccountShareCounts.GetValueOrDefault(u.Id) + outgoingBudgetPlanShareCounts.GetValueOrDefault(u.Id),
-                incomingAccountShareCounts.GetValueOrDefault(u.Id) + incomingBudgetPlanShareCounts.GetValueOrDefault(u.Id)
-            )).ToList();
+            .Select(u =>
+            {
+                var preference = profilePreferences.GetValueOrDefault(u.Id);
+
+                return new UserSummaryResponse(
+                    u.Id,
+                    u.Email,
+                    BuildDisplayName(u.DisplayName, preference?.FirstName, preference?.LastName),
+                    preference?.FirstName,
+                    preference?.LastName,
+                    BuildProfileImageUrl(preference?.ProfileImagePath),
+                    u.IsAdmin,
+                    u.CreatedAt,
+                    ownedAccountCounts.GetValueOrDefault(u.Id),
+                    outgoingAccountShareCounts.GetValueOrDefault(u.Id) + outgoingBudgetPlanShareCounts.GetValueOrDefault(u.Id),
+                    incomingAccountShareCounts.GetValueOrDefault(u.Id) + incomingBudgetPlanShareCounts.GetValueOrDefault(u.Id)
+                );
+            }).ToList();
+    }
+
+    private string BuildDisplayName(string fallbackDisplayName, string? firstName, string? lastName)
+    {
+        var trimmedFirstName = firstName?.Trim();
+        var trimmedLastName = lastName?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(trimmedFirstName) && !string.IsNullOrWhiteSpace(trimmedLastName))
+        {
+            return $"{trimmedFirstName} {trimmedLastName}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(trimmedFirstName))
+        {
+            return trimmedFirstName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(trimmedLastName))
+        {
+            return trimmedLastName;
+        }
+
+        return fallbackDisplayName;
+    }
+
+    private string? BuildProfileImageUrl(string? profileImagePath)
+    {
+        if (string.IsNullOrWhiteSpace(profileImagePath))
+        {
+            return null;
+        }
+
+        return _storageService.GetPublicUrl(_supabaseOptions.StorageBucket, profileImagePath);
     }
 
     /// <inheritdoc />
