@@ -1,6 +1,7 @@
 using Bunit;
 using Bunit.JSInterop;
 using LocalFinanceManager.Components.Shared;
+using LocalFinanceManager.Tests.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -60,14 +61,5 @@ public class MLSuggestionBadgeTests
             var noModelBadge = cut.Find("[data-testid='no-model-badge']");
             Assert.That(noModelBadge.TextContent, Does.Contain("Geen ML-model"));
         });
-    }
-
-    private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)
-        : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(handler(request));
-        }
     }
 }

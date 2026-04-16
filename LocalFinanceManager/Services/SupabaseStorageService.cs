@@ -35,11 +35,12 @@ public class SupabaseStorageService : ISupabaseStorageService
         CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient();
-        var url = $"{_options.Url}/storage/v1/object/{bucket}/{path}";
+        var url = $"{_options.Url.TrimEnd('/')}/storage/v1/object/{bucket}/{path}";
 
-        using var request = new HttpRequestMessage(HttpMethod.Put, url);
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userJwt);
         request.Headers.Add("apikey", _options.AnonKey);
+        request.Headers.Add("x-upsert", "false");
 
         var streamContent = new StreamContent(fileStream);
         streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
@@ -61,7 +62,7 @@ public class SupabaseStorageService : ISupabaseStorageService
     public async Task DeleteAsync(string bucket, string path, string userJwt, CancellationToken ct = default)
     {
         var client = _httpClientFactory.CreateClient();
-        var url = $"{_options.Url}/storage/v1/object/delete/{bucket}";
+        var url = $"{_options.Url.TrimEnd('/')}/storage/v1/object/delete/{bucket}";
 
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", userJwt);
@@ -82,5 +83,5 @@ public class SupabaseStorageService : ISupabaseStorageService
 
     /// <inheritdoc />
     public string GetPublicUrl(string bucket, string path)
-        => $"{_options.Url}/storage/v1/object/public/{bucket}/{path}";
+        => $"{_options.Url.TrimEnd('/')}/storage/v1/object/public/{bucket}/{path}";
 }
