@@ -19,7 +19,7 @@ The display name shown in the admin user management page should prefer a user's 
 1. Sign in as a regular user and set first name and last name on the personal profile page.
 2. Sign in as an admin user.
 3. Open the user management page.
-4. Review the value shown in the `Weergavenaam` column for that user.
+4. Review the value shown in the `Display name (Weergavenaam)` column for that user.
 
 ## Expected Behaviour
 
