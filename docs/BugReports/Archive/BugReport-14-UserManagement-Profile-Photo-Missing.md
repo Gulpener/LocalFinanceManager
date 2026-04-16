@@ -2,7 +2,7 @@
 
 ## Status
 
-- [ ] Open
+- [x] Resolved
 
 ## Summary
 
@@ -57,16 +57,20 @@ Possible cause: admin user summaries only expose `DisplayName` and email, while 
 
 ## Tasks
 
-- [ ] Confirm the intended admin UX for showing avatars in the user list
-- [ ] Extend the admin user summary data to include profile image information
-- [ ] Render a profile photo or avatar fallback in the user management overview
-- [ ] Ensure the list remains readable and responsive on smaller screens
-- [ ] Add or update UI tests covering users with and without profile pictures
-- [ ] Verify no regression in admin page loading performance
+- [x] Confirm the intended admin UX for showing avatars in the user list
+- [x] Extend the admin user summary data to include profile image information
+- [x] Render a profile photo or avatar fallback in the user management overview
+- [x] Ensure the list remains readable and responsive on smaller screens
+- [x] Add or update UI tests covering users with and without profile pictures
+- [x] Verify no regression in admin page loading performance
 
 ## Acceptance Criteria
 
-- [ ] User management shows a profile photo when one exists for a user
-- [ ] Users without a photo show a consistent avatar fallback
-- [ ] The user overview remains usable on desktop and mobile widths
-- [ ] Regression test added or updated and passing
+- [x] User management shows a profile photo when one exists for a user
+- [x] Users without a photo show a consistent avatar fallback
+- [x] The user overview remains usable on desktop and mobile widths
+- [x] Regression test added or updated and passing
+
+## Solution
+
+Updated admin user projection and UI rendering so the user management list now includes avatar data from `UserPreferences` and displays `ProfileAvatar` per row. `AdminService` now resolves profile image public URLs and returns profile name/image fields in `UserSummaryResponse`, and `UserManagement.razor` renders photo-or-initials fallback via `ProfileAvatar`. Regression coverage was added/updated in `tests/LocalFinanceManager.Tests/Integration/AdminControllerIntegrationTests.cs` and `tests/LocalFinanceManager.E2E/Admin/AdminPanelTests.cs` for users with and without profile photos.

@@ -2,7 +2,7 @@
 
 ## Status
 
-- [ ] Open
+- [x] Resolved
 
 ## Summary
 
@@ -57,16 +57,20 @@ Possible cause: admin user summaries are built only from `Users.DisplayName`, wh
 
 ## Tasks
 
-- [ ] Define display-name precedence for admin views
-- [ ] Join or project profile preference names into the admin user summary
-- [ ] Format the display name as `FirstName LastName` when available
-- [ ] Preserve a sensible fallback when one or both profile name fields are missing
-- [ ] Add or update regression tests for all name-combination scenarios
-- [ ] Verify sorting behavior remains predictable after the display-name change
+- [x] Define display-name precedence for admin views
+- [x] Join or project profile preference names into the admin user summary
+- [x] Format the display name as `FirstName LastName` when available
+- [x] Preserve a sensible fallback when one or both profile name fields are missing
+- [x] Add or update regression tests for all name-combination scenarios
+- [x] Verify sorting behavior remains predictable after the display-name change
 
 ## Acceptance Criteria
 
-- [ ] User management shows `FirstName LastName` when both values are present
-- [ ] User management shows the best available non-empty name when only one value is present
-- [ ] User management falls back to stored display name when no profile names exist
-- [ ] Regression test added or updated and passing
+- [x] User management shows `FirstName LastName` when both values are present
+- [x] User management shows the best available non-empty name when only one value is present
+- [x] User management falls back to stored display name when no profile names exist
+- [x] Regression test added or updated and passing
+
+## Solution
+
+Implemented display-name precedence in `AdminService` by composing names from `UserPreferences` with the following order: `FirstName LastName`, single non-empty name, then fallback to `Users.DisplayName`. Extended `UserSummaryResponse` to include profile name/image fields and ensured `UserManagement.razor` uses the computed display name. Added regression coverage in `tests/LocalFinanceManager.Tests/Integration/AdminControllerIntegrationTests.cs` and `tests/LocalFinanceManager.E2E/Admin/AdminPanelTests.cs` for full-name, single-name, and fallback scenarios.
