@@ -1,5 +1,6 @@
 using LocalFinanceManager.Configuration;
 using LocalFinanceManager.Services;
+using LocalFinanceManager.Tests.TestDoubles;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -31,6 +32,11 @@ public class SupabaseStorageServiceTests
         Assert.That(capturedRequest!.Method, Is.EqualTo(HttpMethod.Post));
         Assert.That(capturedRequest.RequestUri!.ToString(),
             Is.EqualTo("https://example.supabase.co/storage/v1/object/profile-pictures/user/avatar.png"));
+        Assert.That(capturedRequest.Headers.Authorization, Is.Not.Null);
+        Assert.That(capturedRequest.Headers.Authorization!.Scheme, Is.EqualTo("Bearer"));
+        Assert.That(capturedRequest.Headers.Authorization.Parameter, Is.EqualTo("jwt"));
+        Assert.That(capturedRequest.Headers.GetValues("apikey"), Is.EquivalentTo(new[] { "anon" }));
+        Assert.That(capturedRequest.Headers.GetValues("x-upsert"), Is.EquivalentTo(new[] { "false" }));
     }
 
     [Test]
@@ -49,11 +55,5 @@ public class SupabaseStorageServiceTests
     private sealed class StubHttpClientFactory(HttpClient client) : IHttpClientFactory
     {
         public HttpClient CreateClient(string name) => client;
-    }
-
-    private sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => Task.FromResult(handler(request));
     }
 }
